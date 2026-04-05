@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch, apiUrl, areDemoFallbacksEnabled } from '../../../utils/api';
-import { getDashboardPathByRole, normalizeRedirectPath, setAuthSession } from '../../../utils/auth';
+import {
+  beginPendingVerificationSession,
+  getDashboardPathByRole,
+  normalizeRedirectPath,
+  setAuthSession
+} from '../../../utils/auth';
 import {
   createManagedAccount,
   findManagedAccountByEmail,
@@ -213,6 +218,14 @@ const LoginPage = () => {
     return () => { cancelled = true; };
   }, []);
 
+  const redirectToOtpVerification = ({ email, otp = '', emailWarning = '' }) => {
+    beginPendingVerificationSession({ email, otp, emailWarning });
+    navigate('/verify-otp', {
+      state: { email, otp, emailWarning },
+      replace: true
+    });
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
@@ -241,6 +254,15 @@ const LoginPage = () => {
 
       if (!response.ok) {
         setError(payload.message || 'Login failed.');
+        return;
+      }
+
+      if (payload.requiresOtpVerification) {
+        redirectToOtpVerification({
+          email: form.email,
+          otp: payload.otp || '',
+          emailWarning: payload.emailWarning || payload.message || ''
+        });
         return;
       }
 
@@ -281,11 +303,6 @@ const LoginPage = () => {
 
       setAuthSession(payload.token, nextUser);
 
-      if (payload.requiresOtpVerification) {
-        navigate('/verify-otp', { state: { email: form.email }, replace: true });
-        return;
-      }
-
       navigate(normalizeRedirectPath(redirectTo || payload.redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
     } catch (requestError) {
       setError(requestError.message || 'Unable to sign in right now. Please try again.');
@@ -297,8 +314,10 @@ const LoginPage = () => {
   const startSocialLogin = (provider) => {
     setError('');
     setSocialLoading(provider);
-    const endpoint = apiUrl(`/auth/oauth/${provider}/start?role=${encodeURIComponent(socialRole)}`);
-    window.location.assign(endpoint);
+    const endpoint = new URL(apiUrl(`/auth/oauth/${provider}/start`));
+    endpoint.searchParams.set('role', socialRole);
+    endpoint.searchParams.set('clientUrl', window.location.origin);
+    window.location.assign(endpoint.toString());
   };
 
   const handleDemoAccess = (demoAccount) => {

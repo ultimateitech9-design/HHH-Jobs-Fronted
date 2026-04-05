@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../../utils/api';
-import { getCurrentUser, getDashboardPathByRole, normalizeRedirectPath, setAuthSession } from '../../../utils/auth';
+import {
+  beginPendingVerificationSession,
+  clearPendingVerificationSession,
+  getDashboardPathByRole,
+  getPendingVerificationSession,
+  getStoredUser,
+  isEmailVerifiedUser,
+  normalizeRedirectPath,
+  setAuthSession
+} from '../../../utils/auth';
 import { generateRetiredEmployeeId, generateStudentCandidateId } from '../../../utils/hrIdentity';
 import { resendLocalSignupOtp, verifyLocalSignupOtp } from '../../../utils/localAuthFallback';
 import AuthFormMessage from '../components/AuthFormMessage';
@@ -18,9 +27,20 @@ const OtpVerificationPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const email = location.state?.email || getCurrentUser()?.email || '';
-  const prefilledOtp = String(location.state?.otp || '').replace(/\D/g, '').slice(0, 6);
-  const emailWarning = String(location.state?.emailWarning || '');
+  const pendingVerification = getPendingVerificationSession();
+  const legacyStoredUser = getStoredUser();
+  const legacyPendingEmail = legacyStoredUser && !isEmailVerifiedUser(legacyStoredUser)
+    ? String(legacyStoredUser.email || '').trim().toLowerCase()
+    : '';
+
+  const email = String(
+    location.state?.email
+    || pendingVerification?.email
+    || legacyPendingEmail
+    || ''
+  ).trim().toLowerCase();
+  const prefilledOtp = String(location.state?.otp || pendingVerification?.otp || '').replace(/\D/g, '').slice(0, 6);
+  const emailWarning = String(location.state?.emailWarning || pendingVerification?.emailWarning || '');
 
   useEffect(() => {
     if (!email) {
@@ -28,8 +48,9 @@ const OtpVerificationPage = () => {
       return;
     }
 
+    beginPendingVerificationSession({ email, otp: prefilledOtp, emailWarning });
     inputRefs.current[0]?.focus();
-  }, [email, navigate]);
+  }, [email, emailWarning, navigate, prefilledOtp]);
 
   useEffect(() => {
     if (emailWarning) setError(emailWarning);
@@ -122,6 +143,7 @@ const OtpVerificationPage = () => {
           }
           : payload.user;
 
+      clearPendingVerificationSession();
       setAuthSession(payload.token, nextUser);
       navigate(normalizeRedirectPath(payload.redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
     } catch (requestError) {
@@ -146,6 +168,7 @@ const OtpVerificationPage = () => {
             }
             : payload.user;
 
+        clearPendingVerificationSession();
         setAuthSession(payload.token, nextUser);
         navigate(normalizeRedirectPath(payload.redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
       } catch (fallbackError) {
@@ -174,6 +197,7 @@ const OtpVerificationPage = () => {
 
       setCounter(60);
       const nextOtp = String(payload.otp || '').replace(/\D/g, '').slice(0, 6);
+      beginPendingVerificationSession({ email, otp: nextOtp, emailWarning: '' });
       if (nextOtp.length === 6) {
         setOtp(nextOtp.split(''));
         inputRefs.current[5]?.focus();
@@ -186,6 +210,7 @@ const OtpVerificationPage = () => {
         const payload = resendLocalSignupOtp(email);
         setCounter(60);
         const nextOtp = String(payload.otp || '').replace(/\D/g, '').slice(0, 6);
+        beginPendingVerificationSession({ email, otp: nextOtp, emailWarning: '' });
         if (nextOtp.length === 6) {
           setOtp(nextOtp.split(''));
           inputRefs.current[5]?.focus();

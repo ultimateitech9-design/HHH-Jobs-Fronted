@@ -1,4 +1,4 @@
-import { clearAuthSession, getToken } from './auth.js';
+import { clearAuthSession, getCurrentUser, getToken, isEmailVerifiedUser } from './auth.js';
 
 const env = import.meta.env || {};
 
@@ -44,7 +44,9 @@ export const areDemoFallbacksEnabled = () =>
   String(env.VITE_ENABLE_DEMO_FALLBACKS || '').trim().toLowerCase() === 'true';
 
 const hasUsableApiToken = (token) =>
-  Boolean(token) && !/^(managed-|local-|pending-)/i.test(String(token));
+  Boolean(token)
+  && !/^(managed-|local-|pending-)/i.test(String(token))
+  && isEmailVerifiedUser(getCurrentUser());
 
 export const hasApiAccessToken = () => {
   const token = getToken();

@@ -1,5 +1,6 @@
 const TOKEN_KEY = 'job_portal_token';
 const USER_KEY = 'job_portal_user';
+const PENDING_VERIFICATION_KEY = 'job_portal_pending_verification';
 
 const DELETED_USERS_KEY = 'hhh_jobs_deleted_user_ids';
 const DASHBOARD_REDIRECT_RULES = [
@@ -23,7 +24,23 @@ const notifyAuthChange = () => {
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 
-export const getCurrentUser = () => {
+const readStoredJson = (key) => {
+  const rawValue = localStorage.getItem(key);
+  if (!rawValue) return null;
+
+  try {
+    return JSON.parse(rawValue);
+  } catch (error) {
+    localStorage.removeItem(key);
+    return null;
+  }
+};
+
+export const isEmailVerifiedUser = (user) => Boolean(user)
+  && user.isEmailVerified !== false
+  && user.is_email_verified !== false;
+
+export const getStoredUser = () => {
   const rawUser = localStorage.getItem(USER_KEY);
   if (!rawUser) return null;
 
@@ -48,7 +65,54 @@ export const getCurrentUser = () => {
   }
 };
 
+export const getCurrentUser = () => {
+  const user = getStoredUser();
+  return isEmailVerifiedUser(user) ? user : null;
+};
+
+export const getPendingVerificationSession = () => {
+  const pendingSession = readStoredJson(PENDING_VERIFICATION_KEY);
+  if (!pendingSession || typeof pendingSession !== 'object') return null;
+
+  const email = String(pendingSession.email || '').trim().toLowerCase();
+  if (!email) {
+    localStorage.removeItem(PENDING_VERIFICATION_KEY);
+    return null;
+  }
+
+  return {
+    email,
+    otp: String(pendingSession.otp || '').replace(/\D/g, '').slice(0, 6),
+    emailWarning: String(pendingSession.emailWarning || '').trim()
+  };
+};
+
+export const beginPendingVerificationSession = ({ email = '', otp = '', emailWarning = '' } = {}) => {
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+
+  if (normalizedEmail) {
+    localStorage.setItem(PENDING_VERIFICATION_KEY, JSON.stringify({
+      email: normalizedEmail,
+      otp: String(otp || '').replace(/\D/g, '').slice(0, 6),
+      emailWarning: String(emailWarning || '').trim()
+    }));
+  } else {
+    localStorage.removeItem(PENDING_VERIFICATION_KEY);
+  }
+
+  notifyAuthChange();
+};
+
+export const clearPendingVerificationSession = () => {
+  localStorage.removeItem(PENDING_VERIFICATION_KEY);
+  notifyAuthChange();
+};
+
 export const setAuthSession = (token, user) => {
+  localStorage.removeItem(PENDING_VERIFICATION_KEY);
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
   notifyAuthChange();
@@ -57,6 +121,7 @@ export const setAuthSession = (token, user) => {
 export const clearAuthSession = () => {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(PENDING_VERIFICATION_KEY);
   notifyAuthChange();
 };
 

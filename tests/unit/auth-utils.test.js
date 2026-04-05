@@ -69,3 +69,38 @@ test('clears deleted users from storage and reports unauthenticated', async () =
   assert.equal(storage.getItem('job_portal_token'), null);
   assert.equal(storage.getItem('job_portal_user'), null);
 });
+
+test('starts pending verification without leaving an authenticated session behind', async () => {
+  const { authModule, storage } = await setupAuthModule();
+
+  authModule.setAuthSession('valid-token', { id: 'user-1', role: 'student', isEmailVerified: true });
+  authModule.beginPendingVerificationSession({
+    email: '  Pending.User@example.com ',
+    otp: '12a34567',
+    emailWarning: 'Check mailbox'
+  });
+
+  assert.equal(storage.getItem('job_portal_token'), null);
+  assert.equal(storage.getItem('job_portal_user'), null);
+  assert.deepEqual(authModule.getPendingVerificationSession(), {
+    email: 'pending.user@example.com',
+    otp: '123456',
+    emailWarning: 'Check mailbox'
+  });
+  assert.equal(authModule.isAuthenticated(), false);
+});
+
+test('treats unverified stored users as unauthenticated', async () => {
+  const { authModule, storage } = await setupAuthModule();
+
+  storage.setItem('job_portal_token', 'valid-token');
+  storage.setItem('job_portal_user', JSON.stringify({
+    id: 'user-2',
+    role: 'student',
+    isEmailVerified: false
+  }));
+
+  assert.equal(authModule.getCurrentUser(), null);
+  assert.equal(authModule.getStoredUser()?.id, 'user-2');
+  assert.equal(authModule.isAuthenticated(), false);
+});

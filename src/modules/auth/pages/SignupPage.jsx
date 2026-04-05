@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch, apiUrl, areDemoFallbacksEnabled } from '../../../utils/api';
-import { getDashboardPathByRole, normalizeRedirectPath, setAuthSession } from '../../../utils/auth';
+import {
+  beginPendingVerificationSession,
+  getDashboardPathByRole,
+  normalizeRedirectPath,
+  setAuthSession
+} from '../../../utils/auth';
 import { createLocalSignupFallback } from '../../../utils/localAuthFallback';
 import {
   generateHrEmployerId,
@@ -196,19 +201,21 @@ const SignupPage = () => {
     );
   };
 
+  const redirectToOtpVerification = ({ email, otp = '', emailWarning = '' }) => {
+    beginPendingVerificationSession({ email, otp, emailWarning });
+    navigate('/verify-otp', {
+      state: { email, otp, emailWarning },
+      replace: true
+    });
+  };
+
   const completeLocalSignupFallback = (signupPayload, fallbackMessage = '') => {
     try {
       const payload = createLocalSignupFallback(signupPayload);
-      const nextUser = buildSignupUser(payload);
-
-      setAuthSession(payload.token, nextUser);
-      navigate('/verify-otp', {
-        state: {
-          email: form.email,
-          otp: payload.otp || '',
-          emailWarning: fallbackMessage
-        },
-        replace: true
+      redirectToOtpVerification({
+        email: form.email,
+        otp: payload.otp || '',
+        emailWarning: fallbackMessage
       });
       return;
     } catch (error) {
@@ -218,12 +225,9 @@ const SignupPage = () => {
       }
     }
 
-    navigate('/verify-otp', {
-      state: {
-        email: form.email,
-        emailWarning: fallbackMessage || 'Your account may already have been created. Enter the OTP if you received it, or resend OTP from the next screen.'
-      },
-      replace: true
+    redirectToOtpVerification({
+      email: form.email,
+      emailWarning: fallbackMessage || 'Your account may already have been created. Enter the OTP if you received it, or resend OTP from the next screen.'
     });
   };
 
@@ -283,17 +287,17 @@ const SignupPage = () => {
         return;
       }
 
-      const nextUser = buildSignupUser(payload);
-
-      setAuthSession(payload.token, nextUser);
-
       if (payload.requiresOtpVerification) {
-        navigate('/verify-otp', {
-          state: { email: form.email, otp: payload.otp || '', emailWarning: payload.emailWarning || '' },
-          replace: true
+        redirectToOtpVerification({
+          email: form.email,
+          otp: payload.otp || '',
+          emailWarning: payload.emailWarning || ''
         });
         return;
       }
+
+      const nextUser = buildSignupUser(payload);
+      setAuthSession(payload.token, nextUser);
 
       const fallbackRedirect = payload.redirectTo || getDashboardPathByRole(nextUser?.role);
       const nextPath = nextUser?.role === 'retired_employee' && redirectAfterSignup
@@ -346,8 +350,10 @@ const SignupPage = () => {
     }
 
     setSocialLoading(provider);
-    const endpoint = apiUrl(`/auth/oauth/${provider}/start?role=${encodeURIComponent(form.role)}`);
-    window.location.assign(endpoint);
+    const endpoint = new URL(apiUrl(`/auth/oauth/${provider}/start`));
+    endpoint.searchParams.set('role', form.role);
+    endpoint.searchParams.set('clientUrl', window.location.origin);
+    window.location.assign(endpoint.toString());
   };
 
   const selectedCountry = getSelectedCountry(form.countryCode);

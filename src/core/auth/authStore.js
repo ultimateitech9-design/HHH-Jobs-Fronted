@@ -8,9 +8,16 @@ import {
   getDashboardPathByRole,
 } from '../../utils/auth';
 
+const readStoredAuthState = () => {
+  const user = getCurrentUser();
+  return {
+    user,
+    token: user ? getToken() : null
+  };
+};
+
 const useAuthStore = create((set, get) => ({
-  user: getCurrentUser(),
-  token: getToken(),
+  ...readStoredAuthState(),
 
   setAuthData: (token, user) => {
     setAuthSession(token, user);
@@ -35,16 +42,12 @@ const useAuthStore = create((set, get) => ({
 // Sync with localStorage changes from other tabs or legacy auth events
 if (typeof window !== 'undefined') {
   window.addEventListener('auth-changed', () => {
-    const user = getCurrentUser();
-    const token = getToken();
-    useAuthStore.setState({ user, token });
+    useAuthStore.setState(readStoredAuthState());
   });
 
   window.addEventListener('storage', (e) => {
-    if (e.key === 'job_portal_token' || e.key === 'job_portal_user') {
-      const user = getCurrentUser();
-      const token = getToken();
-      useAuthStore.setState({ user, token });
+    if (e.key === 'job_portal_token' || e.key === 'job_portal_user' || e.key === 'job_portal_pending_verification') {
+      useAuthStore.setState(readStoredAuthState());
     }
   });
 }
