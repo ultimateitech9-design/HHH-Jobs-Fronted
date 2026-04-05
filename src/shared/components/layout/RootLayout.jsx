@@ -70,6 +70,21 @@ const RootLayout = () => {
   }, [location.pathname, location.search]);
 
   useEffect(() => {
+    if (location.pathname !== '/') return;
+
+    const params = new URLSearchParams(location.search || '');
+    const hasOAuthCallbackParams = params.has('state')
+      && (params.has('code') || params.has('error') || params.has('error_description'));
+
+    if (!hasOAuthCallbackParams) return;
+
+    navigate({
+      pathname: '/oauth/callback',
+      search: location.search
+    }, { replace: true });
+  }, [location.pathname, location.search, navigate]);
+
+  useEffect(() => {
     if (isPortalWorkbench) {
       setShowScrollTop(false);
       return undefined;

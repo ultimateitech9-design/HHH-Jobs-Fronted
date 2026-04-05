@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { apiFetch } from '../../../utils/api';
 import { getDashboardPathByRole, normalizeRedirectPath, setAuthSession } from '../../../utils/auth';
 import { generateRetiredEmployeeId, generateStudentCandidateId } from '../../../utils/hrIdentity';
 import AuthFormMessage from '../components/AuthFormMessage';
@@ -26,59 +27,110 @@ const readCallbackParams = (location) => {
   return params;
 };
 
+const buildOAuthUser = (decodedUser) => (
+  decodedUser?.role === 'student'
+    ? {
+      ...decodedUser,
+      studentCandidateId: decodedUser?.studentCandidateId || generateStudentCandidateId({
+        name: decodedUser?.name || '',
+        mobile: decodedUser?.mobile || decodedUser?.phone || ''
+      })
+    }
+    : decodedUser?.role === 'retired_employee'
+      ? {
+        ...decodedUser,
+        retiredEmployeeId: decodedUser?.retiredEmployeeId || generateRetiredEmployeeId({
+          name: decodedUser?.name || '',
+          mobile: decodedUser?.mobile || decodedUser?.phone || ''
+        })
+      }
+      : decodedUser
+);
+
 const OAuthCallbackPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const callbackParams = readCallbackParams(location);
-    const shouldScrubUrl = Boolean(location.hash);
+    let cancelled = false;
 
-    if (shouldScrubUrl && typeof window !== 'undefined') {
-      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
-    }
+    const finalizeCallback = async () => {
+      const callbackParams = readCallbackParams(location);
+      const shouldScrubUrl = Boolean(location.hash)
+        || callbackParams.has('code')
+        || callbackParams.has('state')
+        || callbackParams.has('error')
+        || callbackParams.has('error_description');
 
-    const token = callbackParams.get('token');
-    const userEncoded = callbackParams.get('user');
-    const redirectTo = callbackParams.get('redirectTo');
-    const providerError = callbackParams.get('error');
+      if (shouldScrubUrl && typeof window !== 'undefined') {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
 
-    if (providerError) {
-      setError(providerError);
-      return;
-    }
+      const token = callbackParams.get('token');
+      const userEncoded = callbackParams.get('user');
+      const redirectTo = callbackParams.get('redirectTo');
+      const providerError = callbackParams.get('error_description') || callbackParams.get('error');
 
-    if (!token || !userEncoded) {
-      setError('Social login response is incomplete. Please try again.');
-      return;
-    }
+      if (providerError) {
+        if (!cancelled) setError(providerError);
+        return;
+      }
 
-    try {
-      const decodedUser = JSON.parse(decodeBase64Url(userEncoded));
-      const nextUser = decodedUser?.role === 'student'
-        ? {
-          ...decodedUser,
-          studentCandidateId: decodedUser?.studentCandidateId || generateStudentCandidateId({
-            name: decodedUser?.name || '',
-            mobile: decodedUser?.mobile || decodedUser?.phone || ''
-          })
+      if (token && userEncoded) {
+        try {
+          const decodedUser = JSON.parse(decodeBase64Url(userEncoded));
+          const nextUser = buildOAuthUser(decodedUser);
+          setAuthSession(token, nextUser);
+          navigate(normalizeRedirectPath(redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
+        } catch (decodeError) {
+          if (!cancelled) setError('Unable to process social login response. Please try again.');
         }
-        : decodedUser?.role === 'retired_employee'
-          ? {
-            ...decodedUser,
-            retiredEmployeeId: decodedUser?.retiredEmployeeId || generateRetiredEmployeeId({
-              name: decodedUser?.name || '',
-              mobile: decodedUser?.mobile || decodedUser?.phone || ''
-            })
-          }
-          : decodedUser;
+        return;
+      }
 
-      setAuthSession(token, nextUser);
-      navigate(normalizeRedirectPath(redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
-    } catch (decodeError) {
-      setError('Unable to process social login response. Please try again.');
-    }
+      const code = callbackParams.get('code');
+      const state = callbackParams.get('state');
+      if (!code || !state) {
+        if (!cancelled) setError('Social login response is incomplete. Please try again.');
+        return;
+      }
+
+      try {
+        const response = await apiFetch('/auth/oauth/linkedin/exchange', {
+          method: 'POST',
+          body: JSON.stringify({ code, state })
+        });
+        let payload = {};
+        try {
+          payload = await response.json();
+        } catch {
+          payload = {};
+        }
+
+        if (!response.ok) {
+          if (!cancelled) setError(payload.message || 'Unable to complete social login. Please try again.');
+          return;
+        }
+
+        if (!payload.token || !payload.user) {
+          if (!cancelled) setError('Social login response is incomplete. Please try again.');
+          return;
+        }
+
+        const nextUser = buildOAuthUser(payload.user || {});
+        setAuthSession(payload.token, nextUser);
+        navigate(normalizeRedirectPath(payload.redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
+      } catch (requestError) {
+        if (!cancelled) setError(requestError.message || 'Unable to complete social login. Please try again.');
+      }
+    };
+
+    finalizeCallback();
+
+    return () => {
+      cancelled = true;
+    };
   }, [location, navigate]);
 
   return (
