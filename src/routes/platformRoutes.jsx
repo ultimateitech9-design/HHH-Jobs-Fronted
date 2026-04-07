@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
+import { PORTAL_ACCESS } from './portalAccess';
 
 const PlatformModuleLayout = lazy(() => import('../modules/platform/components/PlatformModuleLayout'));
 const PlatformDashboardPage = lazy(() => import('../modules/platform/pages/PlatformDashboardPage'));
@@ -17,7 +18,7 @@ const platformRoutes = [
   {
     path: 'portal/platform',
     element: (
-      <RoleProtectedRoute roles={['platform']}>
+      <RoleProtectedRoute roles={PORTAL_ACCESS.platform}>
         <PlatformModuleLayout />
       </RoleProtectedRoute>
     ),

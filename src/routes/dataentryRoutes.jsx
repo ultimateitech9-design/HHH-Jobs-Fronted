@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
+import { PORTAL_ACCESS } from './portalAccess';
 
 const DataEntryModuleLayout = lazy(() => import('../modules/dataentry/components/dataentryModuleLayout'));
 const AddJob = lazy(() => import('../modules/dataentry/pages/AddJob'));
@@ -18,7 +19,7 @@ const dataentryRoutes = [
   {
     path: 'portal/dataentry',
     element: (
-      <RoleProtectedRoute roles={['dataentry']}>
+      <RoleProtectedRoute roles={PORTAL_ACCESS.dataentry}>
         <DataEntryModuleLayout />
       </RoleProtectedRoute>
     ),

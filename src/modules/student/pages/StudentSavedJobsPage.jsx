@@ -4,6 +4,7 @@ import SectionHeader from '../../../shared/components/SectionHeader';
 import {
   applyToJob,
   formatDateTime,
+  getFriendlyApplyErrorMessage,
   getStudentSavedJobs,
   removeSavedJobForStudent
 } from '../services/studentApi';
@@ -57,7 +58,7 @@ const StudentSavedJobsPage = () => {
       await applyToJob({ jobId, coverLetter: '' });
       setMessage('Application submitted successfully.');
     } catch (error) {
-      setMessage(error.message || 'Unable to apply right now.');
+      setMessage(getFriendlyApplyErrorMessage(error));
     }
   };
 

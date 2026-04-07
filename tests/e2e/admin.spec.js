@@ -84,7 +84,17 @@ test.describe('Admin Portal E2E', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          reports: [ { id: 'rep-1', title: 'Content Violation', status: 'open', reason: 'Spam' } ]
+          reports: [
+            {
+              id: 'rep-1',
+              targetType: 'job',
+              targetId: 'job-1',
+              status: 'open',
+              reason: 'Content Violation',
+              details: 'Listing contains misleading salary claims.',
+              createdAt: '2026-04-01T10:00:00.000Z'
+            }
+          ]
         })
       });
     });

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { FiMapPin, FiBriefcase, FiDollarSign, FiClock, FiBookmark, FiCheckCircle, FiChevronLeft, FiStar, FiActivity, FiArrowRight } from 'react-icons/fi';
+import { FiMapPin, FiBriefcase, FiDollarSign, FiClock, FiBookmark, FiCheckCircle, FiChevronLeft, FiStar, FiActivity, FiAlertCircle, FiArrowRight } from 'react-icons/fi';
 import SectionHeader from '../../../shared/components/SectionHeader';
 import StatusPill from '../../../shared/components/StatusPill';
 import { getCurrentUser } from '../../../utils/auth';
 import {
   applyToJob,
+  getFriendlyApplyErrorMessage,
   getCompanyReviews,
   getStudentJobById,
   getStudentSavedJobs,
@@ -18,6 +19,7 @@ const StudentJobDetailsPage = () => {
   const { jobId } = useParams();
   const user = getCurrentUser();
   const jobsListPath = user?.role === 'retired_employee' ? '/portal/retired/jobs' : '/portal/student/jobs';
+  const resumeSectionPath = '/portal/student/profile?section=resume';
   const [state, setState] = useState({
     loading: true,
     error: '',
@@ -25,9 +27,18 @@ const StudentJobDetailsPage = () => {
     isSaved: false
   });
   const [coverLetter, setCoverLetter] = useState('');
-  const [actionMessage, setActionMessage] = useState('');
+  const [actionFeedback, setActionFeedback] = useState({ type: '', text: '', ctaTo: '', ctaLabel: '' });
   const [atsResult, setAtsResult] = useState(null);
   const [reviews, setReviews] = useState({ summary: null, rows: [] });
+
+  const setActionSuccess = (text) => setActionFeedback({ type: 'success', text, ctaTo: '', ctaLabel: '' });
+  const setActionError = (text, ctaTo = '') => setActionFeedback({ type: 'error', text, ctaTo, ctaLabel: ctaTo ? 'Open Resume Section' : '' });
+  const setApplyError = (error) => {
+    const text = getFriendlyApplyErrorMessage(error);
+    const rawMessage = String(error?.message || '');
+    const needsResume = /resume is required/i.test(rawMessage) || /profile resume missing/i.test(text);
+    setActionError(text, needsResume ? resumeSectionPath : '');
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -82,17 +93,17 @@ const StudentJobDetailsPage = () => {
 
   const handleSaveToggle = async () => {
     if (!state.job) return;
-    setActionMessage('');
+    setActionFeedback({ type: '', text: '', ctaTo: '', ctaLabel: '' });
 
     if (state.isSaved) {
       try {
         await removeSavedJobForStudent(jobId);
       } catch (error) {
-        setActionMessage(error.message || 'Unable to unsave job.');
+        setActionError(error.message || 'Unable to unsave job.');
         return;
       }
       setState((current) => ({ ...current, isSaved: false }));
-      setActionMessage('Job removed from saved list.');
+      setActionSuccess('Job removed from saved list.');
       return;
     }
 
@@ -101,37 +112,37 @@ const StudentJobDetailsPage = () => {
     } catch (error) {
       if (/already saved/i.test(String(error.message || ''))) {
         setState((current) => ({ ...current, isSaved: true }));
-        setActionMessage('Job saved successfully.');
+        setActionSuccess('Job saved successfully.');
         return;
       }
-      setActionMessage(error.message || 'Unable to save job.');
+      setActionError(error.message || 'Unable to save job.');
       return;
     }
 
     setState((current) => ({ ...current, isSaved: true }));
-    setActionMessage('Job saved successfully.');
+    setActionSuccess('Job saved successfully.');
   };
 
   const handleApply = async () => {
-    setActionMessage('');
+    setActionFeedback({ type: '', text: '', ctaTo: '', ctaLabel: '' });
 
     try {
       await applyToJob({ jobId, coverLetter });
-      setActionMessage('Application submitted successfully.');
+      setActionSuccess('Application submitted successfully.');
     } catch (error) {
-      setActionMessage(error.message || 'Unable to apply right now.');
+      setApplyError(error);
     }
   };
 
   const handleAtsCheck = async () => {
-    setActionMessage('');
+    setActionFeedback({ type: '', text: '', ctaTo: '', ctaLabel: '' });
 
     try {
       const result = await runAtsCheck({ jobId, source: 'profile_resume' });
-      setAtsResult(result);
-      setActionMessage('ATS check completed.');
+      setAtsResult(result?.result || null);
+      setActionSuccess('ATS check completed.');
     } catch (error) {
-      setActionMessage(error.message || 'Unable to run ATS check.');
+      setActionError(error.message || 'Unable to run ATS check.');
     }
   };
 
@@ -169,10 +180,17 @@ const StudentJobDetailsPage = () => {
         </Link>
       </div>
 
-      {actionMessage && (
-        <div className="mb-6 p-4 bg-success-50 border-l-4 border-success-500 text-success-700 rounded-lg shadow-sm flex items-center gap-2">
-          <FiCheckCircle className="text-success-500" />
-          {actionMessage}
+      {actionFeedback.text && (
+        <div className={`mb-6 rounded-lg border-l-4 p-4 shadow-sm ${actionFeedback.type === 'error' ? 'border-red-500 bg-red-50 text-red-700' : 'border-success-500 bg-success-50 text-success-700'}`}>
+          <div className="flex flex-wrap items-center gap-2">
+            {actionFeedback.type === 'error' ? <FiAlertCircle className="text-red-500" /> : <FiCheckCircle className="text-success-500" />}
+            <span>{actionFeedback.text}</span>
+            {actionFeedback.ctaTo ? (
+              <Link to={actionFeedback.ctaTo} className="inline-flex items-center rounded-full border border-current px-3 py-1 text-xs font-bold">
+                {actionFeedback.ctaLabel}
+              </Link>
+            ) : null}
+          </div>
         </div>
       )}
 

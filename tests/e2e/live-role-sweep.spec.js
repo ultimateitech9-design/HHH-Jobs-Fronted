@@ -191,7 +191,10 @@ for (const roleConfig of roleConfigs) {
   test(`${roleConfig.key} live portal sweep`, async ({ browser }, testInfo) => {
     test.setTimeout(240_000);
 
-    const email = readRequiredEnv(roleConfig.emailEnv);
+    const email = readOptionalEnv(roleConfig.emailEnv);
+    test.skip(!PASSWORD, 'Set E2E_PASSWORD to run the live portal sweep.');
+    test.skip(!email, `Set ${roleConfig.emailEnv} to run the ${roleConfig.key} live portal sweep.`);
+
     const context = await browser.newContext();
     const page = await context.newPage();
     const diagnostics = attachDiagnostics(page);
@@ -237,12 +240,8 @@ for (const roleConfig of roleConfigs) {
   });
 }
 
-function readRequiredEnv(name) {
-  const value = String(process.env[name] || '').trim();
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
+function readOptionalEnv(name) {
+  return String(process.env[name] || '').trim();
 }
 
 function maskEmail(email) {
@@ -349,6 +348,7 @@ async function visitRoute(page, roleKey, routeConfig, diagnostics) {
 
   try {
     await page.goto(routeConfig.path, { waitUntil: 'domcontentloaded' });
+    await waitForPathPrefix(page, routeConfig.path);
     await waitForRouteSettled(page);
   } catch (error) {
     issues.push(error.message);

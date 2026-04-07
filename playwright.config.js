@@ -23,6 +23,10 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { browserName: 'chromium' }
+    },
+    {
+      name: 'chrome',
+      use: { browserName: 'chromium', channel: 'chrome' }
     }
   ],
   webServer: {

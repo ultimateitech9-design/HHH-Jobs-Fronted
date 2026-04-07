@@ -33,7 +33,7 @@ const safeRequest = async ({ path, options, emptyData, extract = (payload) => pa
   }
 };
 
-const mapProfileToForm = (profile = {}) => {
+export const mapProfileToForm = (profile = {}) => {
   const toLineArray = (items) => {
     if (!Array.isArray(items)) return [];
     return items
@@ -115,11 +115,11 @@ const mapProfileToForm = (profile = {}) => {
     currentPincode: profile.current_pincode || profile.currentPincode || '',
     permanentPincode: profile.permanent_pincode || profile.permanentPincode || '',
     skills: Array.isArray(profile.skills) ? profile.skills : [],
-    technicalSkills: Array.isArray(profile.technical_skills) ? profile.technical_skills : [],
-    softSkills: Array.isArray(profile.soft_skills) ? profile.soft_skills : [],
-    toolsTechnologies: Array.isArray(profile.tools_technologies) ? profile.tools_technologies : [],
-    education: toLineArray(profile.education),
-    educationEntries: toEducationEntries(profile.education),
+    technicalSkills: Array.isArray(profile.technical_skills) ? profile.technical_skills : (Array.isArray(profile.technicalSkills) ? profile.technicalSkills : []),
+    softSkills: Array.isArray(profile.soft_skills) ? profile.soft_skills : (Array.isArray(profile.softSkills) ? profile.softSkills : []),
+    toolsTechnologies: Array.isArray(profile.tools_technologies) ? profile.tools_technologies : (Array.isArray(profile.toolsTechnologies) ? profile.toolsTechnologies : []),
+    education: toLineArray(profile.education || profile.educationEntries),
+    educationEntries: toEducationEntries(profile.education || profile.educationEntries),
     class10Details: profile.class_10_details || profile.class10Details || '',
     class12Details: profile.class_12_details || profile.class12Details || '',
     graduationDetails: profile.graduation_details || profile.graduationDetails || '',
@@ -130,7 +130,7 @@ const mapProfileToForm = (profile = {}) => {
     experience: toLineArray(profile.experience),
     certifications: toLineArray(profile.certifications),
     achievements: toLineArray(profile.achievements),
-    languagesKnown: Array.isArray(profile.languages_known) ? profile.languages_known : [],
+    languagesKnown: Array.isArray(profile.languages_known) ? profile.languages_known : (Array.isArray(profile.languagesKnown) ? profile.languagesKnown : []),
     resumeUrl: profile.resume_url || profile.resumeUrl || '',
     resumeText: profile.resume_text || profile.resumeText || '',
     portfolioUrl: profile.portfolio_url || profile.portfolioUrl || '',
@@ -351,6 +351,49 @@ export const updateStudentAvatar = async (avatarUrl) => {
   });
 
   return mapProfileToForm(updated);
+};
+
+export const importStudentResume = async ({ resumeText = '', resumeUrl = '' } = {}) =>
+  strictRequest({
+    path: '/student/profile/import-resume',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ resumeText, resumeUrl })
+    },
+    extract: (payload) => ({
+      source: payload?.import?.source || '',
+      warnings: payload?.import?.warnings || [],
+      profileDraft: mapProfileToForm(payload?.import?.profileDraft || {})
+    })
+  });
+
+export const uploadStudentResume = async (file) => {
+  const formData = new FormData();
+  formData.append('resume', file);
+
+  return strictRequest({
+    path: '/student/upload/resume',
+    options: {
+      method: 'POST',
+      body: formData
+    },
+    extract: (payload) => ({
+      resumeUrl: payload?.resumeUrl || '',
+      resumeText: payload?.resumeText || '',
+      warnings: payload?.warnings || []
+    })
+  });
+};
+
+export const getFriendlyApplyErrorMessage = (error, fallback = 'Unable to apply right now.') => {
+  const message = String(error?.message || '').trim();
+  if (!message) return fallback;
+
+  if (/resume is required/i.test(message)) {
+    return 'Profile resume missing. Open Profile > Resume, upload or import your resume, then apply again.';
+  }
+
+  return message;
 };
 
 export const getStudentJobs = async (filters = {}) => {

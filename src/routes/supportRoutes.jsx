@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
+import { PORTAL_ACCESS } from './portalAccess';
 
 const SupportModuleLayout = lazy(() => import('../modules/support/layouts/SupportModuleLayout'));
 const SupportDashboard = lazy(() => import('../modules/support/pages/SupportDashboard'));
@@ -18,7 +19,7 @@ const supportRoutes = [
   {
     path: 'portal/support',
     element: (
-      <RoleProtectedRoute roles={['support']}>
+      <RoleProtectedRoute roles={PORTAL_ACCESS.support}>
         <SupportModuleLayout />
       </RoleProtectedRoute>
     ),

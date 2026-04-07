@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiSearch, FiMapPin, FiBriefcase, FiFilter, FiBookmark, FiCheckCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiAlertCircle, FiSearch, FiMapPin, FiBriefcase, FiFilter, FiBookmark, FiCheckCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import SectionHeader from '../../../shared/components/SectionHeader';
 import StatusPill from '../../../shared/components/StatusPill';
 import { getCurrentUser } from '../../../utils/auth';
 import {
   applyToJob,
+  getFriendlyApplyErrorMessage,
   getStudentApplications,
   getStudentJobs,
   getStudentSavedJobs,
@@ -62,13 +63,14 @@ const StudentJobsPage = ({
   subtitle = 'Filter jobs, save opportunities, and apply directly with profile resume.',
   detailsPathBase = '/portal/student/jobs'
 }) => {
+  const resumeSectionPath = '/portal/student/profile?section=resume';
   const currentUser = useMemo(() => getCurrentUser(), []);
   const effectiveAudience = forcedAudience || (currentUser?.role === 'retired_employee' ? 'retired_employee' : '');
   const [filters, setFilters] = useState(() => makeDefaultFilters(effectiveAudience));
   const [jobsState, setJobsState] = useState({ jobs: [], pagination: null, loading: true, error: '' });
   const [savedIds, setSavedIds] = useState(new Set());
   const [appliedIds, setAppliedIds] = useState(new Set());
-  const [actionMessage, setActionMessage] = useState('');
+  const [actionFeedback, setActionFeedback] = useState({ type: '', text: '', ctaTo: '', ctaLabel: '' });
 
   useEffect(() => {
     setFilters(makeDefaultFilters(effectiveAudience));
@@ -132,14 +134,23 @@ const StudentJobsPage = ({
     setFilters((current) => ({ ...current, [key]: value, page: 1 }));
   };
 
+  const setActionSuccess = (text) => setActionFeedback({ type: 'success', text, ctaTo: '', ctaLabel: '' });
+  const setActionError = (text, ctaTo = '') => setActionFeedback({ type: 'error', text, ctaTo, ctaLabel: ctaTo ? 'Open Resume Section' : '' });
+  const setApplyError = (error) => {
+    const text = getFriendlyApplyErrorMessage(error);
+    const rawMessage = String(error?.message || '');
+    const needsResume = /resume is required/i.test(rawMessage) || /profile resume missing/i.test(text);
+    setActionError(text, needsResume ? resumeSectionPath : '');
+  };
+
   const handleSaveToggle = async (jobId) => {
-    setActionMessage('');
+    setActionFeedback({ type: '', text: '', ctaTo: '', ctaLabel: '' });
 
     if (savedIds.has(jobId)) {
       try {
         await removeSavedJobForStudent(jobId);
       } catch (error) {
-        setActionMessage(error.message || 'Unable to remove saved job.');
+        setActionError(error.message || 'Unable to remove saved job.');
         return;
       }
 
@@ -148,7 +159,7 @@ const StudentJobsPage = ({
         copy.delete(jobId);
         return copy;
       });
-      setActionMessage('Removed from saved jobs.');
+      setActionSuccess('Removed from saved jobs.');
       return;
     }
 
@@ -157,37 +168,37 @@ const StudentJobsPage = ({
     } catch (error) {
       if (/already saved/i.test(String(error.message || ''))) {
         setSavedIds((current) => new Set([...current, jobId]));
-        setActionMessage('Job saved successfully.');
+        setActionSuccess('Job saved successfully.');
         return;
       }
-      setActionMessage(error.message || 'Unable to save job.');
+      setActionError(error.message || 'Unable to save job.');
       return;
     }
 
     setSavedIds((current) => new Set([...current, jobId]));
-    setActionMessage('Job saved successfully.');
+    setActionSuccess('Job saved successfully.');
   };
 
   const handleApply = async (jobId) => {
-    setActionMessage('');
+    setActionFeedback({ type: '', text: '', ctaTo: '', ctaLabel: '' });
 
     if (appliedIds.has(jobId)) {
-      setActionMessage('You already applied for this job.');
+      setActionError('You already applied for this job.');
       return;
     }
 
     try {
       await applyToJob({ jobId, coverLetter: '' });
       setAppliedIds((current) => new Set([...current, jobId]));
-      setActionMessage('Application submitted successfully.');
+      setActionSuccess('Application submitted successfully.');
     } catch (error) {
       if (/already applied/i.test(String(error.message || ''))) {
         setAppliedIds((current) => new Set([...current, jobId]));
-        setActionMessage('You already applied for this job.');
+        setActionError('You already applied for this job.');
         return;
       }
 
-      setActionMessage(error.message || 'Unable to apply right now.');
+      setApplyError(error);
     }
   };
 
@@ -205,10 +216,17 @@ const StudentJobsPage = ({
         </div>
       )}
       
-      {actionMessage && (
-        <div className="mb-6 p-4 bg-success-50 border-l-4 border-success-500 text-success-700 rounded-lg shadow-sm flex items-center gap-2">
-          <FiCheckCircle className="text-success-500" />
-          {actionMessage}
+      {actionFeedback.text && (
+        <div className={`mb-6 rounded-lg border-l-4 p-4 shadow-sm ${actionFeedback.type === 'error' ? 'border-red-500 bg-red-50 text-red-700' : 'border-success-500 bg-success-50 text-success-700'}`}>
+          <div className="flex flex-wrap items-center gap-2">
+            {actionFeedback.type === 'error' ? <FiAlertCircle className="text-red-500" /> : <FiCheckCircle className="text-success-500" />}
+            <span>{actionFeedback.text}</span>
+            {actionFeedback.ctaTo ? (
+              <Link to={actionFeedback.ctaTo} className="inline-flex items-center rounded-full border border-current px-3 py-1 text-xs font-bold">
+                {actionFeedback.ctaLabel}
+              </Link>
+            ) : null}
+          </div>
         </div>
       )}
 

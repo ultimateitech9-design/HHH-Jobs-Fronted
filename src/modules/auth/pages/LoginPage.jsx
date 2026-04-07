@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch, apiUrl, areDemoFallbacksEnabled } from '../../../utils/api';
 import {
@@ -181,6 +181,7 @@ const LoginPage = () => {
   const [socialLoading, setSocialLoading] = useState('');
   const [availableProviders, setAvailableProviders] = useState(null);
   const [providersLoading, setProvidersLoading] = useState(true);
+  const retryActionsRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -200,6 +201,15 @@ const LoginPage = () => {
       setError(oauthError);
     }
   }, [location.search]);
+
+  useEffect(() => {
+    if (!error || !retryActionsRef.current) return;
+
+    retryActionsRef.current.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest'
+    });
+  }, [error]);
 
   useEffect(() => {
     let cancelled = false;
@@ -433,7 +443,7 @@ const LoginPage = () => {
           </button>
         </form>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm font-semibold">
+        <div ref={retryActionsRef} className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm font-semibold">
           <Link to="/forgot-password" className="text-brand-700 transition-colors hover:text-brand-800">
             Forgot password?
           </Link>

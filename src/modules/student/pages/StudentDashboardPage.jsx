@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FiAward,
-  FiBell,
+  FiArrowRight,
   FiBookmark,
   FiBriefcase,
   FiCalendar,
   FiCheckCircle,
-  FiClock,
   FiFileText,
-  FiMapPin
+  FiMapPin,
+  FiRefreshCw,
+  FiUploadCloud
 } from 'react-icons/fi';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
@@ -20,8 +20,18 @@ import { getCurrentUser } from '../../../utils/auth';
 import { generateRetiredEmployeeId, generateStudentCandidateId } from '../../../utils/hrIdentity';
 import {
   getStudentDashboardOverview,
-  getStudentJobs
+  getStudentJobs,
+  importStudentResume,
+  updateStudentProfile,
+  uploadStudentResume
 } from '../services/studentApi';
+import {
+  applyImportedResumeToProfile,
+  readResumeImportPayload,
+  STUDENT_RESUME_ACCEPT,
+  summarizeImportedProfileDraft,
+  validateStudentResumeFile
+} from '../utils/resumeImport';
 
 const defaultOverview = {
   loading: true,
@@ -53,8 +63,10 @@ const StudentDashboardPage = () => {
   const isRetiredUser = currentUser?.role === 'retired_employee';
   const liveNotifications = useNotificationStore((store) => store.notifications);
   const notificationsHydrated = useNotificationStore((store) => store.hydrated);
+  const resumeInputRef = useRef(null);
   const [overview, setOverview] = useState(defaultOverview);
   const [recommendedJobs, setRecommendedJobs] = useState({ jobs: [], loading: true });
+  const [resumeCard, setResumeCard] = useState({ loading: false, type: '', text: '', summary: '' });
 
   const profileIdentity = useMemo(() => {
     if (isRetiredUser) {
@@ -115,6 +127,7 @@ const StudentDashboardPage = () => {
 
   const userName = currentUser?.name || overview?.profile?.name || 'Explorer';
   const profileProgress = overview.profileCompletion || 45;
+  const hasStoredResume = Boolean(overview.profile?.resumeUrl || overview.profile?.resumeText);
   const dashboardNotifications = notificationsHydrated ? liveNotifications : overview.notifications;
   const unreadNotifications = notificationsHydrated
     ? liveNotifications.filter((notification) => !notification.is_read).length
@@ -168,6 +181,65 @@ const StudentDashboardPage = () => {
       }
     ];
   }, [overview.interviews.length, profileProgress, unreadNotifications]);
+
+  const handleDashboardResumeImport = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) return;
+
+    const validationMessage = validateStudentResumeFile(file);
+    if (validationMessage) {
+      setResumeCard({ loading: false, type: 'error', text: validationMessage, summary: '' });
+      return;
+    }
+
+    setResumeCard({ loading: true, type: '', text: '', summary: '' });
+
+    try {
+      const payload = await readResumeImportPayload(file);
+      const imported = await importStudentResume(payload);
+      let uploadSummary = { resumeUrl: '', resumeText: '', warnings: [] };
+
+      try {
+        uploadSummary = await uploadStudentResume(file);
+      } catch (error) {
+        uploadSummary = {
+          resumeUrl: '',
+          resumeText: '',
+          warnings: [error.message || 'Resume file upload failed.']
+        };
+      }
+
+      const warnings = [...(imported.warnings || []), ...(uploadSummary.warnings || [])].filter(Boolean);
+      const nextProfile = applyImportedResumeToProfile({
+        currentProfile: overview.profile || {},
+        importedDraft: imported.profileDraft || {},
+        uploadSummary,
+        fallbackResumeText: payload.resumeText
+      });
+      const savedProfile = await updateStudentProfile(nextProfile);
+      const importSummary = summarizeImportedProfileDraft(savedProfile);
+
+      setOverview((current) => ({
+        ...current,
+        profile: { ...(current.profile || {}), ...savedProfile }
+      }));
+      setResumeCard({
+        loading: false,
+        type: 'success',
+        text: warnings.length ? `Resume imported and profile updated. ${warnings.join(' ')}` : 'Resume imported and profile updated.',
+        summary: `Updated ${importSummary}.`
+      });
+    } catch (error) {
+      setResumeCard({
+        loading: false,
+        type: 'error',
+        text: error.message || 'Unable to import resume right now.',
+        summary: ''
+      });
+    }
+  };
 
   if (overview.loading) {
     return (
@@ -301,34 +373,85 @@ const StudentDashboardPage = () => {
           )}
         </DashboardSectionCard>
 
-        <DashboardSectionCard
-          eyebrow="Next Moves"
-          title="Career signals that need attention"
-          subtitle="Quick actions that keep your search active and recruiter-ready."
-        >
-          <div className="space-y-3">
-            {actionItems.map((item) => (
-              <Link
-                key={item.title}
-                to={item.to}
-                className="flex items-start justify-between gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-brand-200 hover:bg-brand-50/40"
-              >
-                <div>
-                  <p className="font-semibold text-slate-900">{item.title}</p>
-                  <p className="mt-1 text-sm text-slate-500">{item.description}</p>
-                </div>
-                <StatusPill value={item.status} />
-              </Link>
-            ))}
+        <div className="space-y-6">
+          <DashboardSectionCard
+            eyebrow="Resume Import"
+            title="Turn resume into profile data"
+            subtitle="Upload once to extract headline, skills, education, and keep one-click apply ready."
+          >
+            <div className="space-y-4">
+              <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="font-semibold text-slate-900">{hasStoredResume ? 'Profile resume is already stored.' : 'No profile resume is stored yet.'}</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Upload PDF, DOC, DOCX, or TXT and we will pull structured profile data from it automatically.
+                </p>
+              </div>
 
-            <Link
-              to="/portal/student/ats"
-              className="inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
-            >
-              Run Resume ATS Check
-            </Link>
-          </div>
-        </DashboardSectionCard>
+              <input
+                ref={resumeInputRef}
+                type="file"
+                accept={STUDENT_RESUME_ACCEPT}
+                className="hidden"
+                data-testid="student-dashboard-resume-input"
+                onChange={handleDashboardResumeImport}
+              />
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => resumeInputRef.current?.click()}
+                  disabled={resumeCard.loading}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
+                >
+                  {resumeCard.loading ? <FiRefreshCw className="animate-spin" /> : <FiUploadCloud />}
+                  {resumeCard.loading ? 'Importing Resume...' : (hasStoredResume ? 'Replace Resume' : 'Upload Resume')}
+                </button>
+                <Link
+                  to="/portal/student/profile?section=resume"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-5 py-3 text-sm font-semibold text-brand-700"
+                >
+                  Open Full Resume Section <FiArrowRight size={14} />
+                </Link>
+              </div>
+
+              {resumeCard.text ? (
+                <div className={`rounded-[1.4rem] border px-4 py-4 text-sm ${resumeCard.type === 'error' ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
+                  <p className="font-semibold">{resumeCard.text}</p>
+                  {resumeCard.summary ? <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em]">{resumeCard.summary}</p> : null}
+                </div>
+              ) : null}
+            </div>
+          </DashboardSectionCard>
+
+          <DashboardSectionCard
+            eyebrow="Next Moves"
+            title="Career signals that need attention"
+            subtitle="Quick actions that keep your search active and recruiter-ready."
+          >
+            <div className="space-y-3">
+              {actionItems.map((item) => (
+                <Link
+                  key={item.title}
+                  to={item.to}
+                  className="flex items-start justify-between gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4 transition-colors hover:border-brand-200 hover:bg-brand-50/40"
+                >
+                  <div>
+                    <p className="font-semibold text-slate-900">{item.title}</p>
+                    <p className="mt-1 text-sm text-slate-500">{item.description}</p>
+                  </div>
+                  <StatusPill value={item.status} />
+                </Link>
+              ))}
+
+              <Link
+                to="/portal/student/ats"
+                className="inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
+              >
+                Run Resume ATS Check
+              </Link>
+            </div>
+          </DashboardSectionCard>
+        </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">

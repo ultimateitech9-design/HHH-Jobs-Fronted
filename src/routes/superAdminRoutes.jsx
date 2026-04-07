@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
+import { PORTAL_ACCESS } from './portalAccess';
 
 const SuperAdminLayout = lazy(() => import('../modules/super-admin/layouts/SuperAdminLayout'));
 const SuperAdminDashboard = lazy(() => import('../modules/super-admin/pages/SuperAdminDashboard'));
@@ -20,7 +21,7 @@ const superAdminRoutes = [
   {
     path: 'portal/super-admin',
     element: (
-      <RoleProtectedRoute roles={['super_admin']}>
+      <RoleProtectedRoute roles={PORTAL_ACCESS.superAdmin}>
         <SuperAdminLayout />
       </RoleProtectedRoute>
     ),

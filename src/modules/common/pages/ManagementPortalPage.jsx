@@ -1,26 +1,32 @@
 import { FiArrowLeft, FiBarChart2, FiBriefcase, FiCreditCard, FiHeadphones, FiShield, FiUserCheck } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
-import { clearAuthSession } from '../../../utils/auth';
+import { clearAuthSession, hasRole, isAuthenticated } from '../../../utils/auth';
+import { PORTAL_ACCESS } from '../../../routes/portalAccess';
 import './ManagementPortalPage.css';
 
 const managementLinks = [
-  { label: 'Admin Dashboard', to: '/portal/admin/dashboard', portalLabel: 'Admin Portal', icon: FiShield },
-  { label: 'Super Admin', to: '/portal/super-admin/dashboard', portalLabel: 'Super Admin Portal', icon: FiUserCheck },
-  { label: 'Platform Ops', to: '/portal/platform/dashboard', portalLabel: 'Platform Operations Portal', icon: FiBarChart2 },
-  { label: 'Audit Desk', to: '/portal/audit/dashboard', portalLabel: 'Audit Portal', icon: FiShield }
+  { label: 'Admin Dashboard', to: '/portal/admin/dashboard', portalLabel: 'Admin Portal', icon: FiShield, roles: PORTAL_ACCESS.admin },
+  { label: 'Super Admin', to: '/portal/super-admin/dashboard', portalLabel: 'Super Admin Portal', icon: FiUserCheck, roles: PORTAL_ACCESS.superAdmin },
+  { label: 'Platform Ops', to: '/portal/platform/dashboard', portalLabel: 'Platform Operations Portal', icon: FiBarChart2, roles: PORTAL_ACCESS.platform },
+  { label: 'Audit Desk', to: '/portal/audit/dashboard', portalLabel: 'Audit Portal', icon: FiShield, roles: PORTAL_ACCESS.audit }
 ];
 
 const employeeLinks = [
-  { label: 'Support Desk', to: '/portal/support/dashboard', portalLabel: 'Support Portal', icon: FiHeadphones },
-  { label: 'Sales Dashboard', to: '/portal/sales/overview', portalLabel: 'Sales Portal', icon: FiBarChart2 },
-  { label: 'Data Entry', to: '/portal/dataentry/dashboard', portalLabel: 'Data Entry Portal', icon: FiBriefcase },
-  { label: 'Accounts Dashboard', to: '/portal/accounts/overview', portalLabel: 'Accounts Portal', icon: FiCreditCard }
+  { label: 'Support Desk', to: '/portal/support/dashboard', portalLabel: 'Support Portal', icon: FiHeadphones, roles: PORTAL_ACCESS.support },
+  { label: 'Sales Dashboard', to: '/portal/sales/overview', portalLabel: 'Sales Portal', icon: FiBarChart2, roles: PORTAL_ACCESS.sales },
+  { label: 'Data Entry', to: '/portal/dataentry/dashboard', portalLabel: 'Data Entry Portal', icon: FiBriefcase, roles: PORTAL_ACCESS.dataentry },
+  { label: 'Accounts Dashboard', to: '/portal/accounts/overview', portalLabel: 'Accounts Portal', icon: FiCreditCard, roles: PORTAL_ACCESS.accounts }
 ];
 
 const ManagementPortalPage = () => {
   const navigate = useNavigate();
 
   const openPortalLogin = (item) => {
+    if (isAuthenticated() && hasRole(item.roles)) {
+      navigate(item.to);
+      return;
+    }
+
     clearAuthSession();
 
     navigate('/login', {

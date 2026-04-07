@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
+import { PORTAL_ACCESS } from './portalAccess';
 
 const SalesModuleLayout = lazy(() => import('../modules/sales-dashboard/components/SalesModuleLayout'));
 const SalesOverview = lazy(() => import('../modules/sales-dashboard/pages/SalesOverview'));
@@ -20,7 +21,7 @@ const salesRoutes = [
   {
     path: 'portal/sales',
     element: (
-      <RoleProtectedRoute roles={['sales']}>
+      <RoleProtectedRoute roles={PORTAL_ACCESS.sales}>
         <SalesModuleLayout />
       </RoleProtectedRoute>
     ),

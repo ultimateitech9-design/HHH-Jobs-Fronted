@@ -41,6 +41,52 @@ test('management portal buttons route unauthenticated users to portal login', as
   await expect(page.getByRole('button', { name: 'Sign In', exact: true })).toBeVisible();
 });
 
+test('authenticated admin can move from management portal into platform ops without logging in again', async ({ browser }) => {
+  const { context, page } = await createRolePage(browser, 'admin');
+
+  try {
+    await page.goto('/management');
+
+    await page.locator('.management-card--management').hover();
+    await page.getByRole('button', { name: 'Platform Ops', exact: true }).click({ force: true });
+
+    await expect(page).toHaveURL(/\/portal\/platform\/dashboard$/);
+    await expect(page.getByText('Platform Dashboard', { exact: true }).first()).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
+test('admin can open the super admin dashboard route when management access is granted', async ({ browser }) => {
+  const { context, page } = await createRolePage(browser, 'admin');
+
+  try {
+    await page.goto('/portal/super-admin/dashboard');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page).toHaveURL(/\/portal\/super-admin\/dashboard$/);
+    await expect(page.getByText('Super Admin Dashboard', { exact: true }).first()).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
+test('authenticated super admin can move from management portal into accounts without logging in again', async ({ browser }) => {
+  const { context, page } = await createRolePage(browser, 'super_admin');
+
+  try {
+    await page.goto('/management');
+
+    await page.locator('.management-card--employee').hover();
+    await page.getByRole('button', { name: 'Accounts Dashboard', exact: true }).click({ force: true });
+
+    await expect(page).toHaveURL(/\/portal\/accounts\/overview$/);
+    await expect(page.getByText('Accounts Overview', { exact: true }).first()).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
 test('super admin dashboard smoke', async ({ browser }) => {
   const { context, page } = await createRolePage(browser, 'super_admin');
 

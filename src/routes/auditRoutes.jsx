@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
+import { PORTAL_ACCESS } from './portalAccess';
 
 const AuditModuleLayout = lazy(() => import('../modules/audit/components/AuditModuleLayout'));
 const AuditDashboardPage = lazy(() => import('../modules/audit/pages/AuditDashboardPage'));
@@ -12,7 +13,7 @@ const auditRoutes = [
   {
     path: 'portal/audit',
     element: (
-      <RoleProtectedRoute roles={['audit']}>
+      <RoleProtectedRoute roles={PORTAL_ACCESS.audit}>
         <AuditModuleLayout />
       </RoleProtectedRoute>
     ),
