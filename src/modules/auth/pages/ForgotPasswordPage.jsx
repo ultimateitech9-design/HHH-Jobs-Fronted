@@ -49,7 +49,7 @@ const ForgotPasswordPage = () => {
 
       setStep('reset');
     } catch (requestError) {
-      setError('Network error while sending OTP.');
+      setError(requestError.message || 'Network error while sending OTP.');
     } finally {
       setIsSubmitting(false);
     }
@@ -90,7 +90,7 @@ const ForgotPasswordPage = () => {
 
       navigate('/login', { replace: true });
     } catch (requestError) {
-      setError('Network error while resetting password.');
+      setError(requestError.message || 'Network error while resetting password.');
     } finally {
       setIsSubmitting(false);
     }
