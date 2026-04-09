@@ -265,17 +265,17 @@ const LoginPanelContent = ({
         payload = {};
       }
 
-      if (!response.ok) {
-        setError(payload.message || 'Login failed.');
-        return;
-      }
-
       if (payload.requiresOtpVerification) {
         redirectToOtpVerification({
           email: form.email,
           otp: payload.otp || '',
           emailWarning: payload.emailWarning || payload.message || ''
         });
+        return;
+      }
+
+      if (!response.ok) {
+        setError(payload.message || 'Login failed.');
         return;
       }
 

@@ -26,6 +26,11 @@ const configuredApiBase = normalizeLoopbackHost(
 );
 
 const browserOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+const deployedApiFallbackBase = normalizeLoopbackHost(
+  env.VITE_DEPLOYED_API_BASE_URL
+  || env.VITE_LIVE_API_BASE_URL
+  || 'https://hhh-jobs-backend.onrender.com'
+);
 
 const deriveLocalRuntimeBase = (origin) => {
   if (!origin || !isLocalOrigin(origin)) return '';
@@ -49,8 +54,12 @@ const runtimeFallbackBase = normalizeLoopbackHost(
   || (env.DEV ? 'http://localhost:5500' : (browserOrigin || 'http://localhost:5500'))
 );
 
+const effectiveFallbackBase = shouldIgnoreConfiguredLocalhost
+  ? (deployedApiFallbackBase || runtimeFallbackBase)
+  : runtimeFallbackBase;
+
 export const API_BASE_URL = String(
-  shouldIgnoreConfiguredLocalhost ? runtimeFallbackBase : (configuredApiBase || runtimeFallbackBase)
+  shouldIgnoreConfiguredLocalhost ? effectiveFallbackBase : (configuredApiBase || runtimeFallbackBase)
 ).replace(/\/+$/, '');
 
 export const apiUrl = (path = '') => {

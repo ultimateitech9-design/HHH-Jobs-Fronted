@@ -41,6 +41,11 @@ const ForgotPasswordPage = () => {
         return;
       }
 
+      if (payload.deliveryFailed) {
+        setError(payload.message || 'Unable to send OTP right now.');
+        return;
+      }
+
       setStep('reset');
     } catch (requestError) {
       setError('Network error while sending OTP.');
