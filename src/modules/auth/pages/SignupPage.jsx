@@ -312,6 +312,21 @@ const SignupPage = () => {
         return;
       }
 
+      if (payload.alreadyRegistered) {
+        navigate('/login', {
+          replace: true,
+          state: {
+            signupMessage: payload.message || 'Email already registered. Please login instead.'
+          }
+        });
+        return;
+      }
+
+      if (payload.roleConflict) {
+        setError(payload.message || 'This email is already pending verification with a different role.');
+        return;
+      }
+
       const nextUser = buildSignupUser(payload);
       setAuthSession(payload.token, nextUser);
 

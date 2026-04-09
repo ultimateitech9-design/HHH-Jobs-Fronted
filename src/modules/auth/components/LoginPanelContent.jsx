@@ -206,6 +206,13 @@ const LoginPanelContent = ({
   }, [location.search]);
 
   useEffect(() => {
+    const signupMessage = String(location.state?.signupMessage || '').trim();
+    if (signupMessage) {
+      setError(signupMessage);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
     if (!error || !retryActionsRef.current) return;
 
     retryActionsRef.current.scrollIntoView({
