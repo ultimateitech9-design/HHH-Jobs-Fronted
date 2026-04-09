@@ -61,6 +61,7 @@ const effectiveFallbackBase = shouldIgnoreConfiguredLocalhost
 export const API_BASE_URL = String(
   shouldIgnoreConfiguredLocalhost ? effectiveFallbackBase : (configuredApiBase || runtimeFallbackBase)
 ).replace(/\/+$/, '');
+export const AUTH_REQUEST_TIMEOUT_MS = 15000;
 
 export const apiUrl = (path = '') => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;

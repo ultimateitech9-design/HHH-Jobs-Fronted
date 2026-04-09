@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { apiFetch } from '../../../utils/api';
+import { apiFetch, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
 import {
   beginPendingVerificationSession,
   clearPendingVerificationSession,
@@ -116,7 +116,8 @@ const OtpVerificationPage = () => {
       setIsSubmitting(true);
       const response = await apiFetch('/auth/verify-otp', {
         method: 'POST',
-        body: JSON.stringify({ email, otp: otpCode })
+        body: JSON.stringify({ email, otp: otpCode }),
+        timeoutMs: AUTH_REQUEST_TIMEOUT_MS
       });
       const payload = await response.json();
 
@@ -186,7 +187,8 @@ const OtpVerificationPage = () => {
     try {
       const response = await apiFetch('/auth/send-otp', {
         method: 'POST',
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email }),
+        timeoutMs: AUTH_REQUEST_TIMEOUT_MS
       });
 
       const payload = await response.json();

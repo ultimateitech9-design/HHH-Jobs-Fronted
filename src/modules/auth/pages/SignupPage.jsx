@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { apiFetch, apiUrl, areDemoFallbacksEnabled } from '../../../utils/api';
+import { apiFetch, apiUrl, areDemoFallbacksEnabled, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
 import {
   beginPendingVerificationSession,
   getDashboardPathByRole,
@@ -288,7 +288,8 @@ const SignupPage = () => {
       setIsSubmitting(true);
       const response = await apiFetch('/auth/signup', {
         method: 'POST',
-        body: JSON.stringify(signupPayload)
+        body: JSON.stringify(signupPayload),
+        timeoutMs: AUTH_REQUEST_TIMEOUT_MS
       });
       const payload = await readResponsePayload(response);
 

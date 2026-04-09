@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { FiX } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { apiFetch, apiUrl, areDemoFallbacksEnabled } from '../../../utils/api';
+import { apiFetch, apiUrl, areDemoFallbacksEnabled, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
 import {
   beginPendingVerificationSession,
   getDashboardPathByRole,
@@ -256,7 +256,8 @@ const LoginPanelContent = ({
       setIsSubmitting(true);
       const response = await apiFetch('/auth/login', {
         method: 'POST',
-        body: JSON.stringify(form)
+        body: JSON.stringify(form),
+        timeoutMs: AUTH_REQUEST_TIMEOUT_MS
       });
       let payload = {};
       try {

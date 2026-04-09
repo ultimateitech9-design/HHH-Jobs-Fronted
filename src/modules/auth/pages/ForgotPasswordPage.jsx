@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { apiFetch } from '../../../utils/api';
+import { apiFetch, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
 import AuthFormMessage from '../components/AuthFormMessage';
 import AuthInputField from '../components/AuthInputField';
 import AuthPageShell from '../components/AuthPageShell';
@@ -32,7 +32,8 @@ const ForgotPasswordPage = () => {
       setIsSubmitting(true);
       const response = await apiFetch('/auth/forgot-password', {
         method: 'POST',
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email }),
+        timeoutMs: AUTH_REQUEST_TIMEOUT_MS
       });
       const payload = await response.json();
 
@@ -77,7 +78,8 @@ const ForgotPasswordPage = () => {
       setIsSubmitting(true);
       const response = await apiFetch('/auth/reset-password', {
         method: 'POST',
-        body: JSON.stringify({ email, otp, newPassword })
+        body: JSON.stringify({ email, otp, newPassword }),
+        timeoutMs: AUTH_REQUEST_TIMEOUT_MS
       });
       const payload = await response.json();
 
