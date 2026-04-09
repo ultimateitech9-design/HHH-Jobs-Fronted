@@ -186,7 +186,15 @@ const buildProfilePayload = (form = {}) => {
         backlogs: String(item?.backlogs || '').trim(),
         educationGap: String(item?.educationGap || '').trim()
       }))
-      .filter((item) => item.educationLevel || item.courseName || item.instituteName);
+      .filter((item) =>
+        item.courseName
+        || item.instituteName
+        || item.universityBoard
+        || item.specialization
+        || item.startYear
+        || item.endYear
+        || item.expectedCompletionYear
+      );
   };
 
   const educationFromEntries = toEducationPayload(form.educationEntries || []);
@@ -622,6 +630,7 @@ export const addCompanyReview = async (reviewPayload) =>
 export const getResumeScore = async () =>
   safeRequest({
     path: '/student/profile/resume-score',
+    options: { timeoutMs: 8000 },
     emptyData: { score: 0, maxScore: 100, grade: 'Needs Work', breakdown: [], tips: [] },
     extract: (payload) => ({
       score: payload?.score || 0,

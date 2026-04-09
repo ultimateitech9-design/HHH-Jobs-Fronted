@@ -25,8 +25,8 @@ const PortalWorkbenchHeader = ({
     : { type: 'button' };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/92 px-4 backdrop-blur-xl md:px-6">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-30 flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white/92 px-3 py-3 backdrop-blur-xl sm:px-4 md:h-16 md:flex-nowrap md:px-6 md:py-0">
+      <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
           onClick={onOpenMobileNav}
@@ -35,14 +35,14 @@ const PortalWorkbenchHeader = ({
           <Menu className="h-5 w-5" />
         </button>
 
-        <div>
-          <h1 className="font-heading text-lg font-semibold text-slate-900">{title}</h1>
-          <p className="hidden text-xs text-slate-500 md:block">{subtitle}</p>
+        <div className="min-w-0">
+          <h1 className="truncate font-heading text-base font-semibold text-slate-900 sm:text-lg">{title}</h1>
+          <p className="hidden truncate text-xs text-slate-500 md:block">{subtitle}</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 md:flex">
+      <div className="ml-auto flex items-center gap-2 sm:gap-3">
+        <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 lg:flex">
           <Search className="h-4 w-4 text-slate-400" />
           <input
             placeholder={searchPlaceholder || 'Search dashboard'}
@@ -53,7 +53,7 @@ const PortalWorkbenchHeader = ({
         {support?.to ? (
           <Link
             to={support.to}
-            className="hidden rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 md:inline-flex"
+            className="hidden rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 lg:inline-flex"
           >
             {support.cta || 'Open module'}
           </Link>
@@ -74,8 +74,10 @@ const PortalWorkbenchHeader = ({
         </BellWrapper>
 
         <Link
-          to={profilePath}
-          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full gradient-primary text-xs font-bold text-white shadow-md shadow-brand-500/20"
+          to={profilePath || '/'}
+          aria-label="Open profile"
+          title="Open profile"
+          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full gradient-primary text-xs font-bold text-white shadow-md shadow-brand-500/20 transition-transform hover:scale-[1.03] hover:ring-2 hover:ring-brand-200 sm:h-10 sm:w-10"
         >
           {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" /> : avatarLetter}
         </Link>

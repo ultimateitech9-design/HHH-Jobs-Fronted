@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   FiBell,
   FiMapPin,
-  FiPlus,
   FiSearch,
   FiSliders,
   FiTrash2,
@@ -12,13 +11,12 @@ import StatusPill from '../../../shared/components/StatusPill';
 import {
   StudentEmptyState,
   StudentNotice,
-  StudentPageShell,
   StudentSurfaceCard,
   studentFieldClassName,
   studentGhostButtonClassName,
   studentPrimaryButtonClassName,
   studentSecondaryButtonClassName
-} from '../components/StudentExperience';
+} from './StudentExperience';
 import {
   createStudentAlert,
   deleteStudentAlert,
@@ -38,7 +36,7 @@ const initialAlertForm = {
 const detailRowClassName =
   'rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600';
 
-const StudentAlertsPage = () => {
+const StudentAlertsWorkspace = ({ sectionId = 'student-alerts-workspace' }) => {
   const [alerts, setAlerts] = useState([]);
   const [form, setForm] = useState(initialAlertForm);
   const [loading, setLoading] = useState(true);
@@ -62,28 +60,6 @@ const StudentAlertsPage = () => {
       mounted = false;
     };
   }, []);
-
-  const stats = useMemo(() => {
-    const activeCount = alerts.filter((alert) => alert.is_active).length;
-
-    return [
-      {
-        label: 'Total Alerts',
-        value: String(alerts.length),
-        helper: 'Job rules saved in your workspace'
-      },
-      {
-        label: 'Active Rules',
-        value: String(activeCount),
-        helper: 'Alerts currently listening for matches'
-      },
-      {
-        label: 'Standby Rules',
-        value: String(Math.max(alerts.length - activeCount, 0)),
-        helper: 'Saved but temporarily paused'
-      }
-    ];
-  }, [alerts]);
 
   const handleCreate = async (event) => {
     event.preventDefault();
@@ -119,7 +95,10 @@ const StudentAlertsPage = () => {
     try {
       const updated = await updateStudentAlert(alert.id, { isActive: nextActiveState });
       setAlerts((current) => current.map((item) => (item.id === alert.id ? updated : item)));
-      setNotice({ type: 'success', text: nextActiveState ? 'Alert activated successfully.' : 'Alert paused successfully.' });
+      setNotice({
+        type: 'success',
+        text: nextActiveState ? 'Alert activated successfully.' : 'Alert paused successfully.'
+      });
     } catch (error) {
       setNotice({ type: 'error', text: error.message || 'Failed to update alert.' });
     }
@@ -138,29 +117,17 @@ const StudentAlertsPage = () => {
   };
 
   return (
-    <StudentPageShell
-      eyebrow="Job Alerts"
-      badge="Automation"
-      title="Set alert rules that keep better-fit jobs finding you"
-      subtitle="Create premium search rules around role, location, experience, and salary so you spend less time re-running the same searches every day."
-      stats={stats}
-      actions={
-        <button type="button" className={studentPrimaryButtonClassName} onClick={() => document.getElementById('student-alert-form')?.scrollIntoView({ behavior: 'smooth' })}>
-          <FiPlus size={15} />
-          Create Alert
-        </button>
-      }
-    >
+    <section id={sectionId} className="space-y-6 scroll-mt-28">
       {notice.text ? <StudentNotice type={notice.type || 'info'} text={notice.text} /> : null}
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <StudentSurfaceCard
-          eyebrow="New Rule"
+          eyebrow="Dashboard Alert Rule"
           title="Design a targeted alert"
           subtitle="Use keyword combinations and salary boundaries to keep alerts useful instead of noisy."
           className="h-fit"
         >
-          <form id="student-alert-form" className="grid gap-4 md:grid-cols-2" onSubmit={handleCreate}>
+          <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreate}>
             <label className="md:col-span-2">
               <span className="mb-2 block text-sm font-bold text-slate-700">Keywords</span>
               <div className="relative">
@@ -234,7 +201,11 @@ const StudentAlertsPage = () => {
                 <FiZap size={15} />
                 Create Alert
               </button>
-              <button type="button" className={studentSecondaryButtonClassName} onClick={() => setForm(initialAlertForm)}>
+              <button
+                type="button"
+                className={studentSecondaryButtonClassName}
+                onClick={() => setForm(initialAlertForm)}
+              >
                 Reset Form
               </button>
             </div>
@@ -289,7 +260,10 @@ const StudentAlertsPage = () => {
                               Filters
                             </p>
                             <p className="mt-2 font-semibold text-slate-800">
-                              {[alert.experience_level || alert.experienceLevel || 'Any experience', alert.employment_type || alert.employmentType || 'Any type'].join(' | ')}
+                              {[
+                                alert.experience_level || alert.experienceLevel || 'Any experience',
+                                alert.employment_type || alert.employmentType || 'Any type'
+                              ].join(' | ')}
                             </p>
                           </div>
                           <div className={`${detailRowClassName} md:col-span-2`}>
@@ -300,11 +274,19 @@ const StudentAlertsPage = () => {
                       </div>
 
                       <div className="flex flex-wrap gap-3 md:w-[220px] md:flex-col">
-                        <button type="button" className={studentGhostButtonClassName} onClick={() => toggleAlert(alert)}>
+                        <button
+                          type="button"
+                          className={studentGhostButtonClassName}
+                          onClick={() => toggleAlert(alert)}
+                        >
                           <FiBell size={14} />
                           {alert.is_active ? 'Pause Alert' : 'Activate Alert'}
                         </button>
-                        <button type="button" className={studentSecondaryButtonClassName} onClick={() => removeAlert(alert.id)}>
+                        <button
+                          type="button"
+                          className={studentSecondaryButtonClassName}
+                          onClick={() => removeAlert(alert.id)}
+                        >
                           <FiTrash2 size={14} />
                           Delete
                         </button>
@@ -319,12 +301,13 @@ const StudentAlertsPage = () => {
               icon={FiBell}
               title="No alerts created yet"
               description="Create your first rule to automatically capture roles that match the keywords and salary range you actually want."
+              className="border-none bg-slate-50/80"
             />
           )}
         </StudentSurfaceCard>
       </div>
-    </StudentPageShell>
+    </section>
   );
 };
 
-export default StudentAlertsPage;
+export default StudentAlertsWorkspace;

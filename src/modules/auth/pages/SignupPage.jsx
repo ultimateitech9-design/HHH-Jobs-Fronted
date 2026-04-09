@@ -47,8 +47,16 @@ const initialFormState = {
   religion: ''
 };
 
+const getRoleFromSearch = (search = '') => {
+  const roleParam = new URLSearchParams(search).get('role');
+  const allowedRoles = new Set(['student', 'hr', 'retired_employee']);
+  return allowedRoles.has(roleParam) ? roleParam : initialFormState.role;
+};
+
 const SignupPage = () => {
-  const [form, setForm] = useState(initialFormState);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [form, setForm] = useState(() => ({ ...initialFormState, role: getRoleFromSearch(location.search) }));
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,13 +64,20 @@ const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [availableProviders, setAvailableProviders] = useState(null);
   const [providersLoading, setProvidersLoading] = useState(true);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const redirectAfterSignupRaw = new URLSearchParams(location.search).get('redirect');
   const redirectAfterSignup = redirectAfterSignupRaw && redirectAfterSignupRaw.startsWith('/')
     ? redirectAfterSignupRaw
     : null;
+  const requestedSignupRole = getRoleFromSearch(location.search);
+  const isLockedSignupLane = requestedSignupRole === 'hr' || requestedSignupRole === 'retired_employee';
+  const visibleSignupRoleOptions = requestedSignupRole === 'hr'
+    ? signupRoleOptions.filter((option) => option.value === 'hr')
+    : requestedSignupRole === 'student'
+      ? signupRoleOptions.filter((option) => option.value !== 'hr')
+      : requestedSignupRole === 'retired_employee'
+        ? signupRoleOptions.filter((option) => option.value === 'retired_employee')
+      : signupRoleOptions;
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -374,16 +389,16 @@ const SignupPage = () => {
     >
       <div className="flex h-full flex-col gap-4">
         <div className="space-y-4">
-          <AuthRoleTabs
-            label="Account type"
-            helperText=""
-            value={form.role}
-            options={signupRoleOptions}
-            onChange={(value) => handleChange('role', value)}
-            disabled={isSubmitting || Boolean(socialLoading)}
-            compact
-            showDescriptions={false}
-          />
+            <AuthRoleTabs
+              label="Account type"
+              helperText=""
+              value={form.role}
+              options={visibleSignupRoleOptions}
+              onChange={(value) => handleChange('role', value)}
+              disabled={isSubmitting || Boolean(socialLoading) || isLockedSignupLane}
+              compact
+              showDescriptions={false}
+            />
 
           {isSocialSignupAllowed ? (
             <AuthSocialButtons

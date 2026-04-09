@@ -1,13 +1,33 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { FiMapPin, FiBriefcase, FiDollarSign, FiClock, FiBookmark, FiCheckCircle, FiChevronLeft, FiStar, FiActivity, FiAlertCircle, FiArrowRight } from 'react-icons/fi';
-import SectionHeader from '../../../shared/components/SectionHeader';
+import {
+  FiActivity,
+  FiAlertCircle,
+  FiArrowRight,
+  FiBookmark,
+  FiBriefcase,
+  FiCheckCircle,
+  FiChevronLeft,
+  FiClock,
+  FiDollarSign,
+  FiMapPin,
+  FiStar
+} from 'react-icons/fi';
 import StatusPill from '../../../shared/components/StatusPill';
 import { getCurrentUser } from '../../../utils/auth';
 import {
+  StudentEmptyState,
+  StudentNotice,
+  StudentPageShell,
+  StudentSurfaceCard,
+  studentPrimaryButtonClassName,
+  studentSecondaryButtonClassName,
+  studentTextareaClassName
+} from '../components/StudentExperience';
+import {
   applyToJob,
-  getFriendlyApplyErrorMessage,
   getCompanyReviews,
+  getFriendlyApplyErrorMessage,
   getStudentJobById,
   getStudentSavedJobs,
   removeSavedJobForStudent,
@@ -91,6 +111,24 @@ const StudentJobDetailsPage = () => {
     return `${state.job.minPrice || '-'} - ${state.job.maxPrice || '-'} ${state.job.salaryType || ''}`;
   }, [state.job]);
 
+  const pageStats = useMemo(() => ([
+    {
+      label: 'Location',
+      value: state.job?.jobLocation || 'Remote',
+      helper: 'Current work location'
+    },
+    {
+      label: 'Experience',
+      value: state.job?.experienceLevel || 'Flexible',
+      helper: 'Expected seniority level'
+    },
+    {
+      label: 'Salary',
+      value: salaryLabel,
+      helper: 'Published compensation range'
+    }
+  ]), [salaryLabel, state.job?.experienceLevel, state.job?.jobLocation]);
+
   const handleSaveToggle = async () => {
     if (!state.job) return;
     setActionFeedback({ type: '', text: '', ctaTo: '', ctaLabel: '' });
@@ -148,309 +186,249 @@ const StudentJobDetailsPage = () => {
 
   if (state.loading) {
     return (
-      <div className="flex justify-center items-center py-32">
-        <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center py-32">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-200 border-t-brand-500" />
       </div>
     );
   }
 
   if (!state.job) {
     return (
-      <div className="w-full max-w-3xl mx-auto px-4 py-20 text-center">
-        <div className="bg-white rounded-3xl p-12 shadow-soft border border-neutral-100">
-          <div className="w-20 h-20 bg-error-50 rounded-full flex items-center justify-center mx-auto mb-6 text-error-400">
-            <FiCheckCircle size={32} className="rotate-45" />
-          </div>
-          <h3 className="text-2xl font-bold font-heading text-primary mb-4">Job Not Found</h3>
-          <p className="text-neutral-500 mb-8">{state.error || "The job you're looking for doesn't exist or has been removed."}</p>
-          <Link to={jobsListPath} className="inline-flex items-center gap-2 px-6 py-3 bg-brand-50 text-brand-700 font-bold rounded-xl hover:bg-brand-100 transition-colors">
-            <FiChevronLeft /> Back to Jobs
-          </Link>
-        </div>
+      <div className="mx-auto max-w-4xl py-16">
+        <StudentEmptyState
+          icon={FiAlertCircle}
+          title="Job not found"
+          description={state.error || "The role you're looking for is unavailable right now."}
+          action={
+            <Link to={jobsListPath} className={studentPrimaryButtonClassName}>
+              <FiChevronLeft size={15} />
+              Back to Jobs
+            </Link>
+          }
+        />
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8">
-      {/* Top Navigation */}
-      <div className="mb-6">
-        <Link to={jobsListPath} className="inline-flex items-center gap-2 text-neutral-500 hover:text-brand-600 font-medium transition-colors">
-          <FiChevronLeft /> Back to Jobs
-        </Link>
-      </div>
+    <StudentPageShell
+      eyebrow="Job Details"
+      badge={state.job.companyName}
+      title={state.job.jobTitle}
+      subtitle="Review the role, check ATS fit, and send an application with a more polished, context-rich flow."
+      stats={pageStats}
+      actions={
+        <>
+          <Link to={jobsListPath} className={studentSecondaryButtonClassName}>
+            <FiChevronLeft size={15} />
+            Back to Jobs
+          </Link>
+          <button type="button" className={state.isSaved ? studentSecondaryButtonClassName : studentPrimaryButtonClassName} onClick={handleSaveToggle}>
+            <FiBookmark className={state.isSaved ? 'fill-current' : ''} size={15} />
+            {state.isSaved ? 'Saved' : 'Save Job'}
+          </button>
+        </>
+      }
+    >
+      {actionFeedback.text ? (
+        <StudentNotice
+          type={actionFeedback.type}
+          text={actionFeedback.text}
+          action={actionFeedback.ctaTo ? (
+            <Link to={actionFeedback.ctaTo} className={studentSecondaryButtonClassName}>
+              {actionFeedback.ctaLabel}
+            </Link>
+          ) : null}
+        />
+      ) : null}
 
-      {actionFeedback.text && (
-        <div className={`mb-6 rounded-lg border-l-4 p-4 shadow-sm ${actionFeedback.type === 'error' ? 'border-red-500 bg-red-50 text-red-700' : 'border-success-500 bg-success-50 text-success-700'}`}>
-          <div className="flex flex-wrap items-center gap-2">
-            {actionFeedback.type === 'error' ? <FiAlertCircle className="text-red-500" /> : <FiCheckCircle className="text-success-500" />}
-            <span>{actionFeedback.text}</span>
-            {actionFeedback.ctaTo ? (
-              <Link to={actionFeedback.ctaTo} className="inline-flex items-center rounded-full border border-current px-3 py-1 text-xs font-bold">
-                {actionFeedback.ctaLabel}
-              </Link>
-            ) : null}
-          </div>
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="space-y-6">
+          <StudentSurfaceCard
+            eyebrow="Role Snapshot"
+            title="Core job information"
+            subtitle="A quick read before you decide whether to apply immediately or tune your profile first."
+          >
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                  <FiMapPin size={13} />
+                  Location
+                </p>
+                <p className="mt-2 font-semibold text-slate-800">{state.job.jobLocation || 'Not specified'}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                  <FiBriefcase size={13} />
+                  Experience
+                </p>
+                <p className="mt-2 font-semibold text-slate-800">{state.job.experienceLevel || 'Not specified'}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                  <FiClock size={13} />
+                  Employment Type
+                </p>
+                <p className="mt-2 font-semibold text-slate-800">{state.job.employmentType || 'Not specified'}</p>
+              </div>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-3">
+                <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-emerald-700">
+                  <FiDollarSign size={13} />
+                  Salary
+                </p>
+                <p className="mt-2 font-semibold text-emerald-900">{salaryLabel}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {(state.job.skills || []).map((skill) => (
+                <span key={skill} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </StudentSurfaceCard>
+
+          <StudentSurfaceCard
+            eyebrow="Description"
+            title="What the company needs"
+          >
+            <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
+              {state.job.description || 'No description provided.'}
+            </div>
+          </StudentSurfaceCard>
+
+          <StudentSurfaceCard
+            eyebrow="Apply"
+            title="Apply for this position"
+            subtitle="Use your platform profile and resume to send a cleaner, recruiter-ready application."
+          >
+            <div className="space-y-5">
+              <label>
+                <span className="mb-2 block text-sm font-bold text-slate-700">Cover Letter</span>
+                <textarea
+                  rows={6}
+                  value={coverLetter}
+                  onChange={(event) => setCoverLetter(event.target.value)}
+                  placeholder="Introduce yourself, mention your strongest projects, and explain why this role is the right fit."
+                  className={studentTextareaClassName}
+                />
+              </label>
+
+              <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4">
+                <button type="button" className={studentPrimaryButtonClassName} onClick={handleApply}>
+                  <FiArrowRight size={15} />
+                  Submit Application
+                </button>
+                <button type="button" className={studentSecondaryButtonClassName} onClick={handleAtsCheck}>
+                  <FiActivity size={15} />
+                  ATS Check
+                </button>
+              </div>
+            </div>
+          </StudentSurfaceCard>
         </div>
-      )}
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column: Job Content & Application */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Header Card */}
-          <div className="bg-white rounded-3xl p-8 shadow-soft border border-neutral-100 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-brand-50 to-teal-50 rounded-bl-full opacity-50 pointer-events-none"></div>
-            
-            <div className="relative z-10">
-              <div className="flex justify-between items-start gap-4 mb-6">
-                <div className="flex items-center gap-5">
-                  <div className="w-20 h-20 bg-brand-50 rounded-2xl flex items-center justify-center text-brand-600 font-heading font-bold text-3xl flex-shrink-0 shadow-sm">
-                    {state.job.companyName?.charAt(0) || 'C'}
-                  </div>
-                  <div>
-                    <h1 className="text-3xl font-extrabold font-heading text-primary leading-tight mb-2">
-                      {state.job.jobTitle}
-                    </h1>
-                    <Link to="#" className="text-lg font-medium text-brand-600 hover:text-brand-700 transition-colors">
-                      {state.job.companyName}
-                    </Link>
-                  </div>
-                </div>
-                <StatusPill value={state.job.status || 'open'} />
+        <div className="space-y-6">
+          {atsResult ? (
+            <StudentSurfaceCard
+              eyebrow="ATS Result"
+              title="Resume Match Score"
+              subtitle="A quick ATS view of how strongly your current profile resume maps to this role."
+            >
+              <div className="rounded-[1.8rem] border border-brand-200 bg-brand-50/70 p-5">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-700">Overall Score</p>
+                <p className="mt-3 font-heading text-6xl font-black text-navy">{atsResult.score}</p>
+                <p className="mt-2 text-sm text-slate-500">/ 100 fit score</p>
               </div>
 
-              <div className="flex flex-wrap gap-4 text-sm text-neutral-600 mb-8 mt-6">
-                <div className="flex items-center gap-2 bg-neutral-50 px-3 py-2 rounded-lg border border-neutral-100">
-                  <FiMapPin className="text-brand-500" /> <span className="font-medium">{state.job.jobLocation}</span>
-                </div>
-                <div className="flex items-center gap-2 bg-neutral-50 px-3 py-2 rounded-lg border border-neutral-100">
-                  <FiBriefcase className="text-brand-500" /> <span className="font-medium">{state.job.experienceLevel || 'Not specified'}</span>
-                </div>
-                <div className="flex items-center gap-2 bg-neutral-50 px-3 py-2 rounded-lg border border-neutral-100">
-                  <FiClock className="text-brand-500" /> <span className="font-medium">{state.job.employmentType || 'Not specified'}</span>
-                </div>
-                <div className="flex items-center gap-2 bg-success-50 text-success-700 px-3 py-2 rounded-lg border border-success-100">
-                  <FiDollarSign /> <span className="font-bold">{salaryLabel}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 mb-8">
-                {(state.job.skills || []).map((skill) => (
-                  <span key={skill} className="px-4 py-1.5 bg-brand-50 text-brand-700 font-semibold rounded-lg text-sm">
-                    {skill}
-                  </span>
+              <div className="mt-5 space-y-4">
+                {[
+                  { label: 'Keywords', value: atsResult.keywordScore },
+                  { label: 'Similarity', value: atsResult.similarityScore },
+                  { label: 'Format', value: atsResult.formatScore }
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div className="mb-2 flex items-center justify-between text-sm">
+                      <span className="font-semibold text-slate-700">{item.label}</span>
+                      <span className="font-bold text-navy">{item.value}/100</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-secondary-500" style={{ width: `${item.value}%` }} />
+                    </div>
+                  </div>
                 ))}
               </div>
 
-              <div className="border-t border-neutral-100 pt-8 flex flex-wrap gap-4">
-                <button 
-                  type="button" 
-                  className="flex-1 min-w-[200px] px-8 py-3.5 bg-brand-500 text-white font-bold rounded-xl hover:bg-brand-600 hover:shadow-lg hover:-translate-y-0.5 transition-all text-center flex items-center justify-center gap-2 text-lg" 
-                  onClick={() => document.getElementById('apply-section').scrollIntoView({ behavior: 'smooth' })}
-                >
-                  Apply Now <FiArrowRight />
-                </button>
-                <button 
-                  type="button" 
-                  className={`px-8 py-3.5 border-2 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${state.isSaved ? 'bg-brand-50 border-brand-200 text-brand-600' : 'bg-white border-neutral-200 text-neutral-600 hover:bg-brand-50 hover:border-brand-200 hover:text-brand-600'}`} 
-                  onClick={handleSaveToggle}
-                >
-                  <FiBookmark className={state.isSaved ? 'fill-current' : ''} />
-                  {state.isSaved ? 'Saved' : 'Save Job'}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Job Description */}
-          <div className="bg-white rounded-3xl p-8 shadow-soft border border-neutral-100">
-            <h2 className="text-xl font-bold font-heading text-primary mb-6 flex items-center gap-2">
-              <span className="w-2 h-6 bg-brand-500 rounded-full inline-block"></span>
-              Job Description
-            </h2>
-            <div className="prose prose-brand max-w-none text-neutral-600 leading-relaxed whitespace-pre-line">
-              {state.job.description || 'No description provided.'}
-            </div>
-          </div>
-
-          {/* Application Form */}
-          <div id="apply-section" className="bg-white rounded-3xl p-8 shadow-soft border border-brand-100 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-50 rounded-bl-full pointer-events-none"></div>
-            
-            <h2 className="text-xl font-bold font-heading text-primary mb-2 relative z-10">
-              Apply for this position
-            </h2>
-            <p className="text-neutral-500 mb-6 relative z-10">Use your platform profile and resume to apply instantly.</p>
-            
-            <div className="space-y-6 relative z-10">
-              <div>
-                <label className="block text-sm font-bold text-neutral-700 mb-2">
-                  Cover Letter <span className="text-neutral-400 font-normal">(Optional)</span>
-                </label>
-                <textarea
-                  rows={5}
-                  value={coverLetter}
-                  onChange={(event) => setCoverLetter(event.target.value)}
-                  placeholder="Introduce yourself and explain why you're a great fit for this role..."
-                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all text-sm font-medium resize-y"
-                />
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-neutral-100">
-                <button 
-                  type="button" 
-                  className="flex-1 px-8 py-3.5 bg-brand-500 text-white font-bold rounded-xl hover:bg-brand-600 hover:shadow-md transition-all flex items-center justify-center gap-2" 
-                  onClick={handleApply}
-                >
-                  <FiCheckCircle size={18} /> Submit Application
-                </button>
-                <button 
-                  type="button" 
-                  className="px-6 py-3.5 bg-neutral-100 text-neutral-700 font-bold rounded-xl hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2" 
-                  onClick={handleAtsCheck}
-                >
-                  <FiActivity size={18} /> ATS Check
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: ATS & Company Info */}
-        <div className="space-y-8">
-          
-          {/* ATS Score Card */}
-          {atsResult ? (
-            <div className="bg-white rounded-3xl p-6 shadow-soft border border-neutral-100">
-              <h3 className="text-lg font-bold font-heading text-primary mb-6 flex items-center gap-2">
-                <FiActivity className="text-brand-500" /> Resume Match Score
-              </h3>
-              
-              <div className="flex items-center justify-center mb-8">
-                <div className="relative w-32 h-32">
-                  <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <path
-                      className="text-neutral-100"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                    />
-                    <path
-                      className={atsResult.score >= 70 ? 'text-success-500' : atsResult.score >= 40 ? 'text-warning-500' : 'text-error-500'}
-                      strokeDasharray={`${atsResult.score}, 100`}
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center flex-col">
-                    <span className="text-3xl font-extrabold text-primary">{atsResult.score}</span>
-                    <span className="text-xs font-bold text-neutral-400 -mt-1">/ 100</span>
+              {(atsResult.missingKeywords || []).length > 0 ? (
+                <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-4">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-red-700">Missing Keywords</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {atsResult.missingKeywords.slice(0, 6).map((keyword) => (
+                      <span key={keyword} className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700">
+                        {keyword}
+                      </span>
+                    ))}
                   </div>
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-neutral-500">Keywords</span>
-                  <span className="font-bold text-primary">{atsResult.keywordScore}/100</span>
-                </div>
-                <div className="w-full bg-neutral-100 rounded-full h-1.5">
-                  <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${atsResult.keywordScore}%` }}></div>
-                </div>
-
-                <div className="flex justify-between items-center text-sm mt-4">
-                  <span className="text-neutral-500">Similarity</span>
-                  <span className="font-bold text-primary">{atsResult.similarityScore}/100</span>
-                </div>
-                <div className="w-full bg-neutral-100 rounded-full h-1.5">
-                  <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${atsResult.similarityScore}%` }}></div>
-                </div>
-
-                <div className="flex justify-between items-center text-sm mt-4">
-                  <span className="text-neutral-500">Format</span>
-                  <span className="font-bold text-primary">{atsResult.formatScore}/100</span>
-                </div>
-                <div className="w-full bg-neutral-100 rounded-full h-1.5">
-                  <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${atsResult.formatScore}%` }}></div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-neutral-100 space-y-3">
-                {atsResult.missingKeywords && atsResult.missingKeywords.length > 0 && (
-                  <div>
-                    <span className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Missing Keywords</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {atsResult.missingKeywords.slice(0, 5).map(kw => (
-                        <span key={kw} className="px-2 py-1 bg-error-50 text-error-600 text-[10px] font-bold rounded-md">{kw}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+              ) : null}
+            </StudentSurfaceCard>
           ) : (
-            <div className="bg-gradient-to-br from-brand-500 to-indigo-600 rounded-3xl p-6 shadow-soft text-white text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FiActivity size={24} />
-              </div>
-              <h3 className="text-lg font-bold font-heading mb-2">Check Resume Match</h3>
-              <p className="text-brand-100 text-sm mb-6 leading-relaxed">Run our AI-powered ATS checker to see how well your profile matches this job description before applying.</p>
-              <button 
-                type="button" 
-                className="w-full px-4 py-3 bg-white text-brand-600 font-bold rounded-xl hover:bg-brand-50 transition-colors shadow-sm"
-                onClick={handleAtsCheck}
-              >
-                Scan Resume
-              </button>
-            </div>
+            <StudentSurfaceCard
+              eyebrow="ATS Result"
+              title="Check resume fit before you apply"
+            >
+              <StudentEmptyState
+                icon={FiActivity}
+                title="No ATS result yet"
+                description="Run a quick ATS scan to see whether your current resume language is aligned with this role."
+                className="border-none bg-slate-50/80"
+              />
+            </StudentSurfaceCard>
           )}
 
-          {/* Company Reviews */}
-          <div className="bg-white rounded-3xl p-6 shadow-soft border border-neutral-100">
-            <h3 className="text-lg font-bold font-heading text-primary mb-4 flex items-center justify-between">
-              Company Reviews
-              <div className="flex items-center gap-1 bg-warning-50 text-warning-600 px-2 py-1 rounded text-sm">
-                <FiStar className="fill-current" /> {reviews.summary?.averageRating || '0.0'}
-              </div>
-            </h3>
-            
-            <p className="text-sm text-neutral-500 mb-6 pb-4 border-b border-neutral-100">
-              Based on {reviews.summary?.count || 0} reviews from employees.
-            </p>
-
-            <div className="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-              {reviews.rows.length > 0 ? (
-                reviews.rows.map((review) => (
-                  <div key={review.id} className="bg-neutral-50 p-4 rounded-xl border border-neutral-100">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-bold text-sm text-primary">{review.title || 'Review'}</h4>
-                      <div className="flex text-warning-400 text-xs gap-0.5">
-                        {[...Array(5)].map((_, i) => (
-                          <FiStar key={i} className={i < review.rating ? 'fill-current' : 'text-neutral-300'} />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-xs text-neutral-600 leading-relaxed line-clamp-3">{review.review}</p>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-6 text-neutral-500 text-sm">
-                  <FiStar className="mx-auto text-neutral-300 mb-2" size={24} />
-                  No reviews available for this company yet.
+          <StudentSurfaceCard
+            eyebrow="Company Reviews"
+            title="Candidate sentiment"
+            subtitle={`Based on ${reviews.summary?.count || 0} review(s) for ${state.job.companyName}.`}
+          >
+            {reviews.rows.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                  <span className="text-sm font-semibold text-amber-800">Average rating</span>
+                  <span className="inline-flex items-center gap-2 text-lg font-black text-amber-800">
+                    <FiStar className="fill-current" />
+                    {reviews.summary?.averageRating || '0.0'}
+                  </span>
                 </div>
-              )}
-            </div>
-          </div>
-          
+
+                {reviews.rows.map((review) => (
+                  <article key={review.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold text-navy">{review.title || 'Candidate review'}</h3>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">{review.review}</p>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
+                        <FiStar className="fill-current" />
+                        {review.rating}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <StudentEmptyState
+                icon={FiStar}
+                title="No reviews available yet"
+                description="This company has not received candidate reviews in the portal yet."
+                className="border-none bg-slate-50/80"
+              />
+            )}
+          </StudentSurfaceCard>
         </div>
       </div>
-    </div>
+    </StudentPageShell>
   );
 };
 

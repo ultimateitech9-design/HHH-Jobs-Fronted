@@ -25,6 +25,7 @@ import {
   updateStudentProfile,
   uploadStudentResume
 } from '../services/studentApi';
+import StudentAlertsWorkspace from '../components/StudentAlertsWorkspace';
 import {
   applyImportedResumeToProfile,
   readResumeImportPayload,
@@ -126,6 +127,12 @@ const StudentDashboardPage = () => {
   }, []);
 
   const userName = currentUser?.name || overview?.profile?.name || 'Explorer';
+  const professionalHeadline =
+    overview?.profile?.headline
+    || overview?.profile?.targetRole
+    || currentUser?.headline
+    || currentUser?.targetRole
+    || '';
   const profileProgress = overview.profileCompletion || 45;
   const hasStoredResume = Boolean(overview.profile?.resumeUrl || overview.profile?.resumeText);
   const dashboardNotifications = notificationsHydrated ? liveNotifications : overview.notifications;
@@ -173,10 +180,10 @@ const StudentDashboardPage = () => {
         title: unreadNotifications > 0 ? 'Review recruiter updates' : 'Notifications are under control',
         description:
           unreadNotifications > 0
-            ? `${unreadNotifications} unread alerts or recruiter messages are waiting.`
-            : 'No unread alerts right now.'
+            ? `${unreadNotifications} unread notifications or recruiter messages are waiting.`
+            : 'No unread notifications right now.'
         ,
-        to: '/portal/student/notifications',
+        to: '/portal/student/dashboard#student-notifications-feed',
         status: unreadNotifications > 0 ? 'unread' : 'read'
       }
     ];
@@ -259,15 +266,21 @@ const StudentDashboardPage = () => {
 
       <PortalDashboardHero
         tone="student"
+        compact
         eyebrow={isRetiredUser ? 'Retired Professional Workspace' : 'Student Dashboard'}
         badge={profileIdentity.label}
         title={`Welcome back, ${userName}`}
         description={
           isRetiredUser
             ? 'Bring your experience back into the market with a profile, pipeline, and opportunity flow built for retired professionals.'
-            : 'Track applications, improve profile strength, and stay close to the jobs, interviews, and alerts that move your search forward.'
+            : 'Track applications, improve profile strength, and stay close to the jobs, interviews, and updates that move your search forward.'
         }
-        chips={[profileIdentity.value, `${profileProgress}% profile strength`, `${unreadNotifications} unread alerts`]}
+        chips={[
+          profileIdentity.value,
+          ...(professionalHeadline ? [professionalHeadline] : []),
+          `${profileProgress}% profile strength`,
+          `${unreadNotifications} unread updates`
+        ]}
         primaryAction={{ to: '/portal/student/profile', label: 'Open Profile' }}
         secondaryAction={{ to: '/portal/student/jobs', label: 'Browse Jobs' }}
         metrics={[
@@ -454,6 +467,17 @@ const StudentDashboardPage = () => {
         </div>
       </div>
 
+      <section className="space-y-4">
+        <div className="space-y-2">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-brand-600">Alert Center</p>
+          <h2 className="font-heading text-3xl font-extrabold text-navy">Manage job alerts inside your dashboard</h2>
+          <p className="max-w-3xl text-sm text-slate-500">
+            Create, pause, or delete alert rules here. Student bell icon now brings you back to this alert center so job updates stay in one cleaner flow.
+          </p>
+        </div>
+        <StudentAlertsWorkspace sectionId="student-alerts-workspace" />
+      </section>
+
       <div className="grid gap-6 xl:grid-cols-2">
         <DashboardSectionCard
           eyebrow="Interviews"
@@ -486,36 +510,38 @@ const StudentDashboardPage = () => {
           </ul>
         </DashboardSectionCard>
 
-        <DashboardSectionCard
-          eyebrow="Notifications"
-          title="Recent recruiter updates"
-          action={
-            <Link to="/portal/student/notifications" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
-              Open Notifications
-            </Link>
-          }
-        >
-          <ul className="space-y-3">
-            {dashboardNotifications.length > 0 ? (
-              dashboardNotifications.slice(0, 6).map((notification, index) => (
-                <li key={notification.id || `notification-${index}`} className="flex items-start justify-between gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
-                  <div>
-                    <p className="font-semibold text-slate-900">{notification.title || notification.subject || notification.type || 'Portal update'}</p>
-                    <p className="mt-1 text-sm text-slate-500">{notification.message || notification.description || 'A new update is available in your dashboard.'}</p>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      {notification.created_at || notification.createdAt || notification.updated_at || notification.updatedAt || notification.time || 'Recently'}
-                    </p>
-                  </div>
-                  <StatusPill value={notification.is_read ? 'read' : 'unread'} />
+        <section id="student-notifications-feed" className="scroll-mt-28">
+          <DashboardSectionCard
+            eyebrow="Notifications"
+            title="Recent recruiter updates"
+            action={
+              <Link to="/portal/student/notifications" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                Open Notifications
+              </Link>
+            }
+          >
+            <ul className="space-y-3">
+              {dashboardNotifications.length > 0 ? (
+                dashboardNotifications.slice(0, 6).map((notification, index) => (
+                  <li key={notification.id || `notification-${index}`} className="flex items-start justify-between gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div>
+                      <p className="font-semibold text-slate-900">{notification.title || notification.subject || notification.type || 'Portal update'}</p>
+                      <p className="mt-1 text-sm text-slate-500">{notification.message || notification.description || 'A new update is available in your dashboard.'}</p>
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        {notification.created_at || notification.createdAt || notification.updated_at || notification.updatedAt || notification.time || 'Recently'}
+                      </p>
+                    </div>
+                    <StatusPill value={notification.is_read ? 'read' : 'unread'} />
+                  </li>
+                ))
+              ) : (
+                <li className="rounded-[1.4rem] border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
+                  No recent notifications are waiting for you.
                 </li>
-              ))
-            ) : (
-              <li className="rounded-[1.4rem] border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
-                No recent notifications are waiting for you.
-              </li>
-            )}
-          </ul>
-        </DashboardSectionCard>
+              )}
+            </ul>
+          </DashboardSectionCard>
+        </section>
       </div>
     </div>
   );

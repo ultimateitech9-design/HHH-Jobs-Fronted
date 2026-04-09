@@ -154,7 +154,7 @@ export const getDashboardPathByRole = (role) => {
 
 export const getNotificationPathByRole = (role) => {
   const normalizedRole = normalizeRole(role);
-  if (normalizedRole === 'student' || normalizedRole === 'retired_employee') return '/portal/student/notifications';
+  if (normalizedRole === 'student' || normalizedRole === 'retired_employee') return '/portal/student/dashboard#student-alerts-workspace';
   if (normalizedRole === 'hr') return '/portal/hr/notifications';
   if (normalizedRole === 'dataentry') return '/portal/dataentry/notifications';
   return '';

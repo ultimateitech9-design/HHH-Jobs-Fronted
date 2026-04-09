@@ -2,12 +2,28 @@ import { clearAuthSession, getCurrentUser, getToken, isEmailVerifiedUser } from 
 
 const env = import.meta.env || {};
 
-const configuredApiBase =
+const isLocalOrigin = (value = '') => /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?$/i.test(String(value).trim());
+
+const normalizeLoopbackHost = (value = '') => {
+  const rawValue = String(value || '').trim();
+  if (!rawValue) return '';
+
+  try {
+    const url = new URL(rawValue);
+    if (isLocalOrigin(url.origin)) {
+      url.hostname = '127.0.0.1';
+    }
+    return url.toString().replace(/\/+$/, '');
+  } catch (error) {
+    return rawValue.replace(/\/+$/, '');
+  }
+};
+
+const configuredApiBase = normalizeLoopbackHost(
   env.VITE_API_BASE_URL
   || env.VITE_API_URL
-  || '';
-
-const isLocalOrigin = (value = '') => /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?$/i.test(String(value).trim());
+  || ''
+);
 
 const browserOrigin = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -28,8 +44,10 @@ const shouldIgnoreConfiguredLocalhost =
   && !isLocalOrigin(browserOrigin)
   && isLocalOrigin(configuredApiBase);
 
-const runtimeFallbackBase = deriveLocalRuntimeBase(browserOrigin)
-  || (env.DEV ? 'http://localhost:5500' : (browserOrigin || 'http://localhost:5500'));
+const runtimeFallbackBase = normalizeLoopbackHost(
+  deriveLocalRuntimeBase(browserOrigin)
+  || (env.DEV ? 'http://localhost:5500' : (browserOrigin || 'http://localhost:5500'))
+);
 
 export const API_BASE_URL = String(
   shouldIgnoreConfiguredLocalhost ? runtimeFallbackBase : (configuredApiBase || runtimeFallbackBase)
@@ -56,9 +74,10 @@ export const hasApiAccessToken = () => {
 export const apiFetch = async (path, options = {}) => {
   const token = getToken();
   const shouldUseApiAuth = hasUsableApiToken(token);
-  const headers = { ...(options.headers || {}) };
+  const { timeoutMs = 0, signal: callerSignal, ...fetchOptions } = options;
+  const headers = { ...(fetchOptions.headers || {}) };
 
-  if (options.body && !(options.body instanceof FormData) && !headers['Content-Type'] && !headers['content-type']) {
+  if (fetchOptions.body && !(fetchOptions.body instanceof FormData) && !headers['Content-Type'] && !headers['content-type']) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -67,15 +86,29 @@ export const apiFetch = async (path, options = {}) => {
   }
 
   const targetUrl = apiUrl(path);
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeoutId = controller && timeoutMs > 0 ? globalThis.setTimeout(() => controller.abort(), timeoutMs) : null;
+
+  if (callerSignal && controller) {
+    if (callerSignal.aborted) controller.abort();
+    else callerSignal.addEventListener('abort', () => controller.abort(), { once: true });
+  }
+
   let response;
   try {
     response = await fetch(targetUrl, {
-      ...options,
-      headers
+      ...fetchOptions,
+      headers,
+      signal: controller?.signal || callerSignal
     });
   } catch (error) {
+    if (timeoutId) globalThis.clearTimeout(timeoutId);
+    if (error?.name === 'AbortError') {
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s (${targetUrl}).`);
+    }
     throw new Error(`Unable to connect to server (${targetUrl}). Please check backend is running.`);
   }
+  if (timeoutId) globalThis.clearTimeout(timeoutId);
 
   if (shouldUseApiAuth && response.status === 401) {
     clearAuthSession();

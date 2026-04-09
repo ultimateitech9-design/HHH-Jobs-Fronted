@@ -1,14 +1,22 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
-import { 
-  FiBriefcase, 
-  FiClock, 
-  FiCheckCircle, 
-  FiXCircle, 
-  FiCalendar, 
+import {
+  FiBriefcase,
+  FiCalendar,
   FiChevronRight,
-  FiFilter
+  FiClock,
+  FiFilter,
+  FiTarget,
+  FiTrendingUp,
+  FiXCircle
 } from 'react-icons/fi';
+import {
+  StudentEmptyState,
+  StudentNotice,
+  StudentPageShell,
+  StudentSurfaceCard,
+  studentPrimaryButtonClassName
+} from '../components/StudentExperience';
 import { formatDateTime, getStudentApplications } from '../services/studentApi';
 
 const STATUS_STAGES = [
@@ -27,7 +35,7 @@ const StudentApplicationsPage = () => {
     let mounted = true;
 
     const loadApplications = async () => {
-      setState(prev => ({ ...prev, loading: true }));
+      setState((prev) => ({ ...prev, loading: true }));
       const response = await getStudentApplications();
       if (!mounted) return;
 
@@ -51,6 +59,30 @@ const StudentApplicationsPage = () => {
     return state.applications.filter((item) => String(item.status || '').toLowerCase() === statusFilter);
   }, [state.applications, statusFilter]);
 
+  const topStats = useMemo(() => {
+    const total = state.applications.length;
+    const shortlisted = state.applications.filter((item) => String(item.status || '').toLowerCase() === 'shortlisted').length;
+    const interviews = state.applications.filter((item) => String(item.status || '').toLowerCase() === 'interviewed').length;
+
+    return [
+      {
+        label: 'Tracked Applications',
+        value: String(total),
+        helper: 'Everything currently in your pipeline'
+      },
+      {
+        label: 'Shortlisted',
+        value: String(shortlisted),
+        helper: 'Applications that moved beyond first review'
+      },
+      {
+        label: 'Interview Stage',
+        value: String(interviews),
+        helper: 'Roles already close to recruiter conversations'
+      }
+    ];
+  }, [state.applications]);
+
   const getStatusColor = (status) => {
     const s = String(status).toLowerCase();
     switch (s) {
@@ -66,58 +98,60 @@ const StudentApplicationsPage = () => {
 
   const getTimelineProgress = (currentStatus) => {
     if (currentStatus === 'rejected') return -1;
-    const index = STATUS_STAGES.findIndex(s => s.id === currentStatus);
+    const index = STATUS_STAGES.findIndex((stage) => stage.id === currentStatus);
     return index >= 0 ? index : 0;
   };
 
   return (
-    <div className="space-y-8 pb-10">
-      <header className="mb-8">
-        <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2">My Applications</h1>
-        <p className="text-neutral-500 text-lg">Track your application status and interview pipeline.</p>
-      </header>
+    <StudentPageShell
+      eyebrow="Applications"
+      badge="Pipeline"
+      title="Track every application with clearer movement and less guesswork"
+      subtitle="See which roles are still at apply stage, where shortlists are building, and which opportunities are ready for interview preparation."
+      stats={topStats}
+    >
+      {state.isDemo ? <StudentNotice type="info" text="Demo mode is active, so sample application records are being shown." /> : null}
+      {state.error ? <StudentNotice type="error" text={state.error} /> : null}
 
-      {state.isDemo && (
-        <div className="bg-amber-50 text-amber-700 p-4 rounded-2xl flex items-center gap-3 border border-amber-200">
-          <span className="font-semibold">Demo Mode: Showing sample application data.</span>
-        </div>
-      )}
-      {state.error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 border border-red-200">
-          <FiXCircle size={20} /> <span className="font-semibold">{state.error}</span>
-        </div>
-      )}
-
-      {/* Filter Section */}
-      <section className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center">
-            <FiFilter size={18} />
+      <StudentSurfaceCard
+        eyebrow="Filters"
+        title="Focus the pipeline"
+        subtitle="Switch between statuses to instantly isolate where your applications are getting stuck or improving."
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+              <FiFilter size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-700">Filter by status</p>
+              <p className="text-sm text-slate-500">Review only the stage you want to act on today.</p>
+            </div>
           </div>
-          <span className="font-bold text-primary">Filter Status</span>
-        </div>
-        <div className="w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 hide-scrollbar flex gap-2">
-          {['all', ...STATUS_STAGES.map(s => s.id), 'rejected'].map(status => (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
-                statusFilter === status 
-                  ? 'bg-primary text-white shadow-md' 
-                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-              }`}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </button>
-          ))}
-        </div>
-      </section>
 
-      {/* Applications List */}
+          <div className="flex flex-wrap gap-2">
+            {['all', ...STATUS_STAGES.map((stage) => stage.id), 'rejected'].map((status) => (
+              <button
+                key={status}
+                type="button"
+                onClick={() => setStatusFilter(status)}
+                className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                  statusFilter === status
+                    ? 'bg-navy text-white shadow-sm'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700'
+                }`}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </StudentSurfaceCard>
+
       {state.loading ? (
-        <div className="space-y-4 animate-pulse">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-48 bg-white rounded-3xl border border-neutral-100"></div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="h-60 animate-pulse rounded-[2rem] bg-slate-100" />
           ))}
         </div>
       ) : filtered.length > 0 ? (
@@ -129,100 +163,86 @@ const StudentApplicationsPage = () => {
             const isRejected = currentStatus === 'rejected';
 
             return (
-              <article key={app.id || app._id} className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 hover:shadow-md transition-shadow">
-                <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between mb-8">
-                  <div className="flex gap-4 items-start">
-                    <div className="w-14 h-14 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center flex-shrink-0 border border-brand-100">
-                      <FiBriefcase size={24} />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-primary mb-1">
-                        {app.jobTitle || app.job?.jobTitle || 'Untitled Role'}
-                      </h3>
-                      <p className="text-neutral-500 font-medium mb-3">
-                        {app.companyName || app.job?.companyName || 'Unknown Company'}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(currentStatus)}`}>
-                          {currentStatus.toUpperCase()}
-                        </span>
-                        <span className="text-xs text-neutral-400 font-medium flex items-center gap-1">
-                          <FiClock /> Updated {formatDateTime(app.statusUpdatedAt)}
-                        </span>
-                      </div>
-                    </div>
+              <StudentSurfaceCard
+                key={app.id || app._id}
+                eyebrow="Application Card"
+                title={app.jobTitle || app.job?.jobTitle || 'Untitled Role'}
+                subtitle={app.companyName || app.job?.companyName || 'Unknown company'}
+                action={targetId ? (
+                  <Link to={`/portal/student/jobs/${targetId}`} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700">
+                    View Job
+                    <FiChevronRight size={14} />
+                  </Link>
+                ) : null}
+              >
+                <div className="space-y-6">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] ${getStatusColor(currentStatus)}`}>
+                      {currentStatus}
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
+                      <FiClock size={12} />
+                      Updated {formatDateTime(app.statusUpdatedAt)}
+                    </span>
                   </div>
-                  {targetId && (
-                    <Link 
-                      to={`/portal/student/jobs/${targetId}`}
-                      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-neutral-50 text-primary font-bold rounded-xl hover:bg-brand-50 hover:text-brand-600 transition-colors shrink-0"
-                    >
-                      View Job <FiChevronRight />
-                    </Link>
-                  )}
-                </div>
 
-                {/* Timeline Visualizer */}
-                <div className="relative pt-4 px-2 md:px-8">
-                  <div className="absolute top-7 left-8 right-8 h-1 bg-neutral-100 rounded-full z-0"></div>
-                  <div 
-                    className={`absolute top-7 left-8 h-1 rounded-full z-0 transition-all duration-1000 ${isRejected ? 'bg-red-500' : 'bg-brand-500'}`} 
-                    style={{ width: isRejected ? '100%' : `${(progressIndex / (STATUS_STAGES.length - 1)) * 100}%` }}
-                  ></div>
+                  <div className="relative rounded-[1.8rem] border border-slate-200 bg-slate-50/80 px-4 py-6">
+                    <div className="absolute left-8 right-8 top-10 h-1 rounded-full bg-white" />
+                    <div
+                      className={`absolute left-8 top-10 h-1 rounded-full transition-all duration-700 ${isRejected ? 'bg-red-500' : 'bg-gradient-to-r from-brand-500 to-secondary-500'}`}
+                      style={{ width: isRejected ? 'calc(100% - 4rem)' : `calc(${(progressIndex / (STATUS_STAGES.length - 1)) * 100}% - 0.5rem)` }}
+                    />
 
-                  <div className="relative z-10 flex justify-between">
-                    {STATUS_STAGES.map((stage, idx) => {
-                      const isActive = !isRejected && progressIndex >= idx;
-                      const isCurrent = !isRejected && progressIndex === idx;
-                      
-                      return (
-                        <div key={stage.id} className="flex flex-col items-center">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-3 transition-colors duration-500 shadow-sm border-2 ${
-                            isActive 
-                              ? 'bg-brand-500 border-brand-500 text-white' 
-                              : isRejected
-                                ? 'bg-neutral-100 border-neutral-200 text-neutral-300'
-                                : 'bg-white border-neutral-200 text-neutral-300'
-                          }`}>
-                            {isActive ? <FiCheckCircle size={16} /> : <div className="w-2 h-2 rounded-full bg-current opacity-50"></div>}
+                    <div className="relative z-10 grid gap-5 md:grid-cols-5">
+                      {STATUS_STAGES.map((stage, index) => {
+                        const isActive = !isRejected && progressIndex >= index;
+                        const isCurrent = !isRejected && progressIndex === index;
+
+                        return (
+                          <div key={stage.id} className="flex flex-col items-center text-center">
+                            <div className={`flex h-9 w-9 items-center justify-center rounded-full border-2 ${
+                              isActive
+                                ? 'border-brand-500 bg-brand-500 text-white'
+                                : 'border-slate-200 bg-white text-slate-300'
+                            }`}>
+                              {isActive ? <FiTrendingUp size={15} /> : <div className="h-2.5 w-2.5 rounded-full bg-current opacity-60" />}
+                            </div>
+                            <span className={`mt-3 text-xs font-bold uppercase tracking-[0.16em] ${isCurrent ? 'text-brand-700' : 'text-slate-500'}`}>
+                              {stage.label}
+                            </span>
                           </div>
-                          <span className={`text-xs font-bold ${
-                            isCurrent ? 'text-brand-600' : isActive ? 'text-primary' : 'text-neutral-400'
-                          }`}>
-                            {stage.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {isRejected && (
-                    <div className="mt-8 p-4 bg-red-50 rounded-xl border border-red-100 flex items-start gap-3">
-                      <FiXCircle className="text-red-500 mt-0.5 shrink-0" size={18} />
-                      <div>
-                        <p className="text-sm font-bold text-red-800">Application Unsuccessful</p>
-                        <p className="text-xs text-red-600 mt-1">Don&apos;t be discouraged! Continue applying to similar roles to increase your chances.</p>
-                      </div>
+                        );
+                      })}
                     </div>
-                  )}
+
+                    {isRejected ? (
+                      <div className="mt-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <FiXCircle className="mt-0.5 shrink-0" size={16} />
+                        <div>
+                          <p className="font-bold">Application closed out</p>
+                          <p className="mt-1 text-red-600">Use the same role to refine resume language and improve the next application.</p>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
-              </article>
+              </StudentSurfaceCard>
             );
           })}
         </div>
       ) : (
-        <div className="bg-white rounded-3xl p-12 text-center border border-neutral-100 shadow-sm">
-          <div className="w-20 h-20 bg-neutral-50 text-neutral-300 rounded-full flex flex-items-center justify-center mx-auto mb-4">
-            <FiBriefcase size={32} className="m-auto" />
-          </div>
-          <h3 className="text-2xl font-bold text-primary mb-2">No Applications Found</h3>
-          <p className="text-neutral-500 mb-6">You haven&apos;t applied to any jobs with the selected status.</p>
-          <Link to="/portal/student/jobs" className="inline-flex items-center gap-2 px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-500 transition-colors">
-            Browse Jobs
-          </Link>
-        </div>
+        <StudentEmptyState
+          icon={FiBriefcase}
+          title="No applications found"
+          description="You have not applied to any roles under this filter yet. Start applying to build your live pipeline."
+          action={
+            <Link to="/portal/student/jobs" className={studentPrimaryButtonClassName}>
+              Browse Jobs
+            </Link>
+          }
+        />
       )}
-    </div>
+    </StudentPageShell>
   );
 };
 

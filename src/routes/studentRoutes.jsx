@@ -9,7 +9,6 @@ const StudentJobsPage = lazy(() => import('../modules/student/pages/StudentJobsP
 const StudentJobDetailsPage = lazy(() => import('../modules/student/pages/StudentJobDetailsPage'));
 const StudentApplicationsPage = lazy(() => import('../modules/student/pages/StudentApplicationsPage'));
 const StudentSavedJobsPage = lazy(() => import('../modules/student/pages/StudentSavedJobsPage'));
-const StudentAlertsPage = lazy(() => import('../modules/student/pages/StudentAlertsPage'));
 const StudentInterviewsPage = lazy(() => import('../modules/student/pages/StudentInterviewsPage'));
 const StudentAnalyticsPage = lazy(() => import('../modules/student/pages/StudentAnalyticsPage'));
 const StudentAtsPage = lazy(() => import('../modules/student/pages/StudentAtsPage'));
@@ -33,7 +32,7 @@ const studentRoutes = [
       { path: 'jobs/:jobId', element: <StudentJobDetailsPage /> },
       { path: 'applications', element: <StudentApplicationsPage /> },
       { path: 'saved-jobs', element: <StudentSavedJobsPage /> },
-      { path: 'alerts', element: <StudentAlertsPage /> },
+      { path: 'alerts', element: <Navigate to="/portal/student/dashboard#student-alerts-workspace" replace /> },
       { path: 'interviews', element: <StudentInterviewsPage /> },
       { path: 'analytics', element: <StudentAnalyticsPage /> },
       { path: 'ats', element: <StudentAtsPage /> },

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { FiAward, FiBook, FiBriefcase, FiCamera, FiCheckCircle, FiDownload, FiFileText, FiPlus, FiRefreshCw, FiTrash2, FiTrendingUp, FiUploadCloud, FiUser } from 'react-icons/fi';
+import { FiBook, FiBriefcase, FiCamera, FiCheckCircle, FiDownload, FiFileText, FiPlus, FiRefreshCw, FiTrash2, FiTrendingUp, FiUploadCloud, FiUser, FiX } from 'react-icons/fi';
 import useAuthStore from '../../../core/auth/authStore';
 import { getToken, setAuthSession } from '../../../utils/auth';
-import { getResumeScore, getStudentProfile, importStudentResume, updateStudentAvatar, updateStudentProfile, uploadStudentResume } from '../services/studentApi';
+import { getStudentProfile, importStudentResume, updateStudentAvatar, updateStudentProfile, uploadStudentResume } from '../services/studentApi';
 import {
   applyImportedResumeToProfile,
   readFileAsDataUrl,
@@ -17,12 +17,23 @@ const TABS = [
   { id: 'personal', label: 'Personal', icon: FiUser },
   { id: 'education', label: 'Education', icon: FiBook },
   { id: 'skills', label: 'Skills', icon: FiBriefcase },
-  { id: 'resume', label: 'Resume', icon: FiFileText },
-  { id: 'score', label: 'Score', icon: FiAward }
+  { id: 'resume', label: 'Resume', icon: FiFileText }
 ];
 
 const EMPTY_EDUCATION = { educationLevel: 'Graduation', courseName: '', instituteName: '', universityBoard: '', specialization: '', startYear: '', endYear: '', educationStatus: 'completed', expectedCompletionYear: '', isHighestQualification: false };
 const EMPTY_FORM = { name: '', email: '', mobile: '', gender: '', avatarUrl: '', headline: '', targetRole: '', profileSummary: '', location: '', currentAddress: '', technicalSkills: [], softSkills: [], toolsTechnologies: [], experience: [], projects: [], certifications: [], achievements: [], languagesKnown: [], educationEntries: [], resumeUrl: '', resumeText: '', linkedinUrl: '', githubUrl: '', portfolioUrl: '' };
+const createEmptyEducation = () => ({ ...EMPTY_EDUCATION });
+const hasEducationContent = (entry = {}) =>
+  Boolean(
+    entry?.courseName
+    || entry?.instituteName
+    || entry?.universityBoard
+    || entry?.specialization
+    || entry?.startYear
+    || entry?.endYear
+    || entry?.expectedCompletionYear
+  );
+const ensureEducationEntries = (items = []) => (Array.isArray(items) && items.length > 0 ? items : [createEmptyEducation()]);
 
 const parseCommaList = (value = '') => String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
 const parseLineList = (value = '') => String(value || '').split('\n').map((item) => item.trim()).filter(Boolean);
@@ -38,7 +49,7 @@ const completionOf = (form = EMPTY_FORM) => {
     Boolean(form.location),
     Boolean(form.profileSummary),
     form.technicalSkills.length > 0,
-    form.educationEntries.length > 0,
+    form.educationEntries.some(hasEducationContent),
     form.experience.length > 0 || form.projects.length > 0,
     Boolean(form.resumeUrl || form.resumeText),
     Boolean(form.linkedinUrl || form.githubUrl || form.portfolioUrl)
@@ -65,7 +76,9 @@ const generatedResume = (form = EMPTY_FORM) => [
   ...(form.projects.length ? form.projects.map((item) => `- ${item}`) : ['- Add projects']),
   '',
   'EDUCATION',
-  ...(form.educationEntries.length ? form.educationEntries.map((item) => `- ${[item.courseName, item.instituteName, item.endYear || item.expectedCompletionYear].filter(Boolean).join(' | ')}`) : ['- Add education'])
+  ...(form.educationEntries.some(hasEducationContent)
+    ? form.educationEntries.filter(hasEducationContent).map((item) => `- ${[item.courseName, item.instituteName, item.endYear || item.expectedCompletionYear].filter(Boolean).join(' | ')}`)
+    : ['- Add education'])
 ].filter((line) => line !== '').join('\n');
 
 const StudentProfilePage = () => {
@@ -80,9 +93,8 @@ const StudentProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [resumeImporting, setResumeImporting] = useState(false);
-  const [scoreLoading, setScoreLoading] = useState(false);
-  const [scoreData, setScoreData] = useState(null);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false);
 
   const setFlash = (type, text) => {
     if (timerRef.current) window.clearTimeout(timerRef.current);
@@ -104,6 +116,17 @@ const StudentProfilePage = () => {
   useEffect(() => () => timerRef.current && window.clearTimeout(timerRef.current), []);
 
   useEffect(() => {
+    if (!avatarPreviewOpen) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setAvatarPreviewOpen(false);
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [avatarPreviewOpen]);
+
+  useEffect(() => {
     const tab = new URLSearchParams(location.search).get('section');
     if (tab && TABS.some((item) => item.id === tab)) setActiveTab(tab);
   }, [location.search]);
@@ -115,31 +138,20 @@ const StudentProfilePage = () => {
       const response = await getStudentProfile();
       if (!mounted) return;
       const data = response.data || {};
-      setForm({ ...EMPTY_FORM, ...data, name: data.name || user?.name || '', email: data.email || user?.email || '', mobile: data.mobile || user?.mobile || '', avatarUrl: data.avatarUrl || user?.avatarUrl || user?.avatar_url || '', educationEntries: Array.isArray(data.educationEntries) ? data.educationEntries : [] });
+      setForm({ ...EMPTY_FORM, ...data, name: data.name || user?.name || '', email: data.email || user?.email || '', mobile: data.mobile || user?.mobile || '', avatarUrl: data.avatarUrl || user?.avatarUrl || user?.avatar_url || '', educationEntries: ensureEducationEntries(data.educationEntries) });
       setMessage(response.error ? { type: 'error', text: response.error } : { type: '', text: '' });
       setLoading(false);
     };
     load();
     return () => { mounted = false; };
-  }, [user?.avatarUrl, user?.avatar_url, user?.email, user?.mobile, user?.name]);
-
-  useEffect(() => {
-    if (activeTab !== 'score' || scoreData || scoreLoading) return;
-    let mounted = true;
-    const loadScore = async () => {
-      setScoreLoading(true);
-      const response = await getResumeScore();
-      if (!mounted) return;
-      setScoreData(response.data || null);
-      setScoreLoading(false);
-    };
-    loadScore();
-    return () => { mounted = false; };
-  }, [activeTab, scoreData, scoreLoading]);
+  }, [user?.email]);
 
   const updateField = (name, value) => setForm((current) => ({ ...current, [name]: value }));
-  const addEducation = () => setForm((current) => ({ ...current, educationEntries: [...current.educationEntries, { ...EMPTY_EDUCATION }] }));
-  const removeEducation = (index) => setForm((current) => ({ ...current, educationEntries: current.educationEntries.filter((_, entryIndex) => entryIndex !== index) }));
+  const addEducation = () => setForm((current) => ({ ...current, educationEntries: [...current.educationEntries, createEmptyEducation()] }));
+  const removeEducation = (index) => setForm((current) => {
+    if (current.educationEntries.length <= 1) return { ...current, educationEntries: [createEmptyEducation()] };
+    return { ...current, educationEntries: current.educationEntries.filter((_, entryIndex) => entryIndex !== index) };
+  });
   const updateEducation = (index, field, value) => setForm((current) => ({ ...current, educationEntries: current.educationEntries.map((item, entryIndex) => (entryIndex === index ? { ...item, [field]: value } : item)) }));
 
   const handleSave = async () => {
@@ -149,7 +161,6 @@ const StudentProfilePage = () => {
       const updated = await updateStudentProfile(form);
       setForm((current) => ({ ...current, ...updated, email: updated.email || current.email }));
       syncUser(updated);
-      setScoreData(null);
       setFlash('success', 'Profile saved successfully.');
     } catch (error) {
       setFlash('error', error.message || 'Failed to save profile.');
@@ -202,7 +213,6 @@ const StudentProfilePage = () => {
       const updated = await updateStudentProfile(nextForm);
       setForm((current) => ({ ...current, ...updated, email: updated.email || current.email }));
       syncUser(updated);
-      setScoreData(null);
       const savedSummary = summarizeImportedProfileDraft(updated);
       const baseMessage = `${successMessage} Saved ${savedSummary} to profile.`;
       setFlash('success', warnings.length ? `${baseMessage} ${warnings.join(' ')}` : baseMessage);
@@ -220,103 +230,138 @@ const StudentProfilePage = () => {
   const completion = completionOf(form);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 pb-12">
-      <section className="rounded-[2rem] border border-neutral-100 bg-white p-6 shadow-sm md:p-10">
-        <div className="flex flex-col items-center gap-8 md:flex-row">
-          <button type="button" aria-label="Upload profile photo" className="relative" onClick={() => avatarInputRef.current?.click()} disabled={avatarUploading}>
-            <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-brand-100 text-4xl font-bold text-brand-600 shadow-lg">
+    <div className="mx-auto max-w-6xl space-y-5 pb-10 sm:space-y-6 sm:pb-12 md:space-y-8">
+      <section className="rounded-[1.75rem] border border-neutral-100 bg-white p-4 shadow-sm sm:p-5 md:rounded-[2rem] md:p-10">
+        <div className="flex flex-col items-center gap-5 sm:gap-6 md:flex-row md:gap-8">
+          <button
+            type="button"
+            aria-label={form.avatarUrl ? 'Preview profile photo' : 'Profile photo'}
+            className={`relative rounded-full ${form.avatarUrl ? 'cursor-zoom-in' : 'cursor-default'}`}
+            onClick={() => form.avatarUrl && setAvatarPreviewOpen(true)}
+          >
+            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-brand-100 text-3xl font-bold text-brand-600 shadow-lg sm:h-28 sm:w-28 md:h-32 md:w-32 md:text-4xl">
               {form.avatarUrl ? <img src={form.avatarUrl} alt="Profile avatar" className="h-full w-full object-cover" /> : (form.name || 'U').charAt(0).toUpperCase()}
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity hover:opacity-100">
-              {avatarUploading ? <FiRefreshCw className="animate-spin" /> : <FiCamera />}
             </div>
           </button>
           <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" data-testid="student-avatar-input" onChange={handleAvatar} />
-          <div className="flex-1 text-center md:text-left">
-            <h1 className="text-3xl font-extrabold text-primary">{form.name || 'Your Name'}</h1>
-            <p className="mt-2 text-lg text-neutral-500">{form.headline || form.targetRole || 'Add your professional headline'}</p>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+          <div className="w-full min-w-0 flex-1 text-center sm:text-left">
+            <h1 className="text-2xl font-extrabold text-primary sm:text-3xl">{form.name || 'Your Name'}</h1>
+            <p className="mt-2 text-base text-neutral-500 sm:text-lg">{form.headline || form.targetRole || 'Add your professional headline'}</p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:justify-start sm:gap-3">
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700"><FiTrendingUp /> Completion {completion}%</span>
               <span className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700"><FiFileText /> {form.resumeUrl || form.resumeText ? 'Resume ready' : 'Resume missing'}</span>
             </div>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-3 md:justify-start">
-              <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarUploading} className="inline-flex items-center gap-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-2.5 text-sm font-bold text-brand-700 hover:bg-brand-100 disabled:opacity-70">
+            <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-start sm:gap-3">
+              <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarUploading} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-2.5 text-sm font-bold text-brand-700 hover:bg-brand-100 disabled:opacity-70 sm:w-auto">
                 {avatarUploading ? <FiRefreshCw className="animate-spin" /> : <FiCamera />}
                 {avatarUploading ? 'Uploading photo...' : 'Upload Photo'}
               </button>
-              <span className="text-xs font-medium text-neutral-500">PNG, JPG, or WEBP up to 4 MB</span>
+              <span className="text-center text-xs font-medium text-neutral-500 sm:text-left">PNG, JPG, or WEBP up to 4 MB</span>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        <aside className="space-y-2 lg:col-span-3">
-          {TABS.map((tab) => <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`flex w-full items-center gap-3 rounded-2xl px-5 py-4 font-bold ${activeTab === tab.id ? 'bg-brand-600 text-white shadow-md' : 'border border-neutral-100 bg-white text-neutral-600 hover:bg-neutral-50'}`}><tab.icon size={18} /> {tab.label}</button>)}
-          <button type="button" onClick={handleSave} disabled={saving} data-testid="student-profile-save" className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 font-bold text-white hover:bg-neutral-800 disabled:opacity-70">{saving ? <FiRefreshCw className="animate-spin" /> : <FiCheckCircle />} {saving ? 'Saving...' : 'Save Profile'}</button>
+      {avatarPreviewOpen && form.avatarUrl ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/75 p-4 backdrop-blur-sm"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setAvatarPreviewOpen(false);
+          }}
+        >
+          <div className="w-full max-w-xl rounded-[1.5rem] bg-white p-4 shadow-2xl sm:rounded-[2rem] md:p-5">
+            <div className="mb-4 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setAvatarPreviewOpen(false)}
+                className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-700 hover:bg-neutral-50"
+              >
+                <FiX size={16} />
+                Cancel
+              </button>
+            </div>
+            <div className="overflow-hidden rounded-[1.5rem] bg-neutral-100">
+              <img src={form.avatarUrl} alt="Profile preview" className="max-h-[75vh] w-full object-contain" />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-12 lg:gap-8">
+        <aside className="lg:col-span-3">
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 lg:mx-0 lg:block lg:space-y-2 lg:overflow-visible lg:px-0 lg:pb-0">
+            {TABS.map((tab) => <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`flex min-w-[138px] flex-shrink-0 items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold sm:min-w-[150px] lg:w-full lg:justify-start lg:gap-3 lg:px-5 lg:py-4 lg:text-base ${activeTab === tab.id ? 'bg-brand-600 text-white shadow-md' : 'border border-neutral-100 bg-white text-neutral-600 hover:bg-neutral-50'}`}><tab.icon size={18} /> {tab.label}</button>)}
+          </div>
+          <button type="button" onClick={handleSave} disabled={saving} data-testid="student-profile-save" className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3.5 font-bold text-white hover:bg-neutral-800 disabled:opacity-70 lg:mt-6 lg:py-4">{saving ? <FiRefreshCw className="animate-spin" /> : <FiCheckCircle />} {saving ? 'Saving...' : 'Save Profile'}</button>
           {message.text ? <p className={`mt-4 text-center text-sm font-bold ${message.type === 'error' ? 'text-red-500' : 'text-emerald-600'}`}>{message.text}</p> : null}
         </aside>
 
         <section className="lg:col-span-9">
-          <div className="rounded-[2rem] border border-neutral-100 bg-white p-6 shadow-sm md:p-10">
+          <div className="min-h-[420px] rounded-[1.75rem] border border-neutral-100 bg-white p-4 shadow-sm sm:min-h-[520px] sm:p-5 md:min-h-[760px] md:rounded-[2rem] md:p-10">
             {activeTab === 'personal' ? (
-              <div className="space-y-6">
+              <div className="space-y-3">
                 <h2 className="text-2xl font-extrabold text-primary">Personal Details</h2>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-name">Full Name</label><input id="student-profile-name" value={form.name} onChange={(event) => updateField('name', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="John Doe" /></div>
-                  <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-email">Email</label><input id="student-profile-email" value={form.email} disabled className="w-full cursor-not-allowed rounded-xl border border-neutral-200 bg-neutral-100 px-4 py-3 text-neutral-500" /></div>
-                  <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-mobile">Mobile Number</label><input id="student-profile-mobile" value={form.mobile} onChange={(event) => updateField('mobile', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="9876543210" /></div>
-                  <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-location">Location</label><input id="student-profile-location" value={form.location} onChange={(event) => updateField('location', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Pune, India" /></div>
-                  <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-gender">Gender</label><select id="student-profile-gender" value={form.gender} onChange={(event) => updateField('gender', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"><option value="">Select gender</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
-                  <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-target-role">Target Role</label><input id="student-profile-target-role" value={form.targetRole} onChange={(event) => updateField('targetRole', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Software Engineer" /></div>
-                  <div className="space-y-1.5 md:col-span-2"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-headline">Professional Headline</label><input id="student-profile-headline" value={form.headline} onChange={(event) => updateField('headline', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Frontend Developer | React | UI Systems" /></div>
-                  <div className="space-y-1.5 md:col-span-2"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-address">Current Address</label><textarea id="student-profile-address" rows="3" value={form.currentAddress} onChange={(event) => updateField('currentAddress', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Current address" /></div>
-                  <div className="space-y-1.5 md:col-span-2"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-summary">Profile Summary</label><textarea id="student-profile-summary" rows="5" value={form.profileSummary} onChange={(event) => updateField('profileSummary', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Write a short recruiter-facing summary." /></div>
-                  <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-linkedin">LinkedIn URL</label><input id="student-profile-linkedin" value={form.linkedinUrl} onChange={(event) => updateField('linkedinUrl', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="https://linkedin.com/in/username" /></div>
-                  <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-github">GitHub URL</label><input id="student-profile-github" value={form.githubUrl} onChange={(event) => updateField('githubUrl', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="https://github.com/username" /></div>
-                  <div className="space-y-1.5 md:col-span-2"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-portfolio">Portfolio URL</label><input id="student-profile-portfolio" value={form.portfolioUrl} onChange={(event) => updateField('portfolioUrl', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="https://portfolio.example.com" /></div>
+                <div className="grid grid-cols-1 gap-y-3 md:grid-cols-2 md:gap-x-4">
+                  <div className="space-y-1"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-name">Full Name</label><input id="student-profile-name" value={form.name} onChange={(event) => updateField('name', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="John Doe" /></div>
+                  <div className="space-y-1"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-email">Email</label><input id="student-profile-email" value={form.email} disabled className="w-full cursor-not-allowed rounded-xl border border-neutral-200 bg-neutral-100 px-4 py-3 text-neutral-500" /></div>
+                  <div className="space-y-1"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-mobile">Mobile Number</label><input id="student-profile-mobile" value={form.mobile} onChange={(event) => updateField('mobile', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="9876543210" /></div>
+                  <div className="space-y-1"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-location">Location</label><input id="student-profile-location" value={form.location} onChange={(event) => updateField('location', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Pune, India" /></div>
+                  <div className="space-y-1"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-gender">Gender</label><select id="student-profile-gender" value={form.gender} onChange={(event) => updateField('gender', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"><option value="">Select gender</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
+                  <div className="space-y-1"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-target-role">Target Role</label><input id="student-profile-target-role" value={form.targetRole} onChange={(event) => updateField('targetRole', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Software Engineer" /></div>
+                  <div className="space-y-1 md:col-span-2"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-headline">Professional Headline</label><input id="student-profile-headline" value={form.headline} onChange={(event) => updateField('headline', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Frontend Developer | React | UI Systems" /></div>
+                  <div className="space-y-1 md:col-span-2"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-address">Current Address</label><textarea id="student-profile-address" rows="3" value={form.currentAddress} onChange={(event) => updateField('currentAddress', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Current address" /></div>
+                  <div className="space-y-1 md:col-span-2"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-summary">Profile Summary</label><textarea id="student-profile-summary" rows="5" value={form.profileSummary} onChange={(event) => updateField('profileSummary', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Write a short recruiter-facing summary." /></div>
+                  <div className="space-y-1"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-linkedin">LinkedIn URL</label><input id="student-profile-linkedin" value={form.linkedinUrl} onChange={(event) => updateField('linkedinUrl', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="https://linkedin.com/in/username" /></div>
+                  <div className="space-y-1"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-github">GitHub URL</label><input id="student-profile-github" value={form.githubUrl} onChange={(event) => updateField('githubUrl', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="https://github.com/username" /></div>
+                  <div className="space-y-1 md:col-span-2"><label className="text-sm font-bold text-neutral-700" htmlFor="student-profile-portfolio">Portfolio URL</label><input id="student-profile-portfolio" value={form.portfolioUrl} onChange={(event) => updateField('portfolioUrl', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="https://portfolio.example.com" /></div>
                 </div>
               </div>
             ) : null}
 
             {activeTab === 'education' ? (
-              <div className="space-y-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div><h2 className="text-2xl font-extrabold text-primary">Education</h2><p className="text-sm text-neutral-500">Add each qualification and save it to make the profile recruiter-ready.</p></div>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={addEducation} className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white hover:bg-brand-500"><FiPlus /> Add Education</button>
-                    <button type="button" onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-70">
+              <div className="w-full space-y-3">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-extrabold text-primary">Education</h2>
+                  <p className="text-sm text-neutral-500">Add each qualification and save it to make the profile recruiter-ready.</p>
+                </div>
+                <div className="grid grid-cols-1 gap-y-3 md:grid-cols-2 md:gap-x-4">
+                  <div className="md:col-span-2 flex w-full flex-wrap gap-2">
+                    <button type="button" onClick={addEducation} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white hover:bg-brand-500 sm:w-auto"><FiPlus /> Add Education</button>
+                  </div>
+
+                  <div className="space-y-5 md:col-span-2">
+                    {form.educationEntries.map((entry, index) => (
+                      <article key={`education-${index}`} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 sm:p-5">
+                        <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-4"><h3 className="text-lg font-bold text-primary">Education #{index + 1}</h3><button type="button" onClick={() => removeEducation(index)} disabled={form.educationEntries.length <= 1} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"><FiTrash2 /> Remove</button></div>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">Level</label><select value={entry.educationLevel} onChange={(event) => updateEducation(index, 'educationLevel', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"><option value="Class 10">Class 10</option><option value="Class 12">Class 12</option><option value="Graduation">Graduation</option><option value="Postgraduate">Postgraduate</option><option value="Doctorate">Doctorate</option><option value="Certification">Certification</option><option value="Other">Other</option></select></div>
+                          <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">Status</label><select value={entry.educationStatus} onChange={(event) => updateEducation(index, 'educationStatus', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"><option value="completed">Completed</option><option value="pursuing">Pursuing</option></select></div>
+                          <div className="space-y-1.5 md:col-span-2"><label className="text-sm font-bold text-neutral-700">Course or Degree</label><input value={entry.courseName} onChange={(event) => updateEducation(index, 'courseName', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="B.Tech Computer Science" /></div>
+                          <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">Institute</label><input value={entry.instituteName} onChange={(event) => updateEducation(index, 'instituteName', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Institute name" /></div>
+                          <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">University or Board</label><input value={entry.universityBoard} onChange={(event) => updateEducation(index, 'universityBoard', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="University / board" /></div>
+                          <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">Specialization</label><input value={entry.specialization} onChange={(event) => updateEducation(index, 'specialization', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="AI / Data Science" /></div>
+                          <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">Start Year</label><input value={entry.startYear} onChange={(event) => updateEducation(index, 'startYear', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="2021" /></div>
+                          <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">{entry.educationStatus === 'pursuing' ? 'Expected Completion Year' : 'End Year'}</label><input value={entry.educationStatus === 'pursuing' ? entry.expectedCompletionYear : entry.endYear} onChange={(event) => updateEducation(index, entry.educationStatus === 'pursuing' ? 'expectedCompletionYear' : 'endYear', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="2025" /></div>
+                          <label className="inline-flex items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-700 md:col-span-2"><input type="checkbox" checked={Boolean(entry.isHighestQualification)} onChange={(event) => updateEducation(index, 'isHighestQualification', event.target.checked)} /> Mark as highest qualification</label>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
+                {form.educationEntries.length > 0 ? (
+                  <div className="flex justify-end">
+                    <button type="button" onClick={handleSave} disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-70 md:w-auto">
                       {saving ? <FiRefreshCw className="animate-spin" /> : <FiCheckCircle />}
                       {saving ? 'Saving...' : 'Save Education'}
                     </button>
                   </div>
-                </div>
-
-                {form.educationEntries.length === 0 ? <div className="rounded-2xl border-2 border-dashed border-neutral-200 bg-neutral-50/70 p-10 text-center text-neutral-500">No education entries added yet.</div> : null}
-
-                <div className="space-y-5">
-                  {form.educationEntries.map((entry, index) => (
-                    <article key={`education-${index}`} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
-                      <div className="mb-4 flex items-center justify-between gap-4"><h3 className="text-lg font-bold text-primary">Education #{index + 1}</h3><button type="button" onClick={() => removeEducation(index)} className="inline-flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-100"><FiTrash2 /> Remove</button></div>
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">Level</label><select value={entry.educationLevel} onChange={(event) => updateEducation(index, 'educationLevel', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"><option value="Class 10">Class 10</option><option value="Class 12">Class 12</option><option value="Graduation">Graduation</option><option value="Postgraduate">Postgraduate</option><option value="Doctorate">Doctorate</option><option value="Certification">Certification</option><option value="Other">Other</option></select></div>
-                        <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">Status</label><select value={entry.educationStatus} onChange={(event) => updateEducation(index, 'educationStatus', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"><option value="completed">Completed</option><option value="pursuing">Pursuing</option></select></div>
-                        <div className="space-y-1.5 md:col-span-2"><label className="text-sm font-bold text-neutral-700">Course or Degree</label><input value={entry.courseName} onChange={(event) => updateEducation(index, 'courseName', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="B.Tech Computer Science" /></div>
-                        <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">Institute</label><input value={entry.instituteName} onChange={(event) => updateEducation(index, 'instituteName', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Institute name" /></div>
-                        <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">University or Board</label><input value={entry.universityBoard} onChange={(event) => updateEducation(index, 'universityBoard', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="University / board" /></div>
-                        <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">Specialization</label><input value={entry.specialization} onChange={(event) => updateEducation(index, 'specialization', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="AI / Data Science" /></div>
-                        <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">Start Year</label><input value={entry.startYear} onChange={(event) => updateEducation(index, 'startYear', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="2021" /></div>
-                        <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700">{entry.educationStatus === 'pursuing' ? 'Expected Completion Year' : 'End Year'}</label><input value={entry.educationStatus === 'pursuing' ? entry.expectedCompletionYear : entry.endYear} onChange={(event) => updateEducation(index, entry.educationStatus === 'pursuing' ? 'expectedCompletionYear' : 'endYear', event.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="2025" /></div>
-                        <label className="inline-flex items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-700 md:col-span-2"><input type="checkbox" checked={Boolean(entry.isHighestQualification)} onChange={(event) => updateEducation(index, 'isHighestQualification', event.target.checked)} /> Mark as highest qualification</label>
-                      </div>
-                    </article>
-                  ))}
-                </div>
+                ) : null}
               </div>
             ) : null}
 
             {activeTab === 'skills' ? (
-              <div className="space-y-6">
+              <div className="w-full space-y-3">
                 <h2 className="text-2xl font-extrabold text-primary">Skills and Experience</h2>
                 <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700" htmlFor="student-technical-skills">Technical Skills</label><input id="student-technical-skills" value={joinCommaList(form.technicalSkills)} onChange={(event) => updateField('technicalSkills', parseCommaList(event.target.value))} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="React, Node.js, SQL, Python" /></div>
                 <div className="space-y-1.5"><label className="text-sm font-bold text-neutral-700" htmlFor="student-soft-skills">Soft Skills</label><input id="student-soft-skills" value={joinCommaList(form.softSkills)} onChange={(event) => updateField('softSkills', parseCommaList(event.target.value))} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Communication, Leadership, Teamwork" /></div>
@@ -332,17 +377,16 @@ const StudentProfilePage = () => {
             ) : null}
 
             {activeTab === 'resume' ? (
-              <div className="space-y-6">
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <h2 className="text-2xl font-extrabold text-primary">Resume Import and Builder</h2>
-                    <p className="text-sm text-neutral-500">Upload resume file to extract profile fields and keep profile resume ready for job apply.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => resumeInputRef.current?.click()} disabled={resumeImporting} className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-500 disabled:opacity-70">{resumeImporting ? <FiRefreshCw className="animate-spin" /> : <FiUploadCloud />} Upload Resume</button>
-                    <button type="button" onClick={() => handleResumeImport({ resumeText: form.resumeText, successMessage: 'Resume text parsed into profile draft.' })} disabled={resumeImporting || !String(form.resumeText || '').trim()} className="inline-flex items-center gap-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-2.5 text-sm font-bold text-brand-700 hover:bg-brand-100 disabled:opacity-70"><FiFileText /> Import From Text</button>
-                    <button type="button" onClick={() => updateField('resumeText', generatedResume(form))} className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 hover:bg-neutral-50"><FiRefreshCw /> Generate Draft</button>
-                    <button type="button" onClick={() => {
+              <div className="w-full space-y-3">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-extrabold text-primary">Resume Import and Builder</h2>
+                  <p className="text-sm text-neutral-500">Upload resume file to extract profile fields and keep profile resume ready for job apply.</p>
+                </div>
+                <div className="flex w-full flex-wrap gap-2">
+                  <button type="button" onClick={() => resumeInputRef.current?.click()} disabled={resumeImporting} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-500 disabled:opacity-70 sm:w-auto">{resumeImporting ? <FiRefreshCw className="animate-spin" /> : <FiUploadCloud />} Upload Resume</button>
+                  <button type="button" onClick={() => handleResumeImport({ resumeText: form.resumeText, successMessage: 'Resume text parsed into profile draft.' })} disabled={resumeImporting || !String(form.resumeText || '').trim()} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-2.5 text-sm font-bold text-brand-700 hover:bg-brand-100 disabled:opacity-70 sm:w-auto"><FiFileText /> Import From Text</button>
+                  <button type="button" onClick={() => updateField('resumeText', generatedResume(form))} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 hover:bg-neutral-50 sm:w-auto"><FiRefreshCw /> Generate Draft</button>
+                  <button type="button" onClick={() => {
                       if (!String(form.resumeText || '').trim()) return setFlash('error', 'No resume text available to download yet.');
                       const blob = new Blob([String(form.resumeText || '')], { type: 'text/plain;charset=utf-8' });
                       const url = URL.createObjectURL(blob);
@@ -351,8 +395,7 @@ const StudentProfilePage = () => {
                       anchor.download = `${String(form.name || 'student-resume').trim().replace(/\s+/g, '-').toLowerCase()}.txt`;
                       anchor.click();
                       URL.revokeObjectURL(url);
-                    }} className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 hover:bg-neutral-50"><FiDownload /> Download Text</button>
-                  </div>
+                    }} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 hover:bg-neutral-50 sm:w-auto"><FiDownload /> Download Text</button>
                 </div>
 
                 <input
@@ -380,52 +423,11 @@ const StudentProfilePage = () => {
 
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-neutral-700" htmlFor="student-resume-text">Resume Text</label>
-                  <textarea id="student-resume-text" rows="18" value={form.resumeText} onChange={(event) => updateField('resumeText', event.target.value)} className="min-h-[420px] w-full rounded-2xl bg-slate-900 p-6 font-mono text-sm leading-relaxed text-slate-100 outline-none focus:ring-2 focus:ring-brand-500" placeholder="Paste resume text here or upload a file to auto-fill profile sections." />
+                  <textarea id="student-resume-text" rows="18" value={form.resumeText} onChange={(event) => updateField('resumeText', event.target.value)} className="min-h-[320px] w-full rounded-2xl bg-slate-900 p-4 font-mono text-sm leading-relaxed text-slate-100 outline-none focus:ring-2 focus:ring-brand-500 sm:min-h-[420px] sm:p-6" placeholder="Paste resume text here or upload a file to auto-fill profile sections." />
                 </div>
               </div>
             ) : null}
 
-            {activeTab === 'score' ? (
-              <div className="space-y-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div><h2 className="text-2xl font-extrabold text-primary">Resume Score</h2><p className="text-sm text-neutral-500">Profile quality check based on your saved student profile.</p></div>
-                  <button type="button" onClick={() => setScoreData(null)} className="inline-flex items-center gap-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-2.5 text-sm font-bold text-brand-700 hover:bg-brand-100"><FiRefreshCw /> Refresh Score</button>
-                </div>
-
-                {scoreLoading ? <div className="flex items-center justify-center py-16"><div className="h-10 w-10 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" /></div> : null}
-
-                {!scoreLoading && scoreData ? (
-                  <>
-                    <div className="flex flex-col items-center gap-8 md:flex-row">
-                      <div className="flex h-36 w-36 flex-col items-center justify-center rounded-full border-8 border-emerald-100 bg-emerald-50 text-center">
-                        <span className="text-4xl font-extrabold text-primary">{scoreData.score}</span>
-                        <span className="text-xs font-bold uppercase tracking-widest text-neutral-500">/ {scoreData.maxScore || 100}</span>
-                        <span className="mt-1 rounded-full bg-white px-3 py-1 text-xs font-bold text-neutral-700">{scoreData.grade}</span>
-                      </div>
-                      <div className="w-full space-y-3">
-                        {(scoreData.breakdown || []).map((item) => (
-                          <div key={item.label}>
-                            <div className="mb-1 flex items-center justify-between text-sm"><span className="font-bold text-primary">{item.label}</span><span className="font-extrabold text-neutral-500">{item.earned}/{item.weight}</span></div>
-                            <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100"><div className={`h-full rounded-full ${item.filled ? 'bg-emerald-500' : 'bg-neutral-200'}`} style={{ width: item.filled ? '100%' : '0%' }} /></div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {(scoreData.tips || []).length ? (
-                      <div className="rounded-2xl border border-brand-100 bg-brand-50 p-6">
-                        <h3 className="flex items-center gap-2 text-base font-extrabold text-primary"><FiTrendingUp className="text-brand-600" /> Improvement Tips</h3>
-                        <ul className="mt-4 space-y-2">
-                          {(scoreData.tips || []).map((tip, index) => <li key={`${tip}-${index}`} className="flex items-start gap-3 text-sm text-neutral-700"><span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">{index + 1}</span>{tip}</li>)}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </>
-                ) : null}
-
-                {!scoreLoading && !scoreData ? <p className="py-10 text-center text-sm text-neutral-500">Save your profile and refresh score to see the latest breakdown.</p> : null}
-              </div>
-            ) : null}
           </div>
         </section>
       </div>

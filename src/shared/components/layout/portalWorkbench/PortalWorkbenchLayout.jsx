@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getCurrentUser } from '../../../../utils/auth';
+import useAuthStore from '../../../../core/auth/authStore';
 import PortalWorkbenchHeader from './PortalWorkbenchHeader';
 import PortalWorkbenchMobileDrawer from './PortalWorkbenchMobileDrawer';
 import PortalWorkbenchSidebar from './PortalWorkbenchSidebar';
@@ -10,22 +11,51 @@ import {
   PORTAL_SIDEBAR_EXPANDED_WIDTH
 } from './portalWorkbench.constants';
 
+const normalizePath = (value = '') => String(value || '').replace(/\/+$/, '');
+
+const pathMatches = (pathname = '', targetPath = '') => {
+  const currentPath = normalizePath(pathname);
+  const basePath = normalizePath(targetPath);
+
+  if (!basePath) return false;
+  return currentPath === basePath || currentPath.startsWith(`${basePath}/`);
+};
+
+const flattenNavItems = (items = []) =>
+  items.flatMap((item) => (Array.isArray(item.children) && item.children.length > 0 ? item.children : item));
+
+const getFirstNavPath = (items = []) => {
+  const firstItem = items[0];
+  if (!firstItem) return '/';
+
+  if (firstItem.to) return firstItem.to;
+  if (Array.isArray(firstItem.children) && firstItem.children.length > 0) {
+    return firstItem.children[0].to || '/';
+  }
+
+  return '/';
+};
+
 const PortalWorkbenchLayout = ({ portalKey, portalLabel, subtitle, navItems = [], support }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const [user, setUser] = useState(() => getCurrentUser());
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const flattenedNavItems = useMemo(() => flattenNavItems(navItems), [navItems]);
+
   const activeItem = useMemo(
-    () => navItems.find((item) => location.pathname.startsWith(item.to)) || navItems[0],
-    [location.pathname, navItems]
+    () => flattenedNavItems.find((item) => pathMatches(location.pathname, item.to)) || flattenedNavItems[0] || navItems[0],
+    [flattenedNavItems, location.pathname, navItems]
   );
 
   const profilePath = user?.role === 'hr'
     ? '/portal/hr/profile'
     : user?.role === 'student' || user?.role === 'retired_employee'
       ? '/portal/student/profile'
-      : navItems[0]?.to || '/';
+      : getFirstNavPath(navItems);
 
   const avatarLetter = String(user?.name || user?.email || 'U').trim().slice(0, 1).toUpperCase();
   const avatarUrl = user?.avatarUrl || user?.avatar_url || '';
@@ -45,6 +75,12 @@ const PortalWorkbenchLayout = ({ portalKey, portalLabel, subtitle, navItems = []
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  const handleLogout = () => {
+    clearAuth();
+    setMobileMenuOpen(false);
+    navigate('/login', { replace: true });
+  };
+
   return (
     <div
       className={`min-h-screen portal-workbench--${portalKey}`}
@@ -60,6 +96,7 @@ const PortalWorkbenchLayout = ({ portalKey, portalLabel, subtitle, navItems = []
         profilePath={profilePath}
         support={support}
         user={user}
+        onLogout={handleLogout}
         onClose={() => setMobileMenuOpen(false)}
       />
 
@@ -75,6 +112,7 @@ const PortalWorkbenchLayout = ({ portalKey, portalLabel, subtitle, navItems = []
           profilePath={profilePath}
           support={support}
           user={user}
+          onLogout={handleLogout}
           onCollapseToggle={() => setSidebarOpen((current) => !current)}
         />
       </motion.aside>
@@ -99,7 +137,7 @@ const PortalWorkbenchLayout = ({ portalKey, portalLabel, subtitle, navItems = []
           <motion.main
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex-1 px-4 py-6 md:px-6 md:py-8"
+            className="flex-1 px-3 py-4 sm:px-4 sm:py-5 md:px-6 md:py-8"
           >
             <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-6">
               <Outlet />

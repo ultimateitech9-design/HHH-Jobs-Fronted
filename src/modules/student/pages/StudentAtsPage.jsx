@@ -1,6 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
+import {
+  FiActivity,
+  FiCheckCircle,
+  FiFileText,
+  FiRefreshCw,
+  FiTarget,
+  FiUploadCloud
+} from 'react-icons/fi';
 import DataTable from '../../../shared/components/DataTable';
-import SectionHeader from '../../../shared/components/SectionHeader';
+import {
+  StudentEmptyState,
+  StudentNotice,
+  StudentPageShell,
+  StudentSurfaceCard,
+  studentFieldClassName,
+  studentGhostButtonClassName,
+  studentPrimaryButtonClassName,
+  studentSecondaryButtonClassName,
+  studentTextareaClassName
+} from '../components/StudentExperience';
 import {
   deleteAtsHistoryItem,
   formatDateTime,
@@ -59,7 +77,7 @@ const StudentAtsPage = () => {
 
   const selectedJobTitle = useMemo(() => {
     const found = jobs.find((job) => (job.id || job._id) === form.jobId);
-    return found?.jobTitle || 'Selected job';
+    return found?.jobTitle || 'Selected role';
   }, [jobs, form.jobId]);
 
   const historyStats = useMemo(() => {
@@ -105,7 +123,7 @@ const StudentAtsPage = () => {
         return (
           <button
             type="button"
-            className="btn-link"
+            className="text-sm font-semibold text-red-600 transition hover:text-red-700"
             onClick={async () => {
               try {
                 await deleteAtsHistoryItem(rowId);
@@ -128,7 +146,7 @@ const StudentAtsPage = () => {
     setNotice({ type: '', text: '' });
 
     if (form.source === 'new_resume_upload' && !String(form.resumeText || '').trim() && !String(form.resumeUrl || '').trim()) {
-      setNotice({ type: 'error', text: 'Upload resume file or provide resume text/url.' });
+      setNotice({ type: 'error', text: 'Upload a resume file or provide resume text/URL before running ATS.' });
       return;
     }
 
@@ -187,7 +205,7 @@ const StudentAtsPage = () => {
         ]);
       }
       setNotice({
-        type: payload?.saved || form.jobId ? 'success' : 'error',
+        type: payload?.persistenceWarning ? 'info' : 'success',
         text: payload?.persistenceWarning || 'ATS check completed successfully.'
       });
     } catch (error) {
@@ -215,13 +233,13 @@ const StudentAtsPage = () => {
     );
 
     if (!isAllowed) {
-      setNotice({ type: 'error', text: 'Please upload PDF, DOC, DOCX, or TXT file.' });
+      setNotice({ type: 'error', text: 'Please upload a PDF, DOC, DOCX, or TXT file.' });
       event.target.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setNotice({ type: 'error', text: 'Resume file size must be 5MB or less.' });
+      setNotice({ type: 'error', text: 'Resume file size must be 5 MB or less.' });
       event.target.value = '';
       return;
     }
@@ -254,179 +272,286 @@ const StudentAtsPage = () => {
     }
   };
 
+  const stats = [
+    {
+      label: 'Total Checks',
+      value: String(historyStats.checks),
+      helper: 'ATS comparisons logged in history',
+      icon: FiActivity
+    },
+    {
+      label: 'Average Score',
+      value: `${historyStats.avgScore}%`,
+      helper: 'Typical match strength across runs',
+      icon: FiTarget
+    },
+    {
+      label: 'Latest Score',
+      value: `${historyStats.latestScore}%`,
+      helper: 'Most recent ATS quality signal',
+      icon: FiCheckCircle
+    }
+  ];
+
   return (
-    <div className="module-page module-page--student">
-      <SectionHeader
-        eyebrow="ATS Analyzer"
-        title="Resume Match and Optimization"
-        subtitle="Run ATS check against a target job and track your ATS history."
-      />
+    <StudentPageShell
+      eyebrow="ATS Analyzer"
+      badge="Resume fit"
+      title="Measure how strongly your resume matches each target role"
+      subtitle="Run ATS checks against your saved profile resume or a custom draft, then use the keyword gaps and warnings to improve before applying."
+      stats={stats}
+    >
+      {state.error ? <StudentNotice type="error" text={state.error} /> : null}
+      {notice.text ? <StudentNotice type={notice.type || 'info'} text={notice.text} /> : null}
 
-      {state.error ? <p className="form-error">{state.error}</p> : null}
-      {notice.text ? <p className={notice.type === 'error' ? 'form-error' : 'form-success'}>{notice.text}</p> : null}
-      {state.loading ? <p className="module-note">Loading ATS data...</p> : null}
-
-      <section className="panel-card ats-score-strip">
-        <article>
-          <p>Total Checks</p>
-          <strong>{historyStats.checks}</strong>
-        </article>
-        <article>
-          <p>Average Score</p>
-          <strong>{historyStats.avgScore}%</strong>
-        </article>
-        <article>
-          <p>Latest Score</p>
-          <strong>{historyStats.latestScore}%</strong>
-        </article>
-      </section>
-
-      <section className="panel-card ats-panel">
-        <form className="form-grid ats-form" onSubmit={runCheck}>
-          <label className="full-row">
-            Job
-            <select value={form.jobId} onChange={(event) => setForm((current) => ({ ...current, jobId: event.target.value }))}>
-              <option value="">
-                {jobs.length === 0 ? 'No jobs available (Run preview)' : 'Run ATS Preview (No job selected)'}
-              </option>
-              {jobs.map((job) => {
-                const value = job.id || job._id;
-                return (
-                  <option key={value} value={value}>
-                    {job.jobTitle} - {job.companyName}
+      <div className="grid gap-6 xl:grid-cols-[1fr_0.95fr]">
+        <StudentSurfaceCard
+          eyebrow="Run Check"
+          title="Launch a fresh ATS comparison"
+          subtitle="Choose a live role or run a preview against any custom target description."
+        >
+          {state.loading ? (
+            <div className="h-72 animate-pulse rounded-[1.8rem] bg-slate-100" />
+          ) : (
+            <form className="grid gap-4 md:grid-cols-2" onSubmit={runCheck}>
+              <label className="md:col-span-2">
+                <span className="mb-2 block text-sm font-bold text-slate-700">Target Job</span>
+                <select
+                  value={form.jobId}
+                  onChange={(event) => setForm((current) => ({ ...current, jobId: event.target.value }))}
+                  className={studentFieldClassName}
+                >
+                  <option value="">
+                    {jobs.length === 0 ? 'No jobs available (Run preview)' : 'Run ATS Preview (No job selected)'}
                   </option>
-                );
-              })}
-            </select>
-          </label>
+                  {jobs.map((job) => {
+                    const value = job.id || job._id;
+                    return (
+                      <option key={value} value={value}>
+                        {job.jobTitle} - {job.companyName}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
 
-          {!form.jobId ? (
-            <label className="full-row">
-              Target Role / Job Description (optional)
-              <textarea
-                rows={3}
-                value={form.targetText}
-                onChange={(event) => setForm((current) => ({ ...current, targetText: event.target.value }))}
-                placeholder="Example: Frontend role requiring React, JavaScript, API integration, and communication."
-              />
-            </label>
-          ) : null}
+              {!form.jobId ? (
+                <label className="md:col-span-2">
+                  <span className="mb-2 block text-sm font-bold text-slate-700">Target Description</span>
+                  <textarea
+                    rows={4}
+                    value={form.targetText}
+                    onChange={(event) => setForm((current) => ({ ...current, targetText: event.target.value }))}
+                    placeholder="Example: Frontend role requiring React, APIs, accessibility, and strong communication."
+                    className={studentTextareaClassName}
+                  />
+                </label>
+              ) : null}
 
-          <label>
-            Source
-            <select
-              value={form.source}
-              onChange={(event) => setForm((current) => ({
-                ...current,
-                source: event.target.value,
-                ...(event.target.value === 'profile_resume' ? { resumeText: '', resumeUrl: '' } : {})
-              }))}
-            >
-              <option value="profile_resume">Use profile resume</option>
-              <option value="new_resume_upload">Use custom text/url</option>
-            </select>
-          </label>
+              <label>
+                <span className="mb-2 block text-sm font-bold text-slate-700">Resume Source</span>
+                <select
+                  value={form.source}
+                  onChange={(event) => setForm((current) => ({
+                    ...current,
+                    source: event.target.value,
+                    ...(event.target.value === 'profile_resume' ? { resumeText: '', resumeUrl: '' } : {})
+                  }))}
+                  className={studentFieldClassName}
+                >
+                  <option value="profile_resume">Use profile resume</option>
+                  <option value="new_resume_upload">Use custom text or file</option>
+                </select>
+              </label>
 
-          <label>
-            Resume URL (optional)
-            <input
-              value={form.resumeUrl}
-              onChange={(event) => setForm((current) => ({ ...current, resumeUrl: event.target.value }))}
-            />
-          </label>
+              <label>
+                <span className="mb-2 block text-sm font-bold text-slate-700">Resume URL</span>
+                <input
+                  value={form.resumeUrl}
+                  onChange={(event) => setForm((current) => ({ ...current, resumeUrl: event.target.value }))}
+                  placeholder="Optional remote file URL"
+                  className={studentFieldClassName}
+                />
+              </label>
 
-          <label>
-            Resume File (optional)
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-              onChange={handleResumeFileUpload}
-            />
-          </label>
+              <label className="md:col-span-2">
+                <span className="mb-2 block text-sm font-bold text-slate-700">Resume File</span>
+                <label className="flex cursor-pointer flex-col items-center justify-center rounded-[1.6rem] border border-dashed border-slate-300 bg-slate-50/80 px-5 py-7 text-center transition hover:border-brand-300 hover:bg-brand-50/40">
+                  <FiUploadCloud className="text-brand-600" size={26} />
+                  <span className="mt-3 text-sm font-semibold text-slate-700">
+                    Upload PDF, DOC, DOCX, or TXT
+                  </span>
+                  <span className="mt-1 text-xs text-slate-500">Maximum 5 MB</span>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                    onChange={handleResumeFileUpload}
+                    className="hidden"
+                  />
+                </label>
+                {selectedFileName ? (
+                  <p className="mt-2 text-sm font-semibold text-slate-500">Attached file: {selectedFileName}</p>
+                ) : null}
+              </label>
 
-          <label className="full-row">
-            Resume Text (optional)
-            <textarea
-              rows={5}
-              value={form.resumeText}
-              onChange={(event) => setForm((current) => ({ ...current, resumeText: event.target.value }))}
-            />
-          </label>
+              <label className="md:col-span-2">
+                <span className="mb-2 block text-sm font-bold text-slate-700">Resume Text</span>
+                <textarea
+                  rows={7}
+                  value={form.resumeText}
+                  onChange={(event) => setForm((current) => ({ ...current, resumeText: event.target.value }))}
+                  placeholder="Paste resume content here if you want to test a custom version."
+                  className={`${studentTextareaClassName} font-mono text-[13px]`}
+                />
+              </label>
 
-          {selectedFileName ? <p className="module-note full-row">Attached file: {selectedFileName}</p> : null}
+              <div className="md:col-span-2 flex flex-wrap gap-3 border-t border-slate-100 pt-4">
+                <button
+                  type="button"
+                  className={studentSecondaryButtonClassName}
+                  onClick={() => {
+                    setForm((current) => ({
+                      ...current,
+                      source: 'profile_resume',
+                      resumeText: '',
+                      resumeUrl: '',
+                      targetText: ''
+                    }));
+                    setSelectedFileName('');
+                    setNotice({ type: '', text: '' });
+                  }}
+                >
+                  <FiRefreshCw size={15} />
+                  Reset Inputs
+                </button>
+                <button type="submit" className={studentPrimaryButtonClassName} disabled={isRunning}>
+                  <FiActivity size={15} />
+                  {isRunning ? 'Running ATS Check...' : 'Run ATS Check'}
+                </button>
+              </div>
+            </form>
+          )}
+        </StudentSurfaceCard>
 
-          <div className="full-row ats-form-actions">
-            <button
-              type="button"
-              className="btn-link"
-              onClick={() => {
-                setForm((current) => ({
-                  ...current,
-                  source: 'profile_resume',
-                  resumeText: '',
-                  resumeUrl: '',
-                  targetText: ''
-                }));
-                setSelectedFileName('');
-                setNotice({ type: '', text: '' });
-              }}
-            >
-              Reset Resume Input
-            </button>
-            <button type="submit" className="btn-primary" disabled={isRunning}>
-              {isRunning ? 'Running...' : 'Run ATS Check'}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      {result ? (
-        <section className="panel-card ats-result-card">
-          <SectionHeader
+        {result ? (
+          <StudentSurfaceCard
             eyebrow="Latest Result"
-            title={`${selectedJobTitle} - Score ${result.score}%`}
+            title={`${selectedJobTitle} match overview`}
+            subtitle="Use these ATS signals to tighten your resume before the next application."
+          >
+            <div className="grid gap-5">
+              <div className="rounded-[1.8rem] border border-brand-200 bg-brand-50/70 p-5">
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-brand-700">Overall Score</p>
+                <div className="mt-4 flex items-end justify-between gap-4">
+                  <div>
+                    <p className="font-heading text-5xl font-black text-navy">{result.score}%</p>
+                    <p className="mt-2 text-sm text-slate-500">Keyword, similarity, and formatting combined</p>
+                  </div>
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-brand-700 shadow-sm">
+                    <FiTarget size={24} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                {[
+                  { label: 'Keyword', value: result.keywordScore },
+                  { label: 'Similarity', value: result.similarityScore },
+                  { label: 'Format', value: result.formatScore }
+                ].map((item) => (
+                  <div key={item.label} className="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-4">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{item.label}</p>
+                    <p className="mt-3 font-heading text-3xl font-black text-navy">{item.value}</p>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+                      <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-secondary-500" style={{ width: `${item.value}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50/70 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Matched Keywords</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {(result.matchedKeywords || []).length > 0 ? (
+                      result.matchedKeywords.map((item) => (
+                        <span key={item} className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-700">
+                          {item}
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-sm text-emerald-800">No matched keywords were returned.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-[1.5rem] border border-red-200 bg-red-50/70 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-red-700">Missing Keywords</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {(result.missingKeywords || []).length > 0 ? (
+                      result.missingKeywords.map((item) => (
+                        <span key={item} className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700">
+                          {item}
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-sm text-red-800">No missing keywords detected.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Suggestions</p>
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                    {(result.suggestions || []).length === 0 ? <li>No suggestions returned.</li> : null}
+                    {(result.suggestions || []).map((item) => <li key={item}>• {item}</li>)}
+                  </ul>
+                </div>
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Warnings</p>
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                    {(result.warnings || []).length === 0 ? <li>No warnings returned.</li> : null}
+                    {(result.warnings || []).map((item) => <li key={item}>• {item}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </StudentSurfaceCard>
+        ) : (
+          <StudentSurfaceCard
+            eyebrow="Latest Result"
+            title="No ATS result yet"
+            subtitle="Run a check to get keyword coverage, similarity scoring, and improvement suggestions."
+          >
+            <StudentEmptyState
+              icon={FiFileText}
+              title="Ready when you are"
+              description="Choose a role on the left, then run an ATS scan to see exactly how recruiter systems may read your resume."
+              className="border-none bg-slate-50/80"
+            />
+          </StudentSurfaceCard>
+        )}
+      </div>
+
+      <StudentSurfaceCard
+        eyebrow="History"
+        title="Past ATS checks"
+        subtitle="Compare previous runs so you can see whether profile edits are actually improving your score."
+      >
+        {history.length === 0 ? (
+          <StudentEmptyState
+            icon={FiActivity}
+            title="No ATS history yet"
+            description="Your first completed ATS scan will appear here with score, keyword fit, and timestamp."
+            className="border-none bg-slate-50/80"
           />
-
-          <div className="ats-score-meter" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Number(result.score || 0)}>
-            <span style={{ width: `${Number(result.score || 0)}%` }} />
-          </div>
-
-          <div className="split-grid ats-result-grid">
-            <div>
-              <p className="module-note">Keyword Score: {result.keywordScore}</p>
-              <p className="module-note">Similarity Score: {result.similarityScore}</p>
-              <p className="module-note">Format Score: {result.formatScore}</p>
-            </div>
-            <div>
-              <p className="module-note">Matched: {(result.matchedKeywords || []).join(', ') || '-'}</p>
-              <p className="module-note">Missing: {(result.missingKeywords || []).join(', ') || '-'}</p>
-            </div>
-          </div>
-
-          <div className="split-grid ats-result-grid">
-            <div>
-              <h4 className="ats-result-title">Suggestions</h4>
-              <ul className="ats-result-list">
-                {(result.suggestions || []).length === 0 ? <li>No suggestions.</li> : null}
-                {(result.suggestions || []).map((item) => <li key={item}>{item}</li>)}
-              </ul>
-            </div>
-            <div>
-              <h4 className="ats-result-title">Warnings</h4>
-              <ul className="ats-result-list">
-                {(result.warnings || []).length === 0 ? <li>No warnings.</li> : null}
-                {(result.warnings || []).map((item) => <li key={item}>{item}</li>)}
-              </ul>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      <section className="panel-card">
-        <SectionHeader eyebrow="History" title="Past ATS Checks" />
-        <DataTable columns={columns} rows={history.map((item) => ({ ...item, id: item.id || item.created_at }))} />
-      </section>
-    </div>
+        ) : (
+          <DataTable columns={columns} rows={history.map((item) => ({ ...item, id: item.id || item.created_at }))} />
+        )}
+      </StudentSurfaceCard>
+    </StudentPageShell>
   );
 };
 

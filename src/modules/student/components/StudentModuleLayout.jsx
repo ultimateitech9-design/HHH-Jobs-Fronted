@@ -1,14 +1,12 @@
 import {
   FiActivity,
   FiBarChart2,
-  FiBell,
   FiBookmark,
   FiBriefcase,
   FiCalendar,
   FiFileText,
   FiGlobe,
   FiHome,
-  FiMessageCircle,
   FiStar,
   FiUser
 } from 'react-icons/fi';
@@ -18,16 +16,21 @@ import { getCurrentUser } from '../../../utils/auth';
 const studentNavItems = [
   { to: '/portal/student/dashboard', label: 'Dashboard', icon: FiHome },
   { to: '/portal/student/profile', label: 'Profile', icon: FiUser },
-  { to: '/portal/student/jobs', label: 'Jobs', icon: FiBriefcase },
+  { to: '/portal/student/ats', label: 'ATS', icon: FiActivity },
+  {
+    key: 'student-jobs-group',
+    label: 'Jobs',
+    icon: FiBriefcase,
+    children: [
+      { to: '/portal/student/jobs', label: 'Jobs', icon: FiBriefcase },
+      { to: '/portal/student/global-jobs', label: 'Global Jobs', icon: FiGlobe }
+    ]
+  },
   { to: '/portal/student/applications', label: 'Applications', icon: FiFileText },
   { to: '/portal/student/saved-jobs', label: 'Saved Jobs', icon: FiBookmark },
-  { to: '/portal/student/alerts', label: 'Alerts', icon: FiBell },
   { to: '/portal/student/interviews', label: 'Interviews', icon: FiCalendar },
   { to: '/portal/student/analytics', label: 'Analytics', icon: FiBarChart2 },
-  { to: '/portal/student/ats', label: 'ATS', icon: FiActivity },
-  { to: '/portal/student/notifications', label: 'Notifications', icon: FiMessageCircle },
-  { to: '/portal/student/company-reviews', label: 'Company Reviews', icon: FiStar },
-  { to: '/portal/student/global-jobs', label: 'Global Jobs', icon: FiGlobe }
+  { to: '/portal/student/company-reviews', label: 'Company Reviews', icon: FiStar }
 ];
 
 const StudentModuleLayout = () => {
@@ -39,18 +42,18 @@ const StudentModuleLayout = () => {
       portalKey="student"
       portalLabel={isRetiredUser ? 'Retired Professional Workspace' : 'Student Workspace'}
       subtitle={isRetiredUser
-        ? 'Complete your professional profile and explore jobs curated for retired professionals.'
-        : 'Build profile strength, discover jobs, and manage applications with clear daily momentum.'}
+        ? 'Refresh your experience profile, track opportunities, and return to the market with a calmer, premium workspace.'
+        : 'Build profile strength, discover better-fit jobs, and manage every application in one focused premium workspace.'}
       navItems={studentNavItems}
       support={{
         showCard: false,
-        title: isRetiredUser ? 'Profile Tips' : 'Career Tips',
+        title: isRetiredUser ? 'Profile Priority' : 'Career Priority',
         text: isRetiredUser
-          ? 'Add your experience highlights and preferred role details to improve matching for retired job openings.'
-          : 'Keep profile, applications, and interview prep updated to improve recruiter replies.',
+          ? 'Highlight recent achievements, preferred role type, and relocation flexibility to improve retired-professional matches.'
+          : 'Keep your profile, saved jobs, and resume score updated so recruiter replies stay warm and relevant.',
         to: '/portal/student/profile',
-        cta: isRetiredUser ? 'Update profile' : 'Open profile',
-        searchPlaceholder: 'Search jobs, applications, interview notes'
+        cta: isRetiredUser ? 'Refine profile' : 'Polish profile',
+        searchPlaceholder: 'Search jobs, applications, interviews, ATS checks'
       }}
     />
   );

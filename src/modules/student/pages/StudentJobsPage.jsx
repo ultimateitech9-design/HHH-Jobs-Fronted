@@ -1,9 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiAlertCircle, FiSearch, FiMapPin, FiBriefcase, FiFilter, FiBookmark, FiCheckCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import SectionHeader from '../../../shared/components/SectionHeader';
+import {
+  FiAlertCircle,
+  FiBookmark,
+  FiBriefcase,
+  FiCheckCircle,
+  FiChevronLeft,
+  FiChevronRight,
+  FiFilter,
+  FiMapPin,
+  FiSearch,
+  FiTarget
+} from 'react-icons/fi';
 import StatusPill from '../../../shared/components/StatusPill';
 import { getCurrentUser } from '../../../utils/auth';
+import {
+  StudentEmptyState,
+  StudentNotice,
+  StudentPageShell,
+  StudentSurfaceCard,
+  studentFieldClassName,
+  studentGhostButtonClassName,
+  studentPrimaryButtonClassName,
+  studentSecondaryButtonClassName
+} from '../components/StudentExperience';
 import {
   applyToJob,
   getFriendlyApplyErrorMessage,
@@ -43,14 +63,14 @@ const CompanyLogoBadge = ({ companyLogo, companyName }) => {
         alt={companyName}
         loading="lazy"
         referrerPolicy="no-referrer"
-        className="w-14 h-14 rounded-2xl border border-neutral-200 bg-white object-contain p-2 flex-shrink-0 group-hover:scale-110 transition-transform"
+        className="h-14 w-14 rounded-2xl border border-neutral-200 bg-white object-contain p-2 transition-transform group-hover:scale-105"
         onError={() => setLogoError(true)}
       />
     );
   }
 
   return (
-    <div className="w-14 h-14 bg-brand-50 rounded-2xl flex items-center justify-center text-brand-600 font-heading font-bold text-xl flex-shrink-0 group-hover:scale-110 transition-transform">
+    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-xl font-heading font-bold text-brand-700 transition-transform group-hover:scale-105">
       {getCompanyInitials(companyName)}
     </div>
   );
@@ -130,6 +150,29 @@ const StudentJobsPage = ({
     [filters]
   );
 
+  const topStats = useMemo(() => {
+    const roles = jobsState.jobs;
+    const remoteCount = roles.filter((job) => /remote/i.test(String(job.jobLocation || ''))).length;
+
+    return [
+      {
+        label: 'Open Roles',
+        value: String(jobsState.pagination?.total || roles.length || 0),
+        helper: 'Current live opportunities in this search'
+      },
+      {
+        label: 'Saved On Page',
+        value: String(roles.filter((job) => savedIds.has(job.id || job._id)).length),
+        helper: 'Roles you already shortlisted'
+      },
+      {
+        label: 'Remote Matches',
+        value: String(remoteCount),
+        helper: 'Visible jobs with remote-friendly location'
+      }
+    ];
+  }, [jobsState.jobs, jobsState.pagination?.total, savedIds]);
+
   const updateFilter = (key, value) => {
     setFilters((current) => ({ ...current, [key]: value, page: 1 }));
   };
@@ -203,237 +246,259 @@ const StudentJobsPage = ({
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8">
-      <SectionHeader
-        eyebrow={eyebrow}
-        title={title}
-        subtitle={subtitle}
-      />
+    <StudentPageShell
+      eyebrow={eyebrow}
+      badge={effectiveAudience === 'retired_employee' ? 'Retired talent' : 'Live marketplace'}
+      title={title}
+      subtitle={subtitle}
+      stats={topStats}
+      actions={
+        <>
+          <Link to="/portal/student/saved-jobs" className={studentSecondaryButtonClassName}>
+            <FiBookmark size={15} />
+            Saved Jobs
+          </Link>
+          <Link to="/portal/student/applications" className={studentPrimaryButtonClassName}>
+            <FiTarget size={15} />
+            View Applications
+          </Link>
+        </>
+      }
+    >
+      {jobsState.error ? <StudentNotice type="error" text={jobsState.error} /> : null}
 
-      {jobsState.error && (
-        <div className="mb-6 p-4 bg-error-50 border-l-4 border-error-500 text-error-700 rounded-lg shadow-sm">
-          {jobsState.error}
-        </div>
-      )}
-      
-      {actionFeedback.text && (
-        <div className={`mb-6 rounded-lg border-l-4 p-4 shadow-sm ${actionFeedback.type === 'error' ? 'border-red-500 bg-red-50 text-red-700' : 'border-success-500 bg-success-50 text-success-700'}`}>
-          <div className="flex flex-wrap items-center gap-2">
-            {actionFeedback.type === 'error' ? <FiAlertCircle className="text-red-500" /> : <FiCheckCircle className="text-success-500" />}
-            <span>{actionFeedback.text}</span>
-            {actionFeedback.ctaTo ? (
-              <Link to={actionFeedback.ctaTo} className="inline-flex items-center rounded-full border border-current px-3 py-1 text-xs font-bold">
-                {actionFeedback.ctaLabel}
-              </Link>
-            ) : null}
-          </div>
-        </div>
-      )}
+      {actionFeedback.text ? (
+        <StudentNotice
+          type={actionFeedback.type}
+          text={actionFeedback.text}
+          action={actionFeedback.ctaTo ? (
+            <Link to={actionFeedback.ctaTo} className={studentGhostButtonClassName}>
+              {actionFeedback.ctaLabel}
+            </Link>
+          ) : null}
+        />
+      ) : null}
 
-      {/* Filters Section */}
-      <section className="bg-white rounded-2xl shadow-soft border border-neutral-100 p-6 mb-10 mt-6 relative z-10">
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-2">
-          <div className="flex-1 w-full relative">
-            <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+      <StudentSurfaceCard
+        eyebrow="Job Filters"
+        title="Refine the opportunity feed"
+        subtitle="Use keywords, location, category, and experience filters to reduce noise and surface more relevant roles."
+      >
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_repeat(3,minmax(0,0.8fr))_auto] xl:items-center">
+          <div className="relative">
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
-              className="w-full pl-11 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all text-sm font-medium"
+              className={`${studentFieldClassName} pl-11`}
               placeholder="Search by title, company, skill"
               value={filters.search}
               onChange={(event) => updateFilter('search', event.target.value)}
             />
           </div>
-          <div className="flex-1 w-full relative">
-            <FiMapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+
+          <div className="relative">
+            <FiMapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
-              className="w-full pl-11 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all text-sm font-medium"
+              className={`${studentFieldClassName} pl-11`}
               placeholder="Location"
               value={filters.location}
               onChange={(event) => updateFilter('location', event.target.value)}
             />
           </div>
-        </div>
-        
-        <div className="flex flex-col md:flex-row items-center gap-4 mt-4">
-          <div className="flex-1 w-full relative">
-            <FiBriefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+
+          <div className="relative">
+            <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
-              className="w-full pl-11 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all text-sm font-medium"
+              className={`${studentFieldClassName} pl-11`}
               placeholder="Employment Type"
               value={filters.employmentType}
               onChange={(event) => updateFilter('employmentType', event.target.value)}
             />
           </div>
-          <div className="flex-1 w-full">
+
+          <input
+            className={studentFieldClassName}
+            placeholder="Experience Level"
+            value={filters.experienceLevel}
+            onChange={(event) => updateFilter('experienceLevel', event.target.value)}
+          />
+
+          <div className="relative">
+            <FiFilter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
-              className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all text-sm font-medium"
-              placeholder="Experience Level"
-              value={filters.experienceLevel}
-              onChange={(event) => updateFilter('experienceLevel', event.target.value)}
-            />
-          </div>
-          <div className="flex-1 w-full relative">
-            <FiFilter className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" />
-            <input
-              className="w-full pl-11 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all text-sm font-medium"
+              className={`${studentFieldClassName} pl-11`}
               placeholder="Category"
               value={filters.category}
               onChange={(event) => updateFilter('category', event.target.value)}
             />
           </div>
-          
-          {hasFilters && (
-            <div className="w-full md:w-auto mt-2 md:mt-0">
-              <button 
-                type="button" 
-                className="w-full md:w-auto px-6 py-3 text-sm font-bold text-error-600 hover:bg-error-50 rounded-xl transition-colors" 
-                onClick={() => setFilters(makeDefaultFilters(effectiveAudience))}
+
+          {hasFilters ? (
+            <button
+              type="button"
+              className="rounded-full border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 transition hover:bg-red-100"
+              onClick={() => setFilters(makeDefaultFilters(effectiveAudience))}
+            >
+              Clear All
+            </button>
+          ) : null}
+        </div>
+      </StudentSurfaceCard>
+
+      {jobsState.loading ? (
+        <div className="grid gap-5 lg:grid-cols-2">
+          {[1, 2, 3, 4].map((item) => (
+            <div key={item} className="h-72 animate-pulse rounded-[2rem] bg-slate-100" />
+          ))}
+        </div>
+      ) : jobsState.jobs.length > 0 ? (
+        <div className="grid gap-5 lg:grid-cols-2">
+          {jobsState.jobs.map((job) => {
+            const jobId = job.id || job._id;
+            const isSaved = savedIds.has(jobId);
+            const isApplied = appliedIds.has(jobId);
+
+            return (
+              <article
+                className="group relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.95))] p-6 shadow-[0_18px_42px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:shadow-[0_26px_56px_rgba(15,23,42,0.12)]"
+                key={jobId}
               >
-                Clear All
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(229,155,23,0.12),transparent_35%),linear-gradient(135deg,rgba(47,83,143,0.06),transparent_60%)] opacity-0 transition-opacity group-hover:opacity-100" />
 
-      {jobsState.loading && (
-        <div className="flex justify-center items-center py-20">
-          <div className="w-10 h-10 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin"></div>
-        </div>
-      )}
-
-      {/* Jobs Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-0">
-        {jobsState.jobs.map((job) => {
-          const jobId = job.id || job._id;
-          const isSaved = savedIds.has(jobId);
-          const isApplied = appliedIds.has(jobId);
-
-          return (
-            <article className="bg-white border border-neutral-200 rounded-3xl p-6 sm:p-8 hover:shadow-lg transition-all flex flex-col group relative overflow-hidden" key={jobId}>
-              {/* Subtle background gradient on hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-brand-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-              
-              <div className="relative z-10 flex justify-between items-start gap-4 mb-4">
-                <div className="flex items-center gap-4">
-                  <CompanyLogoBadge companyLogo={job.companyLogo} companyName={job.companyName} />
-                  <div>
-                    <h3 className="text-xl font-bold font-heading text-primary line-clamp-1 group-hover:text-brand-600 transition-colors">
-                      {job.jobTitle}
-                    </h3>
-                    <p className="text-neutral-500 font-medium">
-                      {job.companyName}
-                    </p>
+                <div className="relative z-10 flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <CompanyLogoBadge companyLogo={job.companyLogo} companyName={job.companyName} />
+                    <div>
+                      <h3 className="font-heading text-2xl font-bold text-navy transition-colors group-hover:text-brand-700">
+                        {job.jobTitle}
+                      </h3>
+                      <p className="mt-1 text-sm font-medium text-slate-500">{job.companyName}</p>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex-shrink-0">
+
                   <StatusPill value={job.status || 'open'} />
                 </div>
-              </div>
 
-              <div className="relative z-10 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-600 mb-6">
-                <span className="flex items-center gap-1.5 font-medium"><FiMapPin className="text-brand-400" /> {job.jobLocation}</span>
-                <span className="flex items-center gap-1.5 font-medium"><FiBriefcase className="text-brand-400" /> {job.experienceLevel || 'Experience not specified'}</span>
-                {job.salaryType && <span className="flex items-center gap-1.5 font-medium whitespace-nowrap px-2 py-0.5 bg-success-50 text-success-700 rounded text-xs">{job.minPrice || '-'} - {job.maxPrice || '-'} {job.salaryType || ''}</span>}
-                
-                {(job.targetAudience || job.audience) && String(job.targetAudience || job.audience).toLowerCase() !== 'all' && (
-                  <span className="flex items-center gap-1.5 font-medium whitespace-nowrap px-2 py-0.5 bg-warning-50 text-warning-700 rounded text-xs">Audience: {String(job.targetAudience || job.audience).replace('_', ' ')}</span>
-                )}
-              </div>
+                <div className="relative z-10 mt-5 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600">
+                    <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                      <FiMapPin size={13} />
+                      Location
+                    </p>
+                    <p className="mt-2 font-semibold text-slate-800">{job.jobLocation || 'Remote'}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600">
+                    <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                      <FiBriefcase size={13} />
+                      Experience
+                    </p>
+                    <p className="mt-2 font-semibold text-slate-800">{job.experienceLevel || 'Experience not specified'}</p>
+                  </div>
+                </div>
 
-              <div className="relative z-10 flex flex-wrap gap-2 mb-8">
-                {(job.skills || []).slice(0, 5).map((skill) => (
-                  <span key={skill} className="px-3 py-1.5 bg-neutral-100 text-neutral-600 rounded-lg text-xs font-semibold">
-                    {skill}
-                  </span>
-                ))}
-                {(job.skills || []).length > 5 && (
-                  <span className="px-3 py-1.5 bg-neutral-50 border border-neutral-200 text-neutral-500 rounded-lg text-xs font-semibold">
-                    +{job.skills.length - 5}
-                  </span>
-                )}
-              </div>
+                <div className="relative z-10 mt-4 flex flex-wrap gap-2">
+                  {job.salaryType ? (
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      {job.minPrice || '-'} - {job.maxPrice || '-'} {job.salaryType}
+                    </span>
+                  ) : null}
 
-              <div className="mt-auto relative z-10 flex flex-wrap items-center gap-3 pt-6 border-t border-neutral-100">
-                <Link to={`${detailsPathBase}/${jobId}`} className="px-6 py-2.5 rounded-xl border-2 border-brand-100 text-brand-600 font-bold hover:bg-brand-50 hover:border-brand-200 transition-colors flex-1 text-center whitespace-nowrap">
-                  View Details
-                </Link>
-                
-                <button
-                  type="button"
-                  className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center transition-colors flex-shrink-0 ${isSaved ? 'bg-brand-50 border-brand-200 text-brand-600' : 'bg-white border-neutral-200 text-neutral-400 hover:text-brand-500 hover:border-brand-200 hover:bg-brand-50'}`}
-                  onClick={() => handleSaveToggle(jobId)}
-                  aria-label={isSaved ? "Unsave job" : "Save job"}
-                  title={isSaved ? "Remove from saved jobs" : "Save this job"}
-                >
-                  <FiBookmark className={isSaved ? "fill-current" : ""} size={20} />
-                </button>
-                
-                <button
-                  type="button"
-                  className={`px-8 py-3 rounded-xl font-bold transition-all shadow-sm flex-1 sm:flex-none ${
-                    isApplied 
-                      ? 'bg-success-100 text-success-700 cursor-not-allowed border border-success-200' 
-                      : 'bg-brand-500 text-white hover:bg-brand-600 hover:shadow-md hover:-translate-y-0.5'
-                  }`}
-                  onClick={() => handleApply(jobId)}
-                  disabled={isApplied}
-                >
-                  {isApplied ? (
-                    <span className="flex items-center justify-center gap-2"><FiCheckCircle /> Applied</span>
-                  ) : 'Apply Now'}
-                </button>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+                  {(job.targetAudience || job.audience) && String(job.targetAudience || job.audience).toLowerCase() !== 'all' ? (
+                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                      Audience: {String(job.targetAudience || job.audience).replace('_', ' ')}
+                    </span>
+                  ) : null}
+                </div>
 
-      {(!jobsState.loading && jobsState.jobs.length === 0) && (
-        <div className="bg-white rounded-3xl p-12 text-center border border-neutral-100 mb-8 max-w-2xl mx-auto shadow-sm mt-8">
-          <div className="w-20 h-20 bg-neutral-50 rounded-full flex items-center justify-center mx-auto mb-6 text-neutral-300">
-            <FiSearch size={32} />
+                <div className="relative z-10 mt-4 flex flex-wrap gap-2">
+                  {(job.skills || []).slice(0, 5).map((skill) => (
+                    <span key={skill} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                      {skill}
+                    </span>
+                  ))}
+                  {(job.skills || []).length > 5 ? (
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-400">
+                      +{job.skills.length - 5}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="relative z-10 mt-auto flex flex-wrap gap-3 border-t border-slate-100 pt-6">
+                  <Link to={`${detailsPathBase}/${jobId}`} className={studentSecondaryButtonClassName}>
+                    View Details
+                  </Link>
+
+                  <button
+                    type="button"
+                    className={isSaved ? studentGhostButtonClassName : studentSecondaryButtonClassName}
+                    onClick={() => handleSaveToggle(jobId)}
+                    aria-label={isSaved ? 'Unsave job' : 'Save job'}
+                    title={isSaved ? 'Remove from saved jobs' : 'Save this job'}
+                  >
+                    <FiBookmark className={isSaved ? 'fill-current' : ''} size={16} />
+                    {isSaved ? 'Saved' : 'Save'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className={isApplied ? 'inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-bold text-emerald-700' : studentPrimaryButtonClassName}
+                    onClick={() => handleApply(jobId)}
+                    disabled={isApplied}
+                  >
+                    {isApplied ? (
+                      <>
+                        <FiCheckCircle size={15} />
+                        Applied
+                      </>
+                    ) : 'Apply Now'}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <StudentEmptyState
+          icon={FiSearch}
+          title="No jobs match your filters"
+          description="Try broadening your search, switching location, or clearing filters to surface more opportunities."
+          action={
+            <button type="button" className={studentPrimaryButtonClassName} onClick={() => setFilters(makeDefaultFilters(effectiveAudience))}>
+              Reset Filters
+            </button>
+          }
+        />
+      )}
+
+      {jobsState.pagination && jobsState.pagination.totalPages > 1 ? (
+        <div className="flex justify-center">
+          <div className="flex items-center gap-4 rounded-full border border-slate-200 bg-white px-6 py-4 shadow-sm">
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-navy transition hover:border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={jobsState.pagination.page <= 1}
+              onClick={() => setFilters((current) => ({ ...current, page: current.page - 1 }))}
+              aria-label="Previous Page"
+            >
+              <FiChevronLeft size={18} />
+            </button>
+
+            <span className="min-w-24 text-center text-sm font-bold text-slate-600">
+              Page {jobsState.pagination.page} <span className="mx-1 font-normal text-slate-400">/</span> {jobsState.pagination.totalPages}
+            </span>
+
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-navy transition hover:border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={jobsState.pagination.page >= jobsState.pagination.totalPages}
+              onClick={() => setFilters((current) => ({ ...current, page: current.page + 1 }))}
+              aria-label="Next Page"
+            >
+              <FiChevronRight size={18} />
+            </button>
           </div>
-          <h3 className="text-2xl font-bold font-heading text-primary mb-2">No jobs found</h3>
-          <p className="text-neutral-500 mb-8">Try adjusting your filters or search terms to find what you&apos;re looking for.</p>
-          <button 
-            type="button" 
-            className="px-6 py-3 bg-brand-50 text-brand-700 font-bold rounded-xl hover:bg-brand-100 transition-colors"
-            onClick={() => setFilters(makeDefaultFilters(effectiveAudience))}
-          >
-            Clear All Filters
-          </button>
         </div>
-      )}
-
-      {jobsState.pagination && jobsState.pagination.totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-12 bg-white px-6 py-4 rounded-full shadow-sm border border-neutral-100 w-max mx-auto">
-          <button
-            type="button"
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-colors border border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 hover:border-neutral-200 text-primary"
-            disabled={jobsState.pagination.page <= 1}
-            onClick={() => setFilters((current) => ({ ...current, page: current.page - 1 }))}
-            aria-label="Previous Page"
-          >
-            <FiChevronLeft size={20} />
-          </button>
-          
-          <span className="text-sm font-bold text-neutral-600 min-w-24 text-center">
-            Page {jobsState.pagination.page} <span className="font-normal text-neutral-400 mx-1">/</span> {jobsState.pagination.totalPages}
-          </span>
-          
-          <button
-            type="button"
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-colors border border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 hover:border-neutral-200 text-primary"
-            disabled={jobsState.pagination.page >= jobsState.pagination.totalPages}
-            onClick={() => setFilters((current) => ({ ...current, page: current.page + 1 }))}
-            aria-label="Next Page"
-          >
-            <FiChevronRight size={20} />
-          </button>
-        </div>
-      )}
-    </div>
+      ) : null}
+    </StudentPageShell>
   );
 };
 

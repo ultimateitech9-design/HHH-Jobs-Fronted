@@ -24,12 +24,6 @@ export const getPublicNavItems = ({ jobsNavPath }) => [
         matchers: [/^\/recruiters(?:\/.*)?$/]
       },
       {
-        key: 'for-freshers',
-        label: 'For Freshers',
-        to: '/freshers',
-        matchers: [/^\/freshers(?:\/.*)?$/]
-      },
-      {
         key: 'for-veterans',
         label: 'For Veterans',
         to: '/veterans',

@@ -1,9 +1,8 @@
 export const JOB_GATE_PORTAL_LABEL = 'Login to Unlock Jobs';
 
-export const shouldLockJobBoards = (isAuthenticated) => !Boolean(isAuthenticated);
+export const shouldLockJobBoards = (isAuthenticated) => !isAuthenticated;
 
-export const getPublicJobsNavPath = (isAuthenticated) =>
-  shouldLockJobBoards(isAuthenticated) ? '/login' : '/jobs';
+export const getPublicJobsNavPath = () => '/jobs';
 
 export const getLoginRedirectState = (fromPath, portalLabel = JOB_GATE_PORTAL_LABEL) => ({
   from: fromPath,

@@ -1,14 +1,21 @@
-import { useEffect, useState } from 'react';
-import { 
-  FiCalendar, 
-  FiClock, 
-  FiVideo, 
-  FiMapPin, 
-  FiLink, 
+import { useEffect, useMemo, useState } from 'react';
+import {
+  FiCalendar,
   FiCheckCircle,
+  FiClock,
   FiFileText,
+  FiLink,
+  FiMapPin,
+  FiVideo,
   FiXCircle
 } from 'react-icons/fi';
+import {
+  StudentEmptyState,
+  StudentNotice,
+  StudentPageShell,
+  StudentSurfaceCard,
+  studentPrimaryButtonClassName
+} from '../components/StudentExperience';
 import { formatDateTime, getStudentInterviews } from '../services/studentApi';
 
 const StudentInterviewsPage = () => {
@@ -36,124 +43,143 @@ const StudentInterviewsPage = () => {
     };
   }, []);
 
+  const stats = useMemo(() => {
+    const completed = state.interviews.filter((item) => String(item.status || '').toLowerCase() === 'completed').length;
+    const scheduled = state.interviews.filter((item) => String(item.status || '').toLowerCase() === 'scheduled').length;
+    const virtual = state.interviews.filter((item) => /virtual|video/i.test(String(item.mode || ''))).length;
+
+    return [
+      {
+        label: 'Scheduled',
+        value: String(scheduled),
+        helper: 'Interviews currently lined up'
+      },
+      {
+        label: 'Completed',
+        value: String(completed),
+        helper: 'Sessions already done and awaiting outcome'
+      },
+      {
+        label: 'Virtual Rounds',
+        value: String(virtual),
+        helper: 'Interviews that include an online meeting link'
+      }
+    ];
+  }, [state.interviews]);
+
   const getStatusConfig = (status) => {
-    const s = String(status || 'scheduled').toLowerCase();
-    switch (s) {
-      case 'scheduled': return { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200', icon: FiClock, label: 'Scheduled' };
-      case 'completed': return { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200', icon: FiCheckCircle, label: 'Completed' };
-      case 'cancelled': return { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', icon: FiXCircle, label: 'Cancelled' };
-      default: return { bg: 'bg-neutral-100', text: 'text-neutral-700', border: 'border-neutral-200', icon: FiClock, label: s };
+    const normalized = String(status || 'scheduled').toLowerCase();
+    switch (normalized) {
+      case 'scheduled':
+        return { badge: 'border-blue-200 bg-blue-50 text-blue-700', icon: FiClock, label: 'Scheduled' };
+      case 'completed':
+        return { badge: 'border-emerald-200 bg-emerald-50 text-emerald-700', icon: FiCheckCircle, label: 'Completed' };
+      case 'cancelled':
+        return { badge: 'border-red-200 bg-red-50 text-red-700', icon: FiXCircle, label: 'Cancelled' };
+      default:
+        return { badge: 'border-slate-200 bg-slate-50 text-slate-600', icon: FiClock, label: normalized };
     }
   };
 
   return (
-    <div className="space-y-8 pb-10">
-      <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2">Interview Schedule</h1>
-          <p className="text-neutral-500 text-lg">Track upcoming interviews, find meeting links, and view notes.</p>
-        </div>
-      </header>
-
-      {state.isDemo && (
-        <div className="bg-amber-50 text-amber-700 p-4 rounded-2xl flex items-center gap-3 border border-amber-200 shadow-sm">
-          <span className="font-semibold">Demo Mode: Showing sample interview data.</span>
-        </div>
-      )}
-      
-      {state.error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 border border-red-200 shadow-sm">
-          <FiXCircle size={20} /> <span className="font-semibold">{state.error}</span>
-        </div>
-      )}
+    <StudentPageShell
+      eyebrow="Interviews"
+      badge="Preparation board"
+      title="Keep every interview slot organized and easier to prep for"
+      subtitle="Review timing, meeting mode, company context, and notes in one focused schedule so no conversation feels rushed."
+      stats={stats}
+    >
+      {state.isDemo ? <StudentNotice type="info" text="Demo mode is active, so sample interview data is being shown." /> : null}
+      {state.error ? <StudentNotice type="error" text={state.error} /> : null}
 
       {state.loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-48 bg-white rounded-3xl border border-neutral-100 animate-pulse"></div>
+        <div className="grid gap-5 md:grid-cols-2">
+          {[1, 2, 3, 4].map((item) => (
+            <div key={item} className="h-64 animate-pulse rounded-[2rem] bg-slate-100" />
           ))}
         </div>
       ) : state.interviews.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {state.interviews.map(interview => {
+        <div className="grid gap-5 md:grid-cols-2">
+          {state.interviews.map((interview) => {
             const statusConfig = getStatusConfig(interview.status);
-            const isVirtual = String(interview.mode || '').toLowerCase().includes('virtual') || String(interview.mode || '').toLowerCase().includes('video');
+            const isVirtual = /virtual|video/i.test(String(interview.mode || ''));
             const link = interview.meeting_link || interview.meetingLink;
-            
+            const StatusIcon = statusConfig.icon;
+
             return (
-              <article key={interview.id || Math.random().toString()} className="bg-white rounded-[2rem] p-6 shadow-sm border border-neutral-100 hover:shadow-md transition-all hover:-translate-y-1 relative overflow-hidden group flex flex-col h-full">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-50 rounded-bl-full pointer-events-none -z-0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                
-                <div className="flex justify-between items-start mb-6 relative z-10">
-                  <div className="flex gap-4 items-center">
-                    <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center border border-indigo-100 shadow-sm">
-                      <FiCalendar size={24} />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-primary mb-1">{interview.company_name || interview.companyName || 'Hiring Team'}</h3>
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
-                        <statusConfig.icon size={12} /> {statusConfig.label.toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 mb-6 relative z-10 flex-1">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-neutral-400"><FiClock size={18} /></div>
-                    <div>
-                      <p className="text-sm font-bold text-neutral-700">Scheduled Time</p>
-                      <p className="text-sm text-neutral-600">{formatDateTime(interview.scheduled_at || interview.scheduledAt)}</p>
-                    </div>
+              <StudentSurfaceCard
+                key={interview.id || `${interview.company_name}-${interview.scheduled_at}`}
+                eyebrow="Interview Card"
+                title={interview.company_name || interview.companyName || 'Hiring Team'}
+                subtitle={isVirtual ? 'Virtual interview' : (interview.mode || 'Interview details')}
+                className="h-full"
+              >
+                <div className="flex h-full flex-col gap-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] ${statusConfig.badge}`}>
+                      <StatusIcon size={12} />
+                      {statusConfig.label}
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
+                      <FiCalendar size={12} />
+                      {formatDateTime(interview.scheduled_at || interview.scheduledAt)}
+                    </span>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-neutral-400">{isVirtual ? <FiVideo size={18} /> : <FiMapPin size={18} />}</div>
-                    <div>
-                      <p className="text-sm font-bold text-neutral-700">Mode / Location</p>
-                      <p className="text-sm text-neutral-600 capitalize">{interview.mode || 'Not specified'}</p>
+                  <div className="grid gap-3">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600">
+                      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                        <FiClock size={13} />
+                        Scheduled Time
+                      </p>
+                      <p className="mt-2 font-semibold text-slate-800">{formatDateTime(interview.scheduled_at || interview.scheduledAt)}</p>
                     </div>
-                  </div>
 
-                  {(interview.note || interview.notes || interview.description) && (
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 text-neutral-400"><FiFileText size={18} /></div>
-                      <div>
-                        <p className="text-sm font-bold text-neutral-700">Notes & Description</p>
-                        <p className="text-sm text-neutral-600 line-clamp-2" title={interview.note || interview.notes || interview.description}>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600">
+                      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                        {isVirtual ? <FiVideo size={13} /> : <FiMapPin size={13} />}
+                        Mode / Location
+                      </p>
+                      <p className="mt-2 font-semibold text-slate-800 capitalize">{interview.mode || 'Not specified'}</p>
+                    </div>
+
+                    {(interview.note || interview.notes || interview.description) ? (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600">
+                        <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                          <FiFileText size={13} />
+                          Notes
+                        </p>
+                        <p className="mt-2 leading-6 text-slate-700">
                           {interview.note || interview.notes || interview.description}
                         </p>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {link && (
-                  <div className="pt-4 border-t border-neutral-100 relative z-10 mt-auto">
-                    <a 
-                      href={link} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-brand-50 text-brand-700 border border-brand-100 font-bold rounded-xl hover:bg-brand-600 hover:text-white hover:border-brand-600 transition-all shadow-sm"
-                    >
-                      <FiLink /> Join Meeting
-                    </a>
+                    ) : null}
                   </div>
-                )}
-              </article>
+
+                  {link ? (
+                    <a
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`${studentPrimaryButtonClassName} mt-auto`}
+                    >
+                      <FiLink size={15} />
+                      Join Meeting
+                    </a>
+                  ) : null}
+                </div>
+              </StudentSurfaceCard>
             );
           })}
         </div>
       ) : (
-        <div className="bg-white rounded-3xl p-12 text-center border border-neutral-100 shadow-sm max-w-2xl mx-auto mt-12">
-          <div className="w-24 h-24 bg-neutral-50 text-neutral-300 rounded-full flex flex-items-center justify-center mx-auto mb-6">
-            <FiCalendar size={40} className="m-auto" />
-          </div>
-          <h3 className="text-2xl font-bold text-primary mb-3">No Upcoming Interviews</h3>
-          <p className="text-neutral-500 mb-8 max-w-md mx-auto">You don&apos;t have any interviews scheduled at the moment. Keep applying to land your dream job!</p>
-        </div>
+        <StudentEmptyState
+          icon={FiCalendar}
+          title="No upcoming interviews"
+          description="Keep applying and refining your resume. Once companies start scheduling rounds, they will appear here with timing and notes."
+        />
       )}
-    </div>
+    </StudentPageShell>
   );
 };
 
