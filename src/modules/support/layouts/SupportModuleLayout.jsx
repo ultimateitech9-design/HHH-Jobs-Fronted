@@ -31,12 +31,6 @@ const SupportModuleLayout = () => {
       portalLabel="Support Center"
       subtitle="Tickets, live chat, FAQ, complaints, feedback, knowledge content, and support reporting."
       navItems={supportNavItems}
-      support={{
-        title: 'Queue Focus',
-        text: 'Start with open and escalated tickets to protect response time and customer trust.',
-        to: '/portal/support/tickets',
-        cta: 'Open ticket queue'
-      }}
     />
   );
 };

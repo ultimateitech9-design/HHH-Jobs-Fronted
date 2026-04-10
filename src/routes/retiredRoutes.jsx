@@ -18,7 +18,7 @@ const retiredRoutes = [
       { path: 'jobs/:jobId', element: <StudentJobDetailsPage /> }
     ]
   },
-  { path: 'retired', element: <Navigate to="/portal/student/dashboard" replace /> }
+  { path: 'retired', element: <Navigate to="/portal/student/home" replace /> }
 ];
 
 export default retiredRoutes;

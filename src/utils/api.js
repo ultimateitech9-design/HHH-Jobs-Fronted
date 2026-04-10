@@ -83,8 +83,8 @@ export const hasApiAccessToken = () => {
 
 export const apiFetch = async (path, options = {}) => {
   const token = getToken();
-  const shouldUseApiAuth = hasUsableApiToken(token);
-  const { timeoutMs = 0, signal: callerSignal, ...fetchOptions } = options;
+  const { timeoutMs = 0, signal: callerSignal, skipAuth = false, ...fetchOptions } = options;
+  const shouldUseApiAuth = !skipAuth && hasUsableApiToken(token);
   const headers = { ...(fetchOptions.headers || {}) };
 
   if (fetchOptions.body && !(fetchOptions.body instanceof FormData) && !headers['Content-Type'] && !headers['content-type']) {

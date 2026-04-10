@@ -31,13 +31,6 @@ const DataEntryModuleLayout = () => {
       portalLabel="Data Entry Workspace"
       subtitle="Create job posts, manage approval queues, and track publishing status in one place."
       navItems={dataEntryNavItems}
-      support={{
-        title: 'Job Posting Queue',
-        text: 'Start with pending approvals and draft jobs to keep the publishing flow moving.',
-        to: '/portal/dataentry/pending',
-        cta: 'Open pending jobs',
-        searchPlaceholder: 'Search jobs, drafts, approvals, and notifications'
-      }}
     />
   );
 };

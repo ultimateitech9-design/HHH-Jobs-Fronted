@@ -12,6 +12,7 @@ const HrInterviewsPage = lazy(() => import('../modules/hr/pages/HrInterviewsPage
 const HrAnalyticsPage = lazy(() => import('../modules/hr/pages/HrAnalyticsPage'));
 const HrNotificationsPage = lazy(() => import('../modules/hr/pages/HrNotificationsPage'));
 const HrAtsPage = lazy(() => import('../modules/hr/pages/HrAtsPage'));
+const EmployeeVerificationPage = lazy(() => import('../modules/hr/pages/EmployeeVerificationPage'));
 
 const hrRoutes = [
   {
@@ -31,7 +32,8 @@ const hrRoutes = [
       { path: 'interviews', element: <HrInterviewsPage /> },
       { path: 'analytics', element: <HrAnalyticsPage /> },
       { path: 'ats', element: <HrAtsPage /> },
-      { path: 'notifications', element: <HrNotificationsPage /> }
+      { path: 'notifications', element: <HrNotificationsPage /> },
+      { path: 'employee-verification', element: <EmployeeVerificationPage /> }
     ]
   },
   { path: 'hr', element: <Navigate to="/portal/hr/dashboard" replace /> }

@@ -47,10 +47,11 @@ const industries = [
   'Aviation'
 ];
 
-const EmpVerifyPage = () => {
+const EmpVerifyPage = ({ compact = false }) => {
   return (
-    <div className="pb-16 md:pb-24">
+    <div className={compact ? 'pb-10 md:pb-14' : 'pb-16 md:pb-24'}>
       <PublicPageHero
+        className={compact ? 'py-3 md:py-5' : ''}
         eyebrow="Employee Verification"
         title={<>Employee Verification Powered by <span className="gradient-text">Eimager</span></>}
         description="Understand how the Eimager verification workflow supports employer due diligence, reduces uncertainty, and adds stronger trust signals to hiring decisions."
@@ -91,7 +92,7 @@ const EmpVerifyPage = () => {
         }
       />
 
-      <section className="container mx-auto max-w-7xl px-4">
+      <section className={`container mx-auto max-w-7xl px-4 ${compact ? 'mt-2' : ''}`.trim()}>
         <PublicSectionHeader
           centered
           eyebrow="Verification Signals"
@@ -112,7 +113,7 @@ const EmpVerifyPage = () => {
         </div>
       </section>
 
-      <section className="container mx-auto mt-16 max-w-7xl px-4">
+      <section className={`container mx-auto max-w-7xl px-4 ${compact ? 'mt-10' : 'mt-16'}`.trim()}>
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
             <PublicSectionHeader
@@ -173,7 +174,7 @@ const EmpVerifyPage = () => {
         </div>
       </section>
 
-      <div className="container mx-auto mt-16 max-w-7xl px-4">
+      <div className={`container mx-auto max-w-7xl px-4 ${compact ? 'mt-10' : 'mt-16'}`.trim()}>
         <PublicCallToAction
           eyebrow="Next Step"
           title="Need verification support inside your hiring flow?"

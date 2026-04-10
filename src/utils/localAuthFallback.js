@@ -43,8 +43,8 @@ const getRedirectPathByRole = (role) => {
   if (role === 'super_admin') return '/portal/super-admin/dashboard';
   if (role === 'admin') return '/portal/admin/dashboard';
   if (role === 'hr') return '/portal/hr/dashboard';
-  if (role === 'retired_employee') return '/portal/student/dashboard';
-  return '/portal/student/dashboard';
+  if (role === 'retired_employee') return '/portal/student/home';
+  return '/portal/student/home';
 };
 
 export const createLocalSignupFallback = ({

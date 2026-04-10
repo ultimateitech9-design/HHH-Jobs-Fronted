@@ -69,6 +69,14 @@ test('admin dashboard smoke', async ({ browser }) => {
   });
 });
 
+test('super admin cannot access admin dashboard', async ({ browser }) => {
+  await runWithRolePage(browser, 'super_admin', async (page) => {
+    await page.goto('/portal/admin/dashboard');
+    await expect(page).toHaveURL(/\/forbidden$/);
+    await expect(page.getByText('Access Forbidden', { exact: true })).toBeVisible();
+  });
+});
+
 test('hr dashboard smoke', async ({ browser }) => {
   await runWithRolePage(browser, 'hr', async (page) => {
     const sidebar = getSidebar(page);
@@ -84,6 +92,7 @@ test('hr dashboard smoke', async ({ browser }) => {
     await expect(sidebar.getByRole('link', { name: 'Job Postings', exact: true })).toBeVisible();
     await expect(sidebar.getByRole('link', { name: 'Applicants', exact: true })).toBeVisible();
     await expect(sidebar.getByRole('link', { name: 'Interviews', exact: true })).toBeVisible();
+    await expect(sidebar.getByRole('link', { name: 'Employee Verification', exact: true })).toBeVisible();
     await expect(sidebar.getByRole('link', { name: 'Company Profile', exact: true })).toBeVisible();
 
     await sidebar.getByRole('link', { name: 'Applicants', exact: true }).click();
@@ -95,6 +104,10 @@ test('hr dashboard smoke', async ({ browser }) => {
     await expect(page).toHaveURL(/\/portal\/hr\/interviews$/);
     await expect(page.getByRole('heading', { name: /interview calendar/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /schedule invite/i })).toBeVisible();
+
+    await sidebar.getByRole('link', { name: 'Employee Verification', exact: true }).click();
+    await expect(page).toHaveURL(/\/portal\/hr\/employee-verification$/);
+    await expect(page.getByRole('heading', { name: 'Employee Verification', exact: true })).toBeVisible();
 
     await sidebar.getByRole('link', { name: 'Company Profile', exact: true }).click();
     await expect(page).toHaveURL(/\/portal\/hr\/profile$/);

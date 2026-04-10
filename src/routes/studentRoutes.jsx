@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
 
 const StudentModuleLayout = lazy(() => import('../modules/student/components/StudentModuleLayout'));
+const StudentHomePage = lazy(() => import('../modules/student/pages/StudentHomePage'));
 const StudentDashboardPage = lazy(() => import('../modules/student/pages/StudentDashboardPage'));
 const StudentProfilePage = lazy(() => import('../modules/student/pages/StudentProfilePage'));
 const StudentJobsPage = lazy(() => import('../modules/student/pages/StudentJobsPage'));
@@ -25,7 +26,8 @@ const studentRoutes = [
       </RoleProtectedRoute>
     ),
     children: [
-      { index: true, element: <Navigate to="dashboard" replace /> },
+      { index: true, element: <Navigate to="home" replace /> },
+      { path: 'home', element: <StudentHomePage /> },
       { path: 'dashboard', element: <StudentDashboardPage /> },
       { path: 'profile', element: <StudentProfilePage /> },
       { path: 'jobs', element: <StudentJobsPage /> },
@@ -41,7 +43,7 @@ const studentRoutes = [
       { path: 'global-jobs', element: <StudentExternalJobsPage /> }
     ]
   },
-  { path: 'student', element: <Navigate to="/portal/student/dashboard" replace /> }
+  { path: 'student', element: <Navigate to="/portal/student/home" replace /> }
 ];
 
 export default studentRoutes;

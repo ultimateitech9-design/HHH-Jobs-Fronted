@@ -4,7 +4,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch, apiUrl, areDemoFallbacksEnabled, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
 import {
   beginPendingVerificationSession,
+  clearAuthSession,
   getDashboardPathByRole,
+  isRedirectPathAllowedForRole,
   normalizeRedirectPath,
   setAuthSession
 } from '../../../utils/auth';
@@ -25,20 +27,6 @@ import AuthRoleTabs from './AuthRoleTabs';
 import AuthSocialButtons from './AuthSocialButtons';
 import { socialRoleOptions } from '../config/authOptions';
 import { calculateAge } from '../utils/signupValidation';
-
-const isManagedAccountAllowedForRoute = (role, redirectTo) => {
-  if (!redirectTo) return true;
-
-  const normalizedRedirect = normalizeRedirectPath(redirectTo, role);
-  const allowedPortalPrefix = getDashboardPathByRole(role)
-    .replace(/\/(dashboard|overview)$/, '');
-
-  if (!allowedPortalPrefix) {
-    return true;
-  }
-
-  return normalizedRedirect.startsWith(allowedPortalPrefix);
-};
 
 const DEMO_ACCESS_ACCOUNTS = [
   {
@@ -161,7 +149,7 @@ const tryManagedAccountLogin = ({ email, password, navigate, redirectTo, setErro
   const managedAccount = findManagedAccountByEmail(email);
   if (!managedAccount || managedAccount.password !== password) return false;
 
-  if (!isManagedAccountAllowedForRoute(managedAccount.role, redirectTo)) {
+  if (!isRedirectPathAllowedForRole(redirectTo, managedAccount.role)) {
     setError?.(`This ID is not allowed for the selected portal. Use the ${managedAccount.role} account on its assigned dashboard.`);
     return true;
   }
@@ -172,11 +160,28 @@ const tryManagedAccountLogin = ({ email, password, navigate, redirectTo, setErro
   return true;
 };
 
+const normalizeLoginErrorMessage = (message = '') => {
+  const normalizedMessage = String(message || '').trim();
+  if (!normalizedMessage) return 'Wrong ID or password.';
+
+  const lower = normalizedMessage.toLowerCase();
+  if (
+    lower.includes('invalid email or password')
+    || lower.includes('invalid credentials')
+    || lower.includes('wrong password')
+  ) {
+    return 'Wrong ID or password.';
+  }
+
+  return normalizedMessage;
+};
+
 const LoginPanelContent = ({
   portalLabel = 'Portal Login',
   showHeader = false,
   onRequestClose
 }) => {
+  const isCompactDrawer = showHeader;
   const [form, setForm] = useState({ email: '', password: '' });
   const [socialRole, setSocialRole] = useState('student');
   const [showPassword, setShowPassword] = useState(false);
@@ -264,6 +269,7 @@ const LoginPanelContent = ({
       const response = await apiFetch('/auth/login', {
         method: 'POST',
         body: JSON.stringify(form),
+        skipAuth: true,
         timeoutMs: AUTH_REQUEST_TIMEOUT_MS
       });
       let payload = {};
@@ -283,7 +289,8 @@ const LoginPanelContent = ({
       }
 
       if (!response.ok) {
-        setError(payload.message || 'Login failed.');
+        clearAuthSession();
+        setError(normalizeLoginErrorMessage(payload.message || 'Login failed.'));
         return;
       }
 
@@ -322,6 +329,12 @@ const LoginPanelContent = ({
             }
             : payload.user;
 
+      if (!isRedirectPathAllowedForRole(redirectTo, nextUser?.role)) {
+        clearAuthSession();
+        setError('Wrong ID or password.');
+        return;
+      }
+
       setAuthSession(payload.token, nextUser);
       navigate(normalizeRedirectPath(redirectTo || payload.redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
     } catch (requestError) {
@@ -344,7 +357,7 @@ const LoginPanelContent = ({
     setError('');
 
     const managedAccount = ensureDemoManagedAccount(demoAccount);
-    if (!isManagedAccountAllowedForRoute(managedAccount.role, redirectTo)) {
+    if (!isRedirectPathAllowedForRole(redirectTo, managedAccount.role)) {
       setError(`This demo account is not allowed for the selected portal.`);
       return;
     }
@@ -355,13 +368,13 @@ const LoginPanelContent = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className={isCompactDrawer ? 'space-y-3' : 'space-y-4'}>
       {showHeader ? (
-        <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-600">Secure Access</p>
-            <h1 className="mt-2 font-heading text-[1.6rem] font-extrabold text-navy sm:text-[1.8rem]">{portalLabel}</h1>
-            <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
+            <h1 className="mt-1.5 font-heading text-[1.45rem] font-extrabold text-navy sm:text-[1.6rem]">{portalLabel}</h1>
+            <p className="mt-1.5 max-w-md text-[13px] leading-5 text-slate-600">
               Sign in to manage applications, hiring activity, and account updates with confidence.
             </p>
           </div>
@@ -381,7 +394,7 @@ const LoginPanelContent = ({
 
       <AuthRoleTabs
         label="Social login role"
-        helperText="Only student and retired accounts."
+        helperText={isCompactDrawer ? '' : 'Only student and retired accounts.'}
         value={socialRole}
         options={socialRoleOptions}
         onChange={setSocialRole}
@@ -396,6 +409,7 @@ const LoginPanelContent = ({
         disabled={isSubmitting || Boolean(socialLoading)}
         availableProviders={availableProviders}
         providersLoading={providersLoading}
+        compact={isCompactDrawer}
       />
 
       {showLinkedInLocalHint ? (
@@ -428,13 +442,13 @@ const LoginPanelContent = ({
 
       <AuthFormMessage>{error}</AuthFormMessage>
 
-      <div className="my-5 flex items-center gap-4">
+      <div className={isCompactDrawer ? 'my-3 flex items-center gap-3' : 'my-5 flex items-center gap-4'}>
         <span className="h-px flex-1 bg-slate-200" />
         <span className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">Or sign in with email</span>
         <span className="h-px flex-1 bg-slate-200" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3.5">
+      <form onSubmit={handleSubmit} className={isCompactDrawer ? 'space-y-3' : 'space-y-3.5'}>
         <AuthInputField
           label="Email"
           type="email"
@@ -443,6 +457,7 @@ const LoginPanelContent = ({
           value={form.email}
           onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
           disabled={isSubmitting || Boolean(socialLoading)}
+          className={isCompactDrawer ? 'py-2' : ''}
         />
 
         <AuthPasswordField
@@ -454,6 +469,7 @@ const LoginPanelContent = ({
           disabled={isSubmitting || Boolean(socialLoading)}
           showPassword={showPassword}
           onTogglePassword={() => setShowPassword((current) => !current)}
+          className={isCompactDrawer ? 'py-2' : ''}
         />
 
         <button
@@ -465,7 +481,7 @@ const LoginPanelContent = ({
         </button>
       </form>
 
-      <div ref={retryActionsRef} className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm font-semibold">
+      <div ref={retryActionsRef} className={`${isCompactDrawer ? 'mt-3' : 'mt-5'} flex flex-wrap items-center justify-between gap-3 text-sm font-semibold`.trim()}>
         <Link to="/forgot-password" className="text-brand-700 transition-colors hover:text-brand-800">
           Forgot password?
         </Link>

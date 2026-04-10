@@ -10,11 +10,12 @@ import {
   FiStar,
   FiUser
 } from 'react-icons/fi';
+import { useLocation } from 'react-router-dom';
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
 import { getCurrentUser } from '../../../utils/auth';
 
-const studentNavItems = [
-  { to: '/portal/student/dashboard', label: 'Dashboard', icon: FiHome },
+const studentDashboardNavItems = [
+  { to: '/portal/student/home', label: 'Dashboard', icon: FiHome },
   { to: '/portal/student/profile', label: 'Profile', icon: FiUser },
   { to: '/portal/student/ats', label: 'ATS', icon: FiActivity },
   {
@@ -33,9 +34,23 @@ const studentNavItems = [
   { to: '/portal/student/company-reviews', label: 'Company Reviews', icon: FiStar }
 ];
 
+const studentHomeNavItems = [
+  { to: '/portal/student/home', label: 'Dashboard', icon: FiHome }
+];
+
+const studentHeaderNavItems = [
+  { label: 'Jobs', to: '/portal/student/jobs' },
+  { label: 'Companies', to: '/portal/student/company-reviews' },
+  { label: 'Services', to: '/services' }
+];
+
 const StudentModuleLayout = () => {
   const currentUser = getCurrentUser();
+  const location = useLocation();
   const isRetiredUser = currentUser?.role === 'retired_employee';
+  const isStudentHomeRoute = location.pathname === '/portal/student/home';
+  const isStudentProfileRoute = location.pathname === '/portal/student/profile';
+  const shouldHideSidebar = isStudentHomeRoute || isStudentProfileRoute;
 
   return (
     <PortalWorkbenchLayout
@@ -44,7 +59,14 @@ const StudentModuleLayout = () => {
       subtitle={isRetiredUser
         ? 'Refresh your experience profile, track opportunities, and return to the market with a calmer, premium workspace.'
         : 'Build profile strength, discover better-fit jobs, and manage every application in one focused premium workspace.'}
-      navItems={studentNavItems}
+      fullWidthHeader
+      headerVariant="student-marketplace"
+      headerNavItems={studentHeaderNavItems}
+      headerSearchPlaceholder="Search jobs here"
+      hideSidebarBrand
+      sidebarBelowHeader
+      navItems={isStudentHomeRoute ? studentHomeNavItems : studentDashboardNavItems}
+      hideSidebar={shouldHideSidebar}
       support={{
         showCard: false,
         title: isRetiredUser ? 'Profile Priority' : 'Career Priority',

@@ -36,7 +36,21 @@ const getFirstNavPath = (items = []) => {
   return '/';
 };
 
-const PortalWorkbenchLayout = ({ portalKey, portalLabel, subtitle, navItems = [], support }) => {
+const PortalWorkbenchLayout = ({
+  portalKey,
+  portalLabel,
+  subtitle,
+  navItems = [],
+  support,
+  fullWidthHeader = false,
+  hideSidebar = false,
+  hideSidebarBrand = false,
+  sidebarBelowHeader = false,
+  headerVariant = 'default',
+  headerNavItems = [],
+  headerSearchPlaceholder = '',
+  headerBadge
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const clearAuth = useAuthStore((state) => state.clearAuth);
@@ -59,6 +73,7 @@ const PortalWorkbenchLayout = ({ portalKey, portalLabel, subtitle, navItems = []
 
   const avatarLetter = String(user?.name || user?.email || 'U').trim().slice(0, 1).toUpperCase();
   const avatarUrl = user?.avatarUrl || user?.avatar_url || '';
+  const isCompactViewportRoute = location.pathname === '/portal/hr/employee-verification';
 
   useEffect(() => {
     const sync = () => setUser(getCurrentUser());
@@ -81,6 +96,11 @@ const PortalWorkbenchLayout = ({ portalKey, portalLabel, subtitle, navItems = []
     navigate('/login', { replace: true });
   };
 
+  const sidebarMarginClass = hideSidebar ? 'md:ml-0' : sidebarOpen ? 'md:ml-[260px]' : 'md:ml-[72px]';
+  const sidebarClassName = sidebarBelowHeader
+    ? 'fixed bottom-0 left-0 top-16 z-20 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl md:flex md:flex-col'
+    : 'fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl md:flex md:flex-col';
+
   return (
     <div
       className={`min-h-screen portal-workbench--${portalKey}`}
@@ -100,46 +120,70 @@ const PortalWorkbenchLayout = ({ portalKey, portalLabel, subtitle, navItems = []
         onClose={() => setMobileMenuOpen(false)}
       />
 
-      <motion.aside
-        initial={false}
-        animate={{ width: sidebarOpen ? PORTAL_SIDEBAR_EXPANDED_WIDTH : PORTAL_SIDEBAR_COLLAPSED_WIDTH }}
-        className="fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl md:flex md:flex-col"
-      >
-        <PortalWorkbenchSidebar
-          collapsed={!sidebarOpen}
-          portalLabel={portalLabel}
-          navItems={navItems}
+      {fullWidthHeader ? (
+        <PortalWorkbenchHeader
+          avatarLetter={avatarLetter}
+          avatarUrl={avatarUrl}
+          headerBadge={headerBadge}
+          headerNavItems={headerNavItems}
+          headerSearchPlaceholder={headerSearchPlaceholder}
+          headerVariant={headerVariant}
           profilePath={profilePath}
+          searchPlaceholder={support?.searchPlaceholder}
+          subtitle={subtitle}
           support={support}
-          user={user}
-          onLogout={handleLogout}
-          onCollapseToggle={() => setSidebarOpen((current) => !current)}
+          title={activeItem?.label || portalLabel}
+          onOpenMobileNav={() => setMobileMenuOpen(true)}
         />
-      </motion.aside>
+      ) : null}
+
+      {hideSidebar ? null : (
+        <motion.aside
+          initial={false}
+          animate={{ width: sidebarOpen ? PORTAL_SIDEBAR_EXPANDED_WIDTH : PORTAL_SIDEBAR_COLLAPSED_WIDTH }}
+          className={sidebarClassName}
+        >
+          <PortalWorkbenchSidebar
+            collapsed={!sidebarOpen}
+            hideBrand={hideSidebarBrand}
+            portalLabel={portalLabel}
+            navItems={navItems}
+            profilePath={profilePath}
+            support={support}
+            user={user}
+            onLogout={handleLogout}
+            onCollapseToggle={() => setSidebarOpen((current) => !current)}
+          />
+        </motion.aside>
+      )}
 
       <div
-        className={`min-h-screen transition-all ${
-          sidebarOpen ? 'md:ml-[260px]' : 'md:ml-[72px]'
-        }`}
+        className={`min-h-screen transition-all ${sidebarMarginClass}`}
       >
         <div className="flex min-h-screen flex-col">
-          <PortalWorkbenchHeader
-            avatarLetter={avatarLetter}
-            avatarUrl={avatarUrl}
-            profilePath={profilePath}
-            searchPlaceholder={support?.searchPlaceholder}
-            subtitle={subtitle}
-            support={support}
-            title={activeItem?.label || portalLabel}
-            onOpenMobileNav={() => setMobileMenuOpen(true)}
-          />
+          {fullWidthHeader ? null : (
+            <PortalWorkbenchHeader
+              avatarLetter={avatarLetter}
+              avatarUrl={avatarUrl}
+              headerBadge={headerBadge}
+              headerNavItems={headerNavItems}
+              headerSearchPlaceholder={headerSearchPlaceholder}
+              headerVariant={headerVariant}
+              profilePath={profilePath}
+              searchPlaceholder={support?.searchPlaceholder}
+              subtitle={subtitle}
+              support={support}
+              title={activeItem?.label || portalLabel}
+              onOpenMobileNav={() => setMobileMenuOpen(true)}
+            />
+          )}
 
           <motion.main
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex-1 px-3 py-4 sm:px-4 sm:py-5 md:px-6 md:py-8"
+            className={`flex-1 px-3 py-4 sm:px-4 sm:py-5 md:px-6 ${isCompactViewportRoute ? 'md:py-4' : 'md:py-8'}`}
           >
-            <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-6">
+            <div className={`mx-auto flex w-full max-w-[1480px] flex-col ${isCompactViewportRoute ? 'gap-4' : 'gap-6'}`}>
               <Outlet />
             </div>
           </motion.main>

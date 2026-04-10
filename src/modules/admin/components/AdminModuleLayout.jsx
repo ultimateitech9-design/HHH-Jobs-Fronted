@@ -32,13 +32,6 @@ const AdminModuleLayout = () => {
       portalLabel="Admin Console"
       subtitle="Governance, moderation, billing, and control workflows in one command surface."
       navItems={adminNavItems}
-      support={{
-        title: 'Control Room',
-        text: 'Prioritize HR approvals and job moderation first to keep marketplace quality stable.',
-        to: '/portal/admin/control',
-        cta: 'Open command brief',
-        searchPlaceholder: 'Search users, jobs, reports, and audit logs'
-      }}
     />
   );
 };

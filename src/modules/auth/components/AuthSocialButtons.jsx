@@ -10,7 +10,8 @@ const AuthSocialButtons = ({
   loading = '',
   disabled = false,
   availableProviders = null,
-  providersLoading = false
+  providersLoading = false,
+  compact = false
 }) => {
   if (providersLoading) {
     return (
@@ -37,10 +38,10 @@ const AuthSocialButtons = ({
             type="button"
             onClick={() => onProviderClick(provider.key)}
             disabled={disabled}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition-all hover:-translate-y-0.5 hover:border-brand-100 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-70"
+            className={`inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 ${compact ? 'py-1.5 text-[13px]' : 'py-2 text-sm'} font-semibold text-slate-700 transition-all hover:-translate-y-0.5 hover:border-brand-100 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-70`.trim()}
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-600">
-              <Icon size={14} />
+            <span className={`flex items-center justify-center rounded-full bg-slate-100 text-slate-600 ${compact ? 'h-5 w-5' : 'h-6 w-6'}`.trim()}>
+              <Icon size={compact ? 12 : 14} />
             </span>
             <span>{loading === provider.key ? 'Redirecting...' : provider.label}</span>
           </button>

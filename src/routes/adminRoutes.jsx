@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
+import { PORTAL_ACCESS } from './portalAccess';
 
 const AdminModuleLayout = lazy(() => import('../modules/admin/components/AdminModuleLayout'));
 const AdminControlPage = lazy(() => import('../modules/admin/pages/AdminControlPage'));
@@ -19,7 +20,7 @@ const adminRoutes = [
   {
     path: 'portal/admin',
     element: (
-      <RoleProtectedRoute roles={['admin']}>
+      <RoleProtectedRoute roles={PORTAL_ACCESS.admin}>
         <AdminModuleLayout />
       </RoleProtectedRoute>
     ),

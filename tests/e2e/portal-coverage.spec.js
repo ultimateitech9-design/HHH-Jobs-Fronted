@@ -57,15 +57,15 @@ test('authenticated admin can move from management portal into platform ops with
   }
 });
 
-test('admin can open the super admin dashboard route when management access is granted', async ({ browser }) => {
+test('admin cannot open the super admin dashboard route', async ({ browser }) => {
   const { context, page } = await createRolePage(browser, 'admin');
 
   try {
     await page.goto('/portal/super-admin/dashboard');
     await page.waitForLoadState('networkidle');
 
-    await expect(page).toHaveURL(/\/portal\/super-admin\/dashboard$/);
-    await expect(page.getByText('Super Admin Dashboard', { exact: true }).first()).toBeVisible();
+    await expect(page).toHaveURL(/\/forbidden$/);
+    await expect(page.getByText('Access Forbidden', { exact: true })).toBeVisible();
   } finally {
     await context.close();
   }

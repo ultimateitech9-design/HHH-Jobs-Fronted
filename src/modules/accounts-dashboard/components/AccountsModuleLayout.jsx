@@ -29,12 +29,6 @@ const AccountsModuleLayout = () => {
       portalLabel="Accounts Dashboard"
       subtitle="Revenue, invoices, subscription billing, payouts, refunds, and payment settings."
       navItems={accountsNavItems}
-      support={{
-        title: 'Collections Watch',
-        text: 'Start with outstanding invoices and pending payouts to keep cash flow predictable.',
-        to: '/portal/accounts/invoices',
-        cta: 'Open invoice queue'
-      }}
     />
   );
 };

@@ -34,12 +34,6 @@ const SalesModuleLayout = () => {
       portalLabel="Sales Dashboard"
       subtitle="Orders, leads, customers, team performance, products, coupons, refunds, and sales reporting."
       navItems={salesNavItems}
-      support={{
-        title: 'Revenue Focus',
-        text: 'Start with open leads and orders to keep the monthly sales target on track.',
-        to: '/portal/sales/leads',
-        cta: 'Open sales pipeline'
-      }}
     />
   );
 };

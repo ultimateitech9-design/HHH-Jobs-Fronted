@@ -3,6 +3,7 @@ import {
   FiBell,
   FiBriefcase,
   FiCalendar,
+  FiCheckSquare,
   FiHome,
   FiUser,
   FiUsers,
@@ -18,6 +19,7 @@ const hrNavItems = [
   { to: '/portal/hr/interviews', label: 'Interviews', icon: FiCalendar },
   { to: '/portal/hr/notifications', label: 'Hired', icon: FiBell },
   { to: '/portal/hr/analytics', label: 'Reports', icon: FiFileText },
+  { to: '/portal/hr/employee-verification', label: 'Employee Verification', icon: FiCheckSquare },
   { to: '/portal/hr/profile', label: 'Company Profile', icon: FaBuilding }
 ];
 

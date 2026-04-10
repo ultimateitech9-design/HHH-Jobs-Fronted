@@ -65,7 +65,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 110, damping: 26, mass: 1.05 }}
-              className="fixed inset-y-0 right-0 z-[121] flex h-full w-full max-w-[480px] flex-col overflow-y-auto bg-white px-5 py-5 shadow-[0_24px_72px_rgba(15,23,42,0.18)] sm:max-w-[520px] sm:px-6 sm:py-6"
+              className="fixed inset-y-0 right-0 z-[121] flex h-full w-full max-w-[460px] flex-col overflow-y-auto bg-white px-4 py-4 shadow-[0_24px_72px_rgba(15,23,42,0.18)] sm:max-w-[500px] sm:px-5 sm:py-5"
             >
               <LoginPanelContent
                 portalLabel="Portal Login"

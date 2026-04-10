@@ -4,7 +4,7 @@ const PENDING_VERIFICATION_KEY = 'job_portal_pending_verification';
 
 const DELETED_USERS_KEY = 'hhh_jobs_deleted_user_ids';
 const DASHBOARD_REDIRECT_RULES = [
-  { legacy: '/student', canonical: '/portal/student', defaultPath: '/portal/student/dashboard' },
+  { legacy: '/student', canonical: '/portal/student', defaultPath: '/portal/student/home' },
   { legacy: '/hr', canonical: '/portal/hr', defaultPath: '/portal/hr/dashboard' },
   { legacy: '/admin', canonical: '/portal/admin', defaultPath: '/portal/admin/dashboard' },
   { legacy: '/super-admin', canonical: '/portal/super-admin', defaultPath: '/portal/super-admin/dashboard' },
@@ -148,8 +148,8 @@ export const getDashboardPathByRole = (role) => {
   if (normalizedRole === 'support') return '/portal/support/dashboard';
   if (normalizedRole === 'accounts') return '/portal/accounts/overview';
   if (normalizedRole === 'sales') return '/portal/sales/overview';
-  if (normalizedRole === 'retired_employee') return '/portal/student/dashboard';
-  return '/portal/student/dashboard';
+  if (normalizedRole === 'retired_employee') return '/portal/student/home';
+  return '/portal/student/home';
 };
 
 export const getNotificationPathByRole = (role) => {
@@ -200,6 +200,24 @@ export const normalizeRedirectPath = (path, fallbackRole = '') => {
   return `${rule.canonical}${base.slice(rule.legacy.length)}${suffix}`;
 };
 
+export const isRedirectPathAllowedForRole = (path, role) => {
+  if (!path) return true;
+
+  const normalizedRedirect = normalizeRedirectPath(path, role);
+  if (!normalizedRedirect.startsWith('/portal/')) {
+    return true;
+  }
+
+  const allowedPortalPrefix = getDashboardPathByRole(role)
+    .replace(/\/(dashboard|overview)$/, '');
+
+  if (!allowedPortalPrefix) {
+    return true;
+  }
+
+  return normalizedRedirect.startsWith(allowedPortalPrefix);
+};
+
 export const canAccessRole = (currentRole, allowedRole) => {
   const normalizedCurrentRole = normalizeRole(currentRole);
   const normalizedAllowedRole = normalizeRole(allowedRole);
@@ -207,7 +225,14 @@ export const canAccessRole = (currentRole, allowedRole) => {
   return normalizedCurrentRole === normalizedAllowedRole;
 };
 
-export const hasRole = (allowedRoles = []) => {
+const normalizeAllowedRoles = (allowedRoles = []) => {
+  if (Array.isArray(allowedRoles)) return allowedRoles;
+  return allowedRoles ? [allowedRoles] : [];
+};
+
+export const hasRole = (allowedRoles = [], currentRoleOverride) => {
+  const normalizedAllowedRoles = normalizeAllowedRoles(allowedRoles);
   const currentRole = getUserRole();
-  return allowedRoles.some((allowedRole) => canAccessRole(currentRole, allowedRole));
+  const effectiveRole = currentRoleOverride ?? currentRole;
+  return normalizedAllowedRoles.some((allowedRole) => canAccessRole(effectiveRole, allowedRole));
 };

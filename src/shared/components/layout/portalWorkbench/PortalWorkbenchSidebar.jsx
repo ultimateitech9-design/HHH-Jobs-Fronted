@@ -19,6 +19,7 @@ const getItemKey = (item) => item.key || item.to || item.label;
 
 const PortalWorkbenchSidebar = ({
   collapsed = false,
+  hideBrand = false,
   viewport = 'desktop',
   portalLabel,
   navItems = [],
@@ -98,12 +99,14 @@ const PortalWorkbenchSidebar = ({
 
   return (
     <div className="flex h-full flex-col">
-      <PortalWorkbenchBrand
-        collapsed={isCollapsed}
-        viewport={viewport}
-        onCollapseToggle={onCollapseToggle}
-        onClose={onClose}
-      />
+      {hideBrand && viewport === 'desktop' ? null : (
+        <PortalWorkbenchBrand
+          collapsed={isCollapsed}
+          viewport={viewport}
+          onCollapseToggle={onCollapseToggle}
+          onClose={onClose}
+        />
+      )}
 
       {isCollapsed ? null : (
         <div className="space-y-2 px-4 py-2">
