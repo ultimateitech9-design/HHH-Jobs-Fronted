@@ -197,6 +197,11 @@ const OtpVerificationPage = () => {
         return;
       }
 
+      if (payload.deliveryFailed) {
+        setError(payload.emailWarning || payload.message || 'Unable to resend OTP.');
+        return;
+      }
+
       setCounter(60);
       const nextOtp = String(payload.otp || '').replace(/\D/g, '').slice(0, 6);
       beginPendingVerificationSession({ email, otp: nextOtp, emailWarning: '' });
