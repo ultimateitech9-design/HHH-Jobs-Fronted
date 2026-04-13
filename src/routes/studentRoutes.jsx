@@ -13,8 +13,8 @@ const StudentSavedJobsPage = lazy(() => import('../modules/student/pages/Student
 const StudentInterviewsPage = lazy(() => import('../modules/student/pages/StudentInterviewsPage'));
 const StudentAnalyticsPage = lazy(() => import('../modules/student/pages/StudentAnalyticsPage'));
 const StudentAtsPage = lazy(() => import('../modules/student/pages/StudentAtsPage'));
+const StudentServicesPage = lazy(() => import('../modules/student/pages/StudentServicesPage'));
 const StudentNotificationsPage = lazy(() => import('../modules/student/pages/StudentNotificationsPage'));
-const StudentCompanyReviewsPage = lazy(() => import('../modules/student/pages/StudentCompanyReviewsPage'));
 const StudentExternalJobsPage = lazy(() => import('../modules/student/pages/StudentExternalJobsPage'));
 
 const studentRoutes = [
@@ -38,8 +38,9 @@ const studentRoutes = [
       { path: 'interviews', element: <StudentInterviewsPage /> },
       { path: 'analytics', element: <StudentAnalyticsPage /> },
       { path: 'ats', element: <StudentAtsPage /> },
+      { path: 'services', element: <StudentServicesPage /> },
       { path: 'notifications', element: <StudentNotificationsPage /> },
-      { path: 'company-reviews', element: <StudentCompanyReviewsPage /> },
+      { path: 'company-reviews', element: <Navigate to="/portal/student/home" replace /> },
       { path: 'global-jobs', element: <StudentExternalJobsPage /> }
     ]
   },

@@ -188,25 +188,6 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
 
         <div className="space-y-5">
           <div className="rounded-[1.9rem] border border-slate-200 bg-white p-6 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.35)]">
-            <h2 className="max-w-3xl text-3xl font-extrabold leading-tight text-navy">
-              Companies want to build inclusive teams, help us identify your disability status for better jobs.
-            </h2>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button type="button" className="rounded-full border border-brand-300 px-4 py-2 text-sm font-semibold text-brand-700">
-                I have a disability
-              </button>
-              <button type="button" className="rounded-full border border-brand-300 px-4 py-2 text-sm font-semibold text-brand-700">
-                I don&apos;t have a disability
-              </button>
-            </div>
-            <div className="mt-8 flex justify-end">
-              <button type="button" className="rounded-full bg-slate-100 px-5 py-3 text-sm font-bold text-slate-400">
-                Submit
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-[1.9rem] border border-slate-200 bg-white p-6 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.35)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-3xl font-extrabold text-navy">Recommended jobs for you</h2>

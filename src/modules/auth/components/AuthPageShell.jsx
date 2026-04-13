@@ -9,12 +9,13 @@ const AuthPageShell = ({
   benefits = [],
   balancedPanels = false,
   lockBalancedHeight = true,
+  compactHeader = false,
   panelClassName = '',
   sideClassName = '',
   children
 }) => {
   const sectionClassName = balancedPanels
-    ? `relative overflow-hidden px-4 py-6 ${lockBalancedHeight ? 'md:min-h-[calc(100vh-4rem)] md:py-8' : 'md:py-8'}`
+    ? `relative overflow-hidden px-4 ${compactHeader ? 'py-4 md:py-5' : 'py-6'} ${lockBalancedHeight ? 'md:min-h-[calc(100vh-4rem)] md:py-8' : compactHeader ? '' : 'md:py-8'}`
     : 'relative overflow-hidden px-4 py-8 md:py-14';
   const gridClassName = balancedPanels
     ? `grid gap-7 lg:grid-cols-2 ${lockBalancedHeight ? 'items-stretch' : 'items-start'}`
@@ -64,15 +65,15 @@ const AuthPageShell = ({
 
           <AnimatedSection delay={0.08} className={balancedPanels && lockBalancedHeight ? 'h-full' : ''}>
             <div className={`${panelCardClassName} ${panelClassName}`.trim()}>
-              <div className="mb-5 text-center lg:text-left">
+              <div className={`${compactHeader ? 'mb-2.5' : 'mb-5'} text-center lg:text-left`.trim()}>
                 {eyebrow ? (
-                  <span className="inline-flex rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold-dark">
+                  <span className={`inline-flex rounded-full border border-gold/20 bg-gold/10 ${compactHeader ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'} font-semibold text-gold-dark`.trim()}>
                     {eyebrow}
                   </span>
                 ) : null}
-                <h1 className="mt-3 font-heading text-[1.65rem] font-extrabold text-navy md:text-[1.85rem]">{title}</h1>
+                <h1 className={`font-heading font-extrabold text-navy ${compactHeader ? 'mt-1.5 text-[1.3rem] md:text-[1.45rem]' : 'mt-3 text-[1.65rem] md:text-[1.85rem]'}`.trim()}>{title}</h1>
                 {description ? (
-                  <p className="mt-1.5 text-sm leading-6 text-slate-600">{description}</p>
+                  <p className={`${compactHeader ? 'mt-0.5 text-[0.86rem] leading-5' : 'mt-1.5 text-sm leading-6'} text-slate-600`.trim()}>{description}</p>
                 ) : null}
               </div>
 

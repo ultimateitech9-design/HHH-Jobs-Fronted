@@ -10,8 +10,7 @@ import {
   FiChevronLeft,
   FiClock,
   FiDollarSign,
-  FiMapPin,
-  FiStar
+  FiMapPin
 } from 'react-icons/fi';
 import StatusPill from '../../../shared/components/StatusPill';
 import { getCurrentUser } from '../../../utils/auth';
@@ -26,7 +25,6 @@ import {
 } from '../components/StudentExperience';
 import {
   applyToJob,
-  getCompanyReviews,
   getFriendlyApplyErrorMessage,
   getStudentJobById,
   getStudentSavedJobs,
@@ -49,7 +47,6 @@ const StudentJobDetailsPage = () => {
   const [coverLetter, setCoverLetter] = useState('');
   const [actionFeedback, setActionFeedback] = useState({ type: '', text: '', ctaTo: '', ctaLabel: '' });
   const [atsResult, setAtsResult] = useState(null);
-  const [reviews, setReviews] = useState({ summary: null, rows: [] });
 
   const setActionSuccess = (text) => setActionFeedback({ type: 'success', text, ctaTo: '', ctaLabel: '' });
   const setActionError = (text, ctaTo = '') => setActionFeedback({ type: 'error', text, ctaTo, ctaLabel: ctaTo ? 'Open Resume Section' : '' });
@@ -83,12 +80,6 @@ const StudentJobDetailsPage = () => {
           job,
           isSaved: savedSet.has(jobId)
         });
-
-        if (job?.companyName) {
-          const reviewResponse = await getCompanyReviews(job.companyName);
-          if (!mounted) return;
-          setReviews({ summary: reviewResponse.data.summary, rows: reviewResponse.data.reviews || [] });
-        }
       } catch (error) {
         if (!mounted) return;
         setState((current) => ({
@@ -387,45 +378,6 @@ const StudentJobDetailsPage = () => {
             </StudentSurfaceCard>
           )}
 
-          <StudentSurfaceCard
-            eyebrow="Company Reviews"
-            title="Candidate sentiment"
-            subtitle={`Based on ${reviews.summary?.count || 0} review(s) for ${state.job.companyName}.`}
-          >
-            {reviews.rows.length > 0 ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                  <span className="text-sm font-semibold text-amber-800">Average rating</span>
-                  <span className="inline-flex items-center gap-2 text-lg font-black text-amber-800">
-                    <FiStar className="fill-current" />
-                    {reviews.summary?.averageRating || '0.0'}
-                  </span>
-                </div>
-
-                {reviews.rows.map((review) => (
-                  <article key={review.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-semibold text-navy">{review.title || 'Candidate review'}</h3>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">{review.review}</p>
-                      </div>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
-                        <FiStar className="fill-current" />
-                        {review.rating}
-                      </span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <StudentEmptyState
-                icon={FiStar}
-                title="No reviews available yet"
-                description="This company has not received candidate reviews in the portal yet."
-                className="border-none bg-slate-50/80"
-              />
-            )}
-          </StudentSurfaceCard>
         </div>
       </div>
     </StudentPageShell>

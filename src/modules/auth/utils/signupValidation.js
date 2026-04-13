@@ -17,6 +17,16 @@ export const calculateAge = (dateOfBirth) => {
   return age;
 };
 
+export const getMaxSignupDob = () => {
+  const today = new Date();
+  today.setFullYear(today.getFullYear() - 16);
+
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const getSelectedCountry = (countryCode) =>
   countryCodeOptions.find((item) => item.code === countryCode) || countryCodeOptions[0];
 
@@ -60,11 +70,14 @@ export const validateSignupField = (key, value, nextForm) => {
       return '';
 
     case 'dateOfBirth':
-      if (nextForm.role === 'retired_employee') {
-        if (!value) return 'Date of birth is required for Retired Employee registration.';
+      if (nextForm.role !== 'hr') {
+        if (!value) return 'Date of birth is required for registration.';
         const age = calculateAge(value);
         if (age === null) return 'Please enter a valid date of birth.';
-        if (age < 60) return 'Minimum age for retired employee registration is 60 years.';
+        if (age < 16) return 'Minimum age for registration is 16 years.';
+        if (nextForm.role === 'retired_employee' && age < 60) {
+          return 'Minimum age for retired employee registration is 60 years.';
+        }
       }
       return '';
 

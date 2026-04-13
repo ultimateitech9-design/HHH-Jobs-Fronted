@@ -61,68 +61,77 @@ export const StudentPageShell = ({
   actions,
   children,
   heroClassName = '',
-  bodyClassName = ''
+  bodyClassName = '',
+  showHero = true,
+  heroSize = 'default'
 }) => {
+  const isCompactHero = heroSize === 'compact';
+  const isMiniHero = heroSize === 'mini';
+
   return (
     <div className={`space-y-6 pb-8 ${bodyClassName}`.trim()}>
-      <section
-        className={`relative overflow-hidden rounded-[2.35rem] border border-white/70 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,33,59,0.94)_36%,rgba(47,83,143,0.9)_68%,rgba(229,155,23,0.86))] px-6 py-7 text-white shadow-[0_26px_70px_rgba(17,33,59,0.16)] md:px-8 md:py-8 ${heroClassName}`.trim()}
-      >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,214,102,0.22),transparent_24%),linear-gradient(180deg,transparent,rgba(255,255,255,0.02))]" />
-        <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-white/8 blur-3xl" />
-        <div className="pointer-events-none absolute -right-16 top-0 h-56 w-56 rounded-full bg-brand-200/20 blur-3xl" />
+      {showHero ? (
+        <section
+          className={`relative overflow-hidden rounded-[2.35rem] border border-white/70 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,33,59,0.94)_36%,rgba(47,83,143,0.9)_68%,rgba(229,155,23,0.86))] text-white shadow-[0_26px_70px_rgba(17,33,59,0.16)] ${
+            isMiniHero ? 'px-3.5 py-3.5 md:px-4 md:py-4' : isCompactHero ? 'px-5 py-5 md:px-6 md:py-6' : 'px-6 py-7 md:px-8 md:py-8'
+          } ${heroClassName}`.trim()}
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,214,102,0.22),transparent_24%),linear-gradient(180deg,transparent,rgba(255,255,255,0.02))]" />
+          <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-white/8 blur-3xl" />
+          <div className="pointer-events-none absolute -right-16 top-0 h-56 w-56 rounded-full bg-brand-200/20 blur-3xl" />
 
-        <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.95fr)] xl:items-start">
-          <div>
-            <div className="flex flex-wrap items-center gap-3">
-              {eyebrow ? (
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-white/70">{eyebrow}</p>
+          <div className={`relative grid xl:grid-cols-[minmax(0,1.18fr)_minmax(250px,0.78fr)] xl:items-start ${isMiniHero ? 'gap-2.5' : isCompactHero ? 'gap-4' : 'gap-6'}`}>
+            <div>
+              <div className={`flex flex-wrap items-center ${isMiniHero ? 'gap-2' : 'gap-3'}`}>
+                {eyebrow ? (
+                  <p className={`${isMiniHero ? 'text-[10px] tracking-[0.24em]' : 'text-xs tracking-[0.28em]'} font-black uppercase text-white/70`}>{eyebrow}</p>
+                ) : null}
+                {badge ? (
+                  <span className={`inline-flex items-center rounded-full border border-white/20 bg-white/10 font-bold uppercase tracking-[0.18em] text-white/85 ${isMiniHero ? 'px-2.5 py-1 text-[10px]' : 'px-3 py-1 text-[11px]'}`}>
+                    {badge}
+                  </span>
+                ) : null}
+              </div>
+
+              <h1 className={`max-w-4xl font-heading font-extrabold leading-tight text-white ${isMiniHero ? 'mt-2 text-[1.35rem] md:text-[1.65rem]' : isCompactHero ? 'mt-3 text-[2rem] md:text-[2.45rem]' : 'mt-4 text-3xl md:text-4xl'}`}>
+                {title}
+              </h1>
+
+              {subtitle ? (
+                <p className={`max-w-3xl text-white/76 ${isMiniHero ? 'mt-2 text-[12px] leading-4' : isCompactHero ? 'mt-3 text-sm leading-6' : 'mt-4 text-sm leading-7 md:text-base'}`}>
+                  {subtitle}
+                </p>
               ) : null}
-              {badge ? (
-                <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white/85">
-                  {badge}
-                </span>
-              ) : null}
+
+              {actions ? <div className={`flex flex-wrap ${isMiniHero ? 'mt-3 gap-2' : isCompactHero ? 'mt-4 gap-3' : 'mt-6 gap-3'}`}>{actions}</div> : null}
             </div>
 
-            <h1 className="mt-4 max-w-4xl font-heading text-3xl font-extrabold leading-tight text-white md:text-4xl">
-              {title}
-            </h1>
-
-            {subtitle ? (
-              <p className="mt-4 max-w-3xl text-sm leading-7 text-white/76 md:text-base">
-                {subtitle}
-              </p>
-            ) : null}
-
-            {actions ? <div className="mt-6 flex flex-wrap gap-3">{actions}</div> : null}
-          </div>
-
-          {stats.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              {stats.map((metric) => (
-                <article
-                  key={metric.label}
-                  className={`rounded-[1.45rem] border px-4 py-4 backdrop-blur-sm ${metricTone[metric.tone] || metricTone.default}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/62">{metric.label}</p>
-                      <p className="mt-2 font-heading text-3xl font-black text-white">{metric.value}</p>
-                    </div>
-                    {metric.icon ? (
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white">
-                        {renderIcon(metric.icon)}
+            {stats.length > 0 ? (
+              <div className={`grid ${isMiniHero ? 'gap-2.5 sm:grid-cols-3 xl:grid-cols-1' : 'gap-3 sm:grid-cols-2 xl:grid-cols-1'}`}>
+                {stats.map((metric) => (
+                  <article
+                    key={metric.label}
+                    className={`rounded-[1.3rem] border backdrop-blur-sm ${isMiniHero ? 'px-3 py-2.5' : isCompactHero ? 'px-4 py-3.5' : 'px-4 py-4'} ${metricTone[metric.tone] || metricTone.default}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className={`${isMiniHero ? 'text-[10px] tracking-[0.16em]' : 'text-[11px] tracking-[0.2em]'} font-black uppercase text-white/62`}>{metric.label}</p>
+                        <p className={`font-heading font-black text-white ${isMiniHero ? 'mt-0.5 text-[1.35rem]' : isCompactHero ? 'mt-1.5 text-[2rem]' : 'mt-2 text-3xl'}`}>{metric.value}</p>
                       </div>
-                    ) : null}
-                  </div>
-                  {metric.helper ? <p className="mt-3 text-sm leading-6 text-white/74">{metric.helper}</p> : null}
-                </article>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </section>
+                      {metric.icon ? (
+                        <div className={`flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white ${isMiniHero ? 'h-8 w-8' : 'h-11 w-11'}`}>
+                          {renderIcon(metric.icon)}
+                        </div>
+                      ) : null}
+                    </div>
+                    {metric.helper ? <p className={`text-white/74 ${isMiniHero ? 'mt-1 text-[11px] leading-4' : isCompactHero ? 'mt-2 text-sm leading-5' : 'mt-3 text-sm leading-6'}`}>{metric.helper}</p> : null}
+                  </article>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       {children}
     </div>

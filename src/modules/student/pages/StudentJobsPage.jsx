@@ -81,7 +81,8 @@ const StudentJobsPage = ({
   eyebrow = 'Student Jobs',
   title = 'Search and Apply Jobs',
   subtitle = 'Filter jobs, save opportunities, and apply directly with profile resume.',
-  detailsPathBase = '/portal/student/jobs'
+  detailsPathBase = '/portal/student/jobs',
+  embedded = false
 }) => {
   const resumeSectionPath = '/portal/student/profile?section=resume';
   const currentUser = useMemo(() => getCurrentUser(), []);
@@ -252,6 +253,7 @@ const StudentJobsPage = ({
       title={title}
       subtitle={subtitle}
       stats={topStats}
+      bodyClassName={embedded ? 'pb-0' : ''}
       actions={
         <>
           <Link to="/portal/student/saved-jobs" className={studentSecondaryButtonClassName}>
@@ -345,13 +347,13 @@ const StudentJobsPage = ({
       </StudentSurfaceCard>
 
       {jobsState.loading ? (
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="h-72 animate-pulse rounded-[2rem] bg-slate-100" />
+            <div key={item} className="h-60 animate-pulse rounded-[1.8rem] bg-slate-100" />
           ))}
         </div>
       ) : jobsState.jobs.length > 0 ? (
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
           {jobsState.jobs.map((job) => {
             const jobId = job.id || job._id;
             const isSaved = savedIds.has(jobId);
@@ -359,77 +361,78 @@ const StudentJobsPage = ({
 
             return (
               <article
-                className="group relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.95))] p-6 shadow-[0_18px_42px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:shadow-[0_26px_56px_rgba(15,23,42,0.12)]"
+                className="group relative flex h-full flex-col overflow-hidden rounded-[1.8rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-5 shadow-[0_16px_40px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_24px_52px_rgba(15,23,42,0.12)]"
                 key={jobId}
               >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(229,155,23,0.12),transparent_35%),linear-gradient(135deg,rgba(47,83,143,0.06),transparent_60%)] opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(229,155,23,0.12),transparent_35%),linear-gradient(135deg,rgba(47,83,143,0.05),transparent_60%)] opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/80 to-transparent" />
 
                 <div className="relative z-10 flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-4">
+                  <div className="flex min-w-0 items-center gap-3.5">
                     <CompanyLogoBadge companyLogo={job.companyLogo} companyName={job.companyName} />
-                    <div>
-                      <h3 className="font-heading text-2xl font-bold text-navy transition-colors group-hover:text-brand-700">
+                    <div className="min-w-0">
+                      <h3 className="line-clamp-2 font-heading text-[1.12rem] font-bold leading-7 text-navy transition-colors group-hover:text-brand-700">
                         {job.jobTitle}
                       </h3>
-                      <p className="mt-1 text-sm font-medium text-slate-500">{job.companyName}</p>
+                      <p className="mt-1 truncate text-[0.92rem] font-medium text-slate-500">{job.companyName}</p>
                     </div>
                   </div>
 
                   <StatusPill value={job.status || 'open'} />
                 </div>
 
-                <div className="relative z-10 mt-5 grid gap-3 md:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600">
+                <div className="relative z-10 mt-4 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50/90 px-3.5 py-3 text-sm text-slate-600">
                     <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                       <FiMapPin size={13} />
                       Location
                     </p>
-                    <p className="mt-2 font-semibold text-slate-800">{job.jobLocation || 'Remote'}</p>
+                    <p className="mt-1.5 line-clamp-2 text-[13px] font-semibold leading-5 text-slate-800">{job.jobLocation || 'Remote'}</p>
                   </div>
-                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600">
+                  <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50/90 px-3.5 py-3 text-sm text-slate-600">
                     <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
                       <FiBriefcase size={13} />
                       Experience
                     </p>
-                    <p className="mt-2 font-semibold text-slate-800">{job.experienceLevel || 'Experience not specified'}</p>
+                    <p className="mt-1.5 line-clamp-2 text-[13px] font-semibold leading-5 text-slate-800">{job.experienceLevel || 'Experience not specified'}</p>
                   </div>
                 </div>
 
                 <div className="relative z-10 mt-4 flex flex-wrap gap-2">
                   {job.salaryType ? (
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                    <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700">
                       {job.minPrice || '-'} - {job.maxPrice || '-'} {job.salaryType}
                     </span>
                   ) : null}
 
                   {(job.targetAudience || job.audience) && String(job.targetAudience || job.audience).toLowerCase() !== 'all' ? (
-                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                    <span className="rounded-full border border-amber-100 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-700">
                       Audience: {String(job.targetAudience || job.audience).replace('_', ' ')}
                     </span>
                   ) : null}
                 </div>
 
                 <div className="relative z-10 mt-4 flex flex-wrap gap-2">
-                  {(job.skills || []).slice(0, 5).map((skill) => (
-                    <span key={skill} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                  {(job.skills || []).slice(0, 3).map((skill) => (
+                    <span key={skill} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600">
                       {skill}
                     </span>
                   ))}
-                  {(job.skills || []).length > 5 ? (
-                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-400">
-                      +{job.skills.length - 5}
+                  {(job.skills || []).length > 3 ? (
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-400">
+                      +{job.skills.length - 3}
                     </span>
                   ) : null}
                 </div>
 
-                <div className="relative z-10 mt-auto flex flex-wrap gap-3 border-t border-slate-100 pt-6">
-                  <Link to={`${detailsPathBase}/${jobId}`} className={studentSecondaryButtonClassName}>
-                    View Details
+                <div className="relative z-10 mt-auto grid gap-2 border-t border-slate-100 pt-5 sm:grid-cols-3">
+                  <Link to={`${detailsPathBase}/${jobId}`} className={`w-full ${studentSecondaryButtonClassName}`}>
+                    Details
                   </Link>
 
                   <button
                     type="button"
-                    className={isSaved ? studentGhostButtonClassName : studentSecondaryButtonClassName}
+                    className={`w-full ${isSaved ? studentGhostButtonClassName : studentSecondaryButtonClassName}`}
                     onClick={() => handleSaveToggle(jobId)}
                     aria-label={isSaved ? 'Unsave job' : 'Save job'}
                     title={isSaved ? 'Remove from saved jobs' : 'Save this job'}
@@ -440,7 +443,7 @@ const StudentJobsPage = ({
 
                   <button
                     type="button"
-                    className={isApplied ? 'inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-bold text-emerald-700' : studentPrimaryButtonClassName}
+                    className={isApplied ? 'inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-bold text-emerald-700' : `w-full ${studentPrimaryButtonClassName}`}
                     onClick={() => handleApply(jobId)}
                     disabled={isApplied}
                   >
@@ -449,7 +452,7 @@ const StudentJobsPage = ({
                         <FiCheckCircle size={15} />
                         Applied
                       </>
-                    ) : 'Apply Now'}
+                    ) : 'Apply'}
                   </button>
                 </div>
               </article>

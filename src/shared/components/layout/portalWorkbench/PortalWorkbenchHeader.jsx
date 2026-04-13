@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Bell, Menu, Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Bell, ChevronDown, Menu, Search } from 'lucide-react';
 import useAuthStore from '../../../../core/auth/authStore';
 import useNotificationStore from '../../../../core/notifications/notificationStore';
 import { getNotificationPathByRole } from '../../../../utils/auth';
@@ -21,12 +21,26 @@ const PortalWorkbenchHeader = ({
   onOpenMobileNav
 }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState('');
+  const navRef = useRef(null);
   const user = useAuthStore((state) => state.user);
   const notifications = useNotificationStore((state) => state.notifications);
   const streamConnected = useNotificationStore((state) => state.streamConnected);
+  const location = useLocation();
   const notificationPath = getNotificationPathByRole(user?.role);
   const unreadCount = notifications.filter((notification) => !notification.is_read).length;
   const isStudentMarketplaceHeader = headerVariant === 'student-marketplace';
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!navRef.current?.contains(event.target)) {
+        setOpenDropdown('');
+      }
+    };
+
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (isStudentMarketplaceHeader) {
     return (
@@ -38,8 +52,8 @@ const PortalWorkbenchHeader = ({
           notifications={notifications}
         />
 
-        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 py-2.5 backdrop-blur-xl">
-          <div className="mx-auto grid w-full max-w-[1148px] grid-cols-[auto_1fr] items-center gap-3 px-4 sm:px-5 lg:grid-cols-[auto_1fr_auto] lg:px-6 xl:px-0">
+        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 py-2 backdrop-blur-xl">
+          <div className="mx-auto grid w-full max-w-[1148px] grid-cols-[auto_1fr_auto] items-center gap-2.5 px-3 sm:px-4 lg:gap-3 lg:px-6 xl:px-0">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -49,28 +63,66 @@ const PortalWorkbenchHeader = ({
                 <Menu className="h-5 w-5" />
               </button>
 
-              <Link to="/portal/student/home" className="flex items-center gap-2.5">
-                <img src="/hhh-job-logo.png" alt="HHH Jobs" className="h-9 w-9 object-contain" />
+              <Link to="/" className="flex items-center gap-2">
+                <img src="/hhh-job-logo.png" alt="HHH Jobs" className="h-8 w-8 object-contain sm:h-9 sm:w-9" />
                 <div className="hidden sm:block">
-                  <p className="font-heading text-[1.08rem] font-bold tracking-tight text-gold-dark">HHH Jobs</p>
+                  <p className="font-heading text-base font-bold tracking-tight text-gold-dark">HHH Jobs</p>
                 </div>
               </Link>
             </div>
 
-            <nav className="hidden items-center justify-center gap-10 lg:flex xl:gap-12">
-              {headerNavItems.map((item) => (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  className="text-[0.97rem] font-medium text-slate-700 transition-colors hover:text-navy"
-                >
-                  {item.label}
-                </Link>
-              ))}
+            <nav ref={navRef} className="hidden items-center justify-center gap-7 lg:flex xl:gap-10">
+              {headerNavItems.map((item) => {
+                const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+                const isOpen = openDropdown === item.label;
+                const isActive = item.children?.some((child) => location.pathname === child.to.split('?')[0]) || location.pathname === item.to?.split('?')[0];
+
+                if (!hasChildren) {
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.to}
+                      className="text-[0.92rem] font-medium text-slate-700 transition-colors hover:text-navy"
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div key={item.label} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setOpenDropdown((current) => (current === item.label ? '' : item.label))}
+                      className={`inline-flex items-center gap-1 text-[0.92rem] font-medium transition-colors ${
+                        isActive || isOpen ? 'text-navy' : 'text-slate-700 hover:text-navy'
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isOpen ? (
+                      <div className="absolute left-1/2 top-full z-20 mt-3 w-44 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.label}
+                            to={child.to}
+                            onClick={() => setOpenDropdown('')}
+                            className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-navy"
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
             </nav>
 
-            <div className="ml-auto flex items-center gap-2.5 sm:gap-3">
-              <div className="hidden h-10 items-center rounded-full border border-slate-200 bg-white pl-4 pr-1 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:flex lg:w-[260px] xl:w-[300px]">
+            <div className="ml-auto flex items-center gap-2 sm:gap-2.5">
+              <div className="hidden h-9 items-center rounded-full border border-slate-200 bg-white pl-3.5 pr-1 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:flex lg:w-[220px] xl:w-[280px]">
                 <input
                   placeholder={headerSearchPlaceholder || searchPlaceholder || 'Search jobs here'}
                   className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
@@ -78,7 +130,7 @@ const PortalWorkbenchHeader = ({
                 <button
                   type="button"
                   aria-label="Search jobs"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full gradient-primary text-white"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full gradient-primary text-white"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -96,11 +148,11 @@ const PortalWorkbenchHeader = ({
               <button
                 type="button"
                 onClick={() => setNotificationsOpen(true)}
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900"
+                className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 sm:h-10 sm:w-10"
                 aria-label="Open notifications"
                 title="Open notifications"
               >
-                <Bell className="h-5 w-5" />
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
                 {unreadCount > 0 ? (
                   <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-brand-600 px-1 text-[10px] font-bold text-white">
                     {unreadCount > 99 ? '99+' : unreadCount}
@@ -114,10 +166,26 @@ const PortalWorkbenchHeader = ({
                 to={profilePath || '/'}
                 aria-label="Open profile"
                 title="Open profile"
-                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-gold/30 gradient-primary text-xs font-bold text-white shadow-sm transition-transform hover:scale-[1.03] hover:ring-2 hover:ring-gold/20"
+                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-gold/30 gradient-primary text-xs font-bold text-white shadow-sm transition-transform hover:scale-[1.03] hover:ring-2 hover:ring-gold/20 sm:h-10 sm:w-10"
               >
                 {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" /> : avatarLetter}
               </Link>
+            </div>
+
+            <div className="col-span-full md:hidden">
+              <div className="flex h-9 items-center rounded-full border border-slate-200 bg-white pl-3.5 pr-1 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+                <input
+                  placeholder={headerSearchPlaceholder || searchPlaceholder || 'Search jobs here'}
+                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                />
+                <button
+                  type="button"
+                  aria-label="Search jobs"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full gradient-primary text-white"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </header>

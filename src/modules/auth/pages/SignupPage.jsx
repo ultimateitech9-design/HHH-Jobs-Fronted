@@ -29,6 +29,7 @@ import {
   signupShellBenefits
 } from '../config/authOptions';
 import {
+  getMaxSignupDob,
   getSelectedCountry,
   validateSignupField
 } from '../utils/signupValidation';
@@ -389,6 +390,7 @@ const SignupPage = () => {
 
   const selectedCountry = getSelectedCountry(form.countryCode);
   const isSocialSignupAllowed = form.role === 'student' || form.role === 'retired_employee';
+  const maxSignupDob = getMaxSignupDob();
 
   return (
     <AuthPageShell
@@ -400,11 +402,12 @@ const SignupPage = () => {
       benefits={signupShellBenefits}
       balancedPanels
       lockBalancedHeight={false}
-      panelClassName="w-full"
-      sideClassName="w-full"
+      compactHeader
+      panelClassName="w-full !p-3.5 md:!p-4"
+      sideClassName="w-full !gap-3 !p-4"
     >
-      <div className="flex h-full flex-col gap-4">
-        <div className="space-y-4">
+      <div className="flex h-full flex-col gap-2.5">
+        <div className="space-y-2.5">
             <AuthRoleTabs
               label="Account type"
               helperText=""
@@ -423,6 +426,7 @@ const SignupPage = () => {
               disabled={isSubmitting || Boolean(socialLoading)}
               availableProviders={availableProviders}
               providersLoading={providersLoading}
+              compact
             />
           ) : (
             <AuthFormMessage tone="info">
@@ -432,16 +436,16 @@ const SignupPage = () => {
 
           <AuthFormMessage>{error}</AuthFormMessage>
 
-          <div className="my-2 flex items-center gap-3">
+          <div className="my-0.5 flex items-center gap-2.5">
             <span className="h-px flex-1 bg-slate-200" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">Manual signup</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Manual signup</span>
             <span className="h-px flex-1 bg-slate-200" />
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-4">
-          <div className="space-y-4">
-            <div className={`grid gap-4 ${form.role === 'hr' ? 'md:grid-cols-2' : ''}`}>
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-2.5">
+          <div className="space-y-2.5">
+            <div className={`grid gap-2.5 ${form.role === 'hr' ? 'md:grid-cols-2' : ''}`}>
               <AuthInputField
                 label="Name"
                 type="text"
@@ -450,7 +454,7 @@ const SignupPage = () => {
                 placeholder="Enter full name"
                 disabled={isSubmitting || Boolean(socialLoading)}
                 error={fieldErrors.name}
-                className="py-2"
+                className="py-1"
               />
 
               {form.role === 'hr' ? (
@@ -462,19 +466,19 @@ const SignupPage = () => {
                   placeholder="Enter company name"
                   disabled={isSubmitting || Boolean(socialLoading)}
                   error={fieldErrors.companyName}
-                  className="py-2"
+                  className="py-1"
                 />
               ) : null}
             </div>
 
-            <div className="grid gap-4 md:grid-cols-[190px_minmax(0,1fr)]">
+            <div className="grid gap-2.5 md:grid-cols-[170px_minmax(0,1fr)]">
               <AuthSelectField
                 label="Country Code"
                 value={form.countryCode}
                 onChange={(event) => handleCountryCodeChange(event.target.value)}
                 options={countryCodeOptions}
                 disabled={isSubmitting || Boolean(socialLoading)}
-                className="py-2.5"
+                className="py-1.5"
               />
               <AuthInputField
                 label="Mobile"
@@ -485,11 +489,11 @@ const SignupPage = () => {
                 placeholder={`Enter ${selectedCountry.digits}-digit mobile`}
                 disabled={isSubmitting || Boolean(socialLoading)}
                 error={fieldErrors.mobile}
-                className="py-2"
+                className="py-1"
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-2.5 md:grid-cols-2">
               <AuthInputField
                 label="Email"
                 type="email"
@@ -498,7 +502,7 @@ const SignupPage = () => {
                 placeholder="Enter email address"
                 disabled={isSubmitting || Boolean(socialLoading)}
                 error={fieldErrors.email}
-                className="py-2"
+                className="py-1"
               />
 
               <AuthPasswordField
@@ -510,23 +514,24 @@ const SignupPage = () => {
                 error={fieldErrors.password}
                 showPassword={showPassword}
                 onTogglePassword={() => setShowPassword((current) => !current)}
-                className="py-2"
+                className="py-1"
               />
             </div>
 
             {form.role !== 'hr' ? (
-              <div className="rounded-[1.6rem] border border-slate-200 bg-slate-50/70 p-4">
-                <p className="text-sm font-semibold text-navy">Profile metadata</p>
-                <div className="mt-3 grid gap-4 md:grid-cols-2">
+              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50/70 p-3">
+                <p className="text-[0.92rem] font-semibold text-navy">Profile metadata</p>
+                <div className="mt-2 grid gap-2.5 md:grid-cols-2">
                   <AuthInputField
                     label="Date of Birth"
                     type="date"
                     value={form.dateOfBirth}
+                    max={maxSignupDob}
                     onChange={(event) => handleChange('dateOfBirth', event.target.value)}
                     disabled={isSubmitting || Boolean(socialLoading)}
                     error={fieldErrors.dateOfBirth}
-                    helper={form.role === 'retired_employee' ? 'Retired employee registration requires age 60+.' : ''}
-                    className="py-2"
+                    helper={form.role === 'retired_employee' ? 'Retired employee registration requires age 60+.' : 'Minimum age for registration is 16 years.'}
+                    className="py-1"
                   />
 
                   <AuthSelectField
@@ -535,7 +540,7 @@ const SignupPage = () => {
                     onChange={(event) => handleChange('gender', event.target.value)}
                     options={genderOptions}
                     disabled={isSubmitting || Boolean(socialLoading)}
-                    className="py-2.5"
+                    className="py-1.5"
                   />
 
                   <AuthSelectField
@@ -544,7 +549,7 @@ const SignupPage = () => {
                     onChange={(event) => handleChange('caste', event.target.value)}
                     options={casteOptions}
                     disabled={isSubmitting || Boolean(socialLoading)}
-                    className="py-2.5"
+                    className="py-1.5"
                   />
 
                   <AuthSelectField
@@ -553,7 +558,7 @@ const SignupPage = () => {
                     onChange={(event) => handleChange('religion', event.target.value)}
                     options={religionOptions}
                     disabled={isSubmitting || Boolean(socialLoading)}
-                    className="py-2.5"
+                    className="py-1.5"
                   />
                 </div>
               </div>
@@ -563,7 +568,7 @@ const SignupPage = () => {
 
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center rounded-full gradient-gold px-6 py-2.5 text-sm font-semibold text-primary shadow-lg shadow-gold/20 transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex w-full items-center justify-center rounded-full gradient-gold px-6 py-1.5 text-[0.92rem] font-semibold text-primary shadow-lg shadow-gold/20 transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
             disabled={isSubmitting || Boolean(socialLoading)}
           >
             {isSubmitting ? 'Creating Account...' : 'Create Account'}

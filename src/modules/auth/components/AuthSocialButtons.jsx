@@ -28,7 +28,7 @@ const AuthSocialButtons = ({
   if (visibleProviders.length === 0) return null;
 
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
+    <div className={`grid ${compact ? 'gap-1.5' : 'gap-2'} sm:grid-cols-2`}>
       {visibleProviders.map((provider) => {
         const Icon = provider.icon;
 
@@ -38,10 +38,10 @@ const AuthSocialButtons = ({
             type="button"
             onClick={() => onProviderClick(provider.key)}
             disabled={disabled}
-            className={`inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 ${compact ? 'py-1.5 text-[13px]' : 'py-2 text-sm'} font-semibold text-slate-700 transition-all hover:-translate-y-0.5 hover:border-brand-100 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-70`.trim()}
+            className={`inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3 ${compact ? 'py-1 text-[12px]' : 'py-2 text-sm'} font-semibold text-slate-700 transition-all hover:-translate-y-0.5 hover:border-brand-100 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-70`.trim()}
           >
-            <span className={`flex items-center justify-center rounded-full bg-slate-100 text-slate-600 ${compact ? 'h-5 w-5' : 'h-6 w-6'}`.trim()}>
-              <Icon size={compact ? 12 : 14} />
+            <span className={`flex items-center justify-center rounded-full bg-slate-100 text-slate-600 ${compact ? 'h-4.5 w-4.5' : 'h-6 w-6'}`.trim()}>
+              <Icon size={compact ? 11 : 14} />
             </span>
             <span>{loading === provider.key ? 'Redirecting...' : provider.label}</span>
           </button>

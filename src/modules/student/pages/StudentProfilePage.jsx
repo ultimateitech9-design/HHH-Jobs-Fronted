@@ -576,9 +576,8 @@ const StudentProfilePage = () => {
         </div>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_382px]">
-        <div className={`${cardClassName} flex flex-col gap-7 xl:flex-row xl:items-start xl:justify-between`}>
-          <div className="flex flex-col gap-5 sm:flex-row">
+      <section className={`${cardClassName} grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start`}>
+        <div className="flex flex-col gap-4 sm:flex-row">
             <button
               type="button"
               aria-label={form.avatarUrl ? 'Preview profile photo' : 'Profile photo'}
@@ -586,12 +585,12 @@ const StudentProfilePage = () => {
               onClick={() => form.avatarUrl && setAvatarPreviewOpen(true)}
             >
               <div
-                className="flex h-28 w-28 items-center justify-center rounded-full p-1"
+                className="flex h-24 w-24 items-center justify-center rounded-full p-1"
                 style={{
                   background: `conic-gradient(#ef4444 0 ${Math.max(completion, 4)}%, #e8ecf6 ${Math.max(completion, 4)}% 100%)`
                 }}
               >
-                <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-slate-100 text-4xl font-black text-slate-400">
+                <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-slate-100 text-3xl font-black text-slate-400">
                   {form.avatarUrl ? (
                     <img src={form.avatarUrl} alt="Profile avatar" className="h-full w-full object-cover" />
                   ) : (
@@ -599,89 +598,90 @@ const StudentProfilePage = () => {
                   )}
                 </div>
               </div>
-              <span className="absolute bottom-0 left-1/2 inline-flex -translate-x-1/2 rounded-full border border-red-100 bg-white px-3 py-1 text-xs font-bold text-red-500 shadow-sm">
+              <span className="absolute bottom-0 left-1/2 inline-flex -translate-x-1/2 rounded-full border border-red-100 bg-white px-2.5 py-0.5 text-[11px] font-bold text-red-500 shadow-sm">
                 {completion}%
               </span>
             </button>
 
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-[2.2rem] font-extrabold tracking-tight text-navy">{userName}</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-[1.5rem] font-extrabold tracking-tight text-navy">{userName}</h1>
                 <button
                   type="button"
                   onClick={() => scrollToNode(sectionRefs.current['personal-details'])}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-brand-200 hover:text-brand-700"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-brand-200 hover:text-brand-700"
                   aria-label="Edit personal details"
                 >
-                  <FiEdit2 size={15} />
+                  <FiEdit2 size={13} />
                 </button>
               </div>
-              <p className="mt-2 text-[1.12rem] text-slate-500">
+              <p className="mt-1 text-[0.92rem] text-slate-500">
                 {form.headline || form.targetRole || 'Add your professional headline'}
               </p>
-              <p className="mt-1 text-[0.96rem] text-slate-400">Profile last updated - Yesterday</p>
+              <p className="mt-0.5 text-[0.8rem] text-slate-400">Profile last updated - Yesterday</p>
 
-              <div className="mt-5 flex flex-wrap items-center gap-2.5">
-                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">
-                  <FiTrendingUp />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[0.82rem] font-bold text-emerald-700">
+                  <FiTrendingUp size={14} />
                   Completion {completion}%
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-amber-50 px-3 py-1 text-sm font-bold text-amber-700">
-                  <FiFileText />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-[0.82rem] font-bold text-amber-700">
+                  <FiFileText size={14} />
                   {hasResume ? 'Resume ready' : 'Resume missing'}
                 </span>
               </div>
 
-              <div className="mt-5 grid gap-x-5 gap-y-3 text-[0.98rem] text-slate-600 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-3 grid gap-x-4 gap-y-2.5 text-[0.86rem] text-slate-600 sm:grid-cols-2 xl:grid-cols-3">
                 <span className="inline-flex items-center gap-2">
-                  <FiMapPin className="text-brand-600" />
+                  <FiMapPin size={15} className="text-brand-600" />
                   {form.location || 'Add location'}
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <FiBriefcase className="text-brand-600" />
+                  <FiBriefcase size={15} className="text-brand-600" />
                   {employmentLabel}
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <FiRefreshCw className="text-brand-600" />
+                  <FiRefreshCw size={15} className="text-brand-600" />
                   {availabilityLabel}
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <FiPhone className="text-brand-600" />
+                  <FiPhone size={15} className="text-brand-600" />
                   {form.mobile || 'Add phone number'}
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <FiMail className="text-brand-600" />
+                  <FiMail size={15} className="text-brand-600" />
                   {form.email || 'Add email'}
                 </span>
               </div>
 
-              <div className="mt-6 flex flex-wrap items-center gap-3">
+              <div className="mt-4 flex flex-wrap items-center gap-2.5 md:flex-nowrap">
                 <button
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={avatarUploading}
-                  className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-bold text-amber-700 transition hover:bg-amber-100 disabled:opacity-70"
+                  className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-[0.88rem] font-bold leading-none text-amber-700 transition hover:bg-amber-100 disabled:opacity-70"
                 >
-                  {avatarUploading ? <FiRefreshCw className="animate-spin" /> : <FiCamera />}
+                  {avatarUploading ? <FiRefreshCw size={15} className="animate-spin" /> : <FiCamera size={15} />}
                   {avatarUploading ? 'Uploading photo...' : 'Upload Photo'}
                 </button>
-                <span className="text-sm text-slate-400">PNG, JPG, or WEBP up to 4 MB</span>
+                <span className="min-w-0 flex-1 text-[0.84rem] text-slate-400 md:whitespace-nowrap">
+                  PNG, JPG, or WEBP up to 4 MB
+                </span>
                 <button
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#ef5c30] disabled:opacity-70"
+                  className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[#ff6b3d] px-4 py-2 text-[0.88rem] font-bold leading-none text-white transition hover:bg-[#ef5c30] disabled:opacity-70"
                 >
-                  {saving ? <FiRefreshCw className="animate-spin" /> : <FiCheckCircle />}
+                  {saving ? <FiRefreshCw size={15} className="animate-spin" /> : <FiCheckCircle size={15} />}
                   {saving ? 'Saving...' : 'Save profile'}
                 </button>
               </div>
             </div>
           </div>
-        </div>
 
-        <aside className={`${cardClassName} bg-[linear-gradient(180deg,#fff5e8_0%,#fffaf2_100%)]`}>
-          <div className="space-y-4">
+        <aside className="rounded-[1.5rem] border border-[#f7dfbf] bg-[linear-gradient(180deg,#fff5e8_0%,#fffaf2_100%)] p-4 shadow-[0_14px_30px_-24px_rgba(245,158,11,0.22)] sm:p-5">
+          <div className="space-y-3">
             {missingSections.slice(0, 3).map((item) => {
               const Icon = item.icon;
               return (
@@ -689,15 +689,15 @@ const StudentProfilePage = () => {
                   key={item.id}
                   type="button"
                   onClick={() => scrollToNode(sectionRefs.current[item.id])}
-                  className="flex w-full items-start gap-3 text-left"
+                  className="flex w-full items-start gap-2.5 text-left"
                 >
-                  <span className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-full bg-white text-brand-700 shadow-sm">
-                    <Icon size={18} />
+                  <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-700 shadow-sm">
+                    <Icon size={16} />
                   </span>
-                  <span className="min-w-0 flex-1 text-[1.02rem] font-semibold leading-6 text-navy">
+                  <span className="min-w-0 flex-1 text-[0.94rem] font-semibold leading-5 text-navy">
                     Add {item.label.toLowerCase()}
                   </span>
-                  <span className="inline-flex rounded-full bg-white px-2.5 py-1 text-xs font-bold text-emerald-600">
+                  <span className="inline-flex rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-emerald-600">
                     +{item.weight}%
                   </span>
                 </button>
@@ -707,7 +707,7 @@ const StudentProfilePage = () => {
             <button
               type="button"
               onClick={() => scrollToNode(sectionRefs.current[missingSections[0]?.id || 'personal-details'])}
-              className="mt-2 inline-flex rounded-full bg-[#ff6b3d] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
+              className="mt-1 inline-flex rounded-full bg-[#ff6b3d] px-4 py-2.5 text-[0.88rem] font-bold text-white transition hover:bg-[#ef5c30]"
             >
               {missingSections.length > 0 ? `Add ${missingSections.length} missing details` : 'Profile looks complete'}
             </button>
@@ -742,18 +742,18 @@ const StudentProfilePage = () => {
 
       <div className="grid gap-6 xl:grid-cols-[238px_minmax(0,1fr)]">
         <aside className="xl:sticky xl:top-24 xl:self-start">
-          <div className={`${cardClassName} space-y-1.5 px-1`}>
-            <h2 className="px-3 pb-3 text-[1.15rem] font-extrabold tracking-tight text-navy">Quick links</h2>
+          <div className={`${cardClassName} space-y-0.5 px-1`}>
+            <h2 className="px-3 pb-2 text-[0.92rem] font-extrabold tracking-tight text-navy">Quick links</h2>
             {quickLinks.map((item) => {
               return (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => scrollToNode(sectionRefs.current[item.id])}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-50"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-slate-50"
                 >
-                  <span className="text-[0.98rem] font-medium text-slate-900">{item.label}</span>
-                  <span className="text-[0.97rem] font-bold text-[#2d5bff]">{item.actionLabel}</span>
+                  <span className="text-[0.82rem] font-medium text-slate-900">{item.label}</span>
+                  <span className="text-[0.8rem] font-bold text-[#2d5bff]">{item.actionLabel}</span>
                 </button>
               );
             })}
@@ -1235,7 +1235,7 @@ const StudentProfilePage = () => {
               <div><p className="text-sm text-slate-400">Mobile number</p><input value={form.mobile} onChange={(event) => updateField('mobile', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add mobile number" /></div>
               <div><p className="text-sm text-slate-400">Location</p><input value={form.location} onChange={(event) => updateField('location', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add location" /></div>
               <div><p className="text-sm text-slate-400">Gender</p><input value={form.gender} onChange={(event) => updateField('gender', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add gender" /></div>
-              <div><p className="text-sm text-slate-400">Date of birth</p><input value={form.dateOfBirth} onChange={(event) => updateField('dateOfBirth', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add date of birth" /></div>
+              <div><p className="text-sm text-slate-400">Date of birth</p><input type="date" value={form.dateOfBirth} max={new Date().toISOString().split('T')[0]} onChange={(event) => updateField('dateOfBirth', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" /></div>
               <div><p className="text-sm text-slate-400">Marital status</p><input value={form.maritalStatus} onChange={(event) => updateField('maritalStatus', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add marital status" /></div>
               <div><p className="text-sm text-slate-400">Address</p><input value={form.currentAddress} onChange={(event) => updateField('currentAddress', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add address" /></div>
             </div>

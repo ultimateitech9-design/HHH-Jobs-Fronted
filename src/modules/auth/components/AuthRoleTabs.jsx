@@ -9,13 +9,13 @@ const AuthRoleTabs = ({
   showDescriptions = true
 }) => {
   return (
-    <div className={compact ? 'space-y-2' : 'space-y-2.5'}>
+    <div className={compact ? 'space-y-1' : 'space-y-2.5'}>
       <div>
-        <p className="text-sm font-semibold text-slate-700">{label}</p>
+        <p className={`${compact ? 'text-[0.92rem]' : 'text-sm'} font-semibold text-slate-700`.trim()}>{label}</p>
         {helperText ? <p className="mt-1 text-[11px] leading-5 text-slate-500">{helperText}</p> : null}
       </div>
 
-      <div className="grid gap-2.5 md:grid-cols-3">
+      <div className={`grid ${compact ? 'gap-2' : 'gap-2.5'} md:grid-cols-3`}>
         {options.map((option) => {
           const isActive = value === option.value;
 
@@ -25,13 +25,13 @@ const AuthRoleTabs = ({
               type="button"
               onClick={() => onChange(option.value)}
               disabled={disabled}
-              className={`rounded-[1.2rem] border px-3 ${compact ? 'py-2.5' : 'py-3'} text-left transition-all ${
+              className={`rounded-[1.1rem] border px-3 ${compact ? 'py-1.5' : 'py-3'} text-left transition-all ${
                 isActive
                   ? 'border-gold/30 bg-gold/10 text-navy shadow-sm'
                   : 'border-slate-200 bg-white text-slate-600 hover:border-brand-100 hover:bg-brand-50'
               } ${disabled ? 'cursor-not-allowed opacity-70' : ''}`.trim()}
             >
-              <p className="text-[13px] font-semibold leading-5">{option.label}</p>
+              <p className={`${compact ? 'text-[12px] leading-4.5' : 'text-[13px] leading-5'} font-semibold`.trim()}>{option.label}</p>
               {showDescriptions && option.description ? (
                 <p className="mt-1.5 text-[11px] leading-5 text-slate-500">{option.description}</p>
               ) : null}

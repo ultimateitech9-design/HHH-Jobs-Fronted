@@ -10,7 +10,6 @@ import {
   FiXCircle
 } from 'react-icons/fi';
 import {
-  StudentEmptyState,
   StudentNotice,
   StudentPageShell,
   StudentSurfaceCard,
@@ -172,13 +171,7 @@ const StudentInterviewsPage = () => {
             );
           })}
         </div>
-      ) : (
-        <StudentEmptyState
-          icon={FiCalendar}
-          title="No upcoming interviews"
-          description="Keep applying and refining your resume. Once companies start scheduling rounds, they will appear here with timing and notes."
-        />
-      )}
+      ) : null}
     </StudentPageShell>
   );
 };

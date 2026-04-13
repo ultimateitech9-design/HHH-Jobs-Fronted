@@ -8,6 +8,7 @@ import {
   FiUploadCloud
 } from 'react-icons/fi';
 import DataTable from '../../../shared/components/DataTable';
+import StudentMarketplaceShell from '../components/StudentMarketplaceShell';
 import {
   StudentEmptyState,
   StudentNotice,
@@ -294,22 +295,17 @@ const StudentAtsPage = () => {
   ];
 
   return (
-    <StudentPageShell
-      eyebrow="ATS Analyzer"
-      badge="Resume fit"
-      title="Measure how strongly your resume matches each target role"
-      subtitle="Run ATS checks against your saved profile resume or a custom draft, then use the keyword gaps and warnings to improve before applying."
-      stats={stats}
-    >
-      {state.error ? <StudentNotice type="error" text={state.error} /> : null}
-      {notice.text ? <StudentNotice type={notice.type || 'info'} text={notice.text} /> : null}
+    <StudentMarketplaceShell>
+      <StudentPageShell bodyClassName="pt-0" showHero={false}>
+        {state.error ? <StudentNotice type="error" text={state.error} /> : null}
+        {notice.text ? <StudentNotice type={notice.type || 'info'} text={notice.text} /> : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.95fr]">
-        <StudentSurfaceCard
-          eyebrow="Run Check"
-          title="Launch a fresh ATS comparison"
-          subtitle="Choose a live role or run a preview against any custom target description."
-        >
+        <div className="grid gap-6 xl:grid-cols-[1fr_0.95fr]">
+          <StudentSurfaceCard
+            eyebrow="Run Check"
+            title="Launch a fresh ATS comparison"
+            subtitle="Choose a live role or run a preview against any custom target description."
+          >
           {state.loading ? (
             <div className="h-72 animate-pulse rounded-[1.8rem] bg-slate-100" />
           ) : (
@@ -431,14 +427,14 @@ const StudentAtsPage = () => {
               </div>
             </form>
           )}
-        </StudentSurfaceCard>
+          </StudentSurfaceCard>
 
-        {result ? (
-          <StudentSurfaceCard
-            eyebrow="Latest Result"
-            title={`${selectedJobTitle} match overview`}
-            subtitle="Use these ATS signals to tighten your resume before the next application."
-          >
+          {result ? (
+            <StudentSurfaceCard
+              eyebrow="Latest Result"
+              title={`${selectedJobTitle} match overview`}
+              subtitle="Use these ATS signals to tighten your resume before the next application."
+            >
             <div className="grid gap-5">
               <div className="rounded-[1.8rem] border border-brand-200 bg-brand-50/70 p-5">
                 <p className="text-[11px] font-black uppercase tracking-[0.2em] text-brand-700">Overall Score</p>
@@ -518,40 +514,41 @@ const StudentAtsPage = () => {
                 </div>
               </div>
             </div>
-          </StudentSurfaceCard>
-        ) : (
-          <StudentSurfaceCard
-            eyebrow="Latest Result"
-            title="No ATS result yet"
-            subtitle="Run a check to get keyword coverage, similarity scoring, and improvement suggestions."
-          >
+            </StudentSurfaceCard>
+          ) : (
+            <StudentSurfaceCard
+              eyebrow="Latest Result"
+              title="No ATS result yet"
+              subtitle="Run a check to get keyword coverage, similarity scoring, and improvement suggestions."
+            >
             <StudentEmptyState
               icon={FiFileText}
               title="Ready when you are"
               description="Choose a role on the left, then run an ATS scan to see exactly how recruiter systems may read your resume."
               className="border-none bg-slate-50/80"
             />
-          </StudentSurfaceCard>
-        )}
-      </div>
+            </StudentSurfaceCard>
+          )}
+        </div>
 
-      <StudentSurfaceCard
-        eyebrow="History"
-        title="Past ATS checks"
-        subtitle="Compare previous runs so you can see whether profile edits are actually improving your score."
-      >
-        {history.length === 0 ? (
-          <StudentEmptyState
-            icon={FiActivity}
-            title="No ATS history yet"
-            description="Your first completed ATS scan will appear here with score, keyword fit, and timestamp."
-            className="border-none bg-slate-50/80"
-          />
-        ) : (
-          <DataTable columns={columns} rows={history.map((item) => ({ ...item, id: item.id || item.created_at }))} />
-        )}
-      </StudentSurfaceCard>
-    </StudentPageShell>
+        <StudentSurfaceCard
+          eyebrow="History"
+          title="Past ATS checks"
+          subtitle="Compare previous runs so you can see whether profile edits are actually improving your score."
+        >
+          {history.length === 0 ? (
+            <StudentEmptyState
+              icon={FiActivity}
+              title="No ATS history yet"
+              description="Your first completed ATS scan will appear here with score, keyword fit, and timestamp."
+              className="border-none bg-slate-50/80"
+            />
+          ) : (
+            <DataTable columns={columns} rows={history.map((item) => ({ ...item, id: item.id || item.created_at }))} />
+          )}
+        </StudentSurfaceCard>
+      </StudentPageShell>
+    </StudentMarketplaceShell>
   );
 };
 

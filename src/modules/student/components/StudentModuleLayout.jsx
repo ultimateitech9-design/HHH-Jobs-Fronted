@@ -7,7 +7,6 @@ import {
   FiFileText,
   FiGlobe,
   FiHome,
-  FiStar,
   FiUser
 } from 'react-icons/fi';
 import { useLocation } from 'react-router-dom';
@@ -30,8 +29,7 @@ const studentDashboardNavItems = [
   { to: '/portal/student/applications', label: 'Applications', icon: FiFileText },
   { to: '/portal/student/saved-jobs', label: 'Saved Jobs', icon: FiBookmark },
   { to: '/portal/student/interviews', label: 'Interviews', icon: FiCalendar },
-  { to: '/portal/student/analytics', label: 'Analytics', icon: FiBarChart2 },
-  { to: '/portal/student/company-reviews', label: 'Company Reviews', icon: FiStar }
+  { to: '/portal/student/analytics', label: 'Analytics', icon: FiBarChart2 }
 ];
 
 const studentHomeNavItems = [
@@ -39,9 +37,10 @@ const studentHomeNavItems = [
 ];
 
 const studentHeaderNavItems = [
-  { label: 'Jobs', to: '/portal/student/jobs' },
-  { label: 'Companies', to: '/portal/student/company-reviews' },
-  { label: 'Services', to: '/services' }
+  { label: 'Jobs', to: '/portal/student/home?jobsView=jobs' },
+  { label: 'Companies', to: '/portal/student/home' },
+  { label: 'ATS', to: '/portal/student/ats' },
+  { label: 'Services', to: '/portal/student/services' }
 ];
 
 const StudentModuleLayout = () => {
@@ -50,7 +49,15 @@ const StudentModuleLayout = () => {
   const isRetiredUser = currentUser?.role === 'retired_employee';
   const isStudentHomeRoute = location.pathname === '/portal/student/home';
   const isStudentProfileRoute = location.pathname === '/portal/student/profile';
-  const shouldHideSidebar = isStudentHomeRoute || isStudentProfileRoute;
+  const isStudentAtsRoute = location.pathname === '/portal/student/ats';
+  const isStudentServicesRoute = location.pathname === '/portal/student/services';
+  const isStudentSavedJobsRoute = location.pathname === '/portal/student/saved-jobs';
+  const shouldHideSidebar =
+    isStudentHomeRoute ||
+    isStudentProfileRoute ||
+    isStudentAtsRoute ||
+    isStudentServicesRoute ||
+    isStudentSavedJobsRoute;
 
   return (
     <PortalWorkbenchLayout

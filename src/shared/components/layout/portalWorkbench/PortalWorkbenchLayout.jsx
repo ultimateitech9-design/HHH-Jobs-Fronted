@@ -74,6 +74,10 @@ const PortalWorkbenchLayout = ({
   const avatarLetter = String(user?.name || user?.email || 'U').trim().slice(0, 1).toUpperCase();
   const avatarUrl = user?.avatarUrl || user?.avatar_url || '';
   const isCompactViewportRoute = location.pathname === '/portal/hr/employee-verification';
+  const isStudentWorkbench = portalKey === 'student';
+  const mainPaddingClass = isStudentWorkbench
+    ? 'px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-3'
+    : `px-2 py-3 sm:px-3 sm:py-4 md:px-5 ${isCompactViewportRoute ? 'md:py-4' : 'md:py-7'}`;
 
   useEffect(() => {
     const sync = () => setUser(getCurrentUser());
@@ -181,9 +185,9 @@ const PortalWorkbenchLayout = ({
           <motion.main
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`flex-1 px-3 py-4 sm:px-4 sm:py-5 md:px-6 ${isCompactViewportRoute ? 'md:py-4' : 'md:py-8'}`}
+            className={`flex-1 ${mainPaddingClass}`}
           >
-            <div className={`mx-auto flex w-full max-w-[1480px] flex-col ${isCompactViewportRoute ? 'gap-4' : 'gap-6'}`}>
+            <div className={`mx-auto flex w-full max-w-[1480px] flex-col ${isCompactViewportRoute ? 'gap-4' : 'gap-4 sm:gap-5 md:gap-6'}`}>
               <Outlet />
             </div>
           </motion.main>
