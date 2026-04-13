@@ -53,7 +53,14 @@ const OtpVerificationPage = () => {
   }, [email, emailWarning, navigate, prefilledOtp]);
 
   useEffect(() => {
-    if (emailWarning) setError(emailWarning);
+    const normalizedWarning = String(emailWarning || '').trim();
+    if (!normalizedWarning) return;
+
+    if (/otp email could not be sent|smtp|connection timeout/i.test(normalizedWarning)) {
+      return;
+    }
+
+    setError(normalizedWarning);
   }, [emailWarning]);
 
   useEffect(() => {

@@ -308,7 +308,7 @@ const SignupPage = () => {
         redirectToOtpVerification({
           email: form.email,
           otp: payload.otp || '',
-          emailWarning: payload.emailWarning || ''
+          emailWarning: payload.deliveryFailed ? '' : (payload.emailWarning || '')
         });
         return;
       }

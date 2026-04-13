@@ -283,7 +283,7 @@ const LoginPanelContent = ({
         redirectToOtpVerification({
           email: form.email,
           otp: payload.otp || '',
-          emailWarning: payload.emailWarning || payload.message || ''
+          emailWarning: payload.deliveryFailed ? '' : (payload.emailWarning || payload.message || '')
         });
         return;
       }
