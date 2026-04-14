@@ -82,12 +82,11 @@ export const getPendingVerificationSession = () => {
 
   return {
     email,
-    otp: String(pendingSession.otp || '').replace(/\D/g, '').slice(0, 6),
     emailWarning: String(pendingSession.emailWarning || '').trim()
   };
 };
 
-export const beginPendingVerificationSession = ({ email = '', otp = '', emailWarning = '' } = {}) => {
+export const beginPendingVerificationSession = ({ email = '', emailWarning = '' } = {}) => {
   const normalizedEmail = String(email || '').trim().toLowerCase();
 
   localStorage.removeItem(TOKEN_KEY);
@@ -96,7 +95,6 @@ export const beginPendingVerificationSession = ({ email = '', otp = '', emailWar
   if (normalizedEmail) {
     localStorage.setItem(PENDING_VERIFICATION_KEY, JSON.stringify({
       email: normalizedEmail,
-      otp: String(otp || '').replace(/\D/g, '').slice(0, 6),
       emailWarning: String(emailWarning || '').trim()
     }));
   } else {

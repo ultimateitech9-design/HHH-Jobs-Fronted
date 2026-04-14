@@ -217,10 +217,10 @@ const SignupPage = () => {
     );
   };
 
-  const redirectToOtpVerification = ({ email, otp = '', emailWarning = '' }) => {
-    beginPendingVerificationSession({ email, otp, emailWarning });
+  const redirectToOtpVerification = ({ email, emailWarning = '' }) => {
+    beginPendingVerificationSession({ email, emailWarning });
     navigate('/verify-otp', {
-      state: { email, otp, emailWarning },
+      state: { email, emailWarning },
       replace: true
     });
   };
@@ -230,7 +230,6 @@ const SignupPage = () => {
       const payload = createLocalSignupFallback(signupPayload);
       redirectToOtpVerification({
         email: form.email,
-        otp: payload.otp || '',
         emailWarning: fallbackMessage
       });
       return;
@@ -307,8 +306,7 @@ const SignupPage = () => {
       if (payload.requiresOtpVerification) {
         redirectToOtpVerification({
           email: form.email,
-          otp: payload.otp || '',
-          emailWarning: payload.deliveryFailed ? '' : (payload.emailWarning || '')
+          emailWarning: payload.emailWarning || ''
         });
         return;
       }

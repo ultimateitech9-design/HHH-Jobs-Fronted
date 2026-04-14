@@ -15,17 +15,18 @@ const ForgotPasswordPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [info, setInfo] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const sendOtp = async (event) => {
-    event.preventDefault();
+  const requestResetOtp = async () => {
     setError('');
+    setInfo('');
 
     if (!email) {
       setError('Email is required.');
-      return;
+      return false;
     }
 
     try {
@@ -39,24 +40,34 @@ const ForgotPasswordPage = () => {
 
       if (!response.ok) {
         setError(payload.message || 'Unable to send OTP.');
-        return;
+        return false;
       }
 
       if (payload.deliveryFailed) {
         setError(payload.message || 'Unable to send OTP right now.');
-        return;
+        return false;
       }
 
+      setOtp('');
+      setInfo(payload.message || 'OTP sent. Check your email and spam folder.');
       setStep('reset');
+      return true;
     } catch (requestError) {
       setError(requestError.message || 'Network error while sending OTP.');
+      return false;
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const sendOtp = async (event) => {
+    event.preventDefault();
+    await requestResetOtp();
+  };
+
   const resetPassword = async (event) => {
     event.preventDefault();
+    setInfo('');
     setError('');
 
     if (!otp || !newPassword || !confirmPassword) {
@@ -119,6 +130,7 @@ const ForgotPasswordPage = () => {
             disabled={isSubmitting}
             placeholder="Enter your account email"
           />
+          <AuthFormMessage tone="info">{info}</AuthFormMessage>
           <AuthFormMessage>{error}</AuthFormMessage>
           <button
             type="submit"
@@ -154,6 +166,7 @@ const ForgotPasswordPage = () => {
             showPassword={showConfirmPassword}
             onTogglePassword={() => setShowConfirmPassword((current) => !current)}
           />
+          <AuthFormMessage tone="info">{info}</AuthFormMessage>
           <AuthFormMessage>{error}</AuthFormMessage>
           <button
             type="submit"
@@ -161,6 +174,14 @@ const ForgotPasswordPage = () => {
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Resetting...' : 'Reset Password'}
+          </button>
+          <button
+            type="button"
+            onClick={requestResetOtp}
+            className="inline-flex w-full items-center justify-center rounded-full border border-brand-100 bg-brand-50 px-6 py-3 text-sm font-semibold text-brand-700 transition-all hover:-translate-y-0.5 hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Sending...' : 'Resend OTP'}
           </button>
           <button
             type="button"

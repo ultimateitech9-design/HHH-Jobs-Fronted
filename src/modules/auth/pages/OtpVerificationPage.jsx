@@ -20,6 +20,7 @@ import { otpBenefits } from '../config/authOptions';
 
 const OtpVerificationPage = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [counter, setCounter] = useState(60);
@@ -39,7 +40,6 @@ const OtpVerificationPage = () => {
     || legacyPendingEmail
     || ''
   ).trim().toLowerCase();
-  const prefilledOtp = String(location.state?.otp || pendingVerification?.otp || '').replace(/\D/g, '').slice(0, 6);
   const emailWarning = String(location.state?.emailWarning || pendingVerification?.emailWarning || '');
 
   useEffect(() => {
@@ -48,25 +48,26 @@ const OtpVerificationPage = () => {
       return;
     }
 
-    beginPendingVerificationSession({ email, otp: prefilledOtp, emailWarning });
+    beginPendingVerificationSession({ email, emailWarning });
     inputRefs.current[0]?.focus();
-  }, [email, emailWarning, navigate, prefilledOtp]);
+  }, [email, emailWarning, navigate]);
 
   useEffect(() => {
     const normalizedWarning = String(emailWarning || '').trim();
-    if (!normalizedWarning) return;
-
-    if (/otp email could not be sent|smtp|connection timeout/i.test(normalizedWarning)) {
+    if (!normalizedWarning) {
+      setNotice('');
       return;
     }
 
-    setError(normalizedWarning);
-  }, [emailWarning]);
+    if (/otp email could not be sent|smtp|connection timeout|authentication|login failed|could not send/i.test(normalizedWarning)) {
+      setNotice('');
+      setError(normalizedWarning);
+      return;
+    }
 
-  useEffect(() => {
-    if (prefilledOtp.length !== 6) return;
-    setOtp(prefilledOtp.split(''));
-  }, [prefilledOtp]);
+    setError('');
+    setNotice(normalizedWarning);
+  }, [emailWarning]);
 
   useEffect(() => {
     if (counter <= 0) return undefined;
@@ -112,6 +113,7 @@ const OtpVerificationPage = () => {
 
   const handleVerify = async () => {
     const otpCode = otp.join('');
+    setNotice('');
     setError('');
 
     if (otpCode.length !== 6) {
@@ -189,6 +191,7 @@ const OtpVerificationPage = () => {
 
   const handleResend = async () => {
     if (counter > 0) return;
+    setNotice('');
     setError('');
 
     try {
@@ -210,25 +213,18 @@ const OtpVerificationPage = () => {
       }
 
       setCounter(60);
-      const nextOtp = String(payload.otp || '').replace(/\D/g, '').slice(0, 6);
-      beginPendingVerificationSession({ email, otp: nextOtp, emailWarning: '' });
-      if (nextOtp.length === 6) {
-        setOtp(nextOtp.split(''));
-        inputRefs.current[5]?.focus();
-      } else {
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-      }
+      setNotice('A fresh OTP is on the way. Check your inbox and spam folder.');
+      beginPendingVerificationSession({ email, emailWarning: '' });
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
     } catch (requestError) {
       try {
-        const payload = resendLocalSignupOtp(email);
+        resendLocalSignupOtp(email);
         setCounter(60);
-        const nextOtp = String(payload.otp || '').replace(/\D/g, '').slice(0, 6);
-        beginPendingVerificationSession({ email, otp: nextOtp, emailWarning: '' });
-        if (nextOtp.length === 6) {
-          setOtp(nextOtp.split(''));
-          inputRefs.current[5]?.focus();
-        }
+        setNotice('A fresh OTP has been generated for this session.');
+        beginPendingVerificationSession({ email, emailWarning: '' });
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
       } catch (fallbackError) {
         setError(fallbackError.message || 'Network error while resending OTP.');
       }
@@ -253,6 +249,7 @@ const OtpVerificationPage = () => {
           onPaste={handlePaste}
         />
 
+        <AuthFormMessage tone="info">{notice}</AuthFormMessage>
         <AuthFormMessage>{error}</AuthFormMessage>
 
         <button
