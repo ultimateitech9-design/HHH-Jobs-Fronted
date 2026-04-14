@@ -57,6 +57,8 @@ const publicRoutes = [
   { path: 'verify-otp', element: <OtpVerificationPage /> },
   { path: 'forgot-password', element: <ForgotPasswordPage /> },
   { path: 'oauth/callback', element: <OAuthCallbackPage /> },
+  { path: 'auth/oauth/google/callback', element: <OAuthCallbackPage /> },
+  { path: 'auth/oauth/linkedin/callback', element: <OAuthCallbackPage /> },
   { path: 'about-us', element: <AboutUsPage /> },
   { path: 'blog', element: <BlogPage /> },
   { path: 'blog/:slug', element: <BlogArticlePage /> },

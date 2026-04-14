@@ -18,6 +18,17 @@ import AuthOtpInputGroup from '../components/AuthOtpInputGroup';
 import AuthPageShell from '../components/AuthPageShell';
 import { otpBenefits } from '../config/authOptions';
 
+const normalizeOtpErrorMessage = (message = '') => {
+  const normalized = String(message || '').trim();
+  if (!normalized) return 'Unable to resend OTP right now.';
+
+  if (/otp email could not be sent|smtp|connection timeout|enetunreach|econn|timed out/i.test(normalized)) {
+    return 'We could not deliver the OTP right now. Please wait a moment and try Resend OTP again.';
+  }
+
+  return normalized;
+};
+
 const OtpVerificationPage = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [notice, setNotice] = useState('');
@@ -208,7 +219,7 @@ const OtpVerificationPage = () => {
       }
 
       if (payload.deliveryFailed) {
-        setError(payload.emailWarning || payload.message || 'Unable to resend OTP.');
+        setError(normalizeOtpErrorMessage(payload.emailWarning || payload.message || 'Unable to resend OTP.'));
         return;
       }
 
@@ -226,7 +237,7 @@ const OtpVerificationPage = () => {
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       } catch (fallbackError) {
-        setError(fallbackError.message || 'Network error while resending OTP.');
+        setError(normalizeOtpErrorMessage(fallbackError.message || 'Network error while resending OTP.'));
       }
     }
   };

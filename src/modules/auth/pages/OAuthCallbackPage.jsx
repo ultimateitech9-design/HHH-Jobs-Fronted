@@ -13,6 +13,17 @@ const decodeBase64Url = (value) => {
   return atob(normalized + padding);
 };
 
+const decodeJwtPayload = (value) => {
+  const parts = String(value || '').split('.');
+  if (parts.length < 2) return null;
+
+  try {
+    return JSON.parse(decodeBase64Url(parts[1]));
+  } catch (error) {
+    return null;
+  }
+};
+
 const readCallbackParams = (location) => {
   const params = new URLSearchParams(location.search || '');
   const hash = String(location.hash || '').replace(/^#/, '');
@@ -46,6 +57,17 @@ const buildOAuthUser = (decodedUser) => (
       }
       : decodedUser
 );
+
+const resolveOAuthProvider = (location, stateValue = '') => {
+  const pathnameMatch = String(location.pathname || '').match(/\/auth\/oauth\/([^/]+)\/callback\/?$/i);
+  if (pathnameMatch?.[1]) {
+    return String(pathnameMatch[1]).trim().toLowerCase();
+  }
+
+  const statePayload = decodeJwtPayload(stateValue);
+  const provider = String(statePayload?.provider || '').trim().toLowerCase();
+  return provider || '';
+};
 
 const OAuthCallbackPage = () => {
   const navigate = useNavigate();
@@ -96,9 +118,16 @@ const OAuthCallbackPage = () => {
         return;
       }
 
+      const provider = resolveOAuthProvider(location, state);
+      if (!provider) {
+        if (!cancelled) setError('Unable to identify the social login provider. Please try again.');
+        return;
+      }
+
       try {
-        const response = await apiFetch('/auth/oauth/linkedin/exchange', {
+        const response = await apiFetch(`/auth/oauth/${provider}/exchange`, {
           method: 'POST',
+          skipAuth: true,
           body: JSON.stringify({ code, state })
         });
         let payload = {};
