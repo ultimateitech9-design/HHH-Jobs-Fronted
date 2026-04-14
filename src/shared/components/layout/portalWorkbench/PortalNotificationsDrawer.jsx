@@ -222,10 +222,6 @@ const PortalNotificationsDrawer = ({
                   <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-brand-600">
                     <Bell className="h-7 w-7" />
                   </span>
-                  <h3 className="mt-4 font-heading text-2xl font-extrabold text-slate-950">Alerts bhej</h3>
-                  <p className="mt-2 max-w-xs text-sm leading-6 text-slate-500">
-                    Job related notifications yahin dikhengi jaise hi naye alerts, recruiter updates, ya application signals aayenge.
-                  </p>
                 </div>
               )}
             </div>
