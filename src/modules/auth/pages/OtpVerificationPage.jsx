@@ -24,6 +24,7 @@ const OtpVerificationPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [counter, setCounter] = useState(60);
   const inputRefs = useRef([]);
+  const autoSendTriggeredRef = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -73,6 +74,67 @@ const OtpVerificationPage = () => {
     const timer = setTimeout(() => setCounter((value) => value - 1), 1000);
     return () => clearTimeout(timer);
   }, [counter]);
+
+  const requestOtp = async ({ allowImmediate = false } = {}) => {
+    if (!email) return;
+    if (!allowImmediate && counter > 0) return;
+
+    setError('');
+
+    try {
+      const response = await apiFetch('/auth/send-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+        timeoutMs: AUTH_REQUEST_TIMEOUT_MS
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        setError(payload.message || 'Unable to resend OTP.');
+        if (allowImmediate) setCounter(0);
+        return;
+      }
+
+      if (payload.deliveryFailed) {
+        setError(payload.emailWarning || payload.message || 'Unable to resend OTP.');
+        if (allowImmediate) setCounter(0);
+        return;
+      }
+
+      setCounter(60);
+      const nextOtp = String(payload.otp || '').replace(/\D/g, '').slice(0, 6);
+      beginPendingVerificationSession({ email, otp: nextOtp, emailWarning: '' });
+
+      if (nextOtp.length === 6) {
+        setOtp(nextOtp.split(''));
+        inputRefs.current[5]?.focus();
+      } else {
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+      }
+    } catch (requestError) {
+      try {
+        const payload = resendLocalSignupOtp(email);
+        setCounter(60);
+        const nextOtp = String(payload.otp || '').replace(/\D/g, '').slice(0, 6);
+        beginPendingVerificationSession({ email, otp: nextOtp, emailWarning: '' });
+        if (nextOtp.length === 6) {
+          setOtp(nextOtp.split(''));
+          inputRefs.current[5]?.focus();
+        }
+      } catch (fallbackError) {
+        setError(fallbackError.message || 'Network error while resending OTP.');
+        if (allowImmediate) setCounter(0);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!email || prefilledOtp.length === 6 || autoSendTriggeredRef.current) return;
+    autoSendTriggeredRef.current = true;
+    setCounter(0);
+    requestOtp({ allowImmediate: true });
+  }, [email, prefilledOtp]);
 
   const handleChange = (index, value) => {
     if (!/^\d*$/.test(value)) return;
@@ -188,51 +250,7 @@ const OtpVerificationPage = () => {
   };
 
   const handleResend = async () => {
-    if (counter > 0) return;
-    setError('');
-
-    try {
-      const response = await apiFetch('/auth/send-otp', {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-        timeoutMs: AUTH_REQUEST_TIMEOUT_MS
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        setError(payload.message || 'Unable to resend OTP.');
-        return;
-      }
-
-      if (payload.deliveryFailed) {
-        setError(payload.emailWarning || payload.message || 'Unable to resend OTP.');
-        return;
-      }
-
-      setCounter(60);
-      const nextOtp = String(payload.otp || '').replace(/\D/g, '').slice(0, 6);
-      beginPendingVerificationSession({ email, otp: nextOtp, emailWarning: '' });
-      if (nextOtp.length === 6) {
-        setOtp(nextOtp.split(''));
-        inputRefs.current[5]?.focus();
-      } else {
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-      }
-    } catch (requestError) {
-      try {
-        const payload = resendLocalSignupOtp(email);
-        setCounter(60);
-        const nextOtp = String(payload.otp || '').replace(/\D/g, '').slice(0, 6);
-        beginPendingVerificationSession({ email, otp: nextOtp, emailWarning: '' });
-        if (nextOtp.length === 6) {
-          setOtp(nextOtp.split(''));
-          inputRefs.current[5]?.focus();
-        }
-      } catch (fallbackError) {
-        setError(fallbackError.message || 'Network error while resending OTP.');
-      }
-    }
+    await requestOtp();
   };
 
   return (
