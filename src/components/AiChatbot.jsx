@@ -58,10 +58,33 @@ const getUiLanguage = (languageMode, detectedLanguage) => {
   return detectedLanguage || LANGUAGE.ENGLISH;
 };
 
-const createStarterMessage = (language) => ({
-  role: 'assistant',
-  content: uiCopy[language]?.starter || uiCopy.english.starter
-});
+const createStarterMessage = (language, userRole = 'guest') => {
+  const baseCopy = uiCopy[language]?.starter || uiCopy.english.starter;
+  const normalizedRole = String(userRole || 'guest').trim().toLowerCase();
+
+  if (normalizedRole === 'hr') {
+    return {
+      role: 'assistant',
+      content: language === LANGUAGE.HINDI
+        ? 'Namaste! Main HHH Jobs Recruiter Copilot hoon. Main JD improve karne, screening questions banane, shortlist strategy, interview planning, aur recruiter dashboard tasks me help kar sakta hoon.'
+        : 'Hi! I am the HHH Jobs Recruiter Copilot. I can help with job descriptions, screening questions, shortlist strategy, interview planning, and recruiter dashboard tasks.'
+    };
+  }
+
+  if (normalizedRole === 'admin' || normalizedRole === 'super_admin') {
+    return {
+      role: 'assistant',
+      content: language === LANGUAGE.HINDI
+        ? 'Namaste! Main HHH Jobs Operations Copilot hoon. Main dashboard insights, moderation, workflow issues, aur platform actions ko samjhane me help kar sakta hoon.'
+        : 'Hi! I am the HHH Jobs Operations Copilot. I can help explain dashboard insights, moderation tasks, workflow issues, and platform actions.'
+    };
+  }
+
+  return {
+    role: 'assistant',
+    content: baseCopy
+  };
+};
 
 const detectMessageLanguage = (text = '') => {
   const message = String(text || '').trim();
@@ -80,10 +103,10 @@ const resolveReplyLanguage = (languageMode, text) => {
 const fallbackErrorReply = (errorMessage, language = LANGUAGE.ENGLISH) => {
   const inHindi = language === LANGUAGE.HINDI;
 
-  if (/Missing XAI_API_KEY|AI request failed|AI provider request failed/i.test(errorMessage)) {
+  if (/Missing OPENAI_API_KEY|Missing XAI_API_KEY|Missing AI provider configuration|AI request failed|AI provider request failed/i.test(errorMessage)) {
     return inHindi
-      ? 'AI service abhi configure nahi lag rahi. Server me XAI_API_KEY set karke phir try karein.'
-      : 'AI service seems unconfigured right now. Please set XAI_API_KEY on the server and try again.';
+      ? 'AI service abhi configure nahi lag rahi. Server me OPENAI_API_KEY ya XAI_API_KEY set karke phir try karein.'
+      : 'AI service seems unconfigured right now. Please set OPENAI_API_KEY or XAI_API_KEY on the server and try again.';
   }
 
   if (/Missing server configuration/i.test(errorMessage)) {
@@ -156,9 +179,16 @@ const AiChatbot = ({ hideToggleButton = false }) => {
   const canSend = useMemo(() => input.trim().length > 0 && !isLoading, [input, isLoading]);
 
   const resetChat = () => {
-    setMessages([createStarterMessage(uiLanguage)]);
+    setMessages([createStarterMessage(uiLanguage, user?.role)]);
     setInput('');
   };
+
+  useEffect(() => {
+    setMessages((current) => {
+      if (current.length > 1) return current;
+      return [createStarterMessage(uiLanguage, user?.role)];
+    });
+  }, [uiLanguage, user?.role]);
 
   const sendMessage = async (event) => {
     event.preventDefault();

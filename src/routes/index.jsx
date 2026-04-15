@@ -20,6 +20,7 @@ import auditRoutes from './auditRoutes';
 import retiredRoutes from './retiredRoutes';
 
 const ManagementPortalPage = lazy(() => import('../modules/common/pages/ManagementPortalPage'));
+const ManagementLoginPage = lazy(() => import('../modules/auth/pages/ManagementLoginPage'));
 
 const ChunkRecoveryReady = ({ children }) => {
   const location = useLocation();
@@ -50,6 +51,15 @@ const router = createBrowserRouter([
     element: (
       <SuspenseWrapper>
         <ManagementPortalPage />
+      </SuspenseWrapper>
+    )
+  },
+  {
+    path: '/management/login/:portalKey',
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <SuspenseWrapper>
+        <ManagementLoginPage />
       </SuspenseWrapper>
     )
   },

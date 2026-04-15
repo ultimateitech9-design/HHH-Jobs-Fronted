@@ -138,6 +138,7 @@ const PortalWorkbenchLayout = ({
           support={support}
           title={activeItem?.label || portalLabel}
           onOpenMobileNav={() => setMobileMenuOpen(true)}
+          onLogout={handleLogout}
         />
       ) : null}
 
@@ -179,6 +180,7 @@ const PortalWorkbenchLayout = ({
               support={support}
               title={activeItem?.label || portalLabel}
               onOpenMobileNav={() => setMobileMenuOpen(true)}
+              onLogout={handleLogout}
             />
           )}
 

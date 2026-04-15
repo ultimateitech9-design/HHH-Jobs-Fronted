@@ -5,7 +5,7 @@ export const socialRoleOptions = [
 
 export const signupRoleOptions = [
   { value: 'student', label: 'Student / Candidate', description: 'Apply for roles, track applications, and manage your profile.' },
-  { value: 'hr', label: 'HR / Recruiter', description: 'Manage openings, applicants, and hiring communication.' },
+  { value: 'hr', label: 'Employer / Recruiter', description: 'Manage openings, applicants, and hiring communication.' },
   { value: 'retired_employee', label: 'Retired Employee', description: 'Explore opportunities designed for experienced professionals.' }
 ];
 

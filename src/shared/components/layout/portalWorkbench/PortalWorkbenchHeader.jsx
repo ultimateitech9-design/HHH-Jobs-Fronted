@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bell, ChevronDown, Menu, Search } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Menu, Search, User } from 'lucide-react';
 import useAuthStore from '../../../../core/auth/authStore';
 import useNotificationStore from '../../../../core/notifications/notificationStore';
 import { getNotificationPathByRole } from '../../../../utils/auth';
@@ -18,11 +18,14 @@ const PortalWorkbenchHeader = ({
   subtitle,
   support,
   title,
-  onOpenMobileNav
+  onOpenMobileNav,
+  onLogout
 }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState('');
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const navRef = useRef(null);
+  const profileMenuRef = useRef(null);
   const user = useAuthStore((state) => state.user);
   const notifications = useNotificationStore((state) => state.notifications);
   const streamConnected = useNotificationStore((state) => state.streamConnected);
@@ -35,6 +38,9 @@ const PortalWorkbenchHeader = ({
     const handleClickOutside = (event) => {
       if (!navRef.current?.contains(event.target)) {
         setOpenDropdown('');
+      }
+      if (!profileMenuRef.current?.contains(event.target)) {
+        setProfileMenuOpen(false);
       }
     };
 
@@ -162,14 +168,48 @@ const PortalWorkbenchHeader = ({
                 ) : null}
               </button>
 
-              <Link
-                to={profilePath || '/'}
-                aria-label="Open profile"
-                title="Open profile"
-                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-gold/30 gradient-primary text-xs font-bold text-white shadow-sm transition-transform hover:scale-[1.03] hover:ring-2 hover:ring-gold/20 sm:h-10 sm:w-10"
-              >
-                {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" /> : avatarLetter}
-              </Link>
+              <div ref={profileMenuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setProfileMenuOpen((current) => !current)}
+                  aria-label="Open profile menu"
+                  title="Open profile menu"
+                  className="flex h-9 items-center gap-1.5 rounded-full border border-gold/20 bg-white px-1.5 pr-2 text-xs font-bold text-white shadow-sm transition hover:border-gold/40 hover:ring-2 hover:ring-gold/10 sm:h-10"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full gradient-primary sm:h-9 sm:w-9">
+                    {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" /> : avatarLetter}
+                  </span>
+                  <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {profileMenuOpen ? (
+                  <div className="absolute right-0 top-full z-30 mt-3 w-56 rounded-[1.25rem] border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
+                    <div className="rounded-[1rem] bg-[#f7f5ef] px-3 py-3">
+                      <p className="truncate text-sm font-semibold text-slate-900">{user?.name || 'Profile'}</p>
+                      <p className="truncate text-xs text-slate-500">{user?.email || profilePath}</p>
+                    </div>
+                    <Link
+                      to={profilePath || '/'}
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="mt-2 flex items-center gap-2 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-navy"
+                    >
+                      <User className="h-4 w-4" />
+                      <span>My profile</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        onLogout?.();
+                      }}
+                      className="flex w-full items-center gap-2 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Log out</span>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <div className="col-span-full md:hidden">
@@ -253,14 +293,48 @@ const PortalWorkbenchHeader = ({
             ) : null}
           </button>
 
-          <Link
-            to={profilePath || '/'}
-            aria-label="Open profile"
-            title="Open profile"
-            className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full gradient-primary text-xs font-bold text-white shadow-md shadow-brand-500/20 transition-transform hover:scale-[1.03] hover:ring-2 hover:ring-brand-200 sm:h-10 sm:w-10"
-          >
-            {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" /> : avatarLetter}
-          </Link>
+          <div ref={profileMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setProfileMenuOpen((current) => !current)}
+              aria-label="Open profile menu"
+              title="Open profile menu"
+              className="flex h-9 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-1.5 pr-2 shadow-[0_10px_24px_rgba(15,23,42,0.06)] transition hover:border-slate-300 sm:h-10"
+            >
+              <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full gradient-primary text-xs font-bold text-white shadow-md shadow-brand-500/20 sm:h-9 sm:w-9">
+                {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" /> : avatarLetter}
+              </span>
+              <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {profileMenuOpen ? (
+              <div className="absolute right-0 top-full z-30 mt-3 w-56 rounded-[1.25rem] border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
+                <div className="rounded-[1rem] bg-[#f7f5ef] px-3 py-3">
+                  <p className="truncate text-sm font-semibold text-slate-900">{user?.name || 'Profile'}</p>
+                  <p className="truncate text-xs text-slate-500">{user?.email || profilePath}</p>
+                </div>
+                <Link
+                  to={profilePath || '/'}
+                  onClick={() => setProfileMenuOpen(false)}
+                  className="mt-2 flex items-center gap-2 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-navy"
+                >
+                  <User className="h-4 w-4" />
+                  <span>My profile</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    onLogout?.();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Log out</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
     </>

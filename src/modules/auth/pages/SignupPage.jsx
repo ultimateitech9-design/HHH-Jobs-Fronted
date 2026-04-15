@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
+import { FcGoogle } from 'react-icons/fc';
+import { FiAward, FiBriefcase, FiCheckCircle, FiShield, FiUser } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import AnimatedSection from '../../../shared/components/AnimatedSection';
 import { apiFetch, apiUrl, areDemoFallbacksEnabled, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
 import {
   beginPendingVerificationSession,
@@ -15,21 +18,13 @@ import {
 } from '../../../utils/hrIdentity';
 import AuthFormMessage from '../components/AuthFormMessage';
 import AuthInputField from '../components/AuthInputField';
-import AuthPageShell from '../components/AuthPageShell';
 import AuthPasswordField from '../components/AuthPasswordField';
-import AuthRoleTabs from '../components/AuthRoleTabs';
 import AuthSelectField from '../components/AuthSelectField';
-import AuthSocialButtons from '../components/AuthSocialButtons';
 import {
-  casteOptions,
   countryCodeOptions,
-  genderOptions,
-  religionOptions,
-  signupRoleOptions,
-  signupShellBenefits
+  signupRoleOptions
 } from '../config/authOptions';
 import {
-  getMaxSignupDob,
   getSelectedCountry,
   validateSignupField
 } from '../utils/signupValidation';
@@ -41,17 +36,41 @@ const initialFormState = {
   countryCode: '+91',
   mobile: '',
   password: '',
-  role: 'student',
-  dateOfBirth: '',
-  gender: '',
-  caste: '',
-  religion: ''
+  role: 'student'
 };
 
 const getRoleFromSearch = (search = '') => {
   const roleParam = new URLSearchParams(search).get('role');
   const allowedRoles = new Set(['student', 'hr', 'retired_employee']);
   return allowedRoles.has(roleParam) ? roleParam : initialFormState.role;
+};
+
+const signupBenefitItems = [
+  'Build your profile and get discovered faster.',
+  'Receive updates relevant to your account type.',
+  'Start with a cleaner, guided onboarding flow.'
+];
+
+const socialProviderMeta = {
+  google: {
+    label: 'Google',
+    icon: FcGoogle
+  }
+};
+
+const roleCardMeta = {
+  student: {
+    icon: FiUser,
+    eyebrow: 'Candidate profile'
+  },
+  hr: {
+    icon: FiBriefcase,
+    eyebrow: 'Recruiter access'
+  },
+  retired_employee: {
+    icon: FiAward,
+    eyebrow: 'Experienced profile'
+  }
 };
 
 const SignupPage = () => {
@@ -75,7 +94,7 @@ const SignupPage = () => {
   const visibleSignupRoleOptions = requestedSignupRole === 'hr'
     ? signupRoleOptions.filter((option) => option.value === 'hr')
     : requestedSignupRole === 'student'
-      ? signupRoleOptions.filter((option) => option.value !== 'hr')
+      ? signupRoleOptions.filter((option) => option.value !== 'retired_employee')
       : requestedSignupRole === 'retired_employee'
         ? signupRoleOptions.filter((option) => option.value === 'retired_employee')
       : signupRoleOptions;
@@ -131,8 +150,7 @@ const SignupPage = () => {
       [key]: validateSignupField(key, nextValue, nextForm),
       ...(key === 'role'
         ? {
-          companyName: validateSignupField('companyName', nextForm.companyName, nextForm),
-          dateOfBirth: validateSignupField('dateOfBirth', nextForm.dateOfBirth, nextForm)
+          companyName: validateSignupField('companyName', nextForm.companyName, nextForm)
         }
         : {})
     }));
@@ -168,8 +186,7 @@ const SignupPage = () => {
       companyName: validateSignupField('companyName', form.companyName, form),
       email: validateSignupField('email', form.email, form),
       mobile: validateSignupField('mobile', form.mobile, form),
-      password: validateSignupField('password', form.password, form),
-      dateOfBirth: validateSignupField('dateOfBirth', form.dateOfBirth, form)
+      password: validateSignupField('password', form.password, form)
     };
 
     setFieldErrors(errors);
@@ -277,11 +294,7 @@ const SignupPage = () => {
       email: form.email.trim(),
       mobile: fullMobile,
       password: form.password,
-      role: form.role,
-      dateOfBirth: form.dateOfBirth,
-      gender: form.gender,
-      caste: form.caste,
-      religion: form.religion
+      role: form.role
     };
 
     try {
@@ -360,22 +373,15 @@ const SignupPage = () => {
     setError('');
 
     if (form.role === 'hr') {
-      setError('HR accounts must use manual signup and login. Google and LinkedIn are only for student and retired employee accounts.');
+      setError('Employer / Recruiter accounts must use manual signup and login. Google sign-up is only for candidate and retired employee accounts.');
       return;
     }
 
     const companyNameError = validateSignupField('companyName', form.companyName, form);
-    const dateOfBirthError = validateSignupField('dateOfBirth', form.dateOfBirth, form);
 
     if (companyNameError) {
       setFieldErrors((current) => ({ ...current, companyName: companyNameError }));
       setError(companyNameError);
-      return;
-    }
-
-    if (dateOfBirthError) {
-      setFieldErrors((current) => ({ ...current, dateOfBirth: dateOfBirthError }));
-      setError(dateOfBirthError);
       return;
     }
 
@@ -388,198 +394,270 @@ const SignupPage = () => {
 
   const selectedCountry = getSelectedCountry(form.countryCode);
   const isSocialSignupAllowed = form.role === 'student' || form.role === 'retired_employee';
-  const maxSignupDob = getMaxSignupDob();
+  const visibleSocialProviders = (Array.isArray(availableProviders) ? availableProviders : ['google'])
+    .filter((provider) => provider === 'google');
+  const roleGridClassName = visibleSignupRoleOptions.length === 1
+    ? 'grid-cols-1'
+    : visibleSignupRoleOptions.length === 2
+      ? 'md:grid-cols-2'
+      : 'md:grid-cols-3';
+  const activeRoleMeta = roleCardMeta[form.role];
+  const ActiveRoleIcon = activeRoleMeta?.icon || FiUser;
 
   return (
-    <AuthPageShell
-      eyebrow="Create Account"
-      title="Register for HHH Jobs"
-      description="Create the account that matches your hiring or career goals and start with a clear, guided registration flow."
-      sideTitle="Build your HHH Jobs account with confidence"
-      sideDescription="Choose the role that fits you, complete a straightforward setup, and begin applying, hiring, or exploring new opportunities."
-      benefits={signupShellBenefits}
-      balancedPanels
-      lockBalancedHeight={false}
-      compactHeader
-      panelClassName="w-full !p-3.5 md:!p-4"
-      sideClassName="w-full !gap-3 !p-4"
-    >
-      <div className="flex h-full flex-col gap-2.5">
-        <div className="space-y-2.5">
-            <AuthRoleTabs
-              label="Account type"
-              helperText=""
-              value={form.role}
-              options={visibleSignupRoleOptions}
-              onChange={(value) => handleChange('role', value)}
-              disabled={isSubmitting || Boolean(socialLoading) || isLockedSignupLane}
-              compact
-              showDescriptions={false}
-            />
+    <section className="relative min-h-screen overflow-hidden bg-[#f5f1e8] px-4 py-6 md:px-6 md:py-8">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.14),transparent_26%),radial-gradient(circle_at_100%_0%,rgba(15,23,42,0.06),transparent_28%),linear-gradient(180deg,#f6f1e8_0%,#fbfaf7_52%,#f6f8fb_100%)]" />
 
-          {isSocialSignupAllowed ? (
-            <AuthSocialButtons
-              onProviderClick={startSocialSignup}
-              loading={socialLoading}
-              disabled={isSubmitting || Boolean(socialLoading)}
-              availableProviders={availableProviders}
-              providersLoading={providersLoading}
-              compact
-            />
-          ) : (
-            <AuthFormMessage tone="info">
-              Recruiter accounts are created through the manual form below.
-            </AuthFormMessage>
-          )}
-
-          <AuthFormMessage>{error}</AuthFormMessage>
-
-          <div className="my-0.5 flex items-center gap-2.5">
-            <span className="h-px flex-1 bg-slate-200" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Manual signup</span>
-            <span className="h-px flex-1 bg-slate-200" />
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-2.5">
-          <div className="space-y-2.5">
-            <div className={`grid gap-2.5 ${form.role === 'hr' ? 'md:grid-cols-2' : ''}`}>
-              <AuthInputField
-                label="Name"
-                type="text"
-                value={form.name}
-                onChange={(event) => handleChange('name', event.target.value)}
-                placeholder="Enter full name"
-                disabled={isSubmitting || Boolean(socialLoading)}
-                error={fieldErrors.name}
-                className="py-1"
-              />
-
-              {form.role === 'hr' ? (
-                <AuthInputField
-                  label="Company Name"
-                  type="text"
-                  value={form.companyName}
-                  onChange={(event) => handleChange('companyName', event.target.value)}
-                  placeholder="Enter company name"
-                  disabled={isSubmitting || Boolean(socialLoading)}
-                  error={fieldErrors.companyName}
-                  className="py-1"
-                />
-              ) : null}
+      <div className="relative mx-auto grid w-full max-w-[74rem] gap-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
+        <AnimatedSection className="hidden lg:block lg:pt-10">
+          <aside className="sticky top-8 mx-auto w-full max-w-[18rem] rounded-[2rem] border border-white/70 bg-[rgba(255,252,246,0.82)] p-6 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur">
+            <div className="rounded-[1.6rem] border border-white/80 bg-white/80 p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f5efe1] text-navy">
+                <ActiveRoleIcon size={22} />
+              </div>
+              <p className="mt-4 text-[0.76rem] font-semibold uppercase tracking-[0.22em] text-gold-dark">
+                {activeRoleMeta?.eyebrow || 'Profile setup'}
+              </p>
+              <h2 className="mt-2 text-[1.3rem] font-semibold tracking-[-0.03em] text-slate-950">
+                Account setup, without clutter
+              </h2>
+              <p className="mt-3 text-[0.92rem] leading-6 text-slate-500">
+                Create the right HHH Jobs profile with a softer, cleaner registration flow.
+              </p>
             </div>
 
-            <div className="grid gap-2.5 md:grid-cols-[170px_minmax(0,1fr)]">
-              <AuthSelectField
-                label="Country Code"
-                value={form.countryCode}
-                onChange={(event) => handleCountryCodeChange(event.target.value)}
-                options={countryCodeOptions}
-                disabled={isSubmitting || Boolean(socialLoading)}
-                className="py-1.5"
-              />
-              <AuthInputField
-                label="Mobile"
-                type="tel"
-                inputMode="numeric"
-                value={form.mobile}
-                onChange={(event) => handleChange('mobile', event.target.value)}
-                placeholder={`Enter ${selectedCountry.digits}-digit mobile`}
-                disabled={isSubmitting || Boolean(socialLoading)}
-                error={fieldErrors.mobile}
-                className="py-1"
-              />
+            <div className="mt-5 space-y-3">
+              {signupBenefitItems.map((item) => (
+                <div key={item} className="flex items-start gap-3 rounded-[1.15rem] border border-white/70 bg-white/75 px-4 py-3 text-[0.92rem] leading-6 text-slate-600">
+                  <span className="mt-1 text-brand-600">
+                    <FiCheckCircle size={16} />
+                  </span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </aside>
+        </AnimatedSection>
+
+        <AnimatedSection delay={0.06}>
+          <div className="rounded-[2rem] border border-slate-200/80 bg-white/92 p-5 shadow-[0_24px_72px_rgba(15,23,42,0.09)] backdrop-blur md:p-8">
+            <div className="max-w-[34rem]">
+              <p className="text-[0.76rem] font-semibold uppercase tracking-[0.22em] text-gold-dark">Create your profile</p>
+              <h1 className="mt-2 text-[1.75rem] font-semibold tracking-[-0.04em] text-slate-950 md:text-[2.15rem]">
+                Create your HHH Jobs profile
+              </h1>
+              <p className="mt-3 text-[0.95rem] leading-7 text-slate-500">
+                Open the right account lane, finish the essentials, and move into your dashboard without a noisy form.
+              </p>
             </div>
 
-            <div className="grid gap-2.5 md:grid-cols-2">
-              <AuthInputField
-                label="Email"
-                type="email"
-                value={form.email}
-                onChange={(event) => handleChange('email', event.target.value)}
-                placeholder="Enter email address"
-                disabled={isSubmitting || Boolean(socialLoading)}
-                error={fieldErrors.email}
-                className="py-1"
-              />
-
-              <AuthPasswordField
-                label="Password"
-                value={form.password}
-                onChange={(event) => handleChange('password', event.target.value)}
-                placeholder="Enter password"
-                disabled={isSubmitting || Boolean(socialLoading)}
-                error={fieldErrors.password}
-                showPassword={showPassword}
-                onTogglePassword={() => setShowPassword((current) => !current)}
-                className="py-1"
-              />
-            </div>
-
-            {form.role !== 'hr' ? (
-              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50/70 p-3">
-                <p className="text-[0.92rem] font-semibold text-navy">Profile metadata</p>
-                <div className="mt-2 grid gap-2.5 md:grid-cols-2">
+            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+              <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_176px]">
+                <div className="space-y-4">
                   <AuthInputField
-                    label="Date of Birth"
-                    type="date"
-                    value={form.dateOfBirth}
-                    max={maxSignupDob}
-                    onChange={(event) => handleChange('dateOfBirth', event.target.value)}
+                    label="Full name"
+                    type="text"
+                    value={form.name}
+                    onChange={(event) => handleChange('name', event.target.value)}
+                    placeholder={form.role === 'hr' ? 'Enter contact person name' : 'What is your name?'}
                     disabled={isSubmitting || Boolean(socialLoading)}
-                    error={fieldErrors.dateOfBirth}
-                    helper={form.role === 'retired_employee' ? 'Retired employee registration requires age 60+.' : 'Minimum age for registration is 16 years.'}
-                    className="py-1"
+                    error={fieldErrors.name}
+                    className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                   />
 
-                  <AuthSelectField
-                    label="Gender"
-                    value={form.gender}
-                    onChange={(event) => handleChange('gender', event.target.value)}
-                    options={genderOptions}
+                  {form.role === 'hr' ? (
+                    <AuthInputField
+                      label="Company name"
+                      type="text"
+                      value={form.companyName}
+                      onChange={(event) => handleChange('companyName', event.target.value)}
+                      placeholder="Enter your company name"
+                      disabled={isSubmitting || Boolean(socialLoading)}
+                      error={fieldErrors.companyName}
+                      helper="This helps us set up your recruiter workspace."
+                      className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
+                    />
+                  ) : null}
+
+                  <AuthInputField
+                    label="Email ID"
+                    type="email"
+                    value={form.email}
+                    onChange={(event) => handleChange('email', event.target.value)}
+                    placeholder="Tell us your Email ID"
                     disabled={isSubmitting || Boolean(socialLoading)}
-                    className="py-1.5"
+                    error={fieldErrors.email}
+                    helper="We'll send relevant updates and verification to this email."
+                    className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                   />
 
-                  <AuthSelectField
-                    label="Caste"
-                    value={form.caste}
-                    onChange={(event) => handleChange('caste', event.target.value)}
-                    options={casteOptions}
+                  <AuthPasswordField
+                    label="Password"
+                    value={form.password}
+                    onChange={(event) => handleChange('password', event.target.value)}
+                    placeholder="Create a secure password"
                     disabled={isSubmitting || Boolean(socialLoading)}
-                    className="py-1.5"
+                    error={fieldErrors.password}
+                    helper="This helps keep your account protected."
+                    showPassword={showPassword}
+                    onTogglePassword={() => setShowPassword((current) => !current)}
+                    className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 focus-within:!border-gold/60 focus-within:!bg-white"
                   />
 
-                  <AuthSelectField
-                    label="Religion"
-                    value={form.religion}
-                    onChange={(event) => handleChange('religion', event.target.value)}
-                    options={religionOptions}
-                    disabled={isSubmitting || Boolean(socialLoading)}
-                    className="py-1.5"
-                  />
+                  <div className="grid gap-3 md:grid-cols-[148px_minmax(0,1fr)]">
+                    <AuthSelectField
+                      label="Country code"
+                      value={form.countryCode}
+                      onChange={(event) => handleCountryCodeChange(event.target.value)}
+                      options={countryCodeOptions}
+                      disabled={isSubmitting || Boolean(socialLoading)}
+                      className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] focus:!border-gold/60 focus:!bg-white"
+                    />
+                    <AuthInputField
+                      label="Mobile number"
+                      type="tel"
+                      inputMode="numeric"
+                      value={form.mobile}
+                      onChange={(event) => handleChange('mobile', event.target.value)}
+                      placeholder={`Enter your ${selectedCountry.digits}-digit mobile number`}
+                      disabled={isSubmitting || Boolean(socialLoading)}
+                      error={fieldErrors.mobile}
+                      helper="Recruiters and alerts can reach you on this number."
+                      className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="lg:border-l lg:border-slate-200 lg:pl-6">
+                  <div className="flex items-center gap-3 pb-4 lg:hidden">
+                    <span className="h-px flex-1 bg-slate-200" />
+                    <span className="text-[0.76rem] font-semibold text-slate-400">Or</span>
+                    <span className="h-px flex-1 bg-slate-200" />
+                  </div>
+
+                  <p className="text-[0.78rem] font-semibold text-gold-dark lg:pt-2">Continue with</p>
+
+                  {isSocialSignupAllowed ? (
+                    <div className="mt-3 space-y-2.5">
+                      {providersLoading ? (
+                        <p className="rounded-[1.1rem] border border-slate-200 bg-[#f8f6f1] px-3 py-3 text-[0.84rem] text-slate-500">
+                          Loading social sign-up...
+                        </p>
+                      ) : visibleSocialProviders.length > 0 ? (
+                        visibleSocialProviders.map((provider) => {
+                          const meta = socialProviderMeta[provider];
+                          if (!meta) return null;
+
+                          const Icon = meta.icon;
+
+                          return (
+                            <button
+                              key={provider}
+                              type="button"
+                              onClick={() => startSocialSignup(provider)}
+                              disabled={isSubmitting || Boolean(socialLoading)}
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2.5 text-[0.9rem] font-semibold text-navy shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-0.5 hover:border-gold/40 hover:bg-[#fdf9ef] disabled:cursor-not-allowed disabled:opacity-70"
+                            >
+                              {provider === 'google' ? <Icon size={18} /> : <Icon size={16} />}
+                              <span>{socialLoading === provider ? 'Redirecting...' : meta.label}</span>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <p className="rounded-[1.1rem] border border-slate-200 bg-[#f8f6f1] px-3 py-3 text-[0.84rem] text-slate-500">
+                          Social sign-up is not available right now.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-3 rounded-[1.1rem] border border-slate-200 bg-[#f8f6f1] p-3 text-[0.84rem] leading-5 text-slate-600">
+                      <div className="flex items-start gap-2.5">
+                        <span className="mt-0.5 text-brand-600">
+                          <FiShield size={15} />
+                        </span>
+                        <span>Social sign-up is available for candidate and retired employee profiles.</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            ) : null}
 
+              <AuthFormMessage>{error}</AuthFormMessage>
+
+              <div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[0.92rem] font-semibold text-slate-800">Account type</p>
+                    <p className="mt-1 text-[0.8rem] text-slate-500">Choose the profile that matches your goal.</p>
+                  </div>
+                  {isLockedSignupLane ? (
+                    <span className="rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-[0.72rem] font-semibold text-gold-dark">
+                      Preselected
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className={`grid gap-3 ${roleGridClassName}`.trim()}>
+                  {visibleSignupRoleOptions.map((option) => {
+                    const isActive = form.role === option.value;
+                    const meta = roleCardMeta[option.value];
+                    const Icon = meta?.icon || FiUser;
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleChange('role', option.value)}
+                        disabled={isSubmitting || Boolean(socialLoading) || isLockedSignupLane}
+                        className={`flex items-start justify-between gap-3 rounded-[1rem] border p-4 text-left transition-all ${
+                          isActive
+                            ? 'border-gold/25 bg-[#fbf6ea] shadow-[0_10px_24px_rgba(212,175,55,0.12)]'
+                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-[#faf8f2]'
+                        } ${(isSubmitting || Boolean(socialLoading) || isLockedSignupLane) ? 'cursor-not-allowed opacity-75' : ''}`.trim()}
+                      >
+                        <div>
+                          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-slate-400">{meta?.eyebrow}</p>
+                          <p className="mt-1 text-[0.98rem] font-semibold text-slate-900">{option.label}</p>
+                          {option.description ? (
+                            <p className="mt-1.5 text-[0.82rem] leading-5 text-slate-500">{option.description}</p>
+                          ) : null}
+                        </div>
+                        <span className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                          isActive ? 'bg-white text-gold-dark ring-1 ring-gold/20' : 'bg-slate-50 text-slate-500'
+                        }`}>
+                          <Icon size={18} />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-[1.15rem] border border-slate-200 bg-[#f8f6f1] px-4 py-3 text-[0.8rem] leading-6 text-slate-600">
+                By creating your account, you agree to use HHH Jobs professionally and keep your details accurate for verification.
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-full bg-[#172033] px-6 py-3 text-[0.95rem] font-semibold text-white shadow-[0_18px_36px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
+                  disabled={isSubmitting || Boolean(socialLoading)}
+                >
+                  {isSubmitting ? 'Creating account...' : 'Create account'}
+                </button>
+
+                <div className="text-[0.92rem] text-slate-500">
+                  Already registered?{' '}
+                  <Link to="/login" className="font-semibold text-navy transition-colors hover:text-gold-dark">
+                    Sign in
+                  </Link>
+                </div>
+              </div>
+            </form>
           </div>
-
-          <button
-            type="submit"
-            className="inline-flex w-full items-center justify-center rounded-full gradient-gold px-6 py-1.5 text-[0.92rem] font-semibold text-primary shadow-lg shadow-gold/20 transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isSubmitting || Boolean(socialLoading)}
-          >
-            {isSubmitting ? 'Creating Account...' : 'Create Account'}
-          </button>
-        </form>
-
-        <div className="flex items-center justify-start pt-1 text-sm font-semibold">
-          <Link to="/login" className="text-brand-700 transition-colors hover:text-brand-800">
-            Already have an account?
-          </Link>
-        </div>
+        </AnimatedSection>
       </div>
-    </AuthPageShell>
+    </section>
   );
 };
 

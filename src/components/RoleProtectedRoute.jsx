@@ -3,6 +3,23 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { apiFetch, hasApiAccessToken } from '../utils/api';
 import { getCurrentUser, getToken, hasRole, isAuthenticated, setAuthSession } from '../utils/auth';
 
+const resolvePortalLoginPath = (pathname = '') => {
+  const normalizedPath = String(pathname || '').trim().toLowerCase();
+
+  if (normalizedPath.startsWith('/portal/hr')) return '/login/hr';
+  if (normalizedPath.startsWith('/portal/admin')) return '/management/login/admin';
+  if (normalizedPath.startsWith('/portal/super-admin')) return '/management/login/super-admin';
+  if (normalizedPath.startsWith('/portal/platform')) return '/management/login/platform';
+  if (normalizedPath.startsWith('/portal/audit')) return '/management/login/audit';
+  if (normalizedPath.startsWith('/portal/support')) return '/management/login/support';
+  if (normalizedPath.startsWith('/portal/sales')) return '/management/login/sales';
+  if (normalizedPath.startsWith('/portal/accounts')) return '/management/login/accounts';
+  if (normalizedPath.startsWith('/portal/dataentry')) return '/management/login/dataentry';
+  if (normalizedPath.startsWith('/portal/student')) return '/login/student';
+
+  return '/login';
+};
+
 const RoleProtectedRoute = ({ roles, children }) => {
   const location = useLocation();
   const [resolvedRole, setResolvedRole] = useState(() => getCurrentUser()?.role || null);
@@ -53,7 +70,13 @@ const RoleProtectedRoute = ({ roles, children }) => {
   }, [authenticated, currentUser, roleAllowed, token]);
 
   if (!authenticated) {
-    return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}${location.hash}` }} />;
+    return (
+      <Navigate
+        to={resolvePortalLoginPath(location.pathname)}
+        replace
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+      />
+    );
   }
 
   if (isSyncingRole) {

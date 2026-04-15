@@ -53,6 +53,7 @@ const publicRoutes = [
   { path: 'workflow', element: <Navigate to="/" replace /> },
   { path: 'forbidden', element: <ForbiddenPage /> },
   { path: 'login', element: <LoginPage /> },
+  { path: 'login/:portalKey', element: <LoginPage /> },
   { path: 'sign-up', element: <SignupPage /> },
   { path: 'verify-otp', element: <OtpVerificationPage /> },
   { path: 'forgot-password', element: <ForgotPasswordPage /> },

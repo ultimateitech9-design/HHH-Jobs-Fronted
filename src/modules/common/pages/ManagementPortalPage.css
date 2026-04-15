@@ -155,25 +155,23 @@
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 38px;
-  opacity: 0;
-  transform: translateY(18px);
-  pointer-events: none;
-  transition: opacity 0.24s ease, transform 0.24s ease;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition: transform 0.24s ease;
   position: relative;
   z-index: 2;
 }
 
 .management-card:hover .management-card__actions,
 .management-card:focus-within .management-card__actions {
-  opacity: 1;
   transform: translateY(0);
-  pointer-events: auto;
 }
 
 .management-card:hover .management-card__hint,
 .management-card:focus-within .management-card__hint {
-  opacity: 0;
-  transform: translateY(-10px);
+  opacity: 1;
+  transform: none;
 }
 
 .management-card__link {

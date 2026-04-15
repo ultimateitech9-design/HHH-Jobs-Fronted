@@ -1,10 +1,10 @@
 const AuthSelectField = ({ label, options = [], error, helper, className = '', ...selectProps }) => {
   return (
-    <label className="grid gap-2 text-sm font-semibold text-slate-700">
+    <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
       {label}
       <select
         {...selectProps}
-        className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-all ${
+        className={`w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all ${
           error
             ? 'border-rose-300 bg-rose-50 text-rose-900'
             : 'border-slate-200 bg-slate-50 focus:border-brand-300 focus:bg-white'

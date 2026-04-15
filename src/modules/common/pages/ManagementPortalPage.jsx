@@ -5,17 +5,17 @@ import { PORTAL_ACCESS } from '../../../routes/portalAccess';
 import './ManagementPortalPage.css';
 
 const managementLinks = [
-  { label: 'Admin Dashboard', to: '/portal/admin/dashboard', portalLabel: 'Admin Portal', icon: FiShield, roles: PORTAL_ACCESS.admin },
-  { label: 'Super Admin', to: '/portal/super-admin/dashboard', portalLabel: 'Super Admin Portal', icon: FiUserCheck, roles: PORTAL_ACCESS.superAdmin },
-  { label: 'Platform Ops', to: '/portal/platform/dashboard', portalLabel: 'Platform Operations Portal', icon: FiBarChart2, roles: PORTAL_ACCESS.platform },
-  { label: 'Audit Desk', to: '/portal/audit/dashboard', portalLabel: 'Audit Portal', icon: FiShield, roles: PORTAL_ACCESS.audit }
+  { label: 'Admin Dashboard', to: '/portal/admin/dashboard', loginPath: '/management/login/admin', portalLabel: 'Admin Portal', icon: FiShield, roles: PORTAL_ACCESS.admin },
+  { label: 'Super Admin', to: '/portal/super-admin/dashboard', loginPath: '/management/login/super-admin', portalLabel: 'Super Admin Portal', icon: FiUserCheck, roles: PORTAL_ACCESS.superAdmin },
+  { label: 'Platform Ops', to: '/portal/platform/dashboard', loginPath: '/management/login/platform', portalLabel: 'Platform Operations Portal', icon: FiBarChart2, roles: PORTAL_ACCESS.platform },
+  { label: 'Audit Desk', to: '/portal/audit/dashboard', loginPath: '/management/login/audit', portalLabel: 'Audit Portal', icon: FiShield, roles: PORTAL_ACCESS.audit }
 ];
 
 const employeeLinks = [
-  { label: 'Support Desk', to: '/portal/support/dashboard', portalLabel: 'Support Portal', icon: FiHeadphones, roles: PORTAL_ACCESS.support },
-  { label: 'Sales Dashboard', to: '/portal/sales/overview', portalLabel: 'Sales Portal', icon: FiBarChart2, roles: PORTAL_ACCESS.sales },
-  { label: 'Data Entry', to: '/portal/dataentry/dashboard', portalLabel: 'Data Entry Portal', icon: FiBriefcase, roles: PORTAL_ACCESS.dataentry },
-  { label: 'Accounts Dashboard', to: '/portal/accounts/overview', portalLabel: 'Accounts Portal', icon: FiCreditCard, roles: PORTAL_ACCESS.accounts }
+  { label: 'Support Desk', to: '/portal/support/dashboard', loginPath: '/management/login/support', portalLabel: 'Support Portal', icon: FiHeadphones, roles: PORTAL_ACCESS.support },
+  { label: 'Sales Dashboard', to: '/portal/sales/overview', loginPath: '/management/login/sales', portalLabel: 'Sales Portal', icon: FiBarChart2, roles: PORTAL_ACCESS.sales },
+  { label: 'Data Entry', to: '/portal/dataentry/dashboard', loginPath: '/management/login/dataentry', portalLabel: 'Data Entry Portal', icon: FiBriefcase, roles: PORTAL_ACCESS.dataentry },
+  { label: 'Accounts Dashboard', to: '/portal/accounts/overview', loginPath: '/management/login/accounts', portalLabel: 'Accounts Portal', icon: FiCreditCard, roles: PORTAL_ACCESS.accounts }
 ];
 
 const ManagementPortalPage = () => {
@@ -29,7 +29,7 @@ const ManagementPortalPage = () => {
 
     clearAuthSession();
 
-    navigate('/login', {
+    navigate(item.loginPath || '/login', {
       state: {
         from: item.to,
         portalLabel: item.portalLabel
@@ -60,7 +60,7 @@ const ManagementPortalPage = () => {
             </span>
             <h1>Management</h1>
             <p>Access for administrators, platform operators, and compliance leadership workspaces.</p>
-            <span className="management-card__hint">Hover to reveal login options</span>
+            <span className="management-card__hint">Choose a portal below</span>
             <div className="management-card__actions">
               {managementLinks.map((item) => (
                 <button
@@ -82,7 +82,7 @@ const ManagementPortalPage = () => {
             </span>
             <h2>Employee</h2>
             <p>Access for support, sales, and operations teams inside HHH Jobs.</p>
-            <span className="management-card__hint">Hover to reveal login options</span>
+            <span className="management-card__hint">Choose a portal below</span>
             <div className="management-card__actions">
               {employeeLinks.map((item) => (
                 <button
