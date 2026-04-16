@@ -540,6 +540,55 @@ const StudentAtsPage = () => {
                 ))}
               </div>
 
+              {result.aiSummary || (result.aiPriorityEdits || []).length > 0 || result.aiSuggestedSummary ? (
+                <div className="rounded-[0.95rem] border border-sky-200 bg-[linear-gradient(180deg,rgba(240,249,255,0.92),rgba(255,255,255,0.96))] p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-sky-700">AI ATS Coach</p>
+                      <p className="mt-1 text-[13px] font-semibold text-navy">
+                        {result.aiPowered ? 'Smarter resume fit guidance based on your target role.' : 'Fallback ATS guidance is active.'}
+                      </p>
+                    </div>
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold ${result.aiPowered ? 'border-sky-200 bg-white text-sky-700' : 'border-slate-200 bg-white text-slate-500'}`}>
+                      {result.aiPowered ? 'AI on' : 'AI off'}
+                    </span>
+                  </div>
+
+                  {result.aiSummary ? (
+                    <p className="mt-2 text-xs leading-5 text-slate-600">{result.aiSummary}</p>
+                  ) : null}
+
+                  {(result.aiStrengths || []).length > 0 ? (
+                    <div className="mt-2">
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Strengths spotted</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {result.aiStrengths.map((item) => (
+                          <span key={item} className="rounded-full border border-emerald-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {(result.aiPriorityEdits || []).length > 0 ? (
+                    <div className="mt-2">
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-sky-700">Priority edits</p>
+                      <ul className="mt-1.5 space-y-1 text-xs leading-5 text-slate-600">
+                        {result.aiPriorityEdits.map((item) => <li key={item}>• {item}</li>)}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {result.aiSuggestedSummary ? (
+                    <div className="mt-2 rounded-[0.8rem] border border-sky-100 bg-white/90 p-2.5">
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-sky-700">Suggested summary</p>
+                      <p className="mt-1.5 text-xs leading-5 text-slate-700">{result.aiSuggestedSummary}</p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               <div className="grid gap-2.5 md:grid-cols-2">
                 <div className="rounded-[0.9rem] border border-emerald-200 bg-emerald-50/70 p-2.5">
                   <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">You matched</p>
