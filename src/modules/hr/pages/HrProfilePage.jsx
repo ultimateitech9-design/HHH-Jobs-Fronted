@@ -11,7 +11,8 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiSave,
-  FiHash
+  FiHash,
+  FiShield
 } from 'react-icons/fi';
 import { getHrProfile, updateHrProfile } from '../services/hrApi';
 import { getCurrentUser, getToken, setAuthSession } from '../../../utils/auth';
@@ -31,8 +32,10 @@ const HrProfilePage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const hrEmployerId = currentUser?.hrEmployerId || currentUser?.companyId || currentUser?.id || 'Not assigned';
 
   useEffect(() => {
     let mounted = true;
@@ -42,6 +45,7 @@ const HrProfilePage = () => {
       if (!mounted) return;
 
       setForm(response.data);
+      setIsDemo(Boolean(response.isDemo));
       setError(response.error && !response.isDemo ? response.error : '');
       setLoading(false);
     };

@@ -119,6 +119,20 @@ export const defaultProfileDraft = {
   notes: ''
 };
 
+const normalizeDataEntryProfile = (profile = {}) => ({
+  ...defaultProfileDraft,
+  ...profile,
+  employeeId: profile.employeeId || profile.employee_id || '',
+  shift: profile.shift || 'Morning',
+  location: profile.location || '',
+  headline: profile.headline || '',
+  dailyTarget: profile.dailyTarget || profile.daily_target || '',
+  queueName: profile.queueName || profile.queue_name || '',
+  reviewerLevel: profile.reviewerLevel || profile.reviewer_level || '',
+  qualityScore: profile.qualityScore || profile.quality_score || '',
+  notes: profile.notes || ''
+});
+
 const parseListInput = (value = '') =>
   String(value)
     .split(',')
@@ -316,7 +330,7 @@ export const getDataEntryProfile = async () =>
   safeRequest({
     path: `${DATA_ENTRY_BASE}/profile`,
     emptyData: defaultProfileDraft,
-    extract: (payload) => payload?.profile || payload || {}
+    extract: (payload) => normalizeDataEntryProfile(payload?.profile || payload || {})
   });
 
 export const getDataEntryPortalRecords = async () =>
@@ -327,8 +341,8 @@ export const getDataEntryPortalRecords = async () =>
   });
 
 export const updateDataEntryProfile = async (profilePayload) =>
-  updateItem({
+  strictRequest({
     path: `${DATA_ENTRY_BASE}/profile`,
-    key: 'profile',
-    body: profilePayload
+    options: { method: 'PATCH', body: JSON.stringify(profilePayload) },
+    extract: (payload) => normalizeDataEntryProfile(payload?.profile || payload || {})
   });

@@ -178,7 +178,7 @@ const PlatformBillingPage = () => {
         subtitle="Maintain pricing tiers, track invoice outcomes, and monitor collection health."
       />
 
-      {isDemo ? <p className="module-note">Backend data is unavailable (platform backend endpoints are not connected).</p> : null}
+      {isDemo ? <p className="module-note">Showing fallback billing data because the live backend is unavailable right now.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="form-success">{message}</p> : null}
 
@@ -240,4 +240,3 @@ const PlatformBillingPage = () => {
 };
 
 export default PlatformBillingPage;
-

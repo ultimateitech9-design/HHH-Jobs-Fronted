@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  FiActivity,
-  FiAlertCircle,
   FiArrowRight,
   FiBriefcase,
   FiFlag,
@@ -93,32 +91,40 @@ const AdminDashboardPage = () => {
 
     return [
       {
-        label: 'Total Platform Users',
+        label: 'Total Users',
         value: String(analytics.totalUsers || 0),
-        helper: `${analytics.activeUsers || 0} active • ${analytics.blockedUsers || 0} blocked`,
+        helper: `Active: ${analytics.activeUsers || 0} | Blocked: ${analytics.blockedUsers || 0}`,
         icon: <FiUsers className="text-sky-700" />,
-        tone: 'info'
+        tone: 'info',
+        to: '/portal/admin/users',
+        ctaLabel: 'Open users'
       },
       {
         label: 'HR Accounts',
         value: String(analytics.totalHr || 0),
-        helper: `${analytics.approvedHr || 0} approved • ${(analytics.totalHr || 0) - (analytics.approvedHr || 0)} pending`,
+        helper: `Approved: ${analytics.approvedHr || 0} | Pending: ${(analytics.totalHr || 0) - (analytics.approvedHr || 0)}`,
         icon: <FiShield className="text-brand-700" />,
-        tone: 'accent'
+        tone: 'accent',
+        to: '/portal/admin/users',
+        ctaLabel: 'Review accounts'
       },
       {
         label: 'Job Listings',
         value: String(analytics.totalJobs || 0),
-        helper: `${analytics.openJobs || 0} open • ${analytics.pendingJobs || 0} pending`,
+        helper: `Open: ${analytics.openJobs || 0} | Pending: ${analytics.pendingJobs || 0}`,
         icon: <FiBriefcase className="text-emerald-700" />,
-        tone: 'success'
+        tone: 'success',
+        to: '/portal/admin/jobs',
+        ctaLabel: 'Open jobs'
       },
       {
-        label: 'Moderation Reports',
+        label: 'Open Reports',
         value: String(analytics.reportsTotal || 0),
-        helper: `${analytics.reportsOpen || 0} open tickets in queue`,
+        helper: `Needs attention: ${analytics.reportsOpen || 0}`,
         icon: <FiFlag className="text-amber-700" />,
-        tone: 'warning'
+        tone: 'warning',
+        to: '/portal/admin/reports',
+        ctaLabel: 'Open reports'
       }
     ];
   }, [state.analytics]);
@@ -127,37 +133,41 @@ const AdminDashboardPage = () => {
     const analytics = state.analytics || {};
     return [
       { label: 'HR pending', value: state.pendingHr.length, helper: 'Recruiter approvals waiting' },
-      { label: 'Jobs pending', value: state.pendingJobs.length, helper: 'Posts awaiting moderation' },
-      { label: 'Open reports', value: state.openReports.length, helper: 'User reports requiring action' },
+      { label: 'Jobs pending', value: state.pendingJobs.length, helper: 'Listings waiting for review' },
+      { label: 'Open reports', value: state.openReports.length, helper: 'Reports requiring action' },
       { label: 'Blocked auth', value: analytics.blockedUsers || 0, helper: 'Accounts with access restrictions' }
     ];
   }, [state.analytics, state.pendingHr, state.pendingJobs, state.openReports]);
 
-  const shiftChecklist = useMemo(() => {
-    return [
+  const priorityItems = useMemo(() => (
+    [
       {
-        title: state.pendingHr.length > 0 ? 'Clear recruiter verification backlog' : 'Recruiter approvals are clear',
-        description: state.pendingHr.length > 0
-          ? `${state.pendingHr.length} recruiters are waiting for approval.`
-          : 'No pending HR onboardings right now.'
+        label: 'Recruiter approvals',
+        value: state.pendingHr.length,
+        note: state.pendingHr.length > 0 ? 'Waiting for admin action' : 'All caught up',
+        tone: state.pendingHr.length > 0 ? 'pending' : 'approved'
       },
       {
-        title: state.pendingJobs.length > 0 ? 'Review publishing queue' : 'Job moderation is stable',
-        description: state.pendingJobs.length > 0
-          ? `${state.pendingJobs.length} job posts need compliance review.`
-          : 'No pending jobs in moderation.'
+        label: 'Listing review',
+        value: state.pendingJobs.length,
+        note: state.pendingJobs.length > 0 ? 'Pending publishing decisions' : 'No items in review',
+        tone: state.pendingJobs.length > 0 ? 'pending' : 'approved'
       },
       {
-        title: state.openReports.length > 0 ? 'Close open reports' : 'Report queue is at zero',
-        description: state.openReports.length > 0
-          ? `${state.openReports.length} reports still need admin action.`
-          : 'Moderation inbox is currently clean.'
+        label: 'Reports',
+        value: state.openReports.length,
+        note: state.openReports.length > 0 ? 'Needs timely resolution' : 'No active report queue',
+        tone: state.openReports.length > 0 ? 'warning' : 'approved'
       }
-    ];
-  }, [state.pendingHr, state.pendingJobs, state.openReports]);
+    ]
+  ), [state.pendingHr, state.pendingJobs, state.openReports]);
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="relative overflow-hidden pb-3">
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[410px] bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.14),transparent_40%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.88))]" />
+      <div className="pointer-events-none absolute right-0 top-24 -z-10 h-40 w-40 rounded-full bg-amber-100/55 blur-3xl" />
+      <div className="pointer-events-none absolute left-10 top-64 -z-10 h-36 w-36 rounded-full bg-sky-100/45 blur-3xl" />
+
       {state.isDemo ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 font-semibold text-amber-700">
           Demo Mode: Showing placeholder admin data.
@@ -169,174 +179,157 @@ const AdminDashboardPage = () => {
         </div>
       ) : null}
 
-      <PortalDashboardHero
-        tone="admin"
-        eyebrow="Admin Dashboard"
-        badge="Platform command center"
-        title="Operations overview for moderation, recruiter approvals, and platform governance"
-        description="Monitor platform health, clear moderation checkpoints, and investigate user reports so the hiring ecosystem stays safe, trusted, and operationally stable."
-        chips={['Moderation queue', 'Recruiter approvals', 'Marketplace governance']}
-        primaryAction={{ to: '/portal/admin/users', label: 'Review HR Queue' }}
-        secondaryAction={{ to: '/portal/admin/reports', label: 'Moderate Reports' }}
-        metrics={commandSignals}
-      />
+      <div className="relative z-10">
+        <div className="pointer-events-none absolute inset-0 rounded-[1.5rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.10),transparent_34%,transparent_66%,rgba(255,255,255,0.06))]" />
+        <PortalDashboardHero
+          tone="admin"
+          eyebrow="Admin Dashboard"
+          badge="Admin workspace"
+          title="Admin approvals and review summary"
+          description="Review recruiters, pending listings, and reports from one clean dashboard."
+          chips={['Approvals', 'Listings', 'Reports']}
+          primaryAction={{ to: '/portal/admin/users', label: 'Review HR Queue' }}
+          secondaryAction={{ to: '/portal/admin/reports', label: 'Open Reports' }}
+          metrics={commandSignals}
+        />
+      </div>
 
       {state.loading ? <p className="module-note">Loading admin dashboard...</p> : null}
 
       {!state.loading ? (
         <>
-          <DashboardMetricCards cards={cards} />
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <Link
-              to="/portal/admin/users"
-              className="rounded-[1.7rem] border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-            >
-              <p className="font-heading text-lg font-bold text-navy">Users</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">Approve HR accounts, audit access, and manage restricted users.</p>
-            </Link>
-            <Link
-              to="/portal/admin/jobs"
-              className="rounded-[1.7rem] border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-            >
-              <p className="font-heading text-lg font-bold text-navy">Jobs</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">Clear pending job listings and keep quality high before publishing.</p>
-            </Link>
-            <Link
-              to="/portal/admin/reports"
-              className="rounded-[1.7rem] border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-            >
-              <p className="font-heading text-lg font-bold text-navy">Reports</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">Respond to abuse, fraud, and other trust or moderation issues.</p>
-            </Link>
+          <div className="relative z-20 mt-4 rounded-[1.75rem] border border-slate-200/80 bg-white/88 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md">
+            <div className="mb-2 flex items-center justify-between gap-3 px-1">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Quick Access</p>
+                <p className="mt-1 text-sm font-semibold text-slate-600">Open the main admin areas directly from here.</p>
+              </div>
+            </div>
+            <DashboardMetricCards cards={cards} className="gap-3" />
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[0.95fr_0.95fr_1.1fr]">
-            <DashboardSectionCard
-              eyebrow="Verification Queue"
-              title="Recruiters awaiting approval"
-              action={
-                <Link to="/portal/admin/users" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
-                  Open Users
-                </Link>
-              }
-            >
-              <ul className="space-y-3">
-                {state.pendingHr.length === 0 ? (
-                  <li className="rounded-[1.4rem] border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
-                    Queue is clear.
-                  </li>
-                ) : (
-                  state.pendingHr.slice(0, 6).map((user) => (
-                    <li key={user.id} className="flex items-start justify-between gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
-                      <div>
-                        <p className="font-semibold text-slate-900">{user.name || 'HR Recruiter'}</p>
-                        <p className="mt-1 text-sm text-slate-500">{user.email || 'No email provided'}</p>
-                      </div>
-                      <StatusPill value={user.is_hr_approved ? 'approved' : 'pending'} />
-                    </li>
-                  ))
-                )}
-              </ul>
-            </DashboardSectionCard>
-
-            <DashboardSectionCard
-              eyebrow="Daily Protocol"
-              title="Recommended admin sequence"
-              subtitle="Suggested order of operations to keep moderation and approval work under control."
-            >
-              <ul className="space-y-3">
-                {shiftChecklist.map((item, index) => (
-                  <li key={item.title} className="flex gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-black text-brand-700">
-                      {index + 1}
+          <div className="mt-4 grid gap-3 xl:grid-cols-[1.1fr_0.9fr]">
+            <div className="grid gap-3">
+              <DashboardSectionCard
+                eyebrow="Recruiter Queue"
+                title="Pending recruiter approvals"
+                subtitle="Recent HR accounts waiting for verification."
+                action={
+                  <Link to="/portal/admin/users" className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                    Open Users <FiArrowRight />
+                  </Link>
+                }
+              >
+                <div className="grid gap-2">
+                  {state.pendingHr.length === 0 ? (
+                    <div className="rounded-[1rem] border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-sm text-slate-500">
+                      No recruiter approvals are pending right now.
                     </div>
-                    <div>
-                      <p className="font-semibold text-slate-900">{item.title}</p>
-                      <p className="mt-1 text-sm text-slate-500">{item.description}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </DashboardSectionCard>
-
-            <DashboardSectionCard
-              eyebrow="Moderation Alerts"
-              title="Open reports requiring action"
-              action={
-                <Link to="/portal/admin/reports" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
-                  Open Reports
-                </Link>
-              }
-            >
-              <ul className="space-y-3">
-                {state.openReports.length === 0 ? (
-                  <li className="rounded-[1.4rem] border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
-                    No active reports.
-                  </li>
-                ) : (
-                  state.openReports.slice(0, 5).map((report) => (
-                    <li key={report.id} className="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-semibold capitalize text-slate-900">{report.targetType || 'Item'} • {report.reason || 'Flagged'}</p>
-                          <p className="mt-1 text-sm text-slate-500">{report.details || 'No expanded details provided for this report event.'}</p>
-                          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                            {formatDateTime(report.updated_at || report.created_at)}
-                          </p>
-                        </div>
-                        <StatusPill value={report.status || 'open'} />
-                      </div>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </DashboardSectionCard>
-          </div>
-
-          <DashboardSectionCard
-            eyebrow="Job Clearance Queue"
-            title="Pending jobs awaiting moderation"
-            subtitle="Roles that need compliance review before they can be published to the marketplace."
-            action={
-              <Link to="/portal/admin/jobs" className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
-                Open Jobs <FiArrowRight />
-              </Link>
-            }
-          >
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-slate-200 text-xs uppercase tracking-[0.2em] text-slate-400">
-                    <th className="px-4 py-4">Role</th>
-                    <th className="px-4 py-4">Organization</th>
-                    <th className="px-4 py-4">Location</th>
-                    <th className="px-4 py-4 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {state.pendingJobs.length === 0 ? (
-                    <tr>
-                      <td colSpan="4" className="px-4 py-10 text-center text-sm text-slate-500">
-                        No jobs are currently awaiting moderation.
-                      </td>
-                    </tr>
                   ) : (
-                    state.pendingJobs.slice(0, 8).map((job) => (
-                      <tr key={job.id || job._id} className="border-b border-slate-100 last:border-0">
-                        <td className="px-4 py-4 font-semibold text-slate-900">{job.jobTitle}</td>
-                        <td className="px-4 py-4 text-sm text-slate-600">{job.companyName}</td>
-                        <td className="px-4 py-4 text-sm text-slate-500">{job.jobLocation || '-'}</td>
-                        <td className="px-4 py-4 text-right">
-                          <StatusPill value={job.approvalStatus || 'pending'} />
-                        </td>
-                      </tr>
+                    state.pendingHr.slice(0, 4).map((user) => (
+                      <div key={user.id} className="flex items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50/80 px-4 py-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-900">{user.name || 'HR Recruiter'}</p>
+                          <p className="truncate text-sm text-slate-500">{user.email || 'No email available'}</p>
+                        </div>
+                        <StatusPill value="pending" />
+                      </div>
                     ))
                   )}
-                </tbody>
-              </table>
+                </div>
+              </DashboardSectionCard>
+
+              <DashboardSectionCard
+                eyebrow="Listing Review"
+                title="Jobs awaiting decision"
+                subtitle="Pending listings ready for admin review."
+                action={
+                  <Link to="/portal/admin/jobs" className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                    Open Jobs <FiArrowRight />
+                  </Link>
+                }
+              >
+                <div className="grid gap-2">
+                  {state.pendingJobs.length === 0 ? (
+                    <div className="rounded-[1rem] border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-sm text-slate-500">
+                      No job listings are awaiting review.
+                    </div>
+                  ) : (
+                    state.pendingJobs.slice(0, 4).map((job) => (
+                      <div key={job.id || job._id} className="flex items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50/80 px-4 py-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-900">{job.jobTitle || 'Job listing'}</p>
+                          <p className="truncate text-sm text-slate-500">{job.companyName || 'Company'} {job.jobLocation ? `• ${job.jobLocation}` : ''}</p>
+                        </div>
+                        <StatusPill value={job.approvalStatus || 'pending'} />
+                      </div>
+                    ))
+                  )}
+                </div>
+              </DashboardSectionCard>
             </div>
-          </DashboardSectionCard>
+
+            <div className="grid gap-3">
+              <DashboardSectionCard
+                eyebrow="Report Center"
+                title="Open reports"
+                subtitle="Recent reports that may need immediate attention."
+                action={
+                  <Link to="/portal/admin/reports" className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                    Open Reports <FiArrowRight />
+                  </Link>
+                }
+              >
+                <div className="grid gap-2">
+                  {state.openReports.length === 0 ? (
+                    <div className="rounded-[1rem] border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-sm text-slate-500">
+                      No open reports at the moment.
+                    </div>
+                  ) : (
+                    state.openReports.slice(0, 4).map((report) => (
+                      <div key={report.id} className="rounded-[1rem] border border-slate-200 bg-slate-50/80 px-4 py-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold capitalize text-slate-900">
+                              {report.reason || 'Reported issue'}
+                            </p>
+                            <p className="mt-1 line-clamp-2 text-sm text-slate-500">
+                              {report.details || 'No additional details provided.'}
+                            </p>
+                            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                              {formatDateTime(report.updated_at || report.created_at)}
+                            </p>
+                          </div>
+                          <StatusPill value={report.status || 'open'} />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </DashboardSectionCard>
+
+              <DashboardSectionCard
+                eyebrow="Daily Priorities"
+                title="Admin focus for today"
+                subtitle="A quick view of what deserves attention first."
+              >
+                <div className="grid gap-2">
+                  {priorityItems.map((item) => (
+                    <div key={item.label} className="flex items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-gradient-to-r from-white to-slate-50 px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900">{item.label}</p>
+                        <p className="text-sm text-slate-500">{item.note}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xl font-black leading-none text-navy">{item.value}</p>
+                        <StatusPill value={item.tone} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </DashboardSectionCard>
+            </div>
+          </div>
         </>
       ) : null}
     </div>

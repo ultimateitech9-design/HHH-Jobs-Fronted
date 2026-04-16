@@ -176,7 +176,7 @@ const HrDashboardPage = () => {
   }
 
   return (
-    <div className="space-y-5 pb-4">
+    <div className="space-y-3 pb-2">
       {state.error ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 font-semibold text-red-600">
           {state.error}

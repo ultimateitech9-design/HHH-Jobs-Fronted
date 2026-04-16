@@ -67,7 +67,7 @@ const SupportDashboard = () => {
   }, [tickets]);
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-3 pb-2">
       <PortalDashboardHero
         tone="support"
         eyebrow="Support Dashboard"

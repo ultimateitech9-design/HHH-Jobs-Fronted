@@ -14,7 +14,8 @@ const createRolePage = async (browser, role) => {
               value: JSON.stringify({
                 id: `e2e-${role}`,
                 role,
-                name: `E2E ${role}`
+                name: `E2E ${role}`,
+                isEmailVerified: true
               })
             }
           ]
@@ -36,9 +37,9 @@ test('management portal buttons route unauthenticated users to portal login', as
   await page.locator('.management-card--management').hover();
   await page.getByRole('button', { name: 'Platform Ops', exact: true }).click({ force: true });
 
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/management\/login\/platform$/);
   await expect(page.getByRole('heading', { name: /platform operations portal/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Sign In', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
 });
 
 test('authenticated admin can move from management portal into platform ops without logging in again', async ({ browser }) => {

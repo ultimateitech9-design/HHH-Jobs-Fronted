@@ -5,9 +5,6 @@ import {
   FiDatabase,
   FiFileText,
   FiFlag,
-  FiGlobe,
-  FiSettings,
-  FiShield,
   FiUsers
 } from 'react-icons/fi';
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
@@ -19,10 +16,7 @@ const adminNavItems = [
   { to: '/portal/admin/reports', label: 'Reports', icon: FiFlag },
   { to: '/portal/admin/applications', label: 'Applications', icon: FiFileText },
   { to: '/portal/admin/master-data', label: 'Master Data', icon: FiDatabase },
-  { to: '/portal/admin/payments', label: 'Payments', icon: FiCreditCard },
-  { to: '/portal/admin/audit', label: 'Audit Logs', icon: FiShield },
-  { to: '/portal/admin/settings', label: 'Settings', icon: FiSettings },
-  { to: '/portal/admin/external-jobs', label: 'External Jobs', icon: FiGlobe }
+  { to: '/portal/admin/payments', label: 'Payments', icon: FiCreditCard }
 ];
 
 const AdminModuleLayout = () => {
@@ -30,7 +24,7 @@ const AdminModuleLayout = () => {
     <PortalWorkbenchLayout
       portalKey="admin"
       portalLabel="Admin Console"
-      subtitle="Governance, moderation, billing, and control workflows in one command surface."
+      subtitle="Manage approvals, users, jobs, reports, and payments from one workspace."
       navItems={adminNavItems}
     />
   );

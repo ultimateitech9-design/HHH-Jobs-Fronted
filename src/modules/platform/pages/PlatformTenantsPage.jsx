@@ -194,7 +194,7 @@ const PlatformTenantsPage = () => {
         subtitle="Onboard organizations, map plans, and control tenant state with operational safeguards."
       />
 
-      {isDemo ? <p className="module-note">Backend data is unavailable (platform backend endpoints are not connected).</p> : null}
+      {isDemo ? <p className="module-note">Showing fallback tenant data because the live backend is unavailable right now.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="form-success">{message}</p> : null}
 
@@ -310,4 +310,3 @@ const PlatformTenantsPage = () => {
 };
 
 export default PlatformTenantsPage;
-

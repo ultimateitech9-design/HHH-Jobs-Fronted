@@ -151,7 +151,7 @@ const AuditDashboardPage = () => {
   ];
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-3 pb-2">
       {state.isDemo ? <p className="module-note">Backend data is unavailable because backend is unavailable or restricted.</p> : null}
       {state.error ? <p className="form-error">{state.error}</p> : null}
       <PortalDashboardHero

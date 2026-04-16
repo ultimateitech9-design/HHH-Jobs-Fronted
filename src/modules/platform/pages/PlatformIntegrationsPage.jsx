@@ -96,7 +96,7 @@ const PlatformIntegrationsPage = () => {
         subtitle="Manage integration uptime, monitor latency, and trigger manual sync runs."
       />
 
-      {isDemo ? <p className="module-note">Backend data is unavailable (platform backend endpoints are not connected).</p> : null}
+      {isDemo ? <p className="module-note">Showing fallback integration data because the live backend is unavailable right now.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="form-success">{message}</p> : null}
 
@@ -121,4 +121,3 @@ const PlatformIntegrationsPage = () => {
 };
 
 export default PlatformIntegrationsPage;
-

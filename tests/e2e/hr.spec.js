@@ -9,7 +9,10 @@ test.describe('HR Portal E2E', () => {
           origin: typeof process.env.BASE_URL === 'string' ? process.env.BASE_URL : 'http://127.0.0.1:4173',
           localStorage: [
             { name: 'job_portal_token', value: 'mock-hr-token' },
-            { name: 'job_portal_user', value: JSON.stringify({ id: 'mock-hr', role: 'hr', name: 'Mock HR' }) }
+            {
+              name: 'job_portal_user',
+              value: JSON.stringify({ id: 'mock-hr', role: 'hr', name: 'Mock HR', isEmailVerified: true })
+            }
           ]
         }
       ]
@@ -89,7 +92,7 @@ test.describe('HR Portal E2E', () => {
 
   test('hr can log in securely and see dashboard', async ({ page }) => {
     await page.goto('/portal/hr/dashboard');
-    await expect(page.getByText(/Recruiter Dashboard/i).first()).toBeVisible();
+    await expect(page.getByText(/HR Dashboard/i).first()).toBeVisible();
     await expect(page.getByText(/45/i).first()).toBeVisible();
   });
 

@@ -25,38 +25,38 @@ const PortalDashboardHero = ({
   secondaryAction,
   metrics = [],
   aside,
-  compact = false
+  compact = true
 }) => {
   const gradientClass = toneClasses[tone] || toneClasses.brand;
   const sectionClass = compact
-    ? 'rounded-[1.75rem] px-4 py-4 md:px-5 md:py-5'
-    : 'rounded-[2.25rem] px-6 py-7 md:px-8 md:py-9';
+    ? 'rounded-[1.25rem] px-3 py-3 sm:px-4 sm:py-4 lg:px-4.5 lg:py-4'
+    : 'rounded-[2rem] px-5 py-5 sm:px-6 sm:py-6 lg:px-7 lg:py-7';
   const layoutClass = compact
-    ? 'grid gap-4 2xl:grid-cols-[minmax(0,1.2fr)_320px] 2xl:items-start'
-    : 'grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_360px] xl:items-start';
+    ? 'grid gap-3 xl:grid-cols-[minmax(0,1.02fr)_minmax(260px,0.98fr)] xl:items-start'
+    : 'grid gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.88fr)] xl:items-start';
   const titleClass = compact
-    ? 'mt-2.5 max-w-3xl font-heading text-[1.95rem] font-extrabold leading-tight md:text-[2.3rem]'
-    : 'mt-4 max-w-3xl font-heading text-3xl font-extrabold leading-tight md:text-4xl';
+    ? 'mt-1.5 max-w-3xl text-balance break-words font-heading text-[1.35rem] font-extrabold leading-tight sm:text-[1.55rem] lg:text-[1.75rem]'
+    : 'mt-3 max-w-3xl text-balance break-words font-heading text-[2rem] font-extrabold leading-tight lg:text-[2.7rem]';
   const descriptionClass = compact
-    ? 'mt-2.5 max-w-2xl text-sm leading-5.5 text-white/78'
-    : 'mt-4 max-w-2xl text-sm leading-7 text-white/78 md:text-base';
-  const chipsWrapClass = compact ? 'mt-3 flex flex-wrap gap-1.5' : 'mt-5 flex flex-wrap gap-2';
+    ? 'mt-1.5 max-w-2xl text-[12px] leading-4.5 text-white/78 sm:text-[13px] sm:leading-5'
+    : 'mt-3 max-w-2xl text-sm leading-6 text-white/78 md:text-base';
+  const chipsWrapClass = compact ? 'mt-2.5 flex flex-wrap gap-1.5' : 'mt-4 flex flex-wrap gap-2';
   const chipClass = compact
-    ? 'inline-flex rounded-full border border-white/18 bg-white/8 px-2.5 py-0.5 text-[10px] font-semibold text-white/88'
+    ? 'inline-flex rounded-full border border-white/18 bg-white/8 px-2 py-0.5 text-[9px] font-semibold leading-none text-white/88 sm:text-[10px]'
     : 'inline-flex rounded-full border border-white/18 bg-white/8 px-3 py-1 text-xs font-semibold text-white/88';
-  const actionsWrapClass = compact ? 'mt-4 flex flex-wrap gap-2' : 'mt-6 flex flex-wrap gap-3';
+  const actionsWrapClass = compact ? 'mt-3 flex flex-wrap gap-1.5' : 'mt-5 flex flex-wrap gap-3';
   const primaryActionClass = compact
-    ? 'inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-900 transition-transform hover:-translate-y-0.5'
+    ? 'inline-flex min-h-[34px] items-center justify-center rounded-full bg-white px-3.5 py-1.5 text-[12px] font-bold text-slate-900 transition-transform hover:-translate-y-0.5'
     : 'inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-transform hover:-translate-y-0.5';
   const secondaryActionClass = compact
-    ? 'inline-flex items-center justify-center rounded-full border border-white/18 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/16'
+    ? 'inline-flex min-h-[34px] items-center justify-center rounded-full border border-white/18 bg-white/10 px-3.5 py-1.5 text-[12px] font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/16'
     : 'inline-flex items-center justify-center rounded-full border border-white/18 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/16';
-  const metricsWrapClass = compact ? 'grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-2' : 'grid gap-3';
+  const metricsWrapClass = compact ? 'grid gap-2 grid-cols-2 xl:grid-cols-2' : 'grid gap-3 sm:grid-cols-2';
   const metricCardClass = compact
-    ? 'rounded-[1.1rem] border border-white/15 bg-slate-950/18 px-3.5 py-3 backdrop-blur-md'
+    ? 'min-w-0 rounded-[0.9rem] border border-white/15 bg-slate-950/18 px-2.5 py-2.5 backdrop-blur-md'
     : 'rounded-[1.4rem] border border-white/15 bg-slate-950/18 px-4 py-4 backdrop-blur-md';
-  const metricValueClass = compact ? 'mt-1 text-[1.8rem] font-black text-white' : 'mt-2 text-3xl font-black text-white';
-  const metricHelperClass = compact ? 'mt-1 text-[13px] leading-5 text-white/74' : 'mt-2 text-sm text-white/74';
+  const metricValueClass = compact ? 'mt-1 text-[1.2rem] font-black leading-none text-white sm:text-[1.35rem]' : 'mt-2 text-3xl font-black text-white';
+  const metricHelperClass = compact ? 'mt-1 text-[11px] leading-4 text-white/74' : 'mt-2 text-sm text-white/74';
 
   return (
     <section className={`relative overflow-hidden bg-gradient-to-br text-white shadow-xl ${sectionClass} ${gradientClass}`}>
@@ -64,13 +64,13 @@ const PortalDashboardHero = ({
       <div className="pointer-events-none absolute -bottom-28 left-0 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
 
       <div className={`relative ${layoutClass}`}>
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             {eyebrow ? (
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-white/70">{eyebrow}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70 sm:text-[11px] sm:tracking-[0.22em]">{eyebrow}</p>
             ) : null}
             {badge ? (
-              <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-white/85 backdrop-blur-sm">
+              <span className="inline-flex max-w-full items-center rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white/85 backdrop-blur-sm sm:text-[10px] sm:tracking-[0.16em]">
                 {badge}
               </span>
             ) : null}
@@ -103,7 +103,7 @@ const PortalDashboardHero = ({
               {primaryAction ? (
                 <Link
                   to={primaryAction.to}
-                  className={primaryActionClass}
+                  className={`${primaryActionClass} w-full sm:w-auto`}
                 >
                   {primaryAction.label}
                 </Link>
@@ -111,7 +111,7 @@ const PortalDashboardHero = ({
               {secondaryAction ? (
                 <Link
                   to={secondaryAction.to}
-                  className={secondaryActionClass}
+                  className={`${secondaryActionClass} w-full sm:w-auto`}
                 >
                   {secondaryAction.label}
                 </Link>
@@ -120,16 +120,16 @@ const PortalDashboardHero = ({
           ) : null}
         </div>
 
-        <div className={metricsWrapClass}>
+        <div className={`min-w-0 ${metricsWrapClass}`}>
           {aside ||
             metrics.map((metric) => (
               <article
                 key={metric.label}
                 className={metricCardClass}
               >
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/58">{metric.label}</p>
+                <p className="break-words text-[9px] font-bold uppercase tracking-[0.12em] text-white/58 sm:text-[10px] sm:tracking-[0.16em]">{metric.label}</p>
                 <p className={metricValueClass}>{metric.value}</p>
-                {metric.helper ? <p className={metricHelperClass}>{metric.helper}</p> : null}
+                {metric.helper ? <p className={`${metricHelperClass} break-words`}>{metric.helper}</p> : null}
               </article>
             ))}
         </div>

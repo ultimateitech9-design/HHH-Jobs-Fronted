@@ -175,7 +175,7 @@ const DataEntryDashboard = () => {
   }));
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-3 pb-2">
       {state.isDemo ? <p className="module-note">Demo data is being shown because the data entry backend is not connected.</p> : null}
       {state.error ? <p className="form-error">{state.error}</p> : null}
 

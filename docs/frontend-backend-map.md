@@ -139,10 +139,17 @@ Status: Connected
 Frontend service:
 - `src/modules/platform/services/platformApi.js`
 
-Backend mapping:
-- No active backend route bindings currently used by this module.
+Backend endpoints:
+- Overview: `GET /platform/overview`
+- Tenants: `GET/POST /platform/tenants`, `PATCH/DELETE /platform/tenants/:id`
+- Plans: `GET/POST /platform/plans`
+- Invoices: `GET /platform/invoices`, `PATCH /platform/invoices/:id/status`
+- Integrations: `GET /platform/integrations`, `PATCH /platform/integrations/:id`, `POST /platform/integrations/:id/sync`
+- Support: `GET /platform/support-tickets`, `PATCH /platform/support-tickets/:id`
+- Security: `GET /platform/security-checks`, `PATCH /platform/security-checks/:id`
+- Customization: `GET/PUT /platform/customization/:tenantId`
 
-Status: Demo-only (local in-memory data on frontend)
+Status: Connected with frontend fallback data when the live backend is unavailable
 
 ## Notes
 

@@ -182,8 +182,8 @@ const PlatformDashboardPage = () => {
   ];
 
   return (
-    <div className="space-y-6 pb-4">
-      {state.isDemo ? <p className="module-note">Backend data is unavailable (platform backend endpoints are not connected).</p> : null}
+    <div className="space-y-3 pb-2">
+      {state.isDemo ? <p className="module-note">Showing fallback platform telemetry because the live backend is unavailable right now.</p> : null}
       {state.error ? <p className="form-error">{state.error}</p> : null}
       <PortalDashboardHero
         tone="platform"

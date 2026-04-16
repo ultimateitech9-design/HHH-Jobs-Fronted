@@ -71,6 +71,8 @@ export const apiUrl = (path = '') => {
 export const areDemoFallbacksEnabled = () =>
   String(env.VITE_ENABLE_DEMO_FALLBACKS || '').trim().toLowerCase() === 'true';
 
+const looksLikeJwt = (token) => /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/i.test(String(token || '').trim());
+
 const hasUsableApiToken = (token) =>
   Boolean(token)
   && !/^(managed-|local-|pending-)/i.test(String(token))
@@ -120,7 +122,7 @@ export const apiFetch = async (path, options = {}) => {
   }
   if (timeoutId) globalThis.clearTimeout(timeoutId);
 
-  if (shouldUseApiAuth && response.status === 401) {
+  if (shouldUseApiAuth && response.status === 401 && looksLikeJwt(token)) {
     clearAuthSession();
   }
 

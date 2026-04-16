@@ -306,7 +306,7 @@ function isLocalAppUrl(url) {
 }
 
 function isLocalApiUrl(url) {
-  return /^https?:\/\/127\.0\.0\.1:6001/i.test(url);
+  return /^https?:\/\/127\.0\.0\.1:(5500|6002)/i.test(url);
 }
 
 function snapshotDiagnostics(diagnostics) {

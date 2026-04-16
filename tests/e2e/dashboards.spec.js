@@ -16,7 +16,8 @@ const createRolePage = async (browser, role) => {
               value: JSON.stringify({
                 id: `e2e-${role}`,
                 role,
-                name: `E2E ${role}`
+                name: `E2E ${role}`,
+                isEmailVerified: true
               })
             }
           ]
@@ -83,10 +84,10 @@ test('hr dashboard smoke', async ({ browser }) => {
 
     await page.goto('/portal/hr/dashboard');
     await expect(page).toHaveURL(/\/portal\/hr\/dashboard$/);
-    await expect(page.getByText('Recruiter Dashboard', { exact: true })).toBeVisible();
+    await expect(page.getByText('HR Dashboard', { exact: true }).first()).toBeVisible();
     await expect(
       page.getByRole('heading', {
-        name: /company overview, hiring pipeline, and candidate movement in one recruiter workspace/i
+        name: /run hiring from one clean workspace/i
       })
     ).toBeVisible();
     await expect(sidebar.getByRole('link', { name: 'Job Postings', exact: true })).toBeVisible();
@@ -120,29 +121,24 @@ test('student dashboard smoke', async ({ browser }) => {
     const sidebar = getSidebar(page);
 
     await page.goto('/portal/student/dashboard');
-    await expect(page).toHaveURL(/\/portal\/student\/dashboard$/);
-    await expect(page.getByText('Student Dashboard', { exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
-    await expect(sidebar.getByRole('link', { name: 'Saved Jobs', exact: true })).toBeVisible();
-    await expect(sidebar.getByRole('link', { name: 'Alerts', exact: true })).toBeVisible();
-    await expect(sidebar.getByRole('link', { name: 'Interviews', exact: true })).toBeVisible();
-    await expect(sidebar.getByRole('link', { name: 'Notifications', exact: true })).toBeVisible();
-    await expect(sidebar.getByRole('link', { name: 'Company Reviews', exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/portal\/student\/companies$/);
+    await expect(page.getByRole('heading', { name: /portal companies/i })).toBeVisible();
+    await expect(sidebar.getByRole('link', { name: 'Jobs', exact: true })).toBeVisible();
+    await expect(sidebar.getByRole('link', { name: 'Companies', exact: true })).toBeVisible();
+    await expect(sidebar.getByRole('link', { name: 'ATS', exact: true })).toBeVisible();
+    await expect(sidebar.getByRole('link', { name: 'Services', exact: true })).toBeVisible();
 
-    await sidebar.getByRole('link', { name: 'Saved Jobs', exact: true }).click();
-    await expect(page).toHaveURL(/\/portal\/student\/saved-jobs$/);
-    await expect(page.getByRole('heading', { name: /your saved opportunities/i })).toBeVisible();
+    await sidebar.getByRole('link', { name: 'Jobs', exact: true }).click();
+    await expect(page).toHaveURL(/\/portal\/student\/jobs$/);
+    await expect(page.getByRole('heading', { name: /search and apply jobs/i })).toBeVisible();
 
-    await sidebar.getByRole('link', { name: 'Alerts', exact: true }).click();
-    await expect(page).toHaveURL(/\/portal\/student\/alerts$/);
-    await expect(page.getByRole('heading', { name: /create and manage alert rules/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /create alert/i })).toBeVisible();
+    await sidebar.getByRole('link', { name: 'ATS', exact: true }).click();
+    await expect(page).toHaveURL(/\/portal\/student\/ats$/);
+    await expect(page.getByRole('button', { name: /run ats check/i })).toBeVisible();
 
-    await sidebar.getByRole('link', { name: 'Company Reviews', exact: true }).click();
-    await expect(page).toHaveURL(/\/portal\/student\/company-reviews$/);
-    await expect(page.getByRole('heading', { name: /company reviews/i }).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: /write a review/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /submit review/i })).toBeVisible();
+    await sidebar.getByRole('link', { name: 'Companies', exact: true }).click();
+    await expect(page).toHaveURL(/\/portal\/student\/companies$/);
+    await expect(page.getByRole('heading', { name: /portal companies/i })).toBeVisible();
   });
 });
 
@@ -219,6 +215,49 @@ test('super admin dashboard smoke', async ({ browser }) => {
 test('support ticket details link opens selected ticket', async ({ browser }) => {
   const { context, page } = await createRolePage(browser, 'support');
   try {
+  await page.route('**/support/tickets/SUP-1001', async (route) => {
+    if (route.request().resourceType() === 'document') return route.continue();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ticket: {
+          id: 'SUP-1001',
+          ticket_number: 'SUP-1001',
+          title: 'Employer invoice mismatch',
+          status: 'open',
+          priority: 'high',
+          requester_name: 'Metro Build Infra',
+          requester_email: 'ops@metrobuild.in',
+          created_at: '2026-04-01T10:00:00.000Z',
+          replies: []
+        }
+      })
+    });
+  });
+
+  await page.route('**/support/tickets*', async (route) => {
+    if (route.request().resourceType() === 'document') return route.continue();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        tickets: [
+          {
+            id: 'SUP-1001',
+            ticket_number: 'SUP-1001',
+            title: 'Employer invoice mismatch',
+            status: 'open',
+            priority: 'high',
+            requester_name: 'Metro Build Infra',
+            requester_email: 'ops@metrobuild.in',
+            created_at: '2026-04-01T10:00:00.000Z'
+          }
+        ]
+      })
+    });
+  });
+
   await page.goto('/portal/support/tickets');
   await page.waitForLoadState('networkidle');
 
@@ -231,7 +270,7 @@ test('support ticket details link opens selected ticket', async ({ browser }) =>
   await expect(page).toHaveURL(/\/portal\/support\/ticket-details\/SUP-1001$/);
   await expect(page.getByRole('heading', { name: /ticket details/i }).first()).toBeVisible();
   await expect(page.getByText('SUP-1001', { exact: true })).toBeVisible();
-  await expect(page.getByText('Employer cannot publish approved job', { exact: true })).toBeVisible();
+  await expect(page.getByText('Employer invoice mismatch', { exact: true })).toBeVisible();
   } finally {
     await context.close();
   }

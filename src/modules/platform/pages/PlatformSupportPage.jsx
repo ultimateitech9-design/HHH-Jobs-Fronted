@@ -107,7 +107,7 @@ const PlatformSupportPage = () => {
         subtitle="Manage issue lifecycle, escalations, and ownership for tenant support workloads."
       />
 
-      {isDemo ? <p className="module-note">Backend data is unavailable (platform backend endpoints are not connected).</p> : null}
+      {isDemo ? <p className="module-note">Showing fallback support data because the live backend is unavailable right now.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="form-success">{message}</p> : null}
 
@@ -152,4 +152,3 @@ const PlatformSupportPage = () => {
 };
 
 export default PlatformSupportPage;
-

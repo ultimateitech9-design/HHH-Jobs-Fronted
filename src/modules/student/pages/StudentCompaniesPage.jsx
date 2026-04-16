@@ -102,63 +102,65 @@ const StudentCompaniesPage = () => {
   };
 
   return (
-    <div className="space-y-5 pb-8">
+    <div className="space-y-4 pb-6">
       {state.error ? <StudentNotice type="error" text={state.error} /> : null}
 
       <StudentSurfaceCard
         eyebrow="Companies"
         title="Portal companies"
         subtitle="Open a company and jump straight to its roles."
-        className="p-5 xl:p-6"
+        className="p-4 md:p-5 xl:p-5"
       >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
-              {counts.total} visible
-            </span>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-              Premium {counts.premium}
-            </span>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-              Portal {counts.portal}
-            </span>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-              Live {counts.live}
-            </span>
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
+                {counts.total} visible
+              </span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                Premium {counts.premium}
+              </span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                Portal {counts.portal}
+              </span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                Live {counts.live}
+              </span>
+            </div>
+
+            <div className="relative w-full md:max-w-[380px]">
+              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search company, industry, or location"
+                className="w-full rounded-[0.95rem] border border-slate-200 bg-white px-4 py-2.5 pl-11 text-sm font-medium text-slate-700 outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
+              />
+            </div>
           </div>
 
-          <Link to="/portal/student/jobs" className={`${studentSecondaryButtonClassName} px-4 py-2 text-[13px]`}>
-            Browse jobs
-          </Link>
-        </div>
+          <div className="flex flex-col gap-3 xl:items-end">
+            <Link to="/portal/student/jobs" className={`${studentSecondaryButtonClassName} w-full px-4 py-2 text-[13px] md:w-auto`}>
+              Browse jobs
+            </Link>
 
-        <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative w-full lg:max-w-[420px]">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search company, industry, or location"
-              className="w-full rounded-[1rem] border border-slate-200 bg-white px-4 py-3 pl-11 text-sm font-medium text-slate-700 outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {FILTER_OPTIONS.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setFilter(item.key)}
-                className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-[13px] font-bold transition ${
-                  filter === item.key
-                    ? 'bg-navy text-white shadow-sm'
-                    : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700'
-                }`}
-              >
-                <FiFilter size={13} />
-                {item.label}
-              </button>
-            ))}
+            <div className="flex flex-wrap gap-2 xl:justify-end">
+              {FILTER_OPTIONS.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setFilter(item.key)}
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-bold transition ${
+                    filter === item.key
+                      ? 'bg-navy text-white shadow-sm'
+                      : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700'
+                  }`}
+                >
+                  <FiFilter size={13} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </StudentSurfaceCard>
