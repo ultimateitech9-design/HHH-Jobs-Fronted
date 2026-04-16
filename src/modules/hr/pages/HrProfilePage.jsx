@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   FiBriefcase, 
   FiGlobe, 
@@ -11,12 +11,10 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiSave,
-  FiHash,
-  FiShield
+  FiHash
 } from 'react-icons/fi';
 import { getHrProfile, updateHrProfile } from '../services/hrApi';
 import { getCurrentUser, getToken, setAuthSession } from '../../../utils/auth';
-import { generateHrEmployerId } from '../../../utils/hrIdentity';
 
 const HrProfilePage = () => {
   const currentUser = getCurrentUser();
@@ -33,14 +31,8 @@ const HrProfilePage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isDemo, setIsDemo] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  const hrEmployerId = useMemo(
-    () => generateHrEmployerId({ companyName: form.companyName, mobile: currentUser?.mobile || '' }),
-    [form.companyName, currentUser?.mobile]
-  );
 
   useEffect(() => {
     let mounted = true;
@@ -50,7 +42,6 @@ const HrProfilePage = () => {
       if (!mounted) return;
 
       setForm(response.data);
-      setIsDemo(response.isDemo);
       setError(response.error && !response.isDemo ? response.error : '');
       setLoading(false);
     };
@@ -80,7 +71,7 @@ const HrProfilePage = () => {
         setAuthSession(token, {
           ...currentUser,
           companyName: updated.companyName || currentUser.companyName,
-          hrEmployerId
+          hrEmployerId: currentUser?.hrEmployerId
         });
       }
       setSuccess('Company profile updated successfully.');

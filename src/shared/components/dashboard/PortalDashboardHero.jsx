@@ -32,7 +32,7 @@ const PortalDashboardHero = ({
     ? 'rounded-[1.75rem] px-4 py-4 md:px-5 md:py-5'
     : 'rounded-[2.25rem] px-6 py-7 md:px-8 md:py-9';
   const layoutClass = compact
-    ? 'grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_340px] xl:items-start'
+    ? 'grid gap-4 2xl:grid-cols-[minmax(0,1.2fr)_320px] 2xl:items-start'
     : 'grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_360px] xl:items-start';
   const titleClass = compact
     ? 'mt-2.5 max-w-3xl font-heading text-[1.95rem] font-extrabold leading-tight md:text-[2.3rem]'
@@ -51,7 +51,7 @@ const PortalDashboardHero = ({
   const secondaryActionClass = compact
     ? 'inline-flex items-center justify-center rounded-full border border-white/18 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/16'
     : 'inline-flex items-center justify-center rounded-full border border-white/18 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/16';
-  const metricsWrapClass = compact ? 'grid gap-2 sm:grid-cols-2 xl:grid-cols-2' : 'grid gap-3';
+  const metricsWrapClass = compact ? 'grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-2' : 'grid gap-3';
   const metricCardClass = compact
     ? 'rounded-[1.1rem] border border-white/15 bg-slate-950/18 px-3.5 py-3 backdrop-blur-md'
     : 'rounded-[1.4rem] border border-white/15 bg-slate-950/18 px-4 py-4 backdrop-blur-md';

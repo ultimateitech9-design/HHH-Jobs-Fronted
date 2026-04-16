@@ -28,15 +28,15 @@ const HrModuleLayout = () => {
     <PortalWorkbenchLayout
       portalKey="hr"
       portalLabel="HR Dashboard"
-      subtitle="Recruitment Workspace"
+      subtitle="Hiring"
       navItems={hrNavItems}
       support={{
         showCard: false,
-        title: 'Plan Status',
-        text: 'Premium plan active. Keep job postings updated daily.',
+        title: 'Hiring',
+        text: 'Track roles, applicants, and interviews in one place.',
         to: '/portal/hr/jobs',
-        cta: 'Open hiring queue',
-        searchPlaceholder: 'Search candidates, jobs, interviews'
+        cta: 'Open jobs',
+        searchPlaceholder: 'Search candidates or jobs'
       }}
     />
   );
