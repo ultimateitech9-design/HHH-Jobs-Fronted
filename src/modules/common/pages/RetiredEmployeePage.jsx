@@ -90,8 +90,8 @@ const faqs = [
 const RetiredEmployeePage = () => {
   const currentUser = getCurrentUser();
   const exploreJobsPath = currentUser?.role === 'retired_employee'
-    ? '/portal/student/dashboard'
-    : '/sign-up?role=retired_employee&redirect=%2Fportal%2Fstudent%2Fdashboard';
+    ? '/portal/student/home'
+    : '/sign-up?role=retired_employee&redirect=%2Fportal%2Fstudent%2Fhome';
 
   return (
     <div className="pb-16 md:pb-24">

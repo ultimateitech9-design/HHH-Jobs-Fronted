@@ -18,7 +18,6 @@ import {
   studentGhostButtonClassName,
   studentSecondaryButtonClassName
 } from '../components/StudentExperience';
-import StudentMarketplaceShell from '../components/StudentMarketplaceShell';
 import {
   applyToJob,
   formatDateTime,
@@ -102,26 +101,25 @@ const StudentSavedJobsPage = () => {
   };
 
   return (
-    <StudentMarketplaceShell>
-      <StudentPageShell
-        eyebrow="Saved Jobs"
-        badge="Curated shortlist"
-        title="Your saved opportunities, cleaned up and ready to act on"
-        subtitle="Review the roles you bookmarked, revisit fit quickly, and convert promising matches into applications without losing momentum."
-        heroSize="mini"
-        stats={stats}
-        actions={
-          <>
-            <Link to="/portal/student/jobs" className={`${studentPrimaryButtonClassName} px-4 py-2 text-[13px]`}>
-              <FiBriefcase size={14} />
-              Browse More Jobs
-            </Link>
-            <Link to="/portal/student/applications" className={`${studentSecondaryButtonClassName} px-4 py-2 text-[13px]`}>
-              Open Applications
-            </Link>
-          </>
-        }
-      >
+    <StudentPageShell
+      eyebrow="Saved Jobs"
+      badge="Curated shortlist"
+      title="Your saved opportunities, cleaned up and ready to act on"
+      subtitle="Review the roles you bookmarked, revisit fit quickly, and convert promising matches into applications without losing momentum."
+      heroSize="mini"
+      stats={stats}
+      actions={
+        <>
+          <Link to="/portal/student/jobs" className={`${studentPrimaryButtonClassName} px-4 py-2 text-[13px]`}>
+            <FiBriefcase size={14} />
+            Browse More Jobs
+          </Link>
+          <Link to="/portal/student/applications" className={`${studentSecondaryButtonClassName} px-4 py-2 text-[13px]`}>
+            Open Applications
+          </Link>
+        </>
+      }
+    >
         {state.error ? <StudentNotice type="error" text={state.error} /> : null}
         {notice.text ? <StudentNotice type={notice.type} text={notice.text} /> : null}
 
@@ -219,8 +217,7 @@ const StudentSavedJobsPage = () => {
             />
           )}
         </StudentSurfaceCard>
-      </StudentPageShell>
-    </StudentMarketplaceShell>
+    </StudentPageShell>
   );
 };
 

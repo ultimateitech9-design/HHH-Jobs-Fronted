@@ -207,7 +207,7 @@ const studentServicePaths = {
   'Job Discovery': '/portal/student/jobs',
   'Resume & Profile': '/portal/student/profile?section=resume&focus=resume-builder#resume-builder',
   'Career Growth': '/portal/student/analytics',
-  'Alerts & Notifications': '/portal/student/alerts',
+  'Alerts & Notifications': '/portal/student/notifications',
   'ATS Resume Score': '/portal/student/ats'
 };
 
@@ -227,7 +227,7 @@ const ServicesPage = () => {
   const fallbackPath = '/login';
   const [activePremiumKey, setActivePremiumKey] = useState(premiumFeatures[0].key);
 
-  const getServicePath = (title) => (isStudent ? (studentServicePaths[title] || '/portal/student/dashboard') : fallbackPath);
+  const getServicePath = (title) => (isStudent ? (studentServicePaths[title] || '/portal/student/home') : fallbackPath);
   const atsPath = isStudent ? '/portal/student/ats' : isHr ? '/portal/hr/ats' : '/login';
   const premiumCtaPath = isStudent ? '/contact-us' : isHr ? '/portal/hr/jobs' : '/sign-up';
   const premiumLearnMorePath = (featureKey) => {
@@ -235,7 +235,7 @@ const ServicesPage = () => {
       if (featureKey === 'fast-track') return '/portal/student/jobs';
       if (featureKey === 'direct-connect') return '/portal/student/applications';
       if (featureKey === 'profile-priority') return '/portal/student/profile?section=resume&focus=resume-builder#resume-builder';
-      return '/portal/student/dashboard';
+      return '/portal/student/home';
     }
 
     if (isHr) return '/portal/hr/jobs';

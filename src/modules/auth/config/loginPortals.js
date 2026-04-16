@@ -48,7 +48,7 @@ const loginPortals = {
     createAccountPath: '/sign-up?role=student',
     createAccountLabel: 'Create candidate account',
     showOtpLogin: true,
-    defaultRedirectPath: '/portal/student/home',
+    defaultRedirectPath: '/portal/student/companies',
     benefits: [
       'Track jobs, applications, and interviews from one focused dashboard.',
       'Get quicker access to ATS and profile-strength workflows.',
@@ -70,7 +70,7 @@ const loginPortals = {
     createAccountPath: '/sign-up?role=retired_employee',
     createAccountLabel: 'Create retired professional account',
     showOtpLogin: true,
-    defaultRedirectPath: '/portal/student/home',
+    defaultRedirectPath: '/portal/student/companies',
     benefits: [
       'Access opportunities tailored for experienced professionals.',
       'Keep profile strength, interviews, and saved jobs in one calmer workspace.',

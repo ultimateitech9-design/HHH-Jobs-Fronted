@@ -3,8 +3,7 @@ import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
 
 const StudentModuleLayout = lazy(() => import('../modules/student/components/StudentModuleLayout'));
-const StudentHomePage = lazy(() => import('../modules/student/pages/StudentHomePage'));
-const StudentDashboardPage = lazy(() => import('../modules/student/pages/StudentDashboardPage'));
+const StudentCompaniesPage = lazy(() => import('../modules/student/pages/StudentCompaniesPage'));
 const StudentProfilePage = lazy(() => import('../modules/student/pages/StudentProfilePage'));
 const StudentJobsPage = lazy(() => import('../modules/student/pages/StudentJobsPage'));
 const StudentJobDetailsPage = lazy(() => import('../modules/student/pages/StudentJobDetailsPage'));
@@ -26,25 +25,26 @@ const studentRoutes = [
       </RoleProtectedRoute>
     ),
     children: [
-      { index: true, element: <Navigate to="home" replace /> },
-      { path: 'home', element: <StudentHomePage /> },
-      { path: 'dashboard', element: <StudentDashboardPage /> },
+      { index: true, element: <Navigate to="companies" replace /> },
+      { path: 'home', element: <Navigate to="/portal/student/companies" replace /> },
+      { path: 'dashboard', element: <Navigate to="/portal/student/companies" replace /> },
+      { path: 'companies', element: <StudentCompaniesPage /> },
       { path: 'profile', element: <StudentProfilePage /> },
       { path: 'jobs', element: <StudentJobsPage /> },
       { path: 'jobs/:jobId', element: <StudentJobDetailsPage /> },
       { path: 'applications', element: <StudentApplicationsPage /> },
       { path: 'saved-jobs', element: <StudentSavedJobsPage /> },
-      { path: 'alerts', element: <Navigate to="/portal/student/dashboard#student-alerts-workspace" replace /> },
+      { path: 'alerts', element: <Navigate to="/portal/student/notifications" replace /> },
       { path: 'interviews', element: <StudentInterviewsPage /> },
       { path: 'analytics', element: <StudentAnalyticsPage /> },
       { path: 'ats', element: <StudentAtsPage /> },
       { path: 'services', element: <StudentServicesPage /> },
       { path: 'notifications', element: <StudentNotificationsPage /> },
-      { path: 'company-reviews', element: <Navigate to="/portal/student/home" replace /> },
+      { path: 'company-reviews', element: <Navigate to="/portal/student/companies" replace /> },
       { path: 'global-jobs', element: <StudentExternalJobsPage /> }
     ]
   },
-  { path: 'student', element: <Navigate to="/portal/student/home" replace /> }
+  { path: 'student', element: <Navigate to="/portal/student/companies" replace /> }
 ];
 
 export default studentRoutes;

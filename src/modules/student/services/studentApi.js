@@ -418,6 +418,7 @@ export const getStudentJobs = async (filters = {}) => {
     experienceLevel: filters.experienceLevel,
     category: filters.category,
     audience: filters.audience,
+    includeUnapproved: filters.includeUnapproved ?? true,
     status: 'open'
   }).forEach(([key, value]) => {
     if (value !== undefined && value !== null && String(value).trim() !== '') {

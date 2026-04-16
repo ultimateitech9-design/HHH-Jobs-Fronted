@@ -4,7 +4,7 @@ const PENDING_VERIFICATION_KEY = 'job_portal_pending_verification';
 
 const DELETED_USERS_KEY = 'hhh_jobs_deleted_user_ids';
 const DASHBOARD_REDIRECT_RULES = [
-  { legacy: '/student', canonical: '/portal/student', defaultPath: '/portal/student/home' },
+  { legacy: '/student', canonical: '/portal/student', defaultPath: '/portal/student/companies' },
   { legacy: '/hr', canonical: '/portal/hr', defaultPath: '/portal/hr/dashboard' },
   { legacy: '/admin', canonical: '/portal/admin', defaultPath: '/portal/admin/dashboard' },
   { legacy: '/super-admin', canonical: '/portal/super-admin', defaultPath: '/portal/super-admin/dashboard' },
@@ -146,13 +146,13 @@ export const getDashboardPathByRole = (role) => {
   if (normalizedRole === 'support') return '/portal/support/dashboard';
   if (normalizedRole === 'accounts') return '/portal/accounts/overview';
   if (normalizedRole === 'sales') return '/portal/sales/overview';
-  if (normalizedRole === 'retired_employee') return '/portal/student/home';
-  return '/portal/student/home';
+  if (normalizedRole === 'retired_employee') return '/portal/student/companies';
+  return '/portal/student/companies';
 };
 
 export const getNotificationPathByRole = (role) => {
   const normalizedRole = normalizeRole(role);
-  if (normalizedRole === 'student' || normalizedRole === 'retired_employee') return '/portal/student/dashboard#student-alerts-workspace';
+  if (normalizedRole === 'student' || normalizedRole === 'retired_employee') return '/portal/student/notifications';
   if (normalizedRole === 'hr') return '/portal/hr/notifications';
   if (normalizedRole === 'dataentry') return '/portal/dataentry/notifications';
   return '';

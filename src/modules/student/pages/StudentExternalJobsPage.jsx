@@ -128,115 +128,107 @@ export const ExternalJobCard = ({ isAuthenticated, job, onApply, sourceMap }) =>
   const typeText = job.employment_type || 'Full-time';
 
   return (
-    <article className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[1.2rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-2.5 shadow-[0_10px_24px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_16px_32px_rgba(15,23,42,0.12)]">
+    <article className="group relative flex min-h-[20rem] h-full min-w-0 flex-col overflow-hidden rounded-[1.15rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-3 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_14px_28px_rgba(15,23,42,0.12)] md:h-[21rem]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.12),transparent_28%),linear-gradient(135deg,rgba(14,165,233,0.05),transparent_52%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/80 to-transparent" />
 
-      <div className="relative z-10 flex min-w-0 items-start gap-1.5">
+      <div className="relative z-10 flex min-w-0 items-start gap-2">
           {job.company_logo && !logoError ? (
             <img
               src={job.company_logo}
               alt={job.company_name}
-              className="h-8 w-8 shrink-0 rounded-[0.7rem] border border-slate-200 bg-white object-contain p-1 shadow-sm"
+              className="h-10 w-10 shrink-0 rounded-[0.8rem] border border-slate-200 bg-white object-contain p-1.5 shadow-sm"
               onError={() => setLogoError(true)}
             />
           ) : (
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0.7rem] bg-gradient-to-br from-amber-100 via-white to-slate-100 text-[9px] font-black text-navy shadow-inner">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.8rem] bg-gradient-to-br from-amber-100 via-white to-slate-100 text-sm font-black text-navy shadow-inner">
               {initials}
             </div>
           )}
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1">
-              <span className={`inline-flex max-w-full items-center gap-1 rounded-full border px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.08em] ${sourceColor}`}>
+              <span className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.08em] ${sourceColor}`}>
                 <FiGlobe size={9} />
                 <span className="truncate">{sourceName}</span>
               </span>
               {job.is_remote ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.08em] text-emerald-700">
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.08em] text-emerald-700">
                   <FiTrendingUp size={8} />
                   Remote
                 </span>
               ) : null}
             </div>
-            <h3 className="mt-1 line-clamp-2 break-words text-[0.82rem] font-black leading-[1.2] text-navy transition-colors group-hover:text-brand-700">
+            <h3 className="mt-1 line-clamp-2 break-words text-[0.95rem] font-black leading-5 text-navy transition-colors group-hover:text-brand-700">
               {job.job_title}
             </h3>
-            <p className="mt-0.5 line-clamp-1 text-[10px] font-medium text-slate-500">{job.company_name}</p>
+            <p className="mt-0.5 line-clamp-1 text-[0.82rem] font-medium text-slate-500">{job.company_name}</p>
           </div>
       </div>
 
-      <div className="relative z-10 mt-2.5 grid grid-cols-2 gap-1.5 text-[9px] text-slate-600">
-        <div className="min-w-0 rounded-[0.8rem] border border-slate-200 bg-slate-50/90 px-1.5 py-1.5">
+      <div className="relative z-10 mt-2.5 grid grid-cols-2 gap-2 text-[10px] text-slate-600">
+        <div className="min-w-0 rounded-[0.95rem] border border-slate-200 bg-slate-50/90 px-2.5 py-2">
           <div className="flex items-center gap-1 text-slate-400">
             <FiMapPin size={9} />
             <span className="font-semibold uppercase tracking-[0.1em]">Location</span>
           </div>
-          <p className="mt-1 line-clamp-2 break-words text-[9px] font-semibold leading-4 text-slate-700">{locationText}</p>
+          <p className="mt-1 line-clamp-2 break-words text-[11px] font-semibold leading-4 text-slate-700">{locationText}</p>
         </div>
 
-        <div className="min-w-0 rounded-[0.8rem] border border-slate-200 bg-slate-50/90 px-1.5 py-1.5">
+        <div className="min-w-0 rounded-[0.95rem] border border-slate-200 bg-slate-50/90 px-2.5 py-2">
           <div className="flex items-center gap-1 text-slate-400">
             <FiBriefcase size={9} />
             <span className="font-semibold uppercase tracking-[0.1em]">Type</span>
           </div>
-          <p className="mt-1 line-clamp-1 text-[9px] font-semibold text-slate-700">{typeText}</p>
+          <p className="mt-1 line-clamp-1 text-[11px] font-semibold text-slate-700">{typeText}</p>
         </div>
       </div>
 
-      <div className="relative z-10 mt-2 flex flex-wrap gap-1">
+      <div className="relative z-10 mt-2.5 flex flex-wrap gap-1.5">
         {job.category ? (
-          <span className="max-w-full truncate rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[8px] font-semibold text-slate-600">
+          <span className="max-w-full truncate rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-semibold text-slate-600">
             {job.category}
           </span>
         ) : null}
         {job.experience_level && job.experience_level !== 'Not specified' ? (
-          <span className="max-w-full truncate rounded-full border border-brand-100 bg-brand-50 px-1.5 py-0.5 text-[8px] font-semibold text-brand-700">
+          <span className="max-w-full truncate rounded-full border border-brand-100 bg-brand-50 px-2 py-0.5 text-[9px] font-semibold text-brand-700">
             {job.experience_level}
           </span>
         ) : null}
         {salaryText ? (
-          <span className="max-w-full truncate rounded-full border border-emerald-100 bg-emerald-50 px-1.5 py-0.5 text-[8px] font-semibold text-emerald-700">
+          <span className="max-w-full truncate rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">
             {salaryText}
           </span>
         ) : null}
       </div>
 
       {previewTags.length > 0 ? (
-        <div className="relative z-10 mt-2 flex flex-wrap gap-1">
+        <div className="relative z-10 mt-2 flex flex-wrap gap-1.5">
           {previewTags.map((tag, index) => (
             <span
               key={`${job.id}-${tag}-${index}`}
-              className="max-w-full truncate rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[8px] font-medium text-slate-500"
+              className="max-w-full truncate rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-medium text-slate-500"
             >
               {tag}
             </span>
           ))}
           {Array.isArray(job.tags) && job.tags.length > previewTags.length ? (
-            <span className="rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[8px] font-medium text-slate-400">
+            <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-medium text-slate-400">
               +{job.tags.length - previewTags.length}
             </span>
           ) : null}
         </div>
       ) : null}
 
-      <div className="relative z-10 mt-auto border-t border-slate-100 pt-2.5">
+      <div className="relative z-10 mt-auto border-t border-slate-100 pt-3">
         <button
           type="button"
           onClick={() => onApply(job, sourceName)}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-orange-500 px-3 py-1.5 text-[10px] font-black text-white shadow-[0_10px_20px_rgba(245,158,11,0.24)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_26px_rgba(245,158,11,0.3)]"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-orange-500 px-3 py-2 text-[12px] font-black text-white shadow-[0_10px_20px_rgba(245,158,11,0.24)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_26px_rgba(245,158,11,0.3)]"
         >
           {isAuthenticated ? <FiExternalLink size={11} /> : <FiLock size={11} />}
           {primaryLabel}
         </button>
-
-        <div className="mt-1.5 flex min-w-0 items-center justify-between gap-1.5 text-[8px] text-slate-500">
-          <span className="inline-flex min-w-0 items-center gap-1.5 font-medium">
-            {isAuthenticated ? <FiArrowUpRight size={9} /> : <FiShield size={9} />}
-            <span className="truncate">{isAuthenticated ? 'Verified destination' : 'Login required first'}</span>
-          </span>
-          <span className="truncate font-semibold text-slate-400">{sourceName}</span>
-        </div>
       </div>
     </article>
   );

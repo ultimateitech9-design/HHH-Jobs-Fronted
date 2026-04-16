@@ -4,13 +4,13 @@ import {
   FiArrowRight,
   FiBookmark,
   FiBriefcase,
-  FiCalendar,
   FiCheckCircle,
-  FiFileText,
+  FiLayers,
+  FiStar,
   FiTarget,
-  FiUser
+  FiTrendingUp,
+  FiZap
 } from 'react-icons/fi';
-import StudentMarketplaceShell from '../components/StudentMarketplaceShell';
 import {
   StudentPageShell,
   StudentSurfaceCard,
@@ -18,121 +18,180 @@ import {
   studentSecondaryButtonClassName
 } from '../components/StudentExperience';
 
-const serviceCards = [
+const mainServices = [
   {
-    title: 'ATS Analyzer',
-    description: 'Run ATS checks, compare score history, and improve resume fit before applying.',
-    to: '/portal/student/ats',
-    icon: FiActivity
+    title: 'Auto Apply',
+    description: 'Move faster on relevant jobs with a streamlined apply flow built for quick action.',
+    points: ['Faster apply steps', 'Less repeat work', 'Ready from jobs page'],
+    icon: FiZap,
+    to: '/portal/student/jobs',
+    cta: 'Open jobs'
   },
   {
-    title: 'Profile Upgrade',
-    description: 'Refine headline, resume, skills, and personal details to improve recruiter response.',
+    title: 'Premium HR Visibility',
+    description: 'Boost profile strength so HR teams can notice you faster and take your resume more seriously.',
+    points: ['Stronger recruiter visibility', 'Better profile presentation', 'Improved response chance'],
+    icon: FiStar,
     to: '/portal/student/profile',
-    icon: FiUser
+    cta: 'Upgrade profile'
   },
   {
-    title: 'Applications Tracker',
-    description: 'Review active applications, progress states, and candidate pipeline movement.',
-    to: '/portal/student/applications',
-    icon: FiFileText
-  },
-  {
-    title: 'Saved Jobs',
-    description: 'Keep shortlisted opportunities ready while you optimize resume and ATS score.',
-    to: '/portal/student/saved-jobs',
-    icon: FiBookmark
-  },
-  {
-    title: 'Interview Planner',
-    description: 'Track interview rounds, upcoming meetings, and follow-up preparation tasks.',
-    to: '/portal/student/interviews',
-    icon: FiCalendar
-  },
-  {
-    title: 'Jobs Workspace',
-    description: 'Browse combined HHH Jobs and Global Jobs from one premium student marketplace.',
-    to: '/portal/student/home?jobsView=all',
-    icon: FiBriefcase
+    title: 'Best-Fit Ranking',
+    description: 'Use fit-based guidance to focus on roles where your profile and resume match best.',
+    points: ['Role-fit insights', 'ATS improvement support', 'Smarter targeting'],
+    icon: FiTarget,
+    to: '/portal/student/ats',
+    cta: 'Check ATS fit'
   }
+];
+
+const supportServices = [
+  { label: 'Saved jobs and shortlist tracking', icon: FiBookmark, to: '/portal/student/saved-jobs' },
+  { label: 'Application progress monitoring', icon: FiLayers, to: '/portal/student/applications' },
+  { label: 'Interview planning and follow-up', icon: FiTrendingUp, to: '/portal/student/interviews' },
+  { label: 'Portal job discovery in one place', icon: FiBriefcase, to: '/portal/student/jobs' },
+  { label: 'ATS score history and improvements', icon: FiActivity, to: '/portal/student/ats' },
+  { label: 'More tools as your profile grows', icon: FiCheckCircle, to: '/portal/student/profile' }
 ];
 
 const StudentServicesPage = () => {
   return (
-    <StudentMarketplaceShell>
-      <StudentPageShell
-        eyebrow="Student Services"
-        badge="Career stack"
-        title="Dedicated student services, inside the same premium workspace"
-        subtitle="Open ATS, profile, saved jobs, applications, and interview tools from one student services page instead of jumping to the public services site."
-        heroSize="mini"
-        stats={[
-          { label: 'Core Services', value: '6', helper: 'Focused student service tools', icon: FiTarget },
-          { label: 'ATS Support', value: 'Live', helper: 'Resume scoring and fit analysis', icon: FiActivity, tone: 'success' },
-          { label: 'Job Flows', value: 'Merged', helper: 'HHH Jobs plus Global Jobs together', icon: FiBriefcase, tone: 'accent' }
-        ]}
-        actions={(
-          <>
-            <Link to="/portal/student/ats" className={`${studentPrimaryButtonClassName} px-4 py-2.5 text-[13px]`}>
-              <FiActivity size={15} />
-              Open ATS
-            </Link>
-            <Link to="/portal/student/profile" className={`${studentSecondaryButtonClassName} px-4 py-2.5 text-[13px]`}>
-              <FiUser size={15} />
-              Open Profile
-            </Link>
-          </>
-        )}
-      >
-        <StudentSurfaceCard
-          eyebrow="Services Grid"
-          title="Everything important is grouped here"
-          subtitle="Every card below opens a separate student page with its own focused features."
-        >
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {serviceCards.map((card) => (
-              <Link
-                key={card.title}
-                to={card.to}
-                className="group rounded-[1.6rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-5 shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_42px_rgba(15,23,42,0.1)]"
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-                  <card.icon size={20} />
-                </div>
-                <h2 className="mt-4 text-xl font-extrabold text-navy">{card.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">{card.description}</p>
-                <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-700">
-                  Open service
-                  <FiArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </StudentSurfaceCard>
+    <StudentPageShell showHero={false} bodyClassName="mx-auto max-w-[1180px] space-y-4 pb-8">
+      <section className="overflow-hidden rounded-[1.8rem] border border-white/70 bg-[linear-gradient(135deg,rgba(255,251,245,0.98),rgba(255,255,255,0.98)_48%,rgba(247,250,255,0.98)_100%)] p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-brand-700">
+            Student Services
+          </span>
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold text-slate-600">
+            Clean service hub
+          </span>
+        </div>
 
-        <StudentSurfaceCard
-          eyebrow="Service Benefits"
-          title="What this student services page gives you"
-          subtitle="A clean launchpad for every student feature, while keeping the same jobs-style marketplace shell."
-        >
-          <div className="grid gap-3 md:grid-cols-2">
+        <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-center">
+          <div>
+            <h1 className="font-heading text-[2rem] font-extrabold leading-tight text-navy md:text-[2.35rem]">
+              Better services for students, without the clutter
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Everything important is grouped here in a cleaner format: auto apply support, premium HR visibility,
+              best-fit job targeting, and extra tools that help you move faster.
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2.5">
+              <Link to="/portal/student/jobs" className={`${studentPrimaryButtonClassName} px-4 py-2 text-[13px]`}>
+                <FiBriefcase size={15} />
+                Explore services
+              </Link>
+              <Link to="/portal/student/profile" className={`${studentSecondaryButtonClassName} px-4 py-2 text-[13px]`}>
+                <FiStar size={15} />
+                Improve visibility
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid gap-2.5">
             {[
-              'ATS opens inside the student marketplace shell',
-              'Services no longer redirect to the public website',
-              'Profile, applications, saved jobs, and interviews stay one click away',
-              'The left profile rail and right helper cards remain visible just like jobs'
+              { label: 'Core offers', value: '3' },
+              { label: 'Support tools', value: '6+' },
+              { label: 'Best for', value: 'Fast growth' }
             ].map((item) => (
-              <div key={item} className="flex items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
-                <div className="mt-0.5 rounded-full bg-emerald-50 p-1.5 text-emerald-600">
-                  <FiCheckCircle size={14} />
-                </div>
-                <p className="text-sm font-semibold text-slate-700">{item}</p>
+              <div key={item.label} className="rounded-[1rem] border border-slate-200 bg-white/90 px-3.5 py-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{item.label}</p>
+                <p className="mt-1 text-base font-extrabold text-navy">{item.value}</p>
               </div>
             ))}
           </div>
-        </StudentSurfaceCard>
-      </StudentPageShell>
-    </StudentMarketplaceShell>
+        </div>
+      </section>
+
+      <StudentSurfaceCard
+        eyebrow="Main Services"
+        title="What we provide"
+        subtitle="Compact cards, clear value, and direct actions only."
+        className="p-4 xl:p-5"
+      >
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {mainServices.map((service) => (
+            <article
+              key={service.title}
+              className="rounded-[1.25rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-4 shadow-[0_14px_30px_rgba(15,23,42,0.05)]"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-[0.9rem] bg-brand-50 text-brand-700">
+                <service.icon size={18} />
+              </div>
+              <h2 className="mt-3 text-lg font-extrabold text-navy">{service.title}</h2>
+              <p className="mt-1.5 text-sm leading-6 text-slate-600">{service.description}</p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {service.points.map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+
+              <Link
+                to={service.to}
+                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-700 transition hover:text-brand-800"
+              >
+                {service.cta}
+                <FiArrowRight size={15} />
+              </Link>
+            </article>
+          ))}
+        </div>
+      </StudentSurfaceCard>
+
+      <StudentSurfaceCard
+        eyebrow="More Services"
+        title="And many more"
+        subtitle="Extra student-side tools that keep your job hunt organized."
+        className="p-4 xl:p-5"
+      >
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {supportServices.map((service) => (
+            <Link
+              key={service.label}
+              to={service.to}
+              className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white px-3.5 py-3 transition hover:border-brand-200 hover:bg-brand-50/40"
+            >
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.85rem] bg-slate-50 text-slate-600">
+                <service.icon size={16} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-navy">{service.label}</p>
+                <p className="mt-1 text-xs font-semibold text-brand-700">Open tool</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </StudentSurfaceCard>
+
+      <StudentSurfaceCard
+        eyebrow="Why It Helps"
+        title="Simple, focused, and useful"
+        subtitle="No extra clutter. Just the services students actually need."
+        className="p-4 xl:p-5"
+      >
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            'Apply faster on relevant jobs instead of wasting time on low-fit roles.',
+            'Improve HR visibility with a stronger profile and better presentation.',
+            'Use ATS and fit support to target jobs where you have a better chance.'
+          ].map((item) => (
+            <div key={item} className="rounded-[1rem] border border-slate-200 bg-slate-50/70 px-3.5 py-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <FiCheckCircle size={15} />
+              </div>
+              <p className="mt-3 text-sm font-semibold leading-6 text-slate-700">{item}</p>
+            </div>
+          ))}
+        </div>
+      </StudentSurfaceCard>
+    </StudentPageShell>
   );
 };
 

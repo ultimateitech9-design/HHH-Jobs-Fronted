@@ -274,13 +274,6 @@ const CompanyJobCard = ({ canOpenPortalJobs, isAuthenticated, job, onAction }) =
           )}
           {primaryLabel}
         </button>
-        <div className="mt-3 flex items-center justify-between gap-3 text-[12px] text-slate-500">
-          <span className="inline-flex items-center gap-1.5">
-            {job.sourceType === 'external' ? <FiArrowUpRight size={13} /> : <FiShield size={13} />}
-            {job.sourceType === 'external' ? 'Verified apply destination' : 'Candidate dashboard access'}
-          </span>
-          <span className="font-semibold text-slate-400">{job.sourceLabel}</span>
-        </div>
       </div>
     </article>
   );

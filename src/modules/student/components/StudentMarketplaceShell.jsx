@@ -126,7 +126,7 @@ const StudentMarketplaceShell = ({ children }) => {
               </span>
             </Link>
 
-            <Link to="/portal/student/dashboard" className="mt-3.5 block rounded-[1.35rem] border border-[#d9e7ff] bg-[#eef4ff] p-3 transition hover:border-brand-200 hover:shadow-sm">
+            <Link to="/portal/student/home" className="mt-3.5 block rounded-[1.35rem] border border-[#d9e7ff] bg-[#eef4ff] p-3 transition hover:border-brand-200 hover:shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-extrabold text-navy">HHH Jobs profile</h2>
                 <FiTrendingUp className="text-brand-600" />

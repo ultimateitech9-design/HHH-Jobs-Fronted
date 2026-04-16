@@ -7,6 +7,7 @@ import {
   FiFileText,
   FiGlobe,
   FiHome,
+  FiLayers,
   FiUser
 } from 'react-icons/fi';
 import { useLocation } from 'react-router-dom';
@@ -14,13 +15,14 @@ import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLay
 import { getCurrentUser } from '../../../utils/auth';
 
 const studentDashboardNavItems = [
-  { to: '/portal/student/home', label: 'Dashboard', icon: FiHome },
+  { to: '/portal/student/companies', label: 'Companies', icon: FiLayers },
+  { to: '/portal/student/jobs', label: 'Jobs', icon: FiBriefcase },
   { to: '/portal/student/profile', label: 'Profile', icon: FiUser },
   { to: '/portal/student/ats', label: 'ATS', icon: FiActivity },
   {
     key: 'student-jobs-group',
-    label: 'Jobs',
-    icon: FiBriefcase,
+    label: 'More Jobs',
+    icon: FiGlobe,
     children: [
       { to: '/portal/student/jobs', label: 'Jobs', icon: FiBriefcase },
       { to: '/portal/student/global-jobs', label: 'Global Jobs', icon: FiGlobe }
@@ -33,12 +35,12 @@ const studentDashboardNavItems = [
 ];
 
 const studentHomeNavItems = [
-  { to: '/portal/student/home', label: 'Dashboard', icon: FiHome }
+  { to: '/portal/student/companies', label: 'Companies', icon: FiLayers }
 ];
 
 const studentHeaderNavItems = [
-  { label: 'Jobs', to: '/portal/student/home?jobsView=jobs' },
-  { label: 'Companies', to: '/portal/student/home' },
+  { label: 'Jobs', to: '/portal/student/jobs' },
+  { label: 'Companies', to: '/portal/student/companies' },
   { label: 'ATS', to: '/portal/student/ats' },
   { label: 'Services', to: '/portal/student/services' }
 ];
@@ -48,16 +50,6 @@ const StudentModuleLayout = () => {
   const location = useLocation();
   const isRetiredUser = currentUser?.role === 'retired_employee';
   const isStudentHomeRoute = location.pathname === '/portal/student/home';
-  const isStudentProfileRoute = location.pathname === '/portal/student/profile';
-  const isStudentAtsRoute = location.pathname === '/portal/student/ats';
-  const isStudentServicesRoute = location.pathname === '/portal/student/services';
-  const isStudentSavedJobsRoute = location.pathname === '/portal/student/saved-jobs';
-  const shouldHideSidebar =
-    isStudentHomeRoute ||
-    isStudentProfileRoute ||
-    isStudentAtsRoute ||
-    isStudentServicesRoute ||
-    isStudentSavedJobsRoute;
 
   return (
     <PortalWorkbenchLayout
@@ -73,7 +65,7 @@ const StudentModuleLayout = () => {
       hideSidebarBrand
       sidebarBelowHeader
       navItems={isStudentHomeRoute ? studentHomeNavItems : studentDashboardNavItems}
-      hideSidebar={shouldHideSidebar}
+      hideSidebar
       support={{
         showCard: false,
         title: isRetiredUser ? 'Profile Priority' : 'Career Priority',
