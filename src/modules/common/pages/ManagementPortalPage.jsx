@@ -57,8 +57,6 @@ const ManagementPortalPage = () => {
               <FiShield />
             </span>
             <h1>Management</h1>
-            <p>Access for authorized administrators handling approvals, operations, and business oversight.</p>
-            <span className="management-card__hint">Choose a portal below</span>
             <div className="management-card__actions">
               {managementLinks.map((item) => (
                 <button
@@ -79,8 +77,6 @@ const ManagementPortalPage = () => {
               <FiBriefcase />
             </span>
             <h2>Employee</h2>
-            <p>Access for support, sales, and operations teams inside HHH Jobs.</p>
-            <span className="management-card__hint">Choose a portal below</span>
             <div className="management-card__actions">
               {employeeLinks.map((item) => (
                 <button
