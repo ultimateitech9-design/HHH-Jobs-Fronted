@@ -384,7 +384,7 @@ const AdminUsersPage = () => {
                         <div className="font-medium text-neutral-500 text-xs">{acc.email}</div>
                       </td>
                       <td className="p-4">
-                        <span className="px-2.5 py-1 bg-brand-50 text-brand-700 border border-brand-100 rounded-md text-[10px] uppercase font-black tracking-wider inline-block">
+                        <span className="inline-flex items-center whitespace-nowrap rounded-md border border-brand-100 bg-brand-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-brand-700">
                           {acc.role}
                         </span>
                       </td>
@@ -507,18 +507,18 @@ const AdminUsersPage = () => {
                         <div className="font-medium text-neutral-500 text-xs">{user.email || 'No email'}</div>
                       </td>
                       <td className="p-4">
-                        <span className="font-bold text-neutral-700 text-xs bg-neutral-100 px-2 py-1 rounded inline-block uppercase tracking-wider">
+                        <span className="inline-flex items-center whitespace-nowrap rounded bg-neutral-100 px-2 py-1 text-xs font-bold uppercase tracking-wider text-neutral-700">
                           {user.role}
                         </span>
                       </td>
                       <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-md text-[10px] uppercase font-black tracking-wider border inline-block ${getStatusBadge(user.status || 'active')}`}>
+                        <span className={`inline-flex items-center whitespace-nowrap rounded-md border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${getStatusBadge(user.status || 'active')}`}>
                           {user.status || 'Active'}
                         </span>
                       </td>
                       <td className="p-4">
                         {isHr ? (
-                          <span className={`px-2.5 py-1 rounded-md text-[10px] uppercase font-black tracking-wider border inline-flex items-center gap-1 ${user.is_hr_approved ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                          <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${user.is_hr_approved ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                             {user.is_hr_approved ? <><FiCheckCircle /> Verified</> : <><FiShield /> Pending</>}
                           </span>
                         ) : (
@@ -526,13 +526,13 @@ const AdminUsersPage = () => {
                         )}
                       </td>
                       <td className="p-4 pr-6">
-                        <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                        <div className="flex flex-nowrap items-center justify-end gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                           {/* HR Verification Toggle */}
                           {isHr && (
                             <button
                               disabled={isApprovalBusy}
                               onClick={() => handleHrApproval(user.id, !user.is_hr_approved)}
-                              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors border ${
+                              className={`shrink-0 whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
                                 user.is_hr_approved 
                                   ? 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50' 
                                   : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
@@ -543,25 +543,25 @@ const AdminUsersPage = () => {
                           )}
                           
                           {/* Generic Status Actions */}
-                          <div className="flex bg-neutral-100 rounded-lg p-0.5 border border-neutral-200">
+                          <div className="flex flex-nowrap rounded-lg border border-neutral-200 bg-neutral-100 p-0.5">
                              <button
                                disabled={isStatusBusy}
                                onClick={() => handleStatusChange(user.id, 'active')}
-                               className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${user.status === 'active' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-neutral-700'} disabled:opacity-50`}
+                               className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1 text-xs font-bold transition-all ${user.status === 'active' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-neutral-700'} disabled:opacity-50`}
                              >
                                Active
                              </button>
                              <button
                                disabled={isStatusBusy}
                                onClick={() => handleStatusChange(user.id, 'blocked')}
-                               className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${user.status === 'blocked' ? 'bg-amber-100 text-amber-800 shadow-sm' : 'text-neutral-500 hover:text-amber-700'} disabled:opacity-50`}
+                               className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1 text-xs font-bold transition-all ${user.status === 'blocked' ? 'bg-amber-100 text-amber-800 shadow-sm' : 'text-neutral-500 hover:text-amber-700'} disabled:opacity-50`}
                              >
                                Block
                              </button>
                              <button
                                disabled={isStatusBusy}
                                onClick={() => handleStatusChange(user.id, 'banned')}
-                               className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${user.status === 'banned' ? 'bg-red-100 text-red-800 shadow-sm' : 'text-neutral-500 hover:text-red-700'} disabled:opacity-50`}
+                               className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1 text-xs font-bold transition-all ${user.status === 'banned' ? 'bg-red-100 text-red-800 shadow-sm' : 'text-neutral-500 hover:text-red-700'} disabled:opacity-50`}
                              >
                                Ban
                              </button>

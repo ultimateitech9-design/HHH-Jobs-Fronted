@@ -223,7 +223,7 @@ const AdminApplicationsPage = () => {
                     </td>
                     
                     <td className="p-4 align-top">
-                       <span className="inline-block px-2 py-1 bg-neutral-100 border border-neutral-200 rounded text-xs font-mono font-bold text-neutral-600 mb-1">
+                       <span className="mb-1 inline-flex items-center whitespace-nowrap rounded border border-neutral-200 bg-neutral-100 px-2 py-1 text-xs font-mono font-bold text-neutral-600">
                          JOB-{String(app.jobId).toUpperCase().slice(-8)}
                        </span>
                        <div className="font-bold text-neutral-400 text-[10px] uppercase tracking-wider">
@@ -233,7 +233,7 @@ const AdminApplicationsPage = () => {
                     
                     <td className="p-4 align-top">
                        <div className="flex flex-col items-start gap-1">
-                         <span className={`px-3 py-1.5 rounded-lg text-[10px] uppercase font-black tracking-widest border inline-block ${getStatusBadge(app.status || 'applied')}`}>
+                         <span className={`inline-flex items-center whitespace-nowrap rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest ${getStatusBadge(app.status || 'applied')}`}>
                            {app.status || 'applied'}
                          </span>
                        </div>

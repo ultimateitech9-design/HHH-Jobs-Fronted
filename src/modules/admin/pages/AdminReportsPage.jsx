@@ -293,7 +293,7 @@ const AdminReportsPage = () => {
                       </td>
                       
                       <td className="p-4 align-top pt-5">
-                         <span className={`px-3 py-1.5 rounded-lg text-xs uppercase font-black tracking-wider border inline-block ${getStatusBadge(report.status || 'open')}`}>
+                         <span className={`inline-flex items-center whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-black uppercase tracking-wider ${getStatusBadge(report.status || 'open')}`}>
                            {(report.status || 'open').replace('_', ' ')}
                          </span>
                       </td>
@@ -318,7 +318,7 @@ const AdminReportsPage = () => {
                              </select>
                              
                              <button 
-                               className="bg-brand-600 text-white px-3 py-1.5 rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50 shrink-0 font-bold text-xs flex items-center gap-1.5 shadow-sm border border-brand-700"
+                               className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-brand-700 bg-brand-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-brand-500 disabled:opacity-50"
                                onClick={() => handleUpdateReport(report)}
                                disabled={isBusy || (draft.status === report.status && draft.adminNote === report.adminNote)}
                                title="Save Resolution"

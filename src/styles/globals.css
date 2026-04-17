@@ -1969,11 +1969,14 @@ select {
 
 .status-pill {
   display: inline-flex;
+  align-items: center;
   padding: 0.22rem 0.52rem;
   border-radius: 999px;
   font-size: 0.74rem;
   font-weight: 700;
   text-transform: capitalize;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .status-pill--default {
@@ -2918,9 +2921,14 @@ select {
 .btn-danger,
 .btn-link {
   border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   cursor: pointer;
   font-weight: 700;
   transition: transform var(--transition-standard), box-shadow var(--transition-standard), opacity var(--transition-standard);
+  white-space: nowrap;
 }
 
 .btn-primary {

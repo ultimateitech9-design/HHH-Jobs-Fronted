@@ -362,7 +362,7 @@ const AdminPaymentsPage = () => {
                 planPurchases.map((purchase) => (
                   <tr key={purchase.id} className="hover:bg-white/5 transition-colors group">
                     <td className="p-4 pl-6 align-top">
-                      <div className="font-mono text-white text-sm font-bold bg-white/10 px-2 py-1 rounded inline-block mb-2 border border-white/10">
+                      <div className="mb-2 inline-flex items-center whitespace-nowrap rounded border border-white/10 bg-white/10 px-2 py-1 font-mono text-sm font-bold text-white">
                         {String(purchase.id).slice(-8).toUpperCase()}
                       </div>
                       <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wide">
@@ -389,7 +389,7 @@ const AdminPaymentsPage = () => {
                     </td>
                     
                     <td className="p-4 align-top">
-                      <span className={`px-3 py-1.5 rounded-lg text-[10px] uppercase font-black tracking-widest border inline-block ${
+                      <span className={`inline-flex items-center whitespace-nowrap rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest ${
                          purchase.status === 'paid' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
                          purchase.status === 'pending' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
                          'bg-neutral-500/20 text-neutral-300 border-neutral-500/30'
@@ -399,11 +399,11 @@ const AdminPaymentsPage = () => {
                     </td>
                     
                     <td className="p-4 pr-6 align-top text-right">
-                       <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                       <div className="flex flex-nowrap items-center justify-end gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                          {purchase.status === 'pending' && (
                            <button 
                              onClick={() => handleUpdatePurchaseStatus(purchase.id, 'paid')}
-                             className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-indigo-950 font-black text-xs rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all flex items-center gap-1.5"
+                             className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-emerald-500 px-4 py-2 text-xs font-black text-indigo-950 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all hover:bg-emerald-400"
                            >
                              <FiCheckCircle /> Validate & Grant
                            </button>
@@ -411,7 +411,7 @@ const AdminPaymentsPage = () => {
                          {purchase.status === 'paid' && (
                            <button 
                              onClick={() => handleUpdatePurchaseStatus(purchase.id, 'refunded')}
-                             className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs rounded-xl border border-white/10 transition-colors flex items-center gap-1.5"
+                             className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-white/10 bg-neutral-800 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-neutral-700"
                            >
                              <FiRefreshCcw /> Process Refund
                            </button>
@@ -499,11 +499,11 @@ const AdminPaymentsPage = () => {
                 filteredPayments.map((payment) => (
                   <tr key={payment.id} className="hover:bg-neutral-50/50 transition-colors">
                     <td className="p-4 pl-6 align-top">
-                      <div className="font-mono text-primary text-sm font-bold bg-neutral-100 px-2 py-1 rounded inline-block mb-1 border border-neutral-200">
+                      <div className="mb-1 inline-flex items-center whitespace-nowrap rounded border border-neutral-200 bg-neutral-100 px-2 py-1 font-mono text-sm font-bold text-primary">
                         TXN-{String(payment.id).slice(-8).toUpperCase()}
                       </div>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black tracking-widest border inline-block ${getStatusBadge(payment.status || 'pending')}`}>
+                        <span className={`inline-flex items-center whitespace-nowrap rounded border px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${getStatusBadge(payment.status || 'pending')}`}>
                           {payment.status || 'pending'}
                         </span>
                       </div>
@@ -539,7 +539,7 @@ const AdminPaymentsPage = () => {
                     <td className="p-4 pr-6 align-top text-right">
                        <button 
                          onClick={() => openEdit(payment)}
-                         className="px-3 py-1.5 bg-white hover:bg-neutral-50 text-neutral-700 font-bold text-xs rounded-xl border border-neutral-200 transition-colors flex items-center justify-end gap-1.5 ml-auto shadow-sm"
+                         className="ml-auto flex items-center justify-end gap-1.5 whitespace-nowrap rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-xs font-bold text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50"
                        >
                          <FiEdit3 /> View / Rec
                        </button>

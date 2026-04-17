@@ -371,15 +371,15 @@ const AdminJobsPage = () => {
                       
                       <td className="p-4 align-top">
                         <div className="flex flex-col items-start gap-2">
-                          <span className={`px-3 py-1.5 rounded-lg text-xs uppercase font-black tracking-wider border inline-block ${getStatusBadge(job.status || 'open')}`}>
+                          <span className={`inline-flex items-center whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-black uppercase tracking-wider ${getStatusBadge(job.status || 'open')}`}>
                             {job.status || 'open'}
                           </span>
                           
-                          <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-neutral-100 p-0.5 rounded-lg border border-neutral-200">
+                          <div className="flex flex-nowrap items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-100 p-0.5 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                              <button
                                disabled={isStatusBusy}
                                onClick={() => handleUpdateJobStatus(job, 'open')}
-                               className={`p-1.5 text-xs font-bold rounded-md transition-all ${job.status === 'open' ? 'bg-white text-emerald-600 shadow-sm' : 'text-neutral-500 hover:text-emerald-700'} disabled:opacity-50`}
+                               className={`shrink-0 whitespace-nowrap rounded-md p-1.5 text-xs font-bold transition-all ${job.status === 'open' ? 'bg-white text-emerald-600 shadow-sm' : 'text-neutral-500 hover:text-emerald-700'} disabled:opacity-50`}
                                title="Set Live"
                              >
                                <FiEye size={14} />
@@ -387,7 +387,7 @@ const AdminJobsPage = () => {
                              <button
                                disabled={isStatusBusy}
                                onClick={() => handleUpdateJobStatus(job, 'closed')}
-                               className={`p-1.5 text-xs font-bold rounded-md transition-all ${job.status === 'closed' ? 'bg-amber-100 text-amber-800 shadow-sm' : 'text-neutral-500 hover:text-amber-700'} disabled:opacity-50`}
+                               className={`shrink-0 whitespace-nowrap rounded-md p-1.5 text-xs font-bold transition-all ${job.status === 'closed' ? 'bg-amber-100 text-amber-800 shadow-sm' : 'text-neutral-500 hover:text-amber-700'} disabled:opacity-50`}
                                title="Close Applications"
                              >
                                <FiEyeOff size={14} />
@@ -395,7 +395,7 @@ const AdminJobsPage = () => {
                              <button
                                disabled={isStatusBusy}
                                onClick={() => handleUpdateJobStatus(job, 'deleted')}
-                               className={`p-1.5 text-xs font-bold rounded-md transition-all ${job.status === 'deleted' ? 'bg-red-100 text-red-800 shadow-sm' : 'text-neutral-500 hover:text-red-700'} disabled:opacity-50`}
+                               className={`shrink-0 whitespace-nowrap rounded-md p-1.5 text-xs font-bold transition-all ${job.status === 'deleted' ? 'bg-red-100 text-red-800 shadow-sm' : 'text-neutral-500 hover:text-red-700'} disabled:opacity-50`}
                                title="Soft Delete"
                              >
                                <FiTrash2 size={14} />
@@ -422,7 +422,7 @@ const AdminJobsPage = () => {
                              </select>
                              
                              <button 
-                               className="bg-brand-600 text-white p-1 rounded hover:bg-brand-500 transition-colors disabled:opacity-50 shrink-0"
+                               className="shrink-0 whitespace-nowrap rounded bg-brand-600 p-1 text-white transition-colors hover:bg-brand-500 disabled:opacity-50"
                                onClick={() => handleApplyApproval(job)}
                                disabled={isApprovalBusy || draft.approvalStatus === job.approvalStatus && draft.approvalNote === job.approvalNote}
                                title="Save Clearance"
@@ -444,7 +444,7 @@ const AdminJobsPage = () => {
                         <div className="flex flex-col items-end gap-2">
                            <Link 
                              to={`/portal/admin/applications?jobId=${jobId}`} 
-                             className="px-3 py-1.5 bg-neutral-100 text-neutral-600 hover:bg-brand-50 hover:text-brand-700 border border-neutral-200 hover:border-brand-200 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
+                             className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-neutral-200 bg-neutral-100 px-3 py-1.5 text-xs font-bold text-neutral-600 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
                            >
                              <FiInbox /> Apps DB
                            </Link>
