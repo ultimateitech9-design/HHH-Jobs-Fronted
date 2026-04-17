@@ -188,7 +188,7 @@ const StudentMarketplaceShell = ({ children }) => {
 
           <a
             href={BLOG_BASE_URL}
-            className="block w-full overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white text-left transition hover:border-brand-200 hover:shadow-sm"
+            className="hidden w-full overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white text-left transition hover:border-brand-200 hover:shadow-sm md:block"
           >
             <div className="h-20 overflow-hidden bg-[linear-gradient(135deg,#dbeafe_0%,#bfdbfe_40%,#e2e8f0_100%)]">
               <img

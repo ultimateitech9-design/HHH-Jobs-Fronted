@@ -420,12 +420,12 @@ const AdminUsersPage = () => {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+              <div className="relative w-full sm:w-auto">
                 <select 
                   value={filters.role} 
                   onChange={(e) => setFilters({ ...filters, role: e.target.value })}
-                  className="pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm"
+                  className="w-full pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm sm:min-w-[160px]"
                 >
                   <option value="all">All Roles</option>
                   <option value="admin">System Admin</option>
@@ -435,11 +435,11 @@ const AdminUsersPage = () => {
                 <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
               </div>
 
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <select 
                   value={filters.status} 
                   onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                  className="pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm"
+                  className="w-full pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm sm:min-w-[160px]"
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
@@ -449,7 +449,7 @@ const AdminUsersPage = () => {
                 <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
               </div>
 
-              <div className="relative flex-1 sm:min-w-[200px]">
+              <div className="relative w-full flex-1 sm:min-w-[220px]">
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
                   value={filters.search}
@@ -462,7 +462,7 @@ const AdminUsersPage = () => {
 
               <button 
                 onClick={() => loadUsers(filters)}
-                className="px-4 py-2.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-500 transition-colors shadow-sm flex items-center justify-center gap-2"
+                className="w-full px-4 py-2.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-500 transition-colors shadow-sm flex items-center justify-center gap-2 sm:w-auto"
               >
                 <FiFilter /> Apply
               </button>
@@ -470,14 +470,14 @@ const AdminUsersPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-x-auto custom-scrollbar relative">
+        <div className="relative flex-1 overflow-x-auto custom-scrollbar">
           {loading ? (
              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
                <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
              </div>
           ) : null}
 
-          <table className="w-full text-left border-collapse min-w-[1000px]">
+          <table className="w-full text-left border-collapse min-w-[920px] xl:min-w-[1000px]">
             <thead>
               <tr className="bg-neutral-50">
                 <th className="p-4 pl-6 text-xs font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-200">Account Identity</th>

@@ -468,11 +468,11 @@ const StudentJobsPage = ({
         />
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:items-start">
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start xl:grid-cols-[280px_minmax(0,1fr)]">
         <StudentSurfaceCard
           title="Filters"
           subtitle="HR aur scraped dono jobs yahin filter hongi."
-          className="xl:sticky xl:top-24"
+          className="lg:sticky lg:top-24"
         >
           <div className="space-y-3">
             <div className="relative">
@@ -566,13 +566,13 @@ const StudentJobsPage = ({
 
         <div className="space-y-4">
           {jobsState.loading ? (
-            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {[1, 2, 3, 4, 5, 6].map((item) => (
                 <div key={item} className="h-52 animate-pulse rounded-[1.45rem] bg-slate-100" />
               ))}
             </div>
           ) : totalJobs > 0 ? (
-            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {paginatedJobs.map((job) => {
                 if (job.__kind === 'external') {
                   return (
@@ -593,7 +593,7 @@ const StudentJobsPage = ({
 
                 return (
                   <article
-                    className="group relative flex min-h-[20rem] h-full flex-col overflow-hidden rounded-[1.15rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-3.5 shadow-[0_12px_26px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_16px_32px_rgba(15,23,42,0.12)] md:h-[21rem]"
+                    className="group relative flex min-h-[18.5rem] h-full flex-col overflow-hidden rounded-[1.15rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-3.5 shadow-[0_12px_26px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_16px_32px_rgba(15,23,42,0.12)] sm:min-h-[20rem]"
                     key={jobId}
                   >
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(229,155,23,0.12),transparent_35%),linear-gradient(135deg,rgba(47,83,143,0.05),transparent_60%)] opacity-0 transition-opacity group-hover:opacity-100" />
@@ -722,7 +722,7 @@ const StudentJobsPage = ({
 
       {totalPages > 1 ? (
         <div className="flex justify-center">
-          <div className="flex items-center gap-4 rounded-full border border-slate-200 bg-white px-6 py-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-center gap-3 rounded-[1.4rem] border border-slate-200 bg-white px-4 py-3 shadow-sm sm:flex-nowrap sm:gap-4 sm:rounded-full sm:px-6 sm:py-4">
             <button
               type="button"
               className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-navy transition hover:border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"

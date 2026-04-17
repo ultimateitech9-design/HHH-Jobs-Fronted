@@ -114,7 +114,7 @@ const RootLayout = () => {
 
   return (
     <div
-      className="min-h-screen font-sans text-slate-900"
+      className="min-h-screen overflow-x-clip font-sans text-slate-900"
       style={isPortalWorkbench ? undefined : publicShellStyle}
     >
       {!isPortalWorkbench ? (
@@ -129,7 +129,7 @@ const RootLayout = () => {
       {!isPortalWorkbench && showScrollTop && !isChatbotOpen ? <ScrollToTopButton /> : null}
 
       <NotificationRuntime />
-      <AiChatbot />
+      {!isPortalWorkbench ? <AiChatbot /> : null}
     </div>
   );
 };

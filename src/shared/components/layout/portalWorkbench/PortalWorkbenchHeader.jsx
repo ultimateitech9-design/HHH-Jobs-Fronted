@@ -59,7 +59,7 @@ const PortalWorkbenchHeader = ({
         />
 
         <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 py-1.5 backdrop-blur-xl">
-          <div className="mx-auto grid w-full max-w-[1148px] grid-cols-[auto_1fr_auto] items-center gap-2 px-3 sm:px-4 lg:gap-2.5 lg:px-6 xl:px-0">
+          <div className="mx-auto grid w-full max-w-[1148px] grid-cols-[auto_1fr_auto] items-center gap-2 px-3 sm:px-4 lg:gap-2.5 lg:px-5 xl:px-0">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -77,7 +77,7 @@ const PortalWorkbenchHeader = ({
               </Link>
             </div>
 
-            <nav ref={navRef} className="hidden items-center justify-center gap-7 lg:flex xl:gap-10">
+            <nav ref={navRef} className="hidden min-w-0 items-center justify-center gap-5 lg:flex xl:gap-8">
               {headerNavItems.map((item) => {
                 const hasChildren = Array.isArray(item.children) && item.children.length > 0;
                 const isOpen = openDropdown === item.label;
@@ -128,7 +128,7 @@ const PortalWorkbenchHeader = ({
             </nav>
 
             <div className="ml-auto flex items-center gap-2 sm:gap-2.5">
-              <div className="hidden h-8.5 items-center rounded-full border border-slate-200 bg-white pl-3.5 pr-1 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:flex lg:w-[200px] xl:w-[250px]">
+              <div className="hidden h-[2.125rem] items-center rounded-full border border-slate-200 bg-white pl-3.5 pr-1 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:flex md:w-[170px] lg:w-[200px] xl:w-[240px]">
                 <input
                   placeholder={headerSearchPlaceholder || searchPlaceholder || 'Search jobs here'}
                   className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
@@ -136,7 +136,7 @@ const PortalWorkbenchHeader = ({
                 <button
                   type="button"
                   aria-label="Search jobs"
-                  className="inline-flex h-6.5 w-6.5 items-center justify-center rounded-full gradient-primary text-white"
+                  className="inline-flex h-[1.625rem] w-[1.625rem] items-center justify-center rounded-full gradient-primary text-white"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -154,7 +154,7 @@ const PortalWorkbenchHeader = ({
               <button
                 type="button"
                 onClick={() => setNotificationsOpen(true)}
-                className="relative inline-flex h-8.5 w-8.5 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 sm:h-9 sm:w-9"
+                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900 md:h-9 md:w-9"
                 aria-label="Open notifications"
                 title="Open notifications"
               >
@@ -174,12 +174,12 @@ const PortalWorkbenchHeader = ({
                   onClick={() => setProfileMenuOpen((current) => !current)}
                   aria-label="Open profile menu"
                   title="Open profile menu"
-                  className="flex h-8.5 items-center gap-1.5 rounded-full border border-gold/20 bg-white px-1.5 pr-2 text-xs font-bold text-white shadow-sm transition hover:border-gold/40 hover:ring-2 hover:ring-gold/10 sm:h-9"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gold/20 bg-white p-0 text-xs font-bold text-white shadow-sm transition hover:border-gold/40 hover:ring-2 hover:ring-gold/10 md:h-9 md:w-auto md:gap-1.5 md:justify-start md:px-1.5 md:pr-2"
                 >
-                  <span className="flex h-7.5 w-7.5 items-center justify-center overflow-hidden rounded-full gradient-primary sm:h-8 sm:w-8">
-                    {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" /> : avatarLetter}
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full gradient-primary md:h-8 md:w-8">
+                    {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="h-full w-full rounded-full object-cover object-center" /> : avatarLetter}
                   </span>
-                  <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`hidden h-4 w-4 text-slate-500 transition-transform md:block ${profileMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {profileMenuOpen ? (
@@ -213,7 +213,7 @@ const PortalWorkbenchHeader = ({
             </div>
 
             <div className="col-span-full md:hidden">
-              <div className="flex h-8.5 items-center rounded-full border border-slate-200 bg-white pl-3.5 pr-1 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+              <div className="flex h-[2.125rem] items-center rounded-full border border-slate-200 bg-white pl-3.5 pr-1 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
                 <input
                   placeholder={headerSearchPlaceholder || searchPlaceholder || 'Search jobs here'}
                   className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
@@ -221,7 +221,7 @@ const PortalWorkbenchHeader = ({
                 <button
                   type="button"
                   aria-label="Search jobs"
-                  className="inline-flex h-6.5 w-6.5 items-center justify-center rounded-full gradient-primary text-white"
+                  className="inline-flex h-[1.625rem] w-[1.625rem] items-center justify-center rounded-full gradient-primary text-white"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -242,7 +242,7 @@ const PortalWorkbenchHeader = ({
         notifications={notifications}
       />
 
-      <header className="sticky top-0 z-30 flex min-h-12 flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 bg-white/92 px-3 py-2 backdrop-blur-xl sm:px-4 md:h-12 md:flex-nowrap md:px-4 md:py-0">
+      <header className="sticky top-0 z-30 flex min-h-12 flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 bg-white/92 px-3 py-2 backdrop-blur-xl sm:px-4 md:min-h-12 md:flex-nowrap md:px-4 md:py-0">
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -263,7 +263,7 @@ const PortalWorkbenchHeader = ({
             <Search className="h-4 w-4 text-slate-400" />
             <input
               placeholder={searchPlaceholder || 'Search dashboard'}
-              className="w-44 bg-transparent text-sm outline-none"
+              className="w-32 bg-transparent text-sm outline-none xl:w-44"
             />
           </div>
 
@@ -293,18 +293,18 @@ const PortalWorkbenchHeader = ({
             ) : null}
           </button>
 
-          <div ref={profileMenuRef} className="relative">
+          <div ref={profileMenuRef} className="relative shrink-0">
             <button
               type="button"
               onClick={() => setProfileMenuOpen((current) => !current)}
               aria-label="Open profile menu"
               title="Open profile menu"
-              className="flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-1.5 pr-2 shadow-[0_10px_24px_rgba(15,23,42,0.06)] transition hover:border-slate-300 sm:h-8.5"
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white p-0 shadow-[0_10px_24px_rgba(15,23,42,0.06)] transition hover:border-slate-300 sm:h-9 sm:w-auto sm:gap-1 sm:justify-start sm:px-1.5 sm:pr-2"
             >
-              <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full gradient-primary text-[11px] font-bold text-white shadow-md shadow-brand-500/20 sm:h-7.5 sm:w-7.5">
-                {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" /> : avatarLetter}
+              <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full gradient-primary text-[11px] font-bold text-white shadow-md shadow-brand-500/20 sm:h-8 sm:w-8">
+                {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="h-full w-full rounded-full object-cover object-center" /> : avatarLetter}
               </span>
-              <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`hidden h-4 w-4 text-slate-500 transition-transform sm:block ${profileMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {profileMenuOpen ? (

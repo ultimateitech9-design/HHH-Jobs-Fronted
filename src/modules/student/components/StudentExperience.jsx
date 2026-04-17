@@ -69,20 +69,20 @@ export const StudentPageShell = ({
   const isMiniHero = heroSize === 'mini';
 
   return (
-    <div className={`space-y-6 pb-8 ${bodyClassName}`.trim()}>
+    <div className={`space-y-4 pb-8 sm:space-y-6 ${bodyClassName}`.trim()}>
       {showHero ? (
         <section
           className={`relative overflow-hidden rounded-[2.35rem] border border-white/70 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,33,59,0.94)_36%,rgba(47,83,143,0.9)_68%,rgba(229,155,23,0.86))] text-white shadow-[0_26px_70px_rgba(17,33,59,0.16)] ${
-            isMiniHero ? 'px-3.5 py-3.5 md:px-4 md:py-4' : isCompactHero ? 'px-5 py-5 md:px-6 md:py-6' : 'px-6 py-7 md:px-8 md:py-8'
+            isMiniHero ? 'px-3.5 py-3.5 md:px-4 md:py-4' : isCompactHero ? 'px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6' : 'px-4 py-5 sm:px-6 sm:py-7 md:px-8 md:py-8'
           } ${heroClassName}`.trim()}
         >
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,214,102,0.22),transparent_24%),linear-gradient(180deg,transparent,rgba(255,255,255,0.02))]" />
           <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-white/8 blur-3xl" />
           <div className="pointer-events-none absolute -right-16 top-0 h-56 w-56 rounded-full bg-brand-200/20 blur-3xl" />
 
-          <div className={`relative grid xl:grid-cols-[minmax(0,1.18fr)_minmax(250px,0.78fr)] xl:items-start ${isMiniHero ? 'gap-2.5' : isCompactHero ? 'gap-4' : 'gap-6'}`}>
+          <div className={`relative grid xl:grid-cols-[minmax(0,1.18fr)_minmax(250px,0.78fr)] xl:items-start ${isMiniHero ? 'gap-2.5' : isCompactHero ? 'gap-4' : 'gap-5 sm:gap-6'}`}>
             <div>
-              <div className={`flex flex-wrap items-center ${isMiniHero ? 'gap-2' : 'gap-3'}`}>
+              <div className={`flex flex-wrap items-center ${isMiniHero ? 'gap-2' : 'gap-2.5 sm:gap-3'}`}>
                 {eyebrow ? (
                   <p className={`${isMiniHero ? 'text-[10px] tracking-[0.24em]' : 'text-xs tracking-[0.28em]'} font-black uppercase text-white/70`}>{eyebrow}</p>
                 ) : null}
@@ -93,12 +93,12 @@ export const StudentPageShell = ({
                 ) : null}
               </div>
 
-              <h1 className={`max-w-4xl font-heading font-extrabold leading-tight text-white ${isMiniHero ? 'mt-2 text-[1.35rem] md:text-[1.65rem]' : isCompactHero ? 'mt-3 text-[2rem] md:text-[2.45rem]' : 'mt-4 text-3xl md:text-4xl'}`}>
+              <h1 className={`max-w-4xl font-heading font-extrabold leading-tight text-white ${isMiniHero ? 'mt-2 text-[1.35rem] md:text-[1.65rem]' : isCompactHero ? 'mt-3 text-[1.7rem] sm:text-[2rem] md:text-[2.45rem]' : 'mt-3 text-[1.8rem] sm:text-3xl md:mt-4 md:text-4xl'}`}>
                 {title}
               </h1>
 
               {subtitle ? (
-                <p className={`max-w-3xl text-white/76 ${isMiniHero ? 'mt-2 text-[12px] leading-4' : isCompactHero ? 'mt-3 text-sm leading-6' : 'mt-4 text-sm leading-7 md:text-base'}`}>
+                <p className={`max-w-3xl text-white/76 ${isMiniHero ? 'mt-2 text-[12px] leading-4' : isCompactHero ? 'mt-3 text-sm leading-6' : 'mt-3 text-sm leading-6 md:mt-4 md:text-base md:leading-7'}`}>
                   {subtitle}
                 </p>
               ) : null}
@@ -107,7 +107,7 @@ export const StudentPageShell = ({
             </div>
 
             {stats.length > 0 ? (
-              <div className={`grid ${isMiniHero ? 'gap-2.5 sm:grid-cols-3 xl:grid-cols-1' : 'gap-3 sm:grid-cols-2 xl:grid-cols-1'}`}>
+                <div className={`grid ${isMiniHero ? 'gap-2.5 sm:grid-cols-3 xl:grid-cols-1' : 'gap-3 sm:grid-cols-2 xl:grid-cols-1'}`}>
                 {stats.map((metric) => (
                   <article
                     key={metric.label}
@@ -149,11 +149,11 @@ export const StudentSurfaceCard = ({
 }) => {
   return (
     <section
-      className={`relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/88 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur xl:p-7 ${className}`.trim()}
+      className={`relative overflow-hidden rounded-[1.6rem] border border-white/70 bg-white/88 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur sm:p-5 md:rounded-[2rem] xl:p-7 ${className}`.trim()}
     >
       <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-brand-300/80 to-transparent" />
       {(eyebrow || title || subtitle || action) ? (
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="mb-5 flex flex-col gap-4 md:mb-6 md:flex-row md:items-start md:justify-between">
           <div>
             {eyebrow ? (
               <p className="mb-2 text-[11px] font-black uppercase tracking-[0.22em] text-brand-700">{eyebrow}</p>

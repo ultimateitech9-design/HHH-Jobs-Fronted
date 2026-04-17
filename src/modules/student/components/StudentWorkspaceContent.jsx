@@ -252,7 +252,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
             <p className="mt-2 text-sm text-slate-500">Scan to download from Play Store or App Store.</p>
           </div>
 
-          <div className="overflow-hidden rounded-[1.6rem] border border-slate-200 bg-white">
+          <div className="hidden overflow-hidden rounded-[1.6rem] border border-slate-200 bg-white md:block">
             <div className="h-28 overflow-hidden bg-[linear-gradient(135deg,#dbeafe_0%,#c7d2fe_100%)]">
               <img
                 src={careerCompassDashboard}

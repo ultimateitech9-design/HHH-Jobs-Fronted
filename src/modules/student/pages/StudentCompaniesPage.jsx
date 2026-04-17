@@ -177,10 +177,10 @@ const StudentCompaniesPage = () => {
                 {filteredCompanies.map((company) => (
                   <article
                     key={company.id || company.slug}
-                    className="flex h-full flex-col rounded-[1.25rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 shadow-[0_12px_26px_rgba(15,23,42,0.06)]"
+                    className="flex min-w-0 h-full flex-col rounded-[1.25rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 shadow-[0_12px_26px_rgba(15,23,42,0.06)]"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
                         {company.logoUrl ? (
                           <img
                             src={company.logoUrl}
@@ -203,7 +203,7 @@ const StudentCompaniesPage = () => {
                       </div>
 
                       {company.premium ? (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">
+                        <span className="inline-flex w-fit shrink-0 items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">
                           <FiStar size={12} />
                           Premium
                         </span>
@@ -246,12 +246,12 @@ const StudentCompaniesPage = () => {
                       </div>
                     ) : null}
 
-                    <div className="mt-auto flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-                      <button type="button" className={`${studentPrimaryButtonClassName} px-4 py-2.5 text-[13px]`} onClick={() => openCompany(company)}>
+                    <div className="mt-auto flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:flex-wrap">
+                      <button type="button" className={`${studentPrimaryButtonClassName} w-full px-4 py-2.5 text-[13px] sm:w-auto`} onClick={() => openCompany(company)}>
                         Open company
                         <FiArrowRight size={14} />
                       </button>
-                      <Link to="/portal/student/jobs" className={`${studentSecondaryButtonClassName} px-4 py-2.5 text-[13px]`}>
+                      <Link to="/portal/student/jobs" className={`${studentSecondaryButtonClassName} w-full px-4 py-2.5 text-[13px] sm:w-auto`}>
                         Browse jobs
                       </Link>
                     </div>

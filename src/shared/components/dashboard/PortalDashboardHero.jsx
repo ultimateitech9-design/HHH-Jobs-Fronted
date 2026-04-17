@@ -55,6 +55,9 @@ const PortalDashboardHero = ({
   const metricCardClass = compact
     ? 'min-w-0 rounded-[0.9rem] border border-white/15 bg-slate-950/18 px-2.5 py-2.5 backdrop-blur-md'
     : 'rounded-[1.4rem] border border-white/15 bg-slate-950/18 px-4 py-4 backdrop-blur-md';
+  const clickableMetricCardClass = compact
+    ? `${metricCardClass} block transition duration-200 hover:-translate-y-0.5 hover:bg-slate-950/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70`
+    : `${metricCardClass} block transition duration-200 hover:-translate-y-0.5 hover:bg-slate-950/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70`;
   const metricValueClass = compact ? 'mt-1 text-[1.2rem] font-black leading-none text-white sm:text-[1.35rem]' : 'mt-2 text-3xl font-black text-white';
   const metricHelperClass = compact ? 'mt-1 text-[11px] leading-4 text-white/74' : 'mt-2 text-sm text-white/74';
 
@@ -122,16 +125,36 @@ const PortalDashboardHero = ({
 
         <div className={`min-w-0 ${metricsWrapClass}`}>
           {aside ||
-            metrics.map((metric) => (
-              <article
-                key={metric.label}
-                className={metricCardClass}
-              >
-                <p className="break-words text-[9px] font-bold uppercase tracking-[0.12em] text-white/58 sm:text-[10px] sm:tracking-[0.16em]">{metric.label}</p>
-                <p className={metricValueClass}>{metric.value}</p>
-                {metric.helper ? <p className={`${metricHelperClass} break-words`}>{metric.helper}</p> : null}
-              </article>
-            ))}
+            metrics.map((metric) => {
+              const cardContent = (
+                <>
+                  <p className="break-words text-[9px] font-bold uppercase tracking-[0.12em] text-white/58 sm:text-[10px] sm:tracking-[0.16em]">{metric.label}</p>
+                  <p className={metricValueClass}>{metric.value}</p>
+                  {metric.helper ? <p className={`${metricHelperClass} break-words`}>{metric.helper}</p> : null}
+                </>
+              );
+
+              if (metric.to) {
+                return (
+                  <Link
+                    key={metric.label}
+                    to={metric.to}
+                    className={clickableMetricCardClass}
+                  >
+                    {cardContent}
+                  </Link>
+                );
+              }
+
+              return (
+                <article
+                  key={metric.label}
+                  className={metricCardClass}
+                >
+                  {cardContent}
+                </article>
+              );
+            })}
         </div>
       </div>
     </section>

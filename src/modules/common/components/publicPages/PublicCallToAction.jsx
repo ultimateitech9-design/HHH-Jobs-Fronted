@@ -18,7 +18,7 @@ const PublicCallToAction = ({
 
   return (
     <AnimatedSection>
-      <section className={`relative overflow-hidden rounded-[2.4rem] px-8 py-10 shadow-xl md:px-12 md:py-14 ${wrapperToneClass[tone]}`}>
+      <section className={`relative overflow-hidden rounded-[2rem] px-5 py-8 shadow-xl sm:px-6 md:rounded-[2.4rem] md:px-10 md:py-12 lg:px-12 lg:py-14 ${wrapperToneClass[tone]}`}>
         <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute bottom-0 left-0 h-56 w-56 rounded-full bg-gold/15 blur-3xl" />
 
@@ -29,11 +29,11 @@ const PublicCallToAction = ({
             </p>
           ) : null}
 
-          <h2 className={`mt-4 font-heading text-3xl font-extrabold md:text-4xl ${isDark ? 'text-white' : 'text-navy'}`}>
+          <h2 className={`mt-4 font-heading text-2xl font-extrabold sm:text-3xl md:text-4xl ${isDark ? 'text-white' : 'text-navy'}`}>
             {title}
           </h2>
           {description ? (
-            <p className={`mx-auto mt-4 max-w-2xl text-base leading-8 ${isDark ? 'text-white/74' : 'text-slate-600'}`}>
+            <p className={`mx-auto mt-4 max-w-2xl text-sm leading-7 sm:text-base sm:leading-8 ${isDark ? 'text-white/74' : 'text-slate-600'}`}>
               {description}
             </p>
           ) : null}
@@ -56,12 +56,12 @@ const PublicCallToAction = ({
           ) : null}
 
           {actions.length > 0 ? (
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
               {actions.map((action, index) => (
                 <Link
                   key={`${action.label}-${action.to}`}
                   to={action.to}
-                  className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 ${
+                  className={`inline-flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 sm:w-auto ${
                     index === 0
                       ? isDark
                         ? 'gradient-gold text-primary shadow-lg shadow-gold/20'

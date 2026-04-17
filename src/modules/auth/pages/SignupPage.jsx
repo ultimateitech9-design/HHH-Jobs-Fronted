@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { FiAward, FiBriefcase, FiCheckCircle, FiShield, FiUser } from 'react-icons/fi';
+import { FiCheck, FiShield } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AnimatedSection from '../../../shared/components/AnimatedSection';
 import { apiFetch, apiUrl, areDemoFallbacksEnabled, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
@@ -21,8 +21,7 @@ import AuthInputField from '../components/AuthInputField';
 import AuthPasswordField from '../components/AuthPasswordField';
 import AuthSelectField from '../components/AuthSelectField';
 import {
-  countryCodeOptions,
-  signupRoleOptions
+  countryCodeOptions
 } from '../config/authOptions';
 import {
   getSelectedCountry,
@@ -46,30 +45,15 @@ const getRoleFromSearch = (search = '') => {
 };
 
 const signupBenefitItems = [
-  'Build your profile and get discovered faster.',
-  'Receive updates relevant to your account type.',
-  'Start with a cleaner, guided onboarding flow.'
+  'Build your profile and let recruiters find you',
+  'Get job postings delivered right to your email',
+  'Find a job and grow your career'
 ];
 
 const socialProviderMeta = {
   google: {
     label: 'Google',
     icon: FcGoogle
-  }
-};
-
-const roleCardMeta = {
-  student: {
-    icon: FiUser,
-    eyebrow: 'Candidate profile'
-  },
-  hr: {
-    icon: FiBriefcase,
-    eyebrow: 'Recruiter access'
-  },
-  retired_employee: {
-    icon: FiAward,
-    eyebrow: 'Experienced profile'
   }
 };
 
@@ -89,15 +73,6 @@ const SignupPage = () => {
   const redirectAfterSignup = redirectAfterSignupRaw && redirectAfterSignupRaw.startsWith('/')
     ? redirectAfterSignupRaw
     : null;
-  const requestedSignupRole = getRoleFromSearch(location.search);
-  const isLockedSignupLane = requestedSignupRole === 'hr' || requestedSignupRole === 'retired_employee';
-  const visibleSignupRoleOptions = requestedSignupRole === 'hr'
-    ? signupRoleOptions.filter((option) => option.value === 'hr')
-    : requestedSignupRole === 'student'
-      ? signupRoleOptions.filter((option) => option.value !== 'retired_employee')
-      : requestedSignupRole === 'retired_employee'
-        ? signupRoleOptions.filter((option) => option.value === 'retired_employee')
-      : signupRoleOptions;
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -396,63 +371,63 @@ const SignupPage = () => {
   const isSocialSignupAllowed = form.role === 'student' || form.role === 'retired_employee';
   const visibleSocialProviders = (Array.isArray(availableProviders) ? availableProviders : ['google'])
     .filter((provider) => provider === 'google');
-  const roleGridClassName = visibleSignupRoleOptions.length === 1
-    ? 'grid-cols-1'
-    : visibleSignupRoleOptions.length === 2
-      ? 'md:grid-cols-2'
-      : 'md:grid-cols-3';
-  const activeRoleMeta = roleCardMeta[form.role];
-  const ActiveRoleIcon = activeRoleMeta?.icon || FiUser;
-
   return (
     <section className="relative min-h-screen overflow-hidden bg-[#f5f1e8] px-4 py-6 md:px-6 md:py-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.14),transparent_26%),radial-gradient(circle_at_100%_0%,rgba(15,23,42,0.06),transparent_28%),linear-gradient(180deg,#f6f1e8_0%,#fbfaf7_52%,#f6f8fb_100%)]" />
 
-      <div className="relative mx-auto grid w-full max-w-[74rem] gap-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
-        <AnimatedSection className="hidden lg:block lg:pt-10">
-          <aside className="sticky top-8 mx-auto w-full max-w-[18rem] rounded-[2rem] border border-white/70 bg-[rgba(255,252,246,0.82)] p-6 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur">
-            <div className="rounded-[1.6rem] border border-white/80 bg-white/80 p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f5efe1] text-navy">
-                <ActiveRoleIcon size={22} />
-              </div>
-              <p className="mt-4 text-[0.76rem] font-semibold uppercase tracking-[0.22em] text-gold-dark">
-                {activeRoleMeta?.eyebrow || 'Profile setup'}
-              </p>
-              <h2 className="mt-2 text-[1.3rem] font-semibold tracking-[-0.03em] text-slate-950">
-                Account setup, without clutter
-              </h2>
-              <p className="mt-3 text-[0.92rem] leading-6 text-slate-500">
-                Create the right HHH Jobs profile with a softer, cleaner registration flow.
-              </p>
+      <div className="relative mx-auto grid w-full max-w-[74rem] gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
+        <div className="hidden lg:block lg:pt-6">
+          <aside className="sticky top-6 mx-auto w-full max-w-[16rem] max-h-[calc(100vh-3rem)] overflow-y-auto rounded-[1rem] border border-slate-200 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] xl:max-w-[17rem] xl:p-5">
+            <div className="flex justify-center rounded-[1.3rem] bg-[#f6f8fe] px-4 py-5">
+              <svg viewBox="0 0 220 160" className="h-[7.75rem] w-full max-w-[10.75rem]" aria-hidden="true">
+                <circle cx="110" cy="78" r="59" fill="#eef1fb" />
+                <path d="M54 31C61 48 79 52 91 42C100 35 100 22 93 14" stroke="#f55d3e" strokeWidth="10" strokeLinecap="round" />
+                <path d="M168 33L180 26V40L168 33Z" fill="none" stroke="#1f2937" strokeWidth="1.6" strokeLinejoin="round" />
+                <path d="M61 54H62" stroke="#1f2937" strokeWidth="2" strokeLinecap="round" />
+                <path d="M178 56H179" stroke="#1f2937" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="100" cy="60" r="17" fill="#fff" stroke="#171c2d" strokeWidth="2" />
+                <path d="M86 56C88 43 99 39 110 42C116 35 128 36 135 43C140 49 141 58 137 64C132 71 123 72 116 69C111 75 100 77 91 73C83 69 80 61 86 56Z" fill="#171c2d" />
+                <circle cx="93" cy="60" r="4" fill="#171c2d" />
+                <circle cx="107" cy="60" r="4" fill="#171c2d" />
+                <path d="M104 59L115 52" stroke="#171c2d" strokeWidth="2" strokeLinecap="round" />
+                <path d="M116 65C112 68 107 70 101 70C95 70 90 68 86 64" stroke="#171c2d" strokeWidth="2" strokeLinecap="round" />
+                <path d="M92 79C82 86 78 95 78 111V132" stroke="#171c2d" strokeWidth="2.4" strokeLinecap="round" />
+                <path d="M107 79C118 87 124 99 127 112" stroke="#171c2d" strokeWidth="2.4" strokeLinecap="round" />
+                <path d="M78 111C96 98 114 98 129 110" stroke="#171c2d" strokeWidth="2.4" strokeLinecap="round" />
+                <path d="M126 89C137 96 145 104 152 116" stroke="#171c2d" strokeWidth="2.4" strokeLinecap="round" />
+                <path d="M152 116L160 100" stroke="#171c2d" strokeWidth="2.4" strokeLinecap="round" />
+                <path d="M149 121L164 128" stroke="#171c2d" strokeWidth="2.4" strokeLinecap="round" />
+              </svg>
             </div>
 
-            <div className="mt-5 space-y-3">
+            <h2 className="mt-4 text-[1.55rem] font-semibold leading-[1.2] tracking-[-0.04em] text-slate-950">
+              On registering, you can
+            </h2>
+
+            <div className="mt-4 space-y-3">
               {signupBenefitItems.map((item) => (
-                <div key={item} className="flex items-start gap-3 rounded-[1.15rem] border border-white/70 bg-white/75 px-4 py-3 text-[0.92rem] leading-6 text-slate-600">
-                  <span className="mt-1 text-brand-600">
-                    <FiCheckCircle size={16} />
+                <div key={item} className="flex items-start gap-2.5 text-[0.88rem] leading-7 text-slate-700">
+                  <span className="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#57b947] text-white">
+                    <FiCheck size={10} />
                   </span>
                   <span>{item}</span>
                 </div>
               ))}
             </div>
           </aside>
-        </AnimatedSection>
+        </div>
 
         <AnimatedSection delay={0.06}>
-          <div className="rounded-[2rem] border border-slate-200/80 bg-white/92 p-5 shadow-[0_24px_72px_rgba(15,23,42,0.09)] backdrop-blur md:p-8">
+          <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/92 p-4 shadow-[0_24px_72px_rgba(15,23,42,0.09)] backdrop-blur sm:p-5 md:rounded-[2rem] md:p-8">
             <div className="max-w-[34rem]">
               <p className="text-[0.76rem] font-semibold uppercase tracking-[0.22em] text-gold-dark">Create your profile</p>
               <h1 className="mt-2 text-[1.75rem] font-semibold tracking-[-0.04em] text-slate-950 md:text-[2.15rem]">
                 Create your HHH Jobs profile
               </h1>
-              <p className="mt-3 text-[0.95rem] leading-7 text-slate-500">
-                Open the right account lane, finish the essentials, and move into your dashboard without a noisy form.
-              </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-              <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_176px]">
+            <form onSubmit={handleSubmit} className="mt-6 space-y-6 md:mt-8">
+              <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_160px] xl:grid-cols-[minmax(0,1fr)_176px]">
                 <div className="space-y-4">
                   <AuthInputField
                     label="Full name"
@@ -487,7 +462,6 @@ const SignupPage = () => {
                     placeholder="Tell us your Email ID"
                     disabled={isSubmitting || Boolean(socialLoading)}
                     error={fieldErrors.email}
-                    helper="We'll send relevant updates and verification to this email."
                     className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                   />
 
@@ -498,7 +472,6 @@ const SignupPage = () => {
                     placeholder="Create a secure password"
                     disabled={isSubmitting || Boolean(socialLoading)}
                     error={fieldErrors.password}
-                    helper="This helps keep your account protected."
                     showPassword={showPassword}
                     onTogglePassword={() => setShowPassword((current) => !current)}
                     className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 focus-within:!border-gold/60 focus-within:!bg-white"
@@ -522,23 +495,27 @@ const SignupPage = () => {
                       placeholder={`Enter your ${selectedCountry.digits}-digit mobile number`}
                       disabled={isSubmitting || Boolean(socialLoading)}
                       error={fieldErrors.mobile}
-                      helper="Recruiters and alerts can reach you on this number."
                       className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                     />
                   </div>
                 </div>
 
-                <div className="lg:border-l lg:border-slate-200 lg:pl-6">
+                <div className="relative lg:pl-10">
                   <div className="flex items-center gap-3 pb-4 lg:hidden">
                     <span className="h-px flex-1 bg-slate-200" />
                     <span className="text-[0.76rem] font-semibold text-slate-400">Or</span>
                     <span className="h-px flex-1 bg-slate-200" />
                   </div>
 
-                  <p className="text-[0.78rem] font-semibold text-gold-dark lg:pt-2">Continue with</p>
+                  <span className="pointer-events-none hidden lg:block lg:absolute lg:bottom-6 lg:left-0 lg:top-6 lg:w-px lg:bg-slate-200" />
+                  <span className="hidden lg:block lg:absolute lg:left-0 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:bg-white lg:px-1.5 lg:text-[1rem] lg:text-[#8c90b3]">
+                    Or
+                  </span>
 
                   {isSocialSignupAllowed ? (
-                    <div className="mt-3 space-y-2.5">
+                    <div className="mt-3 flex flex-col gap-3 lg:mt-0 lg:min-h-full lg:items-center lg:justify-center lg:pt-14">
+                      <p className="text-[0.92rem] font-semibold text-slate-800 lg:text-[1.05rem]">Continue with</p>
+
                       {providersLoading ? (
                         <p className="rounded-[1.1rem] border border-slate-200 bg-[#f8f6f1] px-3 py-3 text-[0.84rem] text-slate-500">
                           Loading social sign-up...
@@ -556,7 +533,7 @@ const SignupPage = () => {
                               type="button"
                               onClick={() => startSocialSignup(provider)}
                               disabled={isSubmitting || Boolean(socialLoading)}
-                              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2.5 text-[0.9rem] font-semibold text-navy shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-0.5 hover:border-gold/40 hover:bg-[#fdf9ef] disabled:cursor-not-allowed disabled:opacity-70"
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#2d67ff] bg-white px-5 py-2.5 text-[0.98rem] font-semibold text-[#2d67ff] transition-colors hover:bg-[#f7faff] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:min-w-[148px]"
                             >
                               {provider === 'google' ? <Icon size={18} /> : <Icon size={16} />}
                               <span>{socialLoading === provider ? 'Redirecting...' : meta.label}</span>
@@ -583,59 +560,6 @@ const SignupPage = () => {
               </div>
 
               <AuthFormMessage>{error}</AuthFormMessage>
-
-              <div>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[0.92rem] font-semibold text-slate-800">Account type</p>
-                    <p className="mt-1 text-[0.8rem] text-slate-500">Choose the profile that matches your goal.</p>
-                  </div>
-                  {isLockedSignupLane ? (
-                    <span className="rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-[0.72rem] font-semibold text-gold-dark">
-                      Preselected
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className={`grid gap-3 ${roleGridClassName}`.trim()}>
-                  {visibleSignupRoleOptions.map((option) => {
-                    const isActive = form.role === option.value;
-                    const meta = roleCardMeta[option.value];
-                    const Icon = meta?.icon || FiUser;
-
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => handleChange('role', option.value)}
-                        disabled={isSubmitting || Boolean(socialLoading) || isLockedSignupLane}
-                        className={`flex items-start justify-between gap-3 rounded-[1rem] border p-4 text-left transition-all ${
-                          isActive
-                            ? 'border-gold/25 bg-[#fbf6ea] shadow-[0_10px_24px_rgba(212,175,55,0.12)]'
-                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-[#faf8f2]'
-                        } ${(isSubmitting || Boolean(socialLoading) || isLockedSignupLane) ? 'cursor-not-allowed opacity-75' : ''}`.trim()}
-                      >
-                        <div>
-                          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-slate-400">{meta?.eyebrow}</p>
-                          <p className="mt-1 text-[0.98rem] font-semibold text-slate-900">{option.label}</p>
-                          {option.description ? (
-                            <p className="mt-1.5 text-[0.82rem] leading-5 text-slate-500">{option.description}</p>
-                          ) : null}
-                        </div>
-                        <span className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                          isActive ? 'bg-white text-gold-dark ring-1 ring-gold/20' : 'bg-slate-50 text-slate-500'
-                        }`}>
-                          <Icon size={18} />
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="rounded-[1.15rem] border border-slate-200 bg-[#f8f6f1] px-4 py-3 text-[0.8rem] leading-6 text-slate-600">
-                By creating your account, you agree to use HHH Jobs professionally and keep your details accurate for verification.
-              </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button

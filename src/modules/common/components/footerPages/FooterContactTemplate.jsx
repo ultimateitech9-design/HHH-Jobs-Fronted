@@ -7,9 +7,9 @@ import FooterContactForm from './FooterContactForm';
 import FooterPageAside from './FooterPageAside';
 
 const contactAside = (
-  <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 p-7 text-white shadow-2xl">
+  <div className="overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 p-5 text-white shadow-2xl sm:rounded-[2rem] sm:p-7">
     <p className="text-xs font-black uppercase tracking-[0.24em] text-white/65">Response Standards</p>
-    <div className="mt-6 grid gap-5">
+    <div className="mt-5 grid gap-4 sm:mt-6 sm:gap-5">
       {[
         { icon: FiMail, title: 'Support mailbox', text: 'support@hhh-jobs.com' },
         { icon: FiPhone, title: 'Hiring desk', text: 'Regional employer coordination' },
@@ -67,8 +67,8 @@ const FooterContactTemplate = ({ pageData, relatedLinks }) => {
       </section>
 
       <section className="px-4 py-4 md:py-8">
-        <div className="container mx-auto grid max-w-7xl gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-7 shadow-sm">
+        <div className="container mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,300px)] lg:gap-10">
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-brand-700">Team Routing</p>
             <h3 className="mt-4 font-heading text-2xl font-bold text-navy">How incoming requests are handled</h3>
             <div className="mt-6 grid gap-4">

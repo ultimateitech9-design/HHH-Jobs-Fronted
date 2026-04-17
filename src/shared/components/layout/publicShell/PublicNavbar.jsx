@@ -86,8 +86,8 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
         transition={{ type: 'spring', stiffness: 100, damping: 20 }}
         className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/86 shadow-[0_12px_32px_rgba(17,33,59,0.08)] backdrop-blur-xl"
       >
-        <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4">
-          <Link to="/" className="group flex items-center gap-2.5">
+        <div className="container mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:gap-4 sm:px-4">
+          <Link to="/" className="group flex min-w-0 items-center gap-2.5">
             <motion.img
               src="/hhh-job-logo.png"
               alt="HHH Jobs"
@@ -95,8 +95,8 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
               whileHover={{ rotate: [0, -5, 5, 0], scale: 1.1 }}
               transition={{ duration: 0.5 }}
             />
-            <div className="flex flex-col leading-none">
-              <span className="font-heading text-lg font-bold text-navy transition-colors group-hover:text-gold-dark">
+            <div className="min-w-0 flex flex-col leading-none">
+              <span className="truncate font-heading text-base font-bold text-navy transition-colors group-hover:text-gold-dark sm:text-lg">
                 HHH Jobs
               </span>
               <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-gold-dark">
@@ -285,9 +285,9 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="border-t border-slate-200 bg-white/96 lg:hidden"
+              className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-slate-200 bg-white/96 lg:hidden"
             >
-              <div className="container mx-auto flex max-w-7xl flex-col gap-2 px-4 py-4">
+              <div className="container mx-auto flex max-w-7xl flex-col gap-2 px-3 py-4 sm:px-4">
                 {publicNavItems.map((link, index) => {
                   const isActive = isNavItemActive(link);
 
@@ -368,7 +368,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                   );
                 })}
 
-                <div className="mt-4 flex gap-2">
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                   {user ? (
                     <>
                       {dashboardPath ? (

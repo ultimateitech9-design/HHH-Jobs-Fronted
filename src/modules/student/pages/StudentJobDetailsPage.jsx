@@ -232,7 +232,7 @@ const StudentJobDetailsPage = () => {
         subtitle={state.job.companyName}
         className="p-5 xl:p-6"
         action={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
             <Link to={jobsListPath} className={`${studentSecondaryButtonClassName} px-4 py-2.5 text-[13px]`}>
               <FiChevronLeft size={15} />
               Back
@@ -248,7 +248,7 @@ const StudentJobDetailsPage = () => {
           </div>
         }
       >
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <div className="rounded-[1rem] border border-slate-200 bg-slate-50/80 px-3 py-3">
             <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
               <FiMapPin size={13} />
@@ -283,7 +283,7 @@ const StudentJobDetailsPage = () => {
         ) : null}
       </StudentSurfaceCard>
 
-      <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
         <StudentSurfaceCard
           eyebrow="About Role"
           title="Job description"

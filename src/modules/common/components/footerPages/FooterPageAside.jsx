@@ -9,12 +9,12 @@ const FooterPageAside = ({
   secondaryAction = { label: 'Explore services', to: '/services' }
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <PublicSidebarLinks title="Explore More" links={relatedLinks} />
-      <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 p-6 text-white shadow-xl">
+      <div className="overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 p-5 text-white shadow-xl sm:rounded-[2rem] sm:p-6">
         <p className="text-xs font-black uppercase tracking-[0.24em] text-white/65">Support</p>
-        <h3 className="mt-4 font-heading text-2xl font-bold">{title}</h3>
-        <p className="mt-3 text-sm leading-7 text-white/72">{description}</p>
+        <h3 className="mt-4 font-heading text-xl font-bold sm:text-2xl">{title}</h3>
+        <p className="mt-3 text-sm leading-6 text-white/72 sm:leading-7">{description}</p>
         <div className="mt-6 flex flex-col gap-3">
           <Link
             to={primaryAction.to}
