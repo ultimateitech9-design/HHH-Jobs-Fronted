@@ -6,9 +6,7 @@ import './ManagementPortalPage.css';
 
 const managementLinks = [
   { label: 'Admin Dashboard', to: '/portal/admin/dashboard', loginPath: '/management/login/admin', portalLabel: 'Admin Portal', icon: FiShield, roles: PORTAL_ACCESS.admin },
-  { label: 'Super Admin', to: '/portal/super-admin/dashboard', loginPath: '/management/login/super-admin', portalLabel: 'Super Admin Portal', icon: FiUserCheck, roles: PORTAL_ACCESS.superAdmin },
-  { label: 'Platform Ops', to: '/portal/platform/dashboard', loginPath: '/management/login/platform', portalLabel: 'Platform Operations Portal', icon: FiBarChart2, roles: PORTAL_ACCESS.platform },
-  { label: 'Audit Desk', to: '/portal/audit/dashboard', loginPath: '/management/login/audit', portalLabel: 'Audit Portal', icon: FiShield, roles: PORTAL_ACCESS.audit }
+  { label: 'Super Admin', to: '/portal/super-admin/dashboard', loginPath: '/management/login/super-admin', portalLabel: 'Super Admin Portal', icon: FiUserCheck, roles: PORTAL_ACCESS.superAdmin }
 ];
 
 const employeeLinks = [
@@ -59,8 +57,6 @@ const ManagementPortalPage = () => {
               <FiShield />
             </span>
             <h1>Management</h1>
-            <p>Access for administrators, platform operators, and compliance leadership workspaces.</p>
-            <span className="management-card__hint">Choose a portal below</span>
             <div className="management-card__actions">
               {managementLinks.map((item) => (
                 <button
@@ -81,8 +77,6 @@ const ManagementPortalPage = () => {
               <FiBriefcase />
             </span>
             <h2>Employee</h2>
-            <p>Access for support, sales, and operations teams inside HHH Jobs.</p>
-            <span className="management-card__hint">Choose a portal below</span>
             <div className="management-card__actions">
               {employeeLinks.map((item) => (
                 <button

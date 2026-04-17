@@ -546,7 +546,7 @@ const StudentProfilePage = () => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1120px] space-y-7 pb-12">
+    <div className="mx-auto w-full max-w-[1120px] space-y-5 pb-12 sm:space-y-7">
       <input
         ref={avatarInputRef}
         type="file"
@@ -576,7 +576,7 @@ const StudentProfilePage = () => {
         </div>
       ) : null}
 
-      <section className={`${cardClassName} grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start`}>
+      <section className={`${cardClassName} grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start xl:grid-cols-[minmax(0,1fr)_320px]`}>
         <div className="flex flex-col gap-4 sm:flex-row">
             <button
               type="button"
@@ -631,7 +631,7 @@ const StudentProfilePage = () => {
                 </span>
               </div>
 
-              <div className="mt-3 grid gap-x-4 gap-y-2.5 text-[0.86rem] text-slate-600 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-3 grid gap-x-4 gap-y-2.5 text-[0.86rem] text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
                 <span className="inline-flex items-center gap-2">
                   <FiMapPin size={15} className="text-brand-600" />
                   {form.location || 'Add location'}
@@ -740,8 +740,8 @@ const StudentProfilePage = () => {
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[238px_minmax(0,1fr)]">
-        <aside className="xl:sticky xl:top-24 xl:self-start">
+      <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[238px_minmax(0,1fr)]">
+        <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className={`${cardClassName} space-y-0.5 px-1`}>
             <h2 className="px-3 pb-2 text-[0.92rem] font-extrabold tracking-tight text-navy">Quick links</h2>
             {quickLinks.map((item) => {

@@ -92,7 +92,7 @@ const PlatformSecurityPage = () => {
         subtitle="Track control status, react to alert signals, and maintain trust posture across tenants."
       />
 
-      {isDemo ? <p className="module-note">Backend data is unavailable (platform backend endpoints are not connected).</p> : null}
+      {isDemo ? <p className="module-note">Showing fallback security data because the live backend is unavailable right now.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="form-success">{message}</p> : null}
       {loading ? <p className="module-note">Loading security controls...</p> : null}
@@ -134,4 +134,3 @@ const PlatformSecurityPage = () => {
 };
 
 export default PlatformSecurityPage;
-

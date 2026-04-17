@@ -33,16 +33,16 @@ const FooterBrand = () => {
         </span>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2.5">
+      <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
         <Link
           to="/sign-up"
-          className="inline-flex items-center justify-center rounded-full gradient-gold px-4 py-2 text-xs font-semibold text-primary shadow-lg shadow-gold/20"
+          className="inline-flex w-full items-center justify-center rounded-full gradient-gold px-4 py-2 text-xs font-semibold text-primary shadow-lg shadow-gold/20 sm:w-auto"
         >
           Start Free
         </Link>
         <Link
           to="/contact-us"
-          className="inline-flex items-center justify-center rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/88 transition-colors hover:border-white/25 hover:bg-white/5"
+          className="inline-flex w-full items-center justify-center rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/88 transition-colors hover:border-white/25 hover:bg-white/5 sm:w-auto"
         >
           Contact Team
         </Link>

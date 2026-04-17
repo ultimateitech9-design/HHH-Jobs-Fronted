@@ -5,7 +5,17 @@ const tinyPng = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9p2H2mQAAAAASUVORK5CYII=',
   'base64'
 );
-const API_BASE = 'http://127.0.0.1:6001';
+const companiesApiPattern = /^https?:\/\/[^/]+\/companies(?:\?.*)?$/i;
+const externalJobsApiPattern = /^https?:\/\/[^/]+\/external-jobs(?:\/[^?#]+)?(?:\?.*)?$/i;
+const jobsApiPattern = /^https?:\/\/[^/]+\/jobs(?:\/[^?#]+)?(?:\?.*)?$/i;
+
+const matchesPath = (value, path) => {
+  try {
+    return new URL(value).pathname === path;
+  } catch {
+    return false;
+  }
+};
 
 test.describe('Student Portal E2E', () => {
   test.use({
@@ -23,7 +33,8 @@ test.describe('Student Portal E2E', () => {
                 role: 'student',
                 name: 'Mock Student',
                 email: 'student@example.com',
-                mobile: '9876543210'
+                mobile: '9876543210',
+                isEmailVerified: true
               })
             }
           ]
@@ -53,6 +64,40 @@ test.describe('Student Portal E2E', () => {
         linkedin_url: '',
         github_url: ''
       },
+      companies: [
+        {
+          id: 'company-1',
+          slug: 'local-e2e-hiring-labs',
+          name: 'Local E2E Hiring Labs',
+          headline: 'Verified employer on HHH Jobs',
+          description: 'Hiring operations team focused on engineering roles for growing employers.',
+          location: 'Lucknow, Uttar Pradesh',
+          premium: true,
+          portalProfile: true,
+          portalJobs: 1,
+          liveFeed: false,
+          totalJobs: 1,
+          categories: ['Engineering', 'Hiring']
+        }
+      ],
+      jobs: [
+        {
+          id: 'job-1',
+          jobTitle: 'Frontend Developer',
+          companyName: 'Tech Co',
+          companyLogo: '',
+          jobLocation: 'Remote',
+          experienceLevel: 'Entry',
+          employmentType: 'Full-time',
+          minPrice: 400000,
+          maxPrice: 700000,
+          salaryType: 'yearly',
+          skills: ['React', 'TypeScript'],
+          status: 'open',
+          description: 'Build product experiences for students.'
+        }
+      ],
+      atsHistory: [],
       savedJobs: [
         {
           id: 'saved-1',
@@ -71,7 +116,22 @@ test.describe('Student Portal E2E', () => {
       applications: []
     };
 
-    await page.route(`${API_BASE}/student/overview`, async (route) => {
+    await page.route(companiesApiPattern, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: true,
+          companies: state.companies,
+          summary: {
+            totalCompanies: state.companies.length,
+            totalJobs: state.jobs.length
+          }
+        })
+      });
+    });
+
+    await page.route('**/student/overview', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -98,7 +158,14 @@ test.describe('Student Portal E2E', () => {
             },
             recommendedJobs: [],
             recentApplications: [],
-            upcomingInterviews: [{ id: 'int-1', companyName: 'Tech Co', status: 'scheduled', scheduledAt: '2026-04-09T10:00:00.000Z' }],
+            upcomingInterviews: [
+              {
+                id: 'int-1',
+                companyName: 'Tech Co',
+                status: 'scheduled',
+                scheduledAt: '2026-04-09T10:00:00.000Z'
+              }
+            ],
             recentNotifications: [],
             nextInterview: null
           }
@@ -106,7 +173,7 @@ test.describe('Student Portal E2E', () => {
       });
     });
 
-    await page.route(`${API_BASE}/student/profile/resume-score`, async (route) => {
+    await page.route('**/student/profile/resume-score', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -124,7 +191,7 @@ test.describe('Student Portal E2E', () => {
       });
     });
 
-    await page.route(`${API_BASE}/student/profile/import-resume`, async (route) => {
+    await page.route('**/student/profile/import-resume', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -164,7 +231,7 @@ test.describe('Student Portal E2E', () => {
       });
     });
 
-    await page.route(`${API_BASE}/student/upload/resume`, async (route) => {
+    await page.route('**/student/upload/resume', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -177,7 +244,7 @@ test.describe('Student Portal E2E', () => {
       });
     });
 
-    await page.route(`${API_BASE}/student/profile`, async (route) => {
+    await page.route('**/student/profile', async (route) => {
       if (route.request().method() === 'PUT') {
         const body = await route.request().postDataJSON();
         state.profile = {
@@ -202,7 +269,7 @@ test.describe('Student Portal E2E', () => {
       });
     });
 
-    await page.route(`${API_BASE}/student/saved-jobs`, async (route) => {
+    await page.route('**/student/saved-jobs', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -210,7 +277,7 @@ test.describe('Student Portal E2E', () => {
       });
     });
 
-    await page.route(`${API_BASE}/student/applications`, async (route) => {
+    await page.route('**/student/applications', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -218,15 +285,39 @@ test.describe('Student Portal E2E', () => {
       });
     });
 
-    await page.route(`${API_BASE}/student/company-reviews/**`, async (route) => {
+    await page.route('**/student/company-reviews/**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ status: true, summary: { count: 2, averageRating: 4.2 }, reviews: [{ id: 'r-1', title: 'Good place', rating: 4, review: 'Supportive team' }] })
+        body: JSON.stringify({
+          status: true,
+          summary: { count: 2, averageRating: 4.2 },
+          reviews: [{ id: 'r-1', title: 'Good place', rating: 4, review: 'Supportive team' }]
+        })
       });
     });
 
-    await page.route(`${API_BASE}/ats/check/**`, async (route) => {
+    await page.route('**/ats/history**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: true, checks: state.atsHistory })
+      });
+    });
+
+    await page.route('**/ats/check/**', async (route) => {
+      state.atsHistory = [
+        {
+          id: 'ats-1',
+          job_id: 'job-1',
+          score: 82,
+          keyword_score: 80,
+          similarity_score: 84,
+          format_score: 79,
+          created_at: '2026-04-09T10:00:00.000Z'
+        }
+      ];
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -245,7 +336,41 @@ test.describe('Student Portal E2E', () => {
       });
     });
 
-    await page.route(`${API_BASE}/jobs**`, async (route) => {
+    await page.route(externalJobsApiPattern, async (route) => {
+      const url = new URL(route.request().url());
+
+      if (url.pathname.endsWith('/external-jobs/sources')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ status: true, data: [] })
+        });
+        return;
+      }
+
+      if (url.pathname.endsWith('/external-jobs/categories')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ status: true, data: [] })
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: true,
+          data: {
+            jobs: [],
+            pagination: { page: 1, limit: 8, total: 0, totalPages: 1 }
+          }
+        })
+      });
+    });
+
+    await page.route(jobsApiPattern, async (route) => {
       const url = new URL(route.request().url());
       const { pathname } = url;
 
@@ -265,21 +390,7 @@ test.describe('Student Portal E2E', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             status: true,
-            job: {
-              id: 'job-1',
-              jobTitle: 'Frontend Developer',
-              companyName: 'Tech Co',
-              companyLogo: '',
-              jobLocation: 'Remote',
-              experienceLevel: 'Entry',
-              employmentType: 'Full-time',
-              minPrice: 400000,
-              maxPrice: 700000,
-              salaryType: 'yearly',
-              skills: ['React', 'TypeScript'],
-              status: 'open',
-              description: 'Build product experiences for students.'
-            }
+            job: state.jobs[0]
           })
         });
         return;
@@ -290,120 +401,111 @@ test.describe('Student Portal E2E', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           status: true,
-          jobs: [
-            {
-              id: 'job-1',
-              jobTitle: 'Frontend Developer',
-              companyName: 'Tech Co',
-              companyLogo: '',
-              jobLocation: 'Remote',
-              experienceLevel: 'Entry',
-              employmentType: 'Full-time',
-              minPrice: 400000,
-              maxPrice: 700000,
-              salaryType: 'yearly',
-              skills: ['React', 'TypeScript'],
-              status: 'open'
-            }
-          ],
+          jobs: state.jobs,
           pagination: { page: 1, limit: 8, total: 1, totalPages: 1 }
         })
       });
     });
   });
 
-  test('dashboard loads current student overview', async ({ page }) => {
+  test('dashboard redirects students to the companies hub', async ({ page }) => {
     await page.goto('/portal/student/dashboard');
-    await expect(page.getByText('Student Dashboard', { exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /welcome back, mock student/i })).toBeVisible();
-    await expect(page.getByText('Frontend Developer').first()).toBeVisible();
+    await expect(page).toHaveURL(/\/portal\/student\/companies$/);
+    await expect(page.getByRole('heading', { name: /portal companies/i })).toBeVisible();
+    await expect(page.getByText('Local E2E Hiring Labs')).toBeVisible();
+
+    await page.getByRole('link', { name: /browse jobs/i }).first().click();
+    await expect(page).toHaveURL(/\/portal\/student\/jobs$/);
+    await expect(page.getByRole('heading', { name: /search and apply jobs/i })).toBeVisible();
   });
 
-  test('dashboard resume card imports and saves profile-ready resume data', async ({ page }) => {
-    await page.goto('/portal/student/dashboard');
-    await expect(page.getByRole('heading', { name: /turn resume into profile data/i })).toBeVisible();
+  test('profile resume import saves profile-ready data', async ({ page }) => {
+    await page.goto('/portal/student/profile?section=resume');
+    await expect(page.getByRole('heading', { name: 'Resume', exact: true })).toBeVisible();
 
-    const profileSave = page.waitForResponse((response) => response.url() === `${API_BASE}/student/profile` && response.request().method() === 'PUT');
-    await page.getByTestId('student-dashboard-resume-input').setInputFiles({
-      name: 'resume.txt',
-      mimeType: 'text/plain',
-      buffer: Buffer.from('Mock Student\nFrontend Developer\nstudent@example.com\nSKILLS\nReact, TypeScript\nEDUCATION\nB.Tech Computer Science | Demo Institute | Demo University | 2021 | 2025', 'utf8')
-    });
-    await profileSave;
+    await page.getByRole('textbox', { name: /resume text/i }).fill(
+      'Mock Student\nFrontend Developer\nstudent@example.com\nSkills\nReact, TypeScript'
+    );
+    const resumeImport = page.waitForResponse((response) => matchesPath(response.url(), '/student/profile/import-resume'));
+    const importedProfileSave = page.waitForResponse(
+      (response) => matchesPath(response.url(), '/student/profile') && response.request().method() === 'PUT'
+    );
+    await page.getByRole('button', { name: /import from text/i }).click();
+    await resumeImport;
+    await importedProfileSave;
 
-    await expect(page.getByText(/resume imported and profile updated/i)).toBeVisible();
-    await expect(page.getByText(/updated .*education entries/i)).toBeVisible();
+    await expect(page.getByText(/resume ready/i)).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /resume text/i })).toHaveValue('Imported resume text');
+    await expect(page.locator('input[placeholder="Course or degree"]').first()).toHaveValue('B.Tech Computer Science');
+    await expect(page.getByRole('textbox', { name: /add a recruiter-friendly profile headline/i })).toHaveValue('Frontend Developer');
   });
 
-  test('profile supports avatar upload, resume import, education add, and save', async ({ page }) => {
+  test('profile supports avatar upload, education add, and save', async ({ page }) => {
     await page.goto('/portal/student/profile?section=resume');
     await expect(page.getByRole('button', { name: /upload photo/i })).toBeVisible();
 
-    const avatarUpdate = page.waitForResponse(`${API_BASE}/student/profile`);
+    const avatarUpdate = page.waitForResponse(
+      (response) => matchesPath(response.url(), '/student/profile') && response.request().method() === 'PUT'
+    );
     await page.getByTestId('student-avatar-input').setInputFiles({
       name: 'avatar.png',
       mimeType: 'image/png',
       buffer: tinyPng
     });
     await avatarUpdate;
+    await expect(page.getByRole('button', { name: /preview profile photo/i })).toBeVisible();
 
-    await expect(page.getByRole('button', { name: /upload resume/i })).toBeVisible();
-    await page.getByLabel('Resume Text').fill('Mock Student\nFrontend Developer\nstudent@example.com\nSkills\nReact, TypeScript');
-    const resumeImport = page.waitForResponse(`${API_BASE}/student/profile/import-resume`);
-    const importedProfileSave = page.waitForResponse((response) => response.url() === `${API_BASE}/student/profile` && response.request().method() === 'PUT');
-    await page.getByRole('button', { name: /import from text/i }).click();
-    await resumeImport;
-    await importedProfileSave;
-    await expect(page.getByText('Resume ready', { exact: true }).first()).toBeVisible();
-    await expect(page.getByLabel('Resume Text')).toHaveValue('Imported resume text');
-    await expect(page.getByText(/saved .*education entries to profile/i)).toBeVisible();
-
-    await page.getByRole('button', { name: 'Education' }).click();
-    await expect(page.locator('input[placeholder="B.Tech Computer Science"]').first()).toHaveValue('B.Tech Computer Science');
-    await page.getByRole('button', { name: /add education/i }).click();
-    await page.locator('input[placeholder="B.Tech Computer Science"]').nth(1).fill('MBA');
+    await page.getByRole('button', { name: 'Add education', exact: true }).click();
+    await page.locator('input[placeholder="Course or degree"]').nth(1).fill('MBA');
     await page.locator('input[placeholder="Institute name"]').nth(1).fill('Demo Business School');
-    await page.locator('input[placeholder="2021"]').nth(1).fill('2026');
-    await page.locator('input[placeholder="2025"]').nth(1).fill('2028');
+    await page.locator('input[placeholder="Start year"]').nth(1).fill('2026');
+    await page.locator('input[placeholder="End year"]').nth(1).fill('2028');
 
-    const profileSave = page.waitForResponse(`${API_BASE}/student/profile`);
-    await page.getByTestId('student-profile-save').click();
+    const profileSave = page.waitForResponse(
+      (response) => matchesPath(response.url(), '/student/profile') && response.request().method() === 'PUT'
+    );
+    await page.getByRole('button', { name: /save profile/i }).click();
     await profileSave;
+
     await expect(page.getByText(/profile saved successfully/i)).toBeVisible();
   });
 
   test('jobs apply failure points students to resume section', async ({ page }) => {
-    await page.route(`${API_BASE}/jobs**`, async (route) => {
-      const url = new URL(route.request().url());
-      if (route.request().method() === 'POST' && url.pathname.endsWith('/apply')) {
-        await route.fulfill({
-          status: 400,
-          contentType: 'application/json',
-          body: JSON.stringify({ status: false, message: 'Resume is required. Upload profile resume or provide new resume content.' })
-        });
-        return;
-      }
-
-      await route.fallback();
+    await page.route('**/jobs/**/apply', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: false,
+          message: 'Resume is required. Upload profile resume or provide new resume content.'
+        })
+      });
     });
 
     await page.goto('/portal/student/jobs');
-    await page.getByRole('button', { name: 'Apply Now' }).click();
+    await page.getByRole('button', { name: 'Apply' }).click();
 
     await expect(page.getByText(/profile resume missing/i)).toBeVisible();
     await expect(page.getByRole('link', { name: /open resume section/i })).toBeVisible();
   });
 
-  test('jobs list apply works and job details ATS check renders score', async ({ page }) => {
+  test('jobs list apply works and ATS check renders score', async ({ page }) => {
     await page.goto('/portal/student/jobs');
     await expect(page.getByRole('heading', { name: /search and apply jobs/i })).toBeVisible();
-    await page.getByRole('button', { name: 'Apply Now' }).click();
+    await page.getByRole('button', { name: 'Apply' }).click();
     await expect(page.getByText(/application submitted successfully/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /applied/i })).toBeVisible();
 
-    await page.getByRole('link', { name: /view details/i }).click();
+    await page.getByRole('link', { name: 'Details' }).click();
     await expect(page).toHaveURL(/\/portal\/student\/jobs\/job-1$/);
-    await page.getByRole('button', { name: /ats check/i }).click();
-    await expect(page.getByText('Resume Match Score')).toBeVisible();
-    await expect(page.getByText('82')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /frontend developer/i })).toBeVisible();
+
+    await page.goto('/portal/student/ats');
+    await expect(page.getByRole('heading', { name: /build your ats test/i })).toBeVisible();
+    await page.getByRole('button', { name: /run ats check/i }).click();
+
+    await expect(page.getByText(/ats check completed successfully/i)).toBeVisible();
+    await expect(page.getByText('82%').first()).toBeVisible();
+    await expect(page.getByText('Redux')).toBeVisible();
   });
 });

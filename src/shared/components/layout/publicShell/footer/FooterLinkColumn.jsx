@@ -12,7 +12,7 @@ const FooterLinkColumn = ({ column }) => {
         {column.links.map((link) => {
           const isExternal = isExternalHref(link.to);
           const className =
-            'group inline-flex items-center gap-2 text-[13px] text-white/60 transition-all hover:translate-x-1 hover:text-white';
+            'group inline-flex items-center gap-2 text-[13px] leading-6 text-white/60 transition-all hover:translate-x-1 hover:text-white';
 
           return (
             <li key={link.to}>

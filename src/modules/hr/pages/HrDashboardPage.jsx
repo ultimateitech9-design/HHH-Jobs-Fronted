@@ -97,25 +97,29 @@ const HrDashboardPage = () => {
       label: 'Open roles',
       value: Number(analytics.openJobs || analytics.totalJobs || 0),
       helper: 'Live on portal',
-      icon: FiBriefcase
+      icon: FiBriefcase,
+      to: '/portal/hr/jobs'
     },
     {
       label: 'Applicants',
       value: Number(analytics.totalApplications || 0),
       helper: `${analytics.pipeline?.shortlisted || 0} shortlisted`,
-      icon: FiUsers
+      icon: FiUsers,
+      to: '/portal/hr/candidates'
     },
     {
       label: 'Interviews',
       value: totalInterviews,
       helper: 'Upcoming rounds',
-      icon: FiClipboard
+      icon: FiClipboard,
+      to: '/portal/hr/interviews'
     },
     {
       label: 'Hired',
       value: totalHires,
       helper: 'Closed successfully',
-      icon: FiCheckCircle
+      icon: FiCheckCircle,
+      to: '/portal/hr/notifications'
     }
   ];
 
@@ -148,11 +152,11 @@ const HrDashboardPage = () => {
     const offerCount = Math.max(0, Number(pipeline.shortlisted || 0) - Number(pipeline.hired || 0));
 
     return [
-      { key: 'applied', label: 'Applied', count: Number(pipeline.applied || 0) },
-      { key: 'shortlisted', label: 'Shortlisted', count: Number(pipeline.shortlisted || 0) },
-      { key: 'interview', label: 'Interviewing', count: totalInterviews },
-      { key: 'offer', label: 'Offered', count: offerCount },
-      { key: 'hired', label: 'Hired', count: Number(pipeline.hired || 0) }
+      { key: 'applied', label: 'Applied', count: Number(pipeline.applied || 0), to: '/portal/hr/candidates' },
+      { key: 'shortlisted', label: 'Shortlisted', count: Number(pipeline.shortlisted || 0), to: '/portal/hr/candidates' },
+      { key: 'interview', label: 'Interviewing', count: totalInterviews, to: '/portal/hr/interviews' },
+      { key: 'offer', label: 'Offered', count: offerCount, to: '/portal/hr/candidates' },
+      { key: 'hired', label: 'Hired', count: Number(pipeline.hired || 0), to: '/portal/hr/notifications' }
     ].map((stage, stageIndex) => ({
       ...stage,
       candidates: candidatePool.filter((candidate, index) => (index + stageIndex) % 2 === 0).slice(0, 3)
@@ -176,7 +180,7 @@ const HrDashboardPage = () => {
   }
 
   return (
-    <div className="space-y-5 pb-4">
+    <div className="space-y-3 pb-2">
       {state.error ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 font-semibold text-red-600">
           {state.error}
@@ -197,12 +201,12 @@ const HrDashboardPage = () => {
         title="Run hiring from one clean workspace"
         description="See open roles, candidate activity, and interviews without extra clutter."
         chips={[]}
-        primaryAction={{ to: '/portal/hr/jobs/new', label: 'Post New Job' }}
+        primaryAction={{ to: '/portal/hr/jobs', label: 'Post New Job' }}
         secondaryAction={{ to: '/portal/hr/candidates', label: 'Review Applicants' }}
         metrics={[
-          { label: 'Open roles', value: String(analytics.openJobs || analytics.totalJobs || 0), helper: 'Currently live' },
-          { label: 'Applicants', value: String(analytics.totalApplications || 0), helper: 'In pipeline' },
-          { label: 'Interviews', value: String(totalInterviews), helper: 'Scheduled' }
+          { label: 'Open roles', value: String(analytics.openJobs || analytics.totalJobs || 0), helper: 'Currently live', to: '/portal/hr/jobs' },
+          { label: 'Applicants', value: String(analytics.totalApplications || 0), helper: 'In pipeline', to: '/portal/hr/candidates' },
+          { label: 'Interviews', value: String(totalInterviews), helper: 'Scheduled', to: '/portal/hr/interviews' }
         ]}
       />
 
@@ -210,9 +214,10 @@ const HrDashboardPage = () => {
         {compactStats.map((item) => {
           const Icon = item.icon;
           return (
-            <article
+            <Link
               key={item.label}
-              className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-4 shadow-sm"
+              to={item.to}
+              className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -224,33 +229,9 @@ const HrDashboardPage = () => {
                   <Icon size={18} />
                 </span>
               </div>
-            </article>
+            </Link>
           );
         })}
-      </div>
-
-      <div className="grid items-start gap-3 md:grid-cols-3">
-        <Link
-          to="/portal/hr/jobs"
-          className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-        >
-          <p className="font-heading text-base font-bold text-navy">Job Postings</p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Manage active roles and open new ones fast.</p>
-        </Link>
-        <Link
-          to="/portal/hr/candidates"
-          className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-        >
-          <p className="font-heading text-base font-bold text-navy">Applicants</p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Review and shortlist candidates without extra steps.</p>
-        </Link>
-        <Link
-          to="/portal/hr/interviews"
-          className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-        >
-          <p className="font-heading text-base font-bold text-navy">Interviews</p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Keep interview slots and outcomes neatly tracked.</p>
-        </Link>
       </div>
 
       <div className="grid items-start gap-4 2xl:grid-cols-[1.05fr_0.95fr]">
@@ -262,9 +243,10 @@ const HrDashboardPage = () => {
           </div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
             {pipelineColumns.map((column) => (
-              <article
+              <Link
                 key={column.key}
-                className="min-w-0 rounded-[1.2rem] border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-3.5 shadow-sm"
+                to={column.to}
+                className="min-w-0 rounded-[1.2rem] border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-3.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -289,7 +271,7 @@ const HrDashboardPage = () => {
                     </div>
                   )}
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         </section>
@@ -308,15 +290,20 @@ const HrDashboardPage = () => {
           <ul className="space-y-3">
             {recentApplicants.length > 0 ? (
               recentApplicants.map((applicant) => (
-                <li key={applicant.id} className="flex items-start justify-between gap-4 rounded-[1.15rem] border border-slate-200 bg-slate-50 px-4 py-3.5">
-                  <div>
-                    <p className="font-semibold text-slate-900">{applicant.name}</p>
-                    <p className="mt-1 text-sm text-slate-500">{applicant.role}</p>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      {applicant.experience} • {applicant.time}
-                    </p>
-                  </div>
-                  <StatusPill value={applicant.status} />
+                <li key={applicant.id}>
+                  <Link
+                    to="/portal/hr/candidates"
+                    className="flex items-start justify-between gap-4 rounded-[1.15rem] border border-slate-200 bg-slate-50 px-4 py-3.5 transition duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  >
+                    <div>
+                      <p className="font-semibold text-slate-900">{applicant.name}</p>
+                      <p className="mt-1 text-sm text-slate-500">{applicant.role}</p>
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        {applicant.experience} | {applicant.time}
+                      </p>
+                    </div>
+                    <StatusPill value={applicant.status} />
+                  </Link>
                 </li>
               ))
             ) : (
@@ -342,15 +329,20 @@ const HrDashboardPage = () => {
         <ul className="grid gap-3 xl:grid-cols-2">
           {state.interviews.slice(0, 4).length > 0 ? (
             state.interviews.slice(0, 4).map((interview, index) => (
-              <li key={interview.id || `interview-${index}`} className="flex items-start justify-between gap-4 rounded-[1.15rem] border border-slate-200 bg-slate-50 px-4 py-3.5">
-                <div>
-                  <p className="font-semibold text-slate-900">{pickCandidateName(interview, 'Candidate')}</p>
-                  <p className="mt-1 text-sm text-slate-500">{pickCandidateRole(interview, 'Role')}</p>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    {formatDateTime(interview.scheduled_at || interview.scheduledAt)}
-                  </p>
-                </div>
-                <StatusPill value={interview.status || 'scheduled'} />
+              <li key={interview.id || `interview-${index}`}>
+                <Link
+                  to="/portal/hr/interviews"
+                  className="flex items-start justify-between gap-4 rounded-[1.15rem] border border-slate-200 bg-slate-50 px-4 py-3.5 transition duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                >
+                  <div>
+                    <p className="font-semibold text-slate-900">{pickCandidateName(interview, 'Candidate')}</p>
+                    <p className="mt-1 text-sm text-slate-500">{pickCandidateRole(interview, 'Role')}</p>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      {formatDateTime(interview.scheduled_at || interview.scheduledAt)}
+                    </p>
+                  </div>
+                  <StatusPill value={interview.status || 'scheduled'} />
+                </Link>
               </li>
             ))
           ) : (

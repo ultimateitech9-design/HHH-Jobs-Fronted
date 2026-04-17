@@ -112,7 +112,7 @@ const PlatformCustomizationPage = () => {
         subtitle="Control logo, colors, domain, widgets, and role-permission related UI switches."
       />
 
-      {isDemo ? <p className="module-note">Backend data is unavailable (platform backend endpoints are not connected).</p> : null}
+      {isDemo ? <p className="module-note">Showing fallback customization data because the live backend is unavailable right now.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="form-success">{message}</p> : null}
       {loading ? <p className="module-note">Loading customization...</p> : null}
@@ -234,4 +234,3 @@ const PlatformCustomizationPage = () => {
 };
 
 export default PlatformCustomizationPage;
-

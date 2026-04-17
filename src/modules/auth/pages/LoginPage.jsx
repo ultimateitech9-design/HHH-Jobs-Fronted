@@ -18,8 +18,8 @@ const LoginPage = () => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.14),transparent_24%),radial-gradient(circle_at_100%_0%,rgba(15,23,42,0.08),transparent_28%),linear-gradient(180deg,#f7f3ea_0%,#fcfbf8_48%,#f7f8fb_100%)]" />
 
       <div className="relative mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-[40rem] items-center justify-center">
-        <div className="w-full rounded-[2rem] border border-slate-200/80 bg-white/94 p-4 shadow-[0_24px_72px_rgba(15,23,42,0.1)] backdrop-blur md:p-6">
-          <div className="mb-5 flex items-center justify-between gap-4 rounded-[1.4rem] border border-slate-200/80 bg-[#fcfaf5] px-4 py-3">
+        <div className="w-full rounded-[1.75rem] border border-slate-200/80 bg-white/94 p-4 shadow-[0_24px_72px_rgba(15,23,42,0.1)] backdrop-blur sm:p-5 md:rounded-[2rem] md:p-6">
+          <div className="mb-5 flex flex-col items-start justify-between gap-3 rounded-[1.4rem] border border-slate-200/80 bg-[#fcfaf5] px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
             <div>
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-gold-dark">
                 {portalConfig.eyebrow}
@@ -36,7 +36,7 @@ const LoginPage = () => {
             </Link>
           </div>
 
-          <div className="mx-auto max-w-[34rem] overflow-visible rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-[0_16px_42px_rgba(15,23,42,0.06)] md:p-7">
+          <div className="mx-auto max-w-[34rem] overflow-visible rounded-[1.5rem] border border-slate-200/80 bg-white p-4 shadow-[0_16px_42px_rgba(15,23,42,0.06)] sm:p-5 md:rounded-[1.75rem] md:p-7">
             <LoginPanelContent
               portalLabel={portalLabel}
               description={portalConfig.helperText}

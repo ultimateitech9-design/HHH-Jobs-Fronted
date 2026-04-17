@@ -76,8 +76,8 @@ const PortalWorkbenchLayout = ({
   const isCompactViewportRoute = location.pathname === '/portal/hr/employee-verification';
   const isStudentWorkbench = portalKey === 'student';
   const mainPaddingClass = isStudentWorkbench
-    ? 'px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-3'
-    : `px-2 py-3 sm:px-3 sm:py-4 md:px-5 ${isCompactViewportRoute ? 'md:py-4' : 'md:py-7'}`;
+    ? 'px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4'
+    : `px-3 py-3 sm:px-4 sm:py-4 md:px-5 ${isCompactViewportRoute ? 'md:py-3' : 'md:py-5'}`;
 
   useEffect(() => {
     const sync = () => setUser(getCurrentUser());
@@ -107,7 +107,7 @@ const PortalWorkbenchLayout = ({
 
   return (
     <div
-      className={`min-h-screen portal-workbench--${portalKey}`}
+      className={`min-h-screen overflow-x-clip portal-workbench--${portalKey}`}
       style={{
         background:
           'radial-gradient(circle at top left, rgba(229,155,23,0.12), transparent 26%), radial-gradient(circle at 100% 0%, rgba(36,95,176,0.1), transparent 24%), linear-gradient(180deg, #f8f6f2 0%, #f3f6fb 100%)'
@@ -163,7 +163,7 @@ const PortalWorkbenchLayout = ({
       )}
 
       <div
-        className={`min-h-screen transition-all ${sidebarMarginClass}`}
+        className={`min-h-screen min-w-0 transition-all ${sidebarMarginClass}`}
       >
         <div className="flex min-h-screen flex-col">
           {fullWidthHeader ? null : (
@@ -189,7 +189,7 @@ const PortalWorkbenchLayout = ({
             animate={{ opacity: 1, y: 0 }}
             className={`flex-1 ${mainPaddingClass}`}
           >
-            <div className={`mx-auto flex w-full max-w-[1480px] flex-col ${isCompactViewportRoute ? 'gap-4' : 'gap-4 sm:gap-5 md:gap-6'}`}>
+            <div className={`mx-auto flex min-w-0 w-full max-w-[1480px] flex-col ${isCompactViewportRoute ? 'gap-2.5' : 'gap-2.5 sm:gap-3 md:gap-4'}`}>
               <Outlet />
             </div>
           </motion.main>

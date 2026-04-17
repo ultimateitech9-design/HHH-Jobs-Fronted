@@ -43,8 +43,8 @@ const FooterGenericTemplate = ({ pageKey, pageData, relatedLinks }) => {
       />
 
       <section className="px-4 py-8 md:py-12">
-        <div className="container mx-auto grid max-w-7xl gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div>
+        <div className="container mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,300px)] lg:gap-10">
+          <div className="min-w-0">
             <PublicSectionHeader
               eyebrow={pageData.eyebrow}
               title={sectionMode === 'article' ? 'Featured reads' : 'What you need to know'}
@@ -55,7 +55,7 @@ const FooterGenericTemplate = ({ pageKey, pageData, relatedLinks }) => {
               }
             />
 
-            <div className={`mt-10 grid gap-6 ${sectionMode === 'article' ? 'xl:grid-cols-2' : ''}`}>
+            <div className={`mt-8 grid gap-5 sm:mt-10 sm:gap-6 ${sectionMode === 'article' ? 'xl:grid-cols-2' : ''}`}>
               {(pageData.sections || []).map((section, index) =>
                 sectionMode === 'article' && section.to ? (
                   <FooterArticleCard

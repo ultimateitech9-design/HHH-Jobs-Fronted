@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 
+const publicLoginEmailField = (page) => page.getByPlaceholder('Enter your registered email');
+const publicLoginPasswordField = (page) => page.getByPlaceholder('Enter your password');
+const publicSignInButton = (page) => page.getByRole('button', { name: 'Sign in', exact: true });
+
 test('login retry controls stay in viewport after an invalid password error', async ({ page }) => {
   let loginAttempt = 0;
 
@@ -49,9 +53,9 @@ test('login retry controls stay in viewport after an invalid password error', as
   await page.setViewportSize({ width: 1024, height: 600 });
   await page.goto('/login');
 
-  const emailField = page.getByPlaceholder('you@example.com');
-  const passwordField = page.getByPlaceholder('Enter your password');
-  const signInButton = page.getByRole('button', { name: 'Sign In', exact: true });
+  const emailField = publicLoginEmailField(page);
+  const passwordField = publicLoginPasswordField(page);
+  const signInButton = publicSignInButton(page);
   const forgotPasswordLink = page.getByRole('link', { name: 'Forgot password?' });
 
   await emailField.fill('retry@example.com');
@@ -119,9 +123,9 @@ test('invalid portal login clears stale session and stays on login instead of fo
   try {
     await page.goto('/login');
 
-    await page.getByPlaceholder('you@example.com').fill('wrong-admin@example.com');
-    await page.getByPlaceholder('Enter your password').fill('WrongPassword123!');
-    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+    await publicLoginEmailField(page).fill('wrong-admin@example.com');
+    await publicLoginPasswordField(page).fill('WrongPassword123!');
+    await publicSignInButton(page).click();
 
     await expect(page.getByText('Wrong ID or password.', { exact: true })).toBeVisible();
 
@@ -132,9 +136,9 @@ test('invalid portal login clears stale session and stays on login instead of fo
     expect(storedUser).toBeNull();
 
     await page.goto('/portal/admin/dashboard');
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/management\/login\/admin$/);
     await expect(page).not.toHaveURL(/\/forbidden$/);
-    await expect(page.getByRole('button', { name: 'Sign In', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
   } finally {
     await context.close();
   }
@@ -171,13 +175,13 @@ test('wrong portal credentials stay on login instead of opening forbidden', asyn
   });
 
   await page.goto('/portal/admin/dashboard');
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/management\/login\/admin$/);
 
-  await page.getByPlaceholder('you@example.com').fill('superadmin@example.com');
+  await page.getByPlaceholder('Enter your admin email').fill('superadmin@example.com');
   await page.getByPlaceholder('Enter your password').fill('CorrectButWrongPortal123!');
-  await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/management\/login\/admin$/);
   await expect(page).not.toHaveURL(/\/forbidden$/);
   await expect(page.getByText('Wrong ID or password.', { exact: true })).toBeVisible();
 

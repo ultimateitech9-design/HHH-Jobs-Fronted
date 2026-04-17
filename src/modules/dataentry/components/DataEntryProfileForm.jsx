@@ -7,7 +7,7 @@ const DataEntryProfileForm = ({ draft, saving, onChange, onSubmit }) => {
       </label>
       <label>
         Email
-        <input value={draft.email || ''} onChange={(event) => onChange('email', event.target.value)} />
+        <input value={draft.email || ''} readOnly disabled title="Email is managed through the login account." />
       </label>
       <label>
         Mobile

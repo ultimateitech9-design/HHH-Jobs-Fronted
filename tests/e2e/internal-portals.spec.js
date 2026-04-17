@@ -14,7 +14,8 @@ const createRolePage = async (browser, role) => {
               value: JSON.stringify({
                 id: `e2e-${role}`,
                 role,
-                name: `E2E ${role}`
+                name: `E2E ${role}`,
+                isEmailVerified: true
               })
             }
           ]

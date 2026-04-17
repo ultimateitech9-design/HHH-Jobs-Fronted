@@ -12,6 +12,8 @@
   body {
     @apply bg-surface-base text-primary font-sans antialiased;
     min-height: 100vh;
+    overflow-wrap: break-word;
+    word-break: break-word;
     background-image:
       radial-gradient(circle at top left, rgba(229, 155, 23, 0.16), transparent 32%),
       radial-gradient(circle at 82% 8%, rgba(47, 83, 143, 0.12), transparent 30%),

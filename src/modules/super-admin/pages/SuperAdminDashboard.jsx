@@ -265,7 +265,7 @@ const SuperAdminDashboard = () => {
   }, [activeWorkspace, selectedWorkspace]);
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-3 pb-2">
       {error ? <p className="form-error">{error}</p> : null}
       <PortalDashboardHero
         tone="superAdmin"

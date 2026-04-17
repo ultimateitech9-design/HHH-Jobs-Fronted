@@ -11,7 +11,7 @@ const PublicFooter = () => {
       <div className="h-1 gradient-gold" />
 
       <div className="container relative mx-auto max-w-6xl px-4 py-10 sm:py-11">
-        <div className="grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.48fr)_repeat(4,minmax(0,0.92fr))]">
+        <div className="grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.25fr)_repeat(4,minmax(0,0.9fr))]">
           <FooterBrand />
 
           {footerLinkColumns.map((column) => (

@@ -3,19 +3,19 @@
   min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 14% 24%, rgba(56, 189, 248, 0.18), transparent 28%),
-    radial-gradient(circle at 82% 18%, rgba(99, 102, 241, 0.16), transparent 26%),
-    radial-gradient(circle at 50% 100%, rgba(15, 118, 110, 0.18), transparent 34%),
-    linear-gradient(135deg, #f3f7ff 0%, #dfeaff 38%, #e9f2ff 100%);
-  color: #f5f7fb;
+    radial-gradient(circle at 0% 0%, rgba(229, 155, 23, 0.16), transparent 34%),
+    radial-gradient(circle at 100% 10%, rgba(47, 83, 143, 0.14), transparent 30%),
+    radial-gradient(circle at 56% 100%, rgba(17, 33, 59, 0.08), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 241, 232, 0.92));
+  color: #10213a;
 }
 
 .management-portal__backdrop {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px);
+    linear-gradient(rgba(47, 83, 143, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(47, 83, 143, 0.05) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95), transparent 92%);
   pointer-events: none;
@@ -44,6 +44,12 @@
   color: #17325c;
   text-decoration: none;
   font-weight: 700;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.management-portal__back:hover {
+  color: #c57e12;
+  transform: translateX(-2px);
 }
 
 .management-portal__brand {
@@ -53,6 +59,7 @@
   margin: 0;
   font-size: 1rem;
   color: rgba(23, 50, 92, 0.66);
+  font-family: 'Space Grotesk', sans-serif;
 }
 
 .management-portal__brand strong {
@@ -71,11 +78,20 @@
   min-height: 408px;
   padding: 42px 34px 30px;
   border-radius: 28px;
-  border: 1px solid rgba(97, 129, 189, 0.26);
-  background: linear-gradient(180deg, rgba(251, 253, 255, 0.9), rgba(229, 238, 255, 0.88));
-  box-shadow: 0 24px 48px rgba(67, 92, 138, 0.16);
-  backdrop-filter: blur(18px);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.94), rgba(239, 247, 255, 0.82));
+  box-shadow: 0 22px 48px rgba(17, 33, 59, 0.11);
+  backdrop-filter: blur(22px);
   transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+.management-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  border-radius: 28px 28px 0 0;
+  opacity: 0.95;
 }
 
 .management-card > * {
@@ -85,19 +101,28 @@
 
 .management-card:hover {
   transform: translateY(-6px);
-  border-color: rgba(74, 110, 184, 0.34);
+  border-color: rgba(197, 126, 18, 0.28);
+  box-shadow: 0 28px 56px rgba(17, 33, 59, 0.16);
 }
 
 .management-card--management {
   box-shadow:
-    0 24px 48px rgba(67, 92, 138, 0.16),
-    0 0 70px rgba(59, 130, 246, 0.12);
+    0 22px 48px rgba(17, 33, 59, 0.11),
+    0 0 72px rgba(47, 83, 143, 0.08);
+}
+
+.management-card--management::before {
+  background: linear-gradient(90deg, #11213b, #2f538f);
 }
 
 .management-card--employee {
   box-shadow:
-    0 24px 48px rgba(67, 92, 138, 0.16),
-    0 0 70px rgba(168, 85, 247, 0.12);
+    0 22px 48px rgba(17, 33, 59, 0.11),
+    0 0 72px rgba(31, 122, 97, 0.08);
+}
+
+.management-card--employee::before {
+  background: linear-gradient(90deg, #c57e12, #e59b17 55%, #f3c86d);
 }
 
 .management-card__icon {
@@ -114,11 +139,13 @@
 }
 
 .management-card--management .management-card__icon {
-  background: linear-gradient(180deg, #3c88ff, #2457e7);
+  background: linear-gradient(135deg, #11213b, #2f538f);
+  box-shadow: 0 16px 34px rgba(17, 33, 59, 0.22);
 }
 
 .management-card--employee .management-card__icon {
-  background: linear-gradient(180deg, #b053ff, #7c2ce2);
+  background: linear-gradient(135deg, #c57e12, #e59b17 55%, #f3c86d);
+  box-shadow: 0 16px 34px rgba(197, 126, 18, 0.24);
 }
 
 .management-card h1,
@@ -126,35 +153,16 @@
   margin: 0;
   font-size: clamp(2.3rem, 3.6vw, 3.3rem);
   line-height: 1.05;
-  color: #14233f;
-}
-
-.management-card p {
-  max-width: 30rem;
-  margin: 18px 0 0;
-  color: rgba(20, 35, 63, 0.74);
-  font-size: 1.05rem;
-}
-
-.management-card__hint {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 220px;
-  margin-top: 30px;
-  padding: 12px 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(97, 129, 189, 0.22);
-  background: rgba(255, 255, 255, 0.44);
-  color: rgba(20, 35, 63, 0.62);
-  font-size: 0.92rem;
+  color: #11213b;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.04em;
 }
 
 .management-card__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 38px;
+  margin-top: 24px;
   opacity: 1;
   transform: none;
   pointer-events: auto;
@@ -168,12 +176,6 @@
   transform: translateY(0);
 }
 
-.management-card:hover .management-card__hint,
-.management-card:focus-within .management-card__hint {
-  opacity: 1;
-  transform: none;
-}
-
 .management-card__link {
   display: inline-flex;
   align-items: center;
@@ -183,12 +185,13 @@
   cursor: pointer;
   padding: 14px 20px;
   border-radius: 999px;
-  border: 1px solid rgba(97, 129, 189, 0.24);
-  background: rgba(255, 255, 255, 0.54);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.92);
   color: #17325c;
   text-decoration: none;
   font-weight: 700;
-  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  box-shadow: 0 10px 20px rgba(17, 33, 59, 0.05);
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .management-card__link svg {
@@ -197,14 +200,16 @@
 
 .management-card__link:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.86);
-  border-color: rgba(74, 110, 184, 0.32);
+  background: linear-gradient(135deg, rgba(197, 126, 18, 0.12), rgba(47, 83, 143, 0.08));
+  border-color: rgba(197, 126, 18, 0.28);
+  color: #11213b;
+  box-shadow: 0 14px 28px rgba(17, 33, 59, 0.1);
 }
 
 .management-portal__footer {
   padding-top: 34px;
   text-align: center;
-  color: rgba(230, 236, 245, 0.52);
+  color: rgba(23, 50, 92, 0.46);
 }
 
 @media (max-width: 900px) {
@@ -234,7 +239,4 @@
     pointer-events: auto;
   }
 
-  .management-card__hint {
-    display: none;
-  }
 }

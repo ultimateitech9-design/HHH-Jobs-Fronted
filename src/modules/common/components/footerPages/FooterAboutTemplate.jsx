@@ -83,7 +83,7 @@ const FooterAboutTemplate = ({ pageData, relatedLinks }) => {
       </section>
 
       <section className="px-4 py-10 md:py-14">
-        <div className="container mx-auto grid max-w-7xl gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="container mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,300px)] lg:gap-10">
           <div className="grid gap-6">
             {pageData.sections.map((section, index) => (
               <FooterInfoSectionCard

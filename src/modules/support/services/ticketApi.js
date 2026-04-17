@@ -1,4 +1,4 @@
-import { apiFetch } from '../../../utils/api';
+import { apiFetch, areDemoFallbacksEnabled } from '../../../utils/api';
 import { supportDummyData } from '../data/supportDummyData';
 import { normalizeTicket } from '../utils/ticketHelpers';
 
@@ -33,7 +33,9 @@ export const safeRequest = async ({ path, options, emptyData, fallbackData, extr
     const data = await strictRequest({ path, options, extract });
     return { data, error: '', isDemo: false };
   } catch (error) {
-    const resolvedFallback = typeof fallbackData === 'function' ? fallbackData() : fallbackData;
+    const resolvedFallback = areDemoFallbacksEnabled()
+      ? (typeof fallbackData === 'function' ? fallbackData() : fallbackData)
+      : undefined;
     return {
       data: clone(resolvedFallback !== undefined ? resolvedFallback : emptyData),
       error: error.message || 'Request failed.',

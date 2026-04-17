@@ -9,7 +9,15 @@ test.describe('SuperAdmin Portal E2E', () => {
           origin: typeof process.env.BASE_URL === 'string' ? process.env.BASE_URL : 'http://127.0.0.1:4173',
           localStorage: [
             { name: 'job_portal_token', value: 'mock-superadmin-token' },
-            { name: 'job_portal_user', value: JSON.stringify({ id: 'mock-superadmin', role: 'super_admin', name: 'Super Admin' }) }
+            {
+              name: 'job_portal_user',
+              value: JSON.stringify({
+                id: 'mock-superadmin',
+                role: 'super_admin',
+                name: 'Super Admin',
+                isEmailVerified: true
+              })
+            }
           ]
         }
       ]

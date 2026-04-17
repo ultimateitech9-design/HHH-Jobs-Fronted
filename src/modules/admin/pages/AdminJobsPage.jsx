@@ -260,8 +260,8 @@ const AdminJobsPage = () => {
       </section>
 
       {/* Job Registry Table */}
-      <section className="bg-white rounded-[2.5rem] border border-neutral-100 shadow-sm overflow-hidden flex flex-col min-h-[600px]">
-        <div className="p-6 md:p-8 border-b border-neutral-100 bg-neutral-50/50">
+      <section className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm overflow-hidden flex flex-col min-h-[520px] md:rounded-[2.5rem] md:min-h-[600px]">
+        <div className="border-b border-neutral-100 bg-neutral-50/50 p-4 sm:p-6 md:p-8">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
             <div>
               <h2 className="text-xl font-extrabold text-primary flex items-center gap-2">
@@ -270,8 +270,8 @@ const AdminJobsPage = () => {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+              <div className="relative w-full sm:w-auto">
                 <select 
                   value={filters.status} 
                   onChange={(e) => {
@@ -279,7 +279,7 @@ const AdminJobsPage = () => {
                     setFilters({ ...filters, status: nextStatus });
                     loadJobs(nextStatus);
                   }}
-                  className="pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm"
+                  className="w-full pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm sm:min-w-[170px]"
                 >
                   <option value="all">All Visibility</option>
                   <option value="open">Live (Open)</option>
@@ -289,11 +289,11 @@ const AdminJobsPage = () => {
                 <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
               </div>
 
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <select 
                   value={filters.approvalStatus} 
                   onChange={(e) => setFilters({ ...filters, approvalStatus: e.target.value })}
-                  className="pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm"
+                  className="w-full pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm sm:min-w-[190px]"
                 >
                   <option value="all">All Clearance Tracker</option>
                   <option value="pending">Needs Approval</option>
@@ -303,7 +303,7 @@ const AdminJobsPage = () => {
                 <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
               </div>
 
-              <div className="relative flex-1 sm:min-w-[200px]">
+              <div className="relative w-full flex-1 sm:min-w-[220px]">
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
                   value={filters.search}
@@ -316,14 +316,14 @@ const AdminJobsPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-x-auto custom-scrollbar relative">
+        <div className="relative flex-1 overflow-x-auto custom-scrollbar">
           {loading ? (
              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
                <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
              </div>
           ) : null}
 
-          <table className="w-full text-left border-collapse min-w-[1200px]">
+          <table className="w-full text-left border-collapse min-w-[1040px] xl:min-w-[1200px]">
             <thead>
               <tr className="bg-neutral-50 border-b border-neutral-200">
                 <th className="p-4 pl-6 text-xs font-black text-neutral-400 uppercase tracking-widest">Listing Reference</th>
