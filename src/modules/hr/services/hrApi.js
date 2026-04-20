@@ -497,7 +497,9 @@ export const searchHrCandidatesV2 = async (filters = {}) => {
     branch: filters.branch,
     college: filters.college,
     batchYear: filters.batchYear,
-    available: filters.availableOnly ? 'true' : undefined
+    available: filters.availableOnly ? 'true' : undefined,
+    page: filters.page,
+    limit: filters.limit
   }).forEach(([key, value]) => {
     if (value !== undefined && value !== null && String(value).trim() !== '') params.set(key, value);
   });
@@ -507,11 +509,13 @@ export const searchHrCandidatesV2 = async (filters = {}) => {
     emptyData: {
       access: { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
       summary: { total: 0, blurred: 0, connected: 0, availableNow: 0 },
+      pagination: { page: 1, limit: 24, total: 0, totalPages: 1, count: 0 },
       candidates: []
     },
     extract: (payload) => ({
       access: payload?.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
       summary: payload?.summary || { total: 0, blurred: 0, connected: 0, availableNow: 0 },
+      pagination: payload?.pagination || { page: 1, limit: 24, total: 0, totalPages: 1, count: 0 },
       candidates: payload?.candidates || []
     })
   });

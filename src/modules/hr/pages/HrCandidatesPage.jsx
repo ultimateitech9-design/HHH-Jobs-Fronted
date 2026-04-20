@@ -49,6 +49,7 @@ const EMPTY_TEMPLATE_FORM = {
   name: '',
   message: ''
 };
+const DEFAULT_PAGE_SIZE = 24;
 
 const statusStyles = {
   pending: 'border-amber-200 bg-amber-50 text-amber-700',
@@ -74,6 +75,7 @@ export default function HrCandidatesPage() {
   const [error, setError] = useState('');
   const [access, setAccess] = useState({ hasPaidAccess: false, requiresUpgrade: true, activePlanName: 'Free' });
   const [summary, setSummary] = useState({ total: 0, blurred: 0, connected: 0, availableNow: 0 });
+  const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0, totalPages: 1, count: 0 });
   const [candidates, setCandidates] = useState([]);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [templates, setTemplates] = useState([]);
@@ -87,13 +89,18 @@ export default function HrCandidatesPage() {
   const [bulkMessage, setBulkMessage] = useState('');
   const [bulkTemplateId, setBulkTemplateId] = useState('');
 
-  const runSearch = async (activeFilters = filters) => {
+  const runSearch = async (activeFilters = filters, requestedPage = 1) => {
     setLoading(true);
     setError('');
-    const response = await searchHrCandidatesV2(activeFilters);
+    const response = await searchHrCandidatesV2({
+      ...activeFilters,
+      page: requestedPage,
+      limit: pagination.limit || DEFAULT_PAGE_SIZE
+    });
     const payload = response.data || {};
     setAccess(payload.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanName: 'Free' });
     setSummary(payload.summary || { total: 0, blurred: 0, connected: 0, availableNow: 0 });
+    setPagination(payload.pagination || { page: 1, limit: DEFAULT_PAGE_SIZE, total: 0, totalPages: 1, count: 0 });
     setCandidates(payload.candidates || []);
     setError(response.error || '');
     setLoading(false);
@@ -107,7 +114,7 @@ export default function HrCandidatesPage() {
   };
 
   useEffect(() => {
-    runSearch(EMPTY_FILTERS);
+    runSearch(EMPTY_FILTERS, 1);
     loadTemplates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -271,7 +278,7 @@ export default function HrCandidatesPage() {
               <p className="text-sm font-semibold text-sky-100">Proactive sourcing</p>
               <h1 className="mt-1 text-3xl font-black tracking-tight">Candidate Database</h1>
               <p className="mt-3 max-w-2xl text-sm text-slate-200">
-                Search discoverable student profiles by skills, CGPA, location, college, and batch year. Paid plans unlock full profile visibility and direct outreach.
+                Search all student profiles by skills, CGPA, location, college, and batch year. Paid plans unlock full profile visibility and direct outreach.
               </p>
             </div>
             <div className="rounded-[1.5rem] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
@@ -381,7 +388,7 @@ export default function HrCandidatesPage() {
                 type="button"
                 onClick={() => {
                   setFilters(EMPTY_FILTERS);
-                  runSearch(EMPTY_FILTERS);
+                  runSearch(EMPTY_FILTERS, 1);
                 }}
                 className="text-xs font-bold text-slate-500 hover:text-brand-600"
               >
@@ -413,7 +420,7 @@ export default function HrCandidatesPage() {
 
             <button
               type="button"
-              onClick={() => runSearch(filters)}
+              onClick={() => runSearch(filters, 1)}
               className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-500"
             >
               {loading ? <FiRefreshCw size={14} className="animate-spin" /> : <FiSearch size={14} />}
@@ -460,27 +467,62 @@ export default function HrCandidatesPage() {
           ) : candidates.length === 0 ? (
             <div className={`${summaryCard} flex min-h-[320px] flex-col items-center justify-center text-center`}>
               <FiUsers size={36} className="text-slate-300" />
-              <p className="mt-4 text-base font-bold text-slate-500">No discoverable candidates match these filters.</p>
+              <p className="mt-4 text-base font-bold text-slate-500">No candidates match these filters.</p>
               <p className="mt-2 max-w-md text-sm text-slate-400">Try broadening your search or removing a few constraints.</p>
             </div>
           ) : (
-            <div className="grid gap-4 xl:grid-cols-2">
-              {candidates.map((candidate) => (
-                <CandidateCard
-                  key={candidate.id}
-                  candidate={candidate}
-                  selected={selectedIds.has(candidate.id)}
-                  selectingEnabled={candidate.access?.canSendInterest && !candidate.crm?.interestStatus}
-                  actionState={actionState}
-                  onSelect={() => handleSelect(candidate.id)}
-                  onShortlist={() => toggleShortlist(candidate)}
-                  onInterest={() => {
-                    setInterestModal(candidate);
-                    setInterestMessage('');
-                    setInterestTemplateId('');
-                  }}
-                />
-              ))}
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.25rem] border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                <span>
+                  Showing <strong className="text-navy">{candidates.length}</strong> of <strong className="text-navy">{pagination.total || summary.total}</strong> candidates
+                </span>
+                <span>
+                  Page <strong className="text-navy">{pagination.page}</strong> of <strong className="text-navy">{pagination.totalPages}</strong>
+                </span>
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-2">
+                {candidates.map((candidate) => (
+                  <CandidateCard
+                    key={candidate.id}
+                    candidate={candidate}
+                    selected={selectedIds.has(candidate.id)}
+                    selectingEnabled={candidate.access?.canSendInterest && !candidate.crm?.interestStatus}
+                    actionState={actionState}
+                    onSelect={() => handleSelect(candidate.id)}
+                    onShortlist={() => toggleShortlist(candidate)}
+                    onInterest={() => {
+                      setInterestModal(candidate);
+                      setInterestMessage('');
+                      setInterestTemplateId('');
+                    }}
+                  />
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.25rem] border border-slate-100 bg-white px-4 py-3">
+                <button
+                  type="button"
+                  disabled={loading || pagination.page <= 1}
+                  onClick={() => runSearch(filters, Math.max(1, pagination.page - 1))}
+                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Previous
+                </button>
+
+                <div className="text-center text-sm text-slate-500">
+                  Page <span className="font-bold text-navy">{pagination.page}</span> / <span className="font-bold text-navy">{pagination.totalPages}</span>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={loading || pagination.page >= pagination.totalPages}
+                  onClick={() => runSearch(filters, pagination.page + 1)}
+                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </div>
