@@ -116,11 +116,11 @@ export function FeaturedJobs({
                 <motion.article
                   whileHover={{ y: -5, boxShadow: '0 25px 50px -12px rgba(17, 33, 59, 0.1)' }}
                   whileTap={{ scale: 0.985 }}
-                  className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 transition-colors hover:border-brand-200"
+                  className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 transition-colors hover:border-brand-200"
                 >
                   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-brand-100/30 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
 
-                  <div className="relative z-10">
+                  <div className="relative z-10 flex h-full flex-col">
                     <div className="mb-4 flex items-start justify-between">
                       <FeaturedCompanyMark companyLogo={job.companyLogo} companyName={job.companyName} />
                       <div className="flex items-center gap-2">
@@ -135,11 +135,11 @@ export function FeaturedJobs({
                       </div>
                     </div>
 
-                    <h3 className="font-heading text-lg font-semibold text-slate-900 transition-colors group-hover:text-brand-700">
+                    <h3 className="line-clamp-2 min-h-[56px] font-heading text-lg font-semibold text-slate-900 transition-colors group-hover:text-brand-700">
                       {job.jobTitle || 'Open Role'}
                     </h3>
-                    <p className="mt-1 text-sm text-slate-500">{job.companyName || 'Hiring Company'}</p>
-                    <p className="mt-4 text-sm leading-6 text-slate-600">{getJobExcerpt(job)}</p>
+                    <p className="mt-1 line-clamp-1 min-h-[20px] text-sm text-slate-500">{job.companyName || 'Hiring Company'}</p>
+                    <p className="mt-4 line-clamp-3 min-h-[72px] text-sm leading-6 text-slate-600">{getJobExcerpt(job)}</p>
 
                     <div className="mt-5 flex flex-wrap gap-3 text-xs text-slate-500">
                       <span className="flex items-center gap-1">
@@ -156,7 +156,7 @@ export function FeaturedJobs({
                       </span>
                     </div>
 
-                    <div className="mt-5 flex items-center justify-between border-t border-slate-200 pt-4">
+                    <div className="mt-auto flex items-center justify-between border-t border-slate-200 pt-4">
                       <span className="text-xs text-slate-500">{job.isFallback ? 'Verified fallback role' : 'Recently updated'}</span>
                       <Link to={getJobHref(job)}>
                         <span className="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 transition-transform hover:translate-x-1">

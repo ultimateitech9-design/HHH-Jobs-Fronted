@@ -23,11 +23,11 @@ export function StatsSection() {
       />
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
-      <div className="container relative z-10 mx-auto max-w-7xl px-4">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-10">
-        {stats.map((item) => (
-          <StatCounter key={item.label} end={item.end} label={item.label} suffix={item.suffix} />
-        ))}
+      <div className="relative z-10 mx-auto w-full max-w-[1280px] px-8 md:px-12 xl:px-16">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-4 md:gap-x-10 md:gap-y-0">
+          {stats.map((item) => (
+            <StatCounter key={item.label} end={item.end} label={item.label} suffix={item.suffix} />
+          ))}
         </div>
       </div>
     </section>

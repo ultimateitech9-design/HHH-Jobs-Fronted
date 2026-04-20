@@ -2,13 +2,20 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Briefcase, Sparkles } from 'lucide-react';
 import AnimatedSection from '../../../../shared/components/AnimatedSection';
+import useAuthStore from '../../../../core/auth/authStore';
+import { normalizeRole } from '../../../../utils/auth';
 
 export function CtaBanner() {
+  const user = useAuthStore((state) => state.user);
+  const isHrUser = normalizeRole(user?.role) === 'hr';
+  const hrDashboardPath = '/portal/hr/dashboard';
+  const hrSignupPath = '/sign-up?role=hr&redirect=%2Fportal%2Fhr%2Fdashboard';
+
   return (
-    <section className="px-4 py-20">
+    <section className="px-4 py-10 md:py-12">
       <div className="container mx-auto max-w-5xl">
         <AnimatedSection>
-          <div className="gradient-primary relative overflow-hidden rounded-[36px] p-10 text-center md:p-16">
+          <div className="gradient-primary relative overflow-hidden rounded-[36px] p-8 text-center md:p-10">
             <motion.div
               className="absolute left-0 top-0 h-64 w-64 rounded-full bg-gold/10 blur-3xl"
               animate={{ x: [0, 40, 0], y: [0, 20, 0] }}
@@ -35,16 +42,18 @@ export function CtaBanner() {
               <h2 className="font-heading text-3xl font-extrabold text-white md:text-4xl">
                 Ready to Transform Your Career?
               </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-lg text-white/70">
+              <p className="mx-auto mt-3 max-w-2xl text-lg text-white/70">
                 Join the platform with the same module power underneath, but with the cleaner public UI you asked for.
               </p>
-              <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-                <Link to="/sign-up">
+              <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row">
+                <Link to="/jobs">
                   <motion.span whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.95 }} className="inline-flex items-center gap-2 rounded-full gradient-gold px-6 py-3 font-semibold text-primary shadow-xl">
                     Find Genuine Jobs <ArrowRight className="h-4 w-4" />
                   </motion.span>
                 </Link>
-                <Link to="/employer-home">
+                <Link
+                  to={isHrUser ? hrDashboardPath : hrSignupPath}
+                >
                   <motion.span
                     whileHover={{ scale: 1.05, y: -3 }}
                     whileTap={{ scale: 0.95 }}

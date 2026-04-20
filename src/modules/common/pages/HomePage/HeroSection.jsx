@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Briefcase, CheckCircle2, GraduationCap, MapPin, Search, Users } from 'lucide-react';
 import heroImage from '../../../../assets/career-compass-hero.jpg';
+import useAuthStore from '../../../../core/auth/authStore';
+import { normalizeRole } from '../../../../utils/auth';
 
 const trustBadges = ['Verified Jobs', 'AI Matching', 'Free to Apply'];
 const quickTags = ['Remote', 'Full-time', 'Internship', 'Part-time', 'Freelance'];
@@ -12,6 +14,11 @@ const statItems = [
 ];
 
 export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipClick }) {
+  const user = useAuthStore((state) => state.user);
+  const isHrUser = normalizeRole(user?.role) === 'hr';
+  const hrJobsPath = '/portal/hr/jobs';
+  const postJobPath = isHrUser ? hrJobsPath : '/login/hr';
+
   return (
     <section className="relative flex min-h-[72vh] items-center overflow-hidden bg-gradient-to-br from-white via-[#fbf8f2] to-[#eef3fb] px-4 pb-8 pt-10 md:pt-12">
       <div className="absolute inset-x-0 top-0 h-1 gradient-gold" />
@@ -108,7 +115,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.55, delay: 0.45 }}
-              className="mt-5 flex flex-wrap gap-2"
+              className="mt-5 flex flex-wrap justify-center gap-2"
             >
               {quickTags.map((tag) => (
                 <button
@@ -134,7 +141,15 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
                   <ArrowRight className="h-4 w-4" />
                 </motion.span>
               </Link>
-              <Link to="/employer-home">
+              <Link
+                to={postJobPath}
+                state={isHrUser
+                  ? undefined
+                  : {
+                      portalLabel: 'Recruiter / HR login',
+                      from: hrJobsPath
+                    }}
+              >
                 <motion.span
                   whileHover={{ scale: 1.04, y: -2 }}
                   whileTap={{ scale: 0.96 }}

@@ -36,8 +36,22 @@ const normalizeLogoCandidate = (value = '') => {
   }
 };
 
-export const buildCompanyLogoUrl = (...values) => {
-  const candidate = normalizeLogoCandidate(pickPreferredText(...values));
+const buildWebsiteLogoCandidate = (value = '') => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  try {
+    const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    return `https://www.google.com/s2/favicons?sz=256&domain_url=${encodeURIComponent(url.origin)}`;
+  } catch {
+    return '';
+  }
+};
+
+export const buildCompanyLogoUrl = (logoUrl = '', fallbackLogoUrl = '', websiteUrl = '') => {
+  const candidate = normalizeLogoCandidate(
+    pickPreferredText(buildWebsiteLogoCandidate(websiteUrl), logoUrl, fallbackLogoUrl)
+  );
   if (!candidate) return '';
   if (/^(data:|blob:|\/)/i.test(candidate)) return candidate;
   if (isAlreadyProxiedLogoUrl(candidate)) return candidate;

@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   FiBookmark,
-  FiBriefcase,
-  FiCheckCircle,
   FiChevronLeft,
   FiChevronRight,
   FiFilter,
@@ -13,28 +11,17 @@ import {
   FiSearch,
   FiTarget
 } from 'react-icons/fi';
-import StatusPill from '../../../shared/components/StatusPill';
 import { getCurrentUser } from '../../../utils/auth';
 import {
   StudentEmptyState,
   StudentNotice,
   StudentPageShell,
-  StudentSurfaceCard,
-  studentFieldClassName,
   studentGhostButtonClassName,
   studentPrimaryButtonClassName,
   studentSecondaryButtonClassName
 } from '../components/StudentExperience';
 import { ExternalJobCard } from './StudentExternalJobsPage';
-import {
-  applyToJob,
-  getFriendlyApplyErrorMessage,
-  getStudentApplications,
-  getStudentJobs,
-  getStudentSavedJobs,
-  removeSavedJobForStudent,
-  saveJobForStudent
-} from '../services/studentApi';
+import { getStudentJobs } from '../services/studentApi';
 import { getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
 
 const FEED_PAGE_LIMIT = 50;
@@ -50,14 +37,6 @@ const makeDefaultFilters = (audience = '') => ({
   remote: false,
   audience
 });
-
-const getCompanyInitials = (value = '') =>
-  String(value || '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('') || 'C';
 
 const isRemoteLike = (value = '') => /remote|work from home|wfh/i.test(String(value || ''));
 
@@ -82,6 +61,36 @@ const interleaveJobs = (internalJobs = [], externalJobs = []) => {
 
   return merged;
 };
+
+const buildCompanySourceKey = (companyName = '') => {
+  const normalized = String(companyName || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return normalized ? `${normalized}_jobs` : 'hhh_jobs';
+};
+
+const mapInternalJobToExternalCard = (job = {}) => ({
+  id: job.id || job._id,
+  source_key: buildCompanySourceKey(job.companyName),
+  company_name: job.companyName || 'HHH Jobs',
+  company_logo: job.companyLogo || '',
+  job_title: job.jobTitle || 'Open Role',
+  is_remote: isRemoteLike(job.jobLocation),
+  job_location: job.jobLocation || 'Remote',
+  employment_type: job.employmentType || 'Full-time',
+  category: job.category || '',
+  experience_level: job.experienceLevel || '',
+  salary_currency: '',
+  salary_min: '',
+  salary_max: '',
+  tags: Array.isArray(job.skills) ? job.skills : [],
+  apply_url: '',
+  __kind: 'internal',
+  details_id: job.id || job._id
+});
 
 const fetchAllPages = async (fetcher, filters = {}) => {
   const firstResponse = await fetcher({
@@ -147,29 +156,6 @@ const openApplyDestination = (url) => {
   }
 };
 
-const CompanyLogoBadge = ({ companyLogo, companyName }) => {
-  const [logoError, setLogoError] = useState(false);
-
-  if (companyLogo && !logoError) {
-    return (
-      <img
-        src={companyLogo}
-        alt={companyName}
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        className="h-12 w-12 rounded-xl border border-neutral-200 bg-white object-contain p-2 transition-transform group-hover:scale-105"
-        onError={() => setLogoError(true)}
-      />
-    );
-  }
-
-  return (
-    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-lg font-heading font-bold text-brand-700 transition-transform group-hover:scale-105">
-      {getCompanyInitials(companyName)}
-    </div>
-  );
-};
-
 const StudentJobsPage = ({
   forcedAudience = '',
   eyebrow = 'Student Jobs',
@@ -178,7 +164,7 @@ const StudentJobsPage = ({
   detailsPathBase = '/portal/student/jobs',
   embedded = false
 }) => {
-  const resumeSectionPath = '/portal/student/profile?section=resume';
+  const navigate = useNavigate();
   const currentUser = useMemo(() => getCurrentUser(), []);
   const effectiveAudience = forcedAudience || (currentUser?.role === 'retired_employee' ? 'retired_employee' : '');
   const [filters, setFilters] = useState(() => makeDefaultFilters(effectiveAudience));
@@ -191,8 +177,6 @@ const StudentJobsPage = ({
     externalCount: 0,
     sources: []
   });
-  const [savedIds, setSavedIds] = useState(new Set());
-  const [appliedIds, setAppliedIds] = useState(new Set());
   const [actionFeedback, setActionFeedback] = useState({ type: '', text: '', ctaTo: '', ctaLabel: '' });
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -270,31 +254,6 @@ const StudentJobsPage = ({
   }, [effectiveAudience, filters, reloadKey]);
 
   useEffect(() => {
-    let mounted = true;
-
-    const primeData = async () => {
-      const [savedResponse, applicationResponse] = await Promise.all([
-        getStudentSavedJobs(),
-        getStudentApplications()
-      ]);
-
-      if (!mounted) return;
-
-      const nextSaved = new Set((savedResponse.data || []).map((item) => item.jobId || item.job_id));
-      const nextApplied = new Set((applicationResponse.data || []).map((item) => item.jobId || item.job_id));
-
-      setSavedIds(nextSaved);
-      setAppliedIds(nextApplied);
-    };
-
-    primeData();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
     const handleFocus = () => setReloadKey((current) => current + 1);
     const intervalId = window.setInterval(() => {
       setReloadKey((current) => current + 1);
@@ -339,73 +298,7 @@ const StudentJobsPage = ({
     setCurrentPage(1);
   };
 
-  const setActionSuccess = (text) => setActionFeedback({ type: 'success', text, ctaTo: '', ctaLabel: '' });
   const setActionError = (text, ctaTo = '') => setActionFeedback({ type: 'error', text, ctaTo, ctaLabel: ctaTo ? 'Open Resume Section' : '' });
-  const setApplyError = (error) => {
-    const text = getFriendlyApplyErrorMessage(error);
-    const rawMessage = String(error?.message || '');
-    const needsResume = /resume is required/i.test(rawMessage) || /profile resume missing/i.test(text);
-    setActionError(text, needsResume ? resumeSectionPath : '');
-  };
-
-  const handleSaveToggle = async (jobId) => {
-    setActionFeedback({ type: '', text: '', ctaTo: '', ctaLabel: '' });
-
-    if (savedIds.has(jobId)) {
-      try {
-        await removeSavedJobForStudent(jobId);
-      } catch (error) {
-        setActionError(error.message || 'Unable to remove saved job.');
-        return;
-      }
-
-      setSavedIds((current) => {
-        const copy = new Set(current);
-        copy.delete(jobId);
-        return copy;
-      });
-      setActionSuccess('Removed from saved jobs.');
-      return;
-    }
-
-    try {
-      await saveJobForStudent(jobId);
-    } catch (error) {
-      if (/already saved/i.test(String(error.message || ''))) {
-        setSavedIds((current) => new Set([...current, jobId]));
-        setActionSuccess('Job saved successfully.');
-        return;
-      }
-      setActionError(error.message || 'Unable to save job.');
-      return;
-    }
-
-    setSavedIds((current) => new Set([...current, jobId]));
-    setActionSuccess('Job saved successfully.');
-  };
-
-  const handleApply = async (jobId) => {
-    setActionFeedback({ type: '', text: '', ctaTo: '', ctaLabel: '' });
-
-    if (appliedIds.has(jobId)) {
-      setActionError('You already applied for this job.');
-      return;
-    }
-
-    try {
-      await applyToJob({ jobId, coverLetter: '' });
-      setAppliedIds((current) => new Set([...current, jobId]));
-      setActionSuccess('Application submitted successfully.');
-    } catch (error) {
-      if (/already applied/i.test(String(error.message || ''))) {
-        setAppliedIds((current) => new Set([...current, jobId]));
-        setActionError('You already applied for this job.');
-        return;
-      }
-
-      setApplyError(error);
-    }
-  };
 
   const handleExternalApply = (job) => {
     const applyUrl = String(job?.apply_url || '').trim();
@@ -415,6 +308,18 @@ const StudentJobsPage = ({
     }
 
     openApplyDestination(applyUrl);
+  };
+
+  const handleCardAction = (job) => {
+    if (job?.__kind === 'internal') {
+      const detailId = job.details_id || job.id;
+      if (detailId) {
+        navigate(`${detailsPathBase}/${detailId}`);
+      }
+      return;
+    }
+
+    handleExternalApply(job);
   };
 
   return (
@@ -468,68 +373,47 @@ const StudentJobsPage = ({
         />
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start xl:grid-cols-[280px_minmax(0,1fr)]">
-        <StudentSurfaceCard
-          title="Filters"
-          subtitle="HR aur scraped dono jobs yahin filter hongi."
-          className="lg:sticky lg:top-24"
-        >
-          <div className="space-y-3">
-            <div className="relative">
-              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="space-y-4">
+        <section className="overflow-hidden rounded-[22px] border border-white/70 bg-white/92 p-2.5 shadow-[0_14px_32px_rgba(15,23,42,0.06)] backdrop-blur xl:p-3">
+          <div className="grid gap-2 lg:grid-cols-2 xl:grid-cols-[minmax(0,6fr)_minmax(0,2fr)_minmax(132px,1.15fr)_minmax(126px,1.05fr)_max-content] xl:items-center">
+            <div className="relative min-w-0 lg:col-span-2 xl:col-span-1">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
               <input
-                className={`${studentFieldClassName} pl-11`}
-                placeholder="Title, company, skill"
+                className="h-9 w-full min-w-0 rounded-[14px] border border-slate-200 bg-white px-3 pl-9 text-[13px] font-medium text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
+                placeholder="Search jobs or company"
                 value={filters.search}
                 onChange={(event) => updateFilter('search', event.target.value)}
               />
             </div>
 
-            <div className="relative">
-              <FiMapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="relative min-w-0">
+              <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
               <input
-                className={`${studentFieldClassName} pl-11`}
+                className="h-9 w-full min-w-0 rounded-[14px] border border-slate-200 bg-white px-3 pl-9 text-[13px] font-medium text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
                 placeholder="Location"
                 value={filters.location}
                 onChange={(event) => updateFilter('location', event.target.value)}
               />
             </div>
 
-            <div className="relative">
-              <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="relative min-w-0">
+              <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
               <input
-                className={`${studentFieldClassName} pl-11`}
-                placeholder="Employment type"
-                value={filters.employmentType}
-                onChange={(event) => updateFilter('employmentType', event.target.value)}
-              />
-            </div>
-
-            <input
-              className={studentFieldClassName}
-              placeholder="Experience level"
-              value={filters.experienceLevel}
-              onChange={(event) => updateFilter('experienceLevel', event.target.value)}
-            />
-
-            <div className="relative">
-              <FiFilter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                className={`${studentFieldClassName} pl-11`}
+                className="h-9 w-full min-w-0 rounded-[14px] border border-slate-200 bg-white py-2 pl-8 pr-3 text-[13px] font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
                 placeholder="Category"
                 value={filters.category}
                 onChange={(event) => updateFilter('category', event.target.value)}
               />
             </div>
 
-            <div className="relative">
-              <FiGlobe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="relative min-w-0">
+              <FiGlobe className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
               <select
-                className={`${studentFieldClassName} appearance-none pl-11`}
+                className="h-9 w-full min-w-0 appearance-none rounded-[14px] border border-slate-200 bg-white py-2 pl-8 pr-3 text-[13px] font-semibold text-slate-700 outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
                 value={filters.source}
                 onChange={(event) => updateFilter('source', event.target.value)}
               >
-                <option value="">All sources</option>
+                <option value="">All Sources</option>
                 <option value="hhh_jobs">HHH Jobs</option>
                 {jobsState.sources.map((source) => (
                   <option key={source.key} value={source.key}>
@@ -539,161 +423,55 @@ const StudentJobsPage = ({
               </select>
             </div>
 
-            <label className="flex items-center gap-3 rounded-[1.15rem] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
-              <input
-                type="checkbox"
-                checked={filters.remote}
-                onChange={(event) => updateFilter('remote', event.target.checked)}
-                className="accent-brand-500"
-              />
-              Remote only
-            </label>
+            <div className="flex min-w-0 flex-wrap items-center gap-2 lg:col-span-2 xl:col-span-1 xl:justify-end">
+              <label className="inline-flex h-9 max-w-full cursor-pointer items-center gap-2 whitespace-nowrap rounded-[14px] border border-slate-200 bg-white px-2.5 text-[13px] font-semibold text-slate-700 transition hover:border-brand-300">
+                <input
+                  type="checkbox"
+                  checked={filters.remote}
+                  onChange={(event) => updateFilter('remote', event.target.checked)}
+                  className="accent-brand-500"
+                />
+                Remote Only
+              </label>
 
-            {hasFilters ? (
-              <button
-                type="button"
-                className="w-full rounded-full border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 transition hover:bg-red-100"
-                onClick={() => {
-                  setFilters(makeDefaultFilters(effectiveAudience));
-                  setCurrentPage(1);
-                }}
-              >
-                Clear All
-              </button>
-            ) : null}
+              {hasFilters ? (
+                <button
+                  type="button"
+                  className="inline-flex h-9 w-fit items-center justify-center rounded-[14px] border border-red-200 bg-red-50 px-2.5 text-[13px] font-bold text-red-600 transition hover:bg-red-100"
+                  onClick={() => {
+                    setFilters(makeDefaultFilters(effectiveAudience));
+                    setCurrentPage(1);
+                  }}
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
           </div>
-        </StudentSurfaceCard>
+        </section>
 
         <div className="space-y-4">
           {jobsState.loading ? (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {[1, 2, 3, 4, 5, 6].map((item) => (
                 <div key={item} className="h-52 animate-pulse rounded-[1.45rem] bg-slate-100" />
               ))}
             </div>
           ) : totalJobs > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {paginatedJobs.map((job) => {
-                if (job.__kind === 'external') {
-                  return (
-                    <ExternalJobCard
-                      key={`external-${job.id}`}
-                      isAuthenticated
-                      job={job}
-                      onApply={handleExternalApply}
-                      sourceMap={sourceMap}
-                    />
-                  );
-                }
-
-                const jobId = job.id || job._id;
-                const isSaved = savedIds.has(jobId);
-                const isApplied = appliedIds.has(jobId);
-                const isAwaitingApproval = String(job.approvalStatus || '').toLowerCase() === 'pending';
+                const cardJob = job.__kind === 'external' ? job : mapInternalJobToExternalCard(job);
 
                 return (
-                  <article
-                    className="group relative flex min-h-[18.5rem] h-full flex-col overflow-hidden rounded-[1.15rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-3.5 shadow-[0_12px_26px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_16px_32px_rgba(15,23,42,0.12)] sm:min-h-[20rem]"
-                    key={jobId}
-                  >
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(229,155,23,0.12),transparent_35%),linear-gradient(135deg,rgba(47,83,143,0.05),transparent_60%)] opacity-0 transition-opacity group-hover:opacity-100" />
-                    <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/80 to-transparent" />
-
-                    <div className="relative z-10 flex items-start justify-between gap-2.5">
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <CompanyLogoBadge companyLogo={job.companyLogo} companyName={job.companyName} />
-                        <div className="min-w-0">
-                          <h3 className="line-clamp-2 font-heading text-[0.95rem] font-bold leading-5 text-navy transition-colors group-hover:text-brand-700">
-                            {job.jobTitle}
-                          </h3>
-                          <p className="mt-0.5 truncate text-[0.82rem] font-medium text-slate-500">{job.companyName}</p>
-                        </div>
-                      </div>
-
-                      <StatusPill value={isAwaitingApproval ? job.approvalStatus : (job.status || 'open')} />
-                    </div>
-
-                    <div className="relative z-10 mt-2.5 grid gap-2 sm:grid-cols-2">
-                      <div className="rounded-[0.95rem] border border-slate-200 bg-slate-50/90 px-2.5 py-2 text-sm text-slate-600">
-                        <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
-                          <FiMapPin size={12} />
-                          Location
-                        </p>
-                        <p className="mt-1 line-clamp-2 text-[11px] font-semibold leading-4 text-slate-800">{job.jobLocation || 'Remote'}</p>
-                      </div>
-                      <div className="rounded-[0.95rem] border border-slate-200 bg-slate-50/90 px-2.5 py-2 text-sm text-slate-600">
-                        <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
-                          <FiBriefcase size={12} />
-                          Experience
-                        </p>
-                        <p className="mt-1 line-clamp-2 text-[11px] font-semibold leading-4 text-slate-800">{job.experienceLevel || 'Experience not specified'}</p>
-                      </div>
-                    </div>
-
-                    <div className="relative z-10 mt-2.5 flex flex-wrap gap-1.5">
-                      {job.salaryType ? (
-                        <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[9px] font-semibold text-emerald-700">
-                          {job.minPrice || '-'} - {job.maxPrice || '-'} {job.salaryType}
-                        </span>
-                      ) : null}
-
-                      {isAwaitingApproval ? (
-                        <span className="rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-[9px] font-semibold text-amber-700">
-                          Awaiting approval
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <div className="relative z-10 mt-2.5 flex flex-wrap gap-1.5">
-                      {(job.skills || []).slice(0, 1).map((skill) => (
-                        <span key={skill} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[9px] font-semibold text-slate-600">
-                          {skill}
-                        </span>
-                      ))}
-                      {(job.skills || []).length > 1 ? (
-                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[9px] font-semibold text-slate-400">
-                          +{job.skills.length - 1}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <div className="relative z-10 mt-auto grid gap-2 border-t border-slate-100 pt-3 sm:grid-cols-3">
-                      <Link to={`${detailsPathBase}/${jobId}`} className={`w-full ${studentSecondaryButtonClassName} px-3 py-2 text-[12px]`}>
-                        Details
-                      </Link>
-
-                      <button
-                        type="button"
-                        className={`w-full ${isSaved ? `${studentGhostButtonClassName} px-3 py-2 text-[12px]` : `${studentSecondaryButtonClassName} px-3 py-2 text-[12px]`}`}
-                        onClick={() => handleSaveToggle(jobId)}
-                        aria-label={isSaved ? 'Unsave job' : 'Save job'}
-                        title={isSaved ? 'Remove from saved jobs' : 'Save this job'}
-                      >
-                        <FiBookmark className={isSaved ? 'fill-current' : ''} size={16} />
-                        {isSaved ? 'Saved' : 'Save'}
-                      </button>
-
-                      <button
-                        type="button"
-                        className={
-                          isApplied
-                            ? 'inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-[12px] font-bold text-emerald-700'
-                            : isAwaitingApproval
-                              ? 'inline-flex w-full items-center justify-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] font-bold text-amber-700'
-                              : `w-full ${studentPrimaryButtonClassName} px-3 py-2 text-[12px]`
-                        }
-                        onClick={() => handleApply(jobId)}
-                        disabled={isApplied || isAwaitingApproval}
-                      >
-                        {isApplied ? (
-                          <>
-                            <FiCheckCircle size={15} />
-                            Applied
-                          </>
-                        ) : isAwaitingApproval ? 'Pending' : 'Apply'}
-                      </button>
-                    </div>
-                  </article>
+                  <ExternalJobCard
+                    key={`${cardJob.__kind || 'external'}-${cardJob.id}`}
+                    isAuthenticated
+                    job={cardJob}
+                    onApply={handleCardAction}
+                    sourceMap={sourceMap}
+                    buttonMode="locked"
+                    buttonLabel="Login to Apply"
+                  />
                 );
               })}
             </div>

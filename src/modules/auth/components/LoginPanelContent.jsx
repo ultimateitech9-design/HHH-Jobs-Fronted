@@ -222,11 +222,6 @@ const LoginPanelContent = ({
         <div>
           <p className="text-[0.76rem] font-semibold uppercase tracking-[0.22em] text-gold-dark">Secure access</p>
           <h1 className="mt-2 font-heading text-[1.85rem] font-semibold tracking-[-0.04em] text-slate-950">{portalLabel}</h1>
-          {description ? (
-            <p className="mt-3 max-w-[32rem] text-[0.95rem] leading-7 text-slate-500">
-              {description}
-            </p>
-          ) : null}
         </div>
 
         <div className="flex items-center gap-2">

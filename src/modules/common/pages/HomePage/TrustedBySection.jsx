@@ -24,17 +24,17 @@ const companies = [
 
 export function TrustedBySection() {
   return (
-    <section className="overflow-hidden border-b border-slate-200 px-4 py-10">
+    <section className="overflow-hidden border-b border-slate-200 px-4 py-12 md:py-14">
       <div className="container mx-auto max-w-7xl">
         <AnimatedSection>
-          <p className="mb-5 text-center text-[11px] font-medium uppercase tracking-[0.28em] text-slate-500">
+          <p className="mb-6 text-center text-[12px] font-medium uppercase tracking-[0.3em] text-slate-500">
             Trusted by leading companies worldwide
           </p>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[#fbf8f2] to-transparent" />
-            <div className="absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[#fbf8f2] to-transparent" />
+            <div className="absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#fbf8f2] to-transparent" />
+            <div className="absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#fbf8f2] to-transparent" />
             <motion.div
-              className="flex w-max items-center gap-8"
+              className="flex w-max items-center gap-10"
               animate={{ x: ['0%', '-50%'] }}
               transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
               style={{ willChange: 'transform' }}
@@ -46,18 +46,16 @@ export function TrustedBySection() {
                   <motion.div
                     key={`${company.name}-${index}`}
                     whileHover={{ scale: 1.08, y: -1 }}
-                    className="flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-full px-3 py-1.5 transition-transform"
-                    style={{ backgroundColor: company.glow }}
+                    className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-full px-4 py-2 transition-transform"
                   >
                     <span
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm"
                       style={{ color: company.color }}
                     >
-                      <CompanyIcon size={18} />
+                      <CompanyIcon size={22} />
                     </span>
                     <span
-                      className="font-heading text-base font-bold"
-                      style={{ color: company.color }}
+                      className="font-heading text-[1.15rem] font-bold text-slate-700"
                     >
                       {company.name}
                     </span>

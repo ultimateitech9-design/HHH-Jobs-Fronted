@@ -8,10 +8,10 @@ import { CategoryCards } from './CategoryCards';
 import { FeaturedJobs } from './FeaturedJobs';
 import { SponsoredCompaniesSection } from './SponsoredCompaniesSection';
 import { WhyHHHJobs } from './WhyHHHJobs';
+import { CampusConnectSection } from './CampusConnectSection';
 import { HowItWorks } from './HowItWorks';
 import { StatsSection } from './StatsSection';
 import { TestimonialsSection } from './TestimonialsSection';
-import { DashboardPreviewSection } from './DashboardPreviewSection';
 import { CtaBanner } from './CtaBanner';
 import { fallbackFeaturedJobs } from './data/fallbackFeaturedJobs';
 
@@ -38,7 +38,7 @@ const matchesCategory = (job = {}, category = null) => {
 const HomePage = () => {
   const [filters, setFilters] = useState({
     keyword: '',
-    location: 'Any Location',
+    location: '',
     experience: 'Any Experience'
   });
   const [jobs, setJobs] = useState([]);
@@ -123,7 +123,7 @@ const HomePage = () => {
         (Array.isArray(job.skills) && job.skills.some((skill) => includesTerm(skill, keyword)));
 
       const locationMatch =
-        filters.location === 'Any Location' ||
+        !filters.location.trim() ||
         includesTerm(job.jobLocation, filters.location);
 
       const experienceMatch =
@@ -233,6 +233,10 @@ const HomePage = () => {
         <WhyHHHJobs />
       </div>
 
+      <div data-reveal style={{ '--jg-reveal-delay': '140ms' }}>
+        <CampusConnectSection />
+      </div>
+
       <div data-reveal style={{ '--jg-reveal-delay': '160ms' }}>
         <HowItWorks />
       </div>
@@ -243,10 +247,6 @@ const HomePage = () => {
 
       <div data-reveal style={{ '--jg-reveal-delay': '220ms' }}>
         <TestimonialsSection />
-      </div>
-
-      <div data-reveal style={{ '--jg-reveal-delay': '260ms' }}>
-        <DashboardPreviewSection />
       </div>
 
       <div data-reveal style={{ '--jg-reveal-delay': '300ms' }}>

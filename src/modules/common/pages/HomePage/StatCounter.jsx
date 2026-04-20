@@ -43,7 +43,7 @@ const StatCounter = ({ duration = 2, end, label, suffix = '' }) => {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
       viewport={{ once: true, amount: 0.35 }}
-      className="text-center md:text-left"
+      className="w-full text-center"
     >
       <div className="font-heading text-3xl font-extrabold tracking-tight text-white md:text-5xl">
         {formatter.format(count)}

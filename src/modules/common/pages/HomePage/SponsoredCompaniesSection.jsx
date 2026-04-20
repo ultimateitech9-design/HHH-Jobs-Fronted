@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiArrowRight,
   FiCheckCircle,
   FiLock,
-  FiMapPin,
   FiShield,
   FiStar
 } from 'react-icons/fi';
@@ -12,8 +11,6 @@ import {
 import useAuthStore from '../../../../core/auth/authStore';
 import { getCompanyEntryIntent } from '../../utils/publicAccess';
 import { getSponsoredCompanies } from '../../services/companyDirectoryApi';
-
-const formatCount = (value) => Number(value || 0).toLocaleString();
 
 const getInitials = (name = '') =>
   String(name || '')
@@ -30,9 +27,6 @@ const formatRating = (value) => {
 
 const CompanyCard = ({ company, isAuthenticated }) => {
   const [logoError, setLogoError] = useState(false);
-  const tags = Array.isArray(company.categories) ? company.categories.slice(0, 2) : [];
-  const hasJobs = Number(company.totalJobs || 0) > 0;
-  const metaLine = company.location || 'Approved partner on HHH Jobs';
   const entryIntent = getCompanyEntryIntent({
     companySlug: company.slug,
     isAuthenticated,
@@ -40,63 +34,40 @@ const CompanyCard = ({ company, isAuthenticated }) => {
   });
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-[34px] border border-white/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.9))] p-2 shadow-[0_22px_70px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_30px_90px_rgba(15,23,42,0.14)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.2),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.12),transparent_24%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-[22px] shadow-[0_20px_46px_rgba(15,23,42,0.07)] backdrop-blur-md transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_rgba(15,23,42,0.12)]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.14),transparent_26%),radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.12),transparent_22%)] opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
 
-      <div className="relative z-10 flex h-full flex-col overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/95">
-        <div className="relative overflow-hidden bg-[linear-gradient(145deg,rgba(15,23,42,1)_0%,rgba(30,41,59,0.98)_54%,rgba(217,119,6,0.92)_100%)] px-4 pb-4 pt-3.5 text-white">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(56,189,248,0.18),transparent_24%)] opacity-90" />
+      <div className="relative z-10 flex h-full flex-col overflow-hidden rounded-[22px] bg-white/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-sm">
+        <div className="relative overflow-hidden bg-[linear-gradient(145deg,rgba(19,31,54,0.98)_0%,rgba(35,49,76,0.96)_55%,rgba(199,126,26,0.92)_100%)] px-3.5 pb-3.5 pt-3 text-white">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_84%_18%,rgba(125,211,252,0.16),transparent_24%)] opacity-90" />
+          <div className="absolute inset-x-0 bottom-0 h-8 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.08))]" />
 
-          <div className="relative z-10 flex items-start justify-between gap-3">
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/88 backdrop-blur">
-                <FiStar size={11} />
-                Sponsor
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/45 bg-emerald-100/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur">
-                <FiCheckCircle size={11} />
-                Approved
-              </span>
-            </div>
-
-            <span
-              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] backdrop-blur ${
-                isAuthenticated
-                  ? 'border-amber-200/60 bg-amber-100/15 text-amber-50'
-                  : 'border-white/15 bg-white/10 text-white/80'
-              }`}
-            >
-              {isAuthenticated ? <FiShield size={11} /> : <FiLock size={11} />}
-              {isAuthenticated ? entryIntent.accessLabel : 'Members only'}
-            </span>
-          </div>
-
-          <div className="relative z-10 mt-3.5 flex items-center gap-3">
-            <div className="flex h-[64px] w-[64px] shrink-0 items-center justify-center rounded-[20px] border border-white/15 bg-white/95 p-2 shadow-lg shadow-black/10">
+          <div className="relative z-10 flex items-start gap-3">
+            <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] border border-white/15 bg-white/95 p-2 shadow-lg shadow-black/10">
               {company.logoUrl && !logoError ? (
                 <img
                   src={company.logoUrl}
                   alt={company.name}
                   loading="lazy"
                   referrerPolicy="no-referrer"
-                  className="max-h-[46px] max-w-[46px] object-contain"
+                  className="max-h-[34px] max-w-[34px] object-contain"
                   onError={() => setLogoError(true)}
                 />
               ) : (
-                <span className="font-heading text-sm font-black text-navy">{getInitials(company.name)}</span>
+                <span className="font-heading text-xs font-black text-navy">{getInitials(company.name)}</span>
               )}
             </div>
 
             <div className="min-w-0">
-              <h3 className="line-clamp-2 font-heading text-[1.38rem] font-black leading-tight text-white">
+              <h3 className="line-clamp-2 font-heading text-[1.08rem] font-black leading-tight text-white xl:text-[1rem] 2xl:text-[1.08rem]">
                 {company.name}
               </h3>
 
-              <div className="mt-1.5 flex items-center gap-2 text-[12px] font-semibold text-white/80">
+              <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-white/78">
                 {company.sponsorRating ? (
                   <>
                     <span className="inline-flex items-center gap-1 text-amber-200">
-                      <FiStar size={14} className="fill-current" />
+                      <FiStar size={12} className="fill-current" />
                       {formatRating(company.sponsorRating)}
                     </span>
                     <span className="text-white/25">|</span>
@@ -106,71 +77,44 @@ const CompanyCard = ({ company, isAuthenticated }) => {
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-1 flex-col px-4 pb-3.5 pt-3">
-          <p className="line-clamp-2 min-h-[34px] text-[13px] leading-5 text-slate-500">{metaLine}</p>
-
-          {tags.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {tags.map((item) => (
-                <span
-                  key={`${company.id}-${item}`}
-                  className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-600"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          ) : null}
-
-          <div className="mt-3 rounded-[22px] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] px-3.5 py-3 shadow-[0_16px_35px_rgba(15,23,42,0.05)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Access Layer</p>
-                <p className="mt-1.5 text-[13px] font-semibold text-slate-700">{entryIntent.accessLabel}</p>
-              </div>
-              <div
-                className={`flex h-9 w-9 items-center justify-center rounded-[18px] ${
-                  isAuthenticated ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'
-                }`}
-              >
-                {isAuthenticated ? <FiShield size={15} /> : <FiLock size={15} />}
-              </div>
-            </div>
-
-            <div
-              className={`mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${
-                isAuthenticated && hasJobs
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                  : 'border-slate-200 bg-slate-50 text-slate-500'
-              }`}
-            >
-              <FiMapPin
-                size={13}
-                className={isAuthenticated && hasJobs ? 'text-emerald-600' : 'text-slate-400'}
-              />
-              <span>
-                {isAuthenticated && hasJobs
-                  ? `${formatCount(company.totalJobs)} curated roles ready`
-                  : 'Role board unlocks after login'}
+          <div className="relative z-10 mt-3 flex items-start justify-between gap-3">
+            <div className="flex flex-col items-start gap-1.5">
+              <span className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.14em] text-white/88">
+                <FiStar size={10} />
+                Sponsor
+              </span>
+              <span className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-100">
+                <FiCheckCircle size={10} />
+                Approved
               </span>
             </div>
 
-            <p className="mt-2 text-[12px] leading-5 text-slate-500">{entryIntent.helperText}</p>
+            <span
+              className={`inline-flex items-center justify-center gap-1 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.14em] ${
+                isAuthenticated
+                  ? 'text-amber-100'
+                  : 'text-white/80'
+              }`}
+            >
+              {isAuthenticated ? <FiShield size={10} /> : <FiLock size={10} />}
+              {isAuthenticated ? entryIntent.accessLabel : 'Members only'}
+            </span>
           </div>
+        </div>
 
+        <div className="flex flex-1 flex-col bg-[linear-gradient(180deg,rgba(255,255,255,0.68),rgba(244,247,251,0.92))] px-3.5 pb-3 pt-3">
           <Link
             to={entryIntent.to}
             state={entryIntent.state}
-            className={`mt-auto inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-[13px] font-black shadow-[0_18px_36px_rgba(15,23,42,0.14)] transition hover:-translate-y-0.5 ${
+            className={`mt-auto inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[12px] font-black shadow-[0_12px_24px_rgba(15,23,42,0.1)] transition hover:-translate-y-0.5 ${
               isAuthenticated
-                ? 'bg-[linear-gradient(135deg,rgba(15,23,42,1),rgba(30,64,175,0.94))] text-white hover:shadow-[0_22px_44px_rgba(15,23,42,0.22)]'
-                : 'bg-[linear-gradient(135deg,rgba(15,23,42,1),rgba(51,65,85,0.94))] text-white hover:shadow-[0_22px_44px_rgba(15,23,42,0.2)]'
+                ? 'bg-[linear-gradient(135deg,rgba(20,31,58,1),rgba(43,82,198,0.92))] text-white hover:shadow-[0_18px_34px_rgba(15,23,42,0.18)]'
+                : 'bg-[linear-gradient(135deg,rgba(20,31,58,1),rgba(61,76,107,0.92))] text-white hover:shadow-[0_18px_34px_rgba(15,23,42,0.18)]'
             }`}
           >
             {isAuthenticated ? 'Open Hiring Lounge' : 'Login to Unlock'}
-            <FiArrowRight size={15} />
+            <FiArrowRight size={14} />
           </Link>
         </div>
       </div>
@@ -179,25 +123,23 @@ const CompanyCard = ({ company, isAuthenticated }) => {
 };
 
 const LoadingCard = () => (
-  <div className="flex h-full flex-col rounded-[34px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,250,252,0.9))] p-2 shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
-    <div className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white">
-      <div className="rounded-[28px] bg-slate-100 px-4 pb-4 pt-3.5">
+  <div className="flex h-full flex-col rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,250,252,0.9))] p-1.5 shadow-[0_16px_36px_rgba(15,23,42,0.05)]">
+    <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white">
+      <div className="rounded-[24px] bg-slate-100 px-3.5 pb-3.5 pt-3">
         <div className="flex justify-between gap-3">
-          <div className="h-6 w-24 rounded-full bg-slate-200" />
-          <div className="h-6 w-24 rounded-full bg-slate-200" />
+          <div className="h-5 w-20 rounded-full bg-slate-200" />
+          <div className="h-5 w-20 rounded-full bg-slate-200" />
         </div>
-        <div className="mt-4 flex items-center gap-3">
-          <div className="h-[64px] w-[64px] rounded-[20px] bg-slate-200" />
+        <div className="mt-3 flex items-center gap-3">
+          <div className="h-[52px] w-[52px] rounded-[16px] bg-slate-200" />
           <div className="min-w-0 flex-1">
-            <div className="h-7 rounded-full bg-slate-200" />
-            <div className="mt-2 h-4 rounded-full bg-slate-200" />
+            <div className="h-5 rounded-full bg-slate-200" />
+            <div className="mt-2 h-3.5 rounded-full bg-slate-200" />
           </div>
         </div>
       </div>
-      <div className="px-4 pb-3.5 pt-3">
-        <div className="h-8 rounded-2xl bg-slate-100" />
-        <div className="mt-3 h-16 rounded-[22px] bg-slate-100" />
-        <div className="mt-3 h-10 rounded-full bg-slate-100" />
+      <div className="px-3.5 pb-3 pt-3">
+        <div className="h-9 rounded-full bg-slate-100" />
       </div>
     </div>
   </div>
@@ -206,12 +148,15 @@ const LoadingCard = () => (
 export function SponsoredCompaniesSection() {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = Boolean(user);
+  const sliderRef = useRef(null);
+  const sliderViewportRef = useRef(null);
   const [sectionState, setSectionState] = useState({
     companies: [],
     summary: null,
     loading: true,
     error: ''
   });
+  const [isAutoPaused, setIsAutoPaused] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -236,116 +181,140 @@ export function SponsoredCompaniesSection() {
     };
   }, []);
 
-  const helperStats = useMemo(() => {
-    const summary = sectionState.summary || {};
-    const sponsors = formatCount(summary.totalSponsors || sectionState.companies.length);
-    const activeSponsors = formatCount(
-      summary.sponsorsWithJobs ||
-        sectionState.companies.filter((company) => Number(company.totalJobs || 0) > 0).length
-    );
-    const openRoles = formatCount(
-      summary.totalOpenRoles ||
-        sectionState.companies.reduce((sum, company) => sum + Number(company.totalJobs || 0), 0)
-    );
+  const baseItems = sectionState.loading ? Array.from({ length: 5 }) : sectionState.companies;
+  const visibleItems = sectionState.loading ? baseItems : [...baseItems, ...baseItems];
+  const paginationItems = sectionState.loading ? baseItems : sectionState.companies;
 
-    if (!isAuthenticated) {
-      return [
-        `${sponsors} approved sponsors`,
-        `${activeSponsors} curated hiring brands`,
-        `${openRoles} roles unlock after login`
-      ];
-    }
+  useEffect(() => {
+    const slider = sliderRef.current;
+    if (!slider) return undefined;
 
-    return [
-      `${sponsors} approved sponsors`,
-      `${activeSponsors} sponsors hiring now`,
-      `${openRoles} listed roles`
-    ];
-  }, [isAuthenticated, sectionState.companies, sectionState.summary]);
+    const normalizeLoopPosition = () => {
+      const card = slider.querySelector('[data-sponsored-slide]');
+      if (!card) return;
+
+      const sliderStyle = window.getComputedStyle(slider);
+      const gap = Number.parseFloat(sliderStyle.columnGap || sliderStyle.gap || '0') || 0;
+      const stride = card.getBoundingClientRect().width + gap;
+      const sourceLength = Math.max(paginationItems.length, 1);
+
+      if (!sectionState.loading && sourceLength > 0) {
+        const loopThreshold = stride * sourceLength;
+
+        if (slider.scrollLeft >= loopThreshold) {
+          slider.scrollLeft -= loopThreshold;
+        }
+
+        if (slider.scrollLeft < 0) {
+          slider.scrollLeft += loopThreshold;
+        }
+      }
+    };
+
+    normalizeLoopPosition();
+    slider.addEventListener('scroll', normalizeLoopPosition, { passive: true });
+    window.addEventListener('resize', normalizeLoopPosition);
+
+    return () => {
+      slider.removeEventListener('scroll', normalizeLoopPosition);
+      window.removeEventListener('resize', normalizeLoopPosition);
+    };
+  }, [paginationItems.length, sectionState.loading]);
+
+  useEffect(() => {
+    const slider = sliderRef.current;
+    if (!slider || sectionState.loading || paginationItems.length < 2 || isAutoPaused) return undefined;
+
+    const mediaQuery =
+      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)')
+        : null;
+
+    if (mediaQuery?.matches) return undefined;
+
+    let frameId = 0;
+    let lastTimestamp = 0;
+    const pixelsPerSecond = 42;
+
+    const step = (timestamp) => {
+      if (!lastTimestamp) {
+        lastTimestamp = timestamp;
+      }
+
+      const elapsed = timestamp - lastTimestamp;
+      lastTimestamp = timestamp;
+      slider.scrollLeft += (elapsed * pixelsPerSecond) / 1000;
+      frameId = window.requestAnimationFrame(step);
+    };
+
+    frameId = window.requestAnimationFrame(step);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [isAutoPaused, paginationItems.length, sectionState.loading]);
 
   return (
-    <section className="px-4 py-16 md:py-20">
-      <div className="container mx-auto max-w-[1540px]">
-        <div className="relative overflow-hidden rounded-[42px] border border-white/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,248,252,0.96))] px-5 py-8 shadow-[0_28px_90px_rgba(15,23,42,0.1)] md:px-8 md:py-10 xl:px-10 xl:py-12">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.14),transparent_26%),radial-gradient(circle_at_82%_10%,rgba(56,189,248,0.1),transparent_20%),linear-gradient(180deg,transparent,rgba(255,255,255,0.25))]" />
+    <section className="relative left-1/2 right-1/2 w-screen max-w-none -translate-x-1/2 overflow-hidden py-8 md:py-10">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.12),transparent_22%),radial-gradient(circle_at_82%_14%,rgba(56,189,248,0.1),transparent_18%)]" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#f6eee1]/65 via-white/20 to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#edf6ff]/60 via-white/20 to-transparent" />
 
-          <div className="relative z-10">
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_420px] xl:items-center">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-brand-700">
-                  Partner Spotlight
-                </p>
-                <h2 className="mt-4 max-w-4xl font-heading text-4xl font-black leading-tight text-navy md:text-5xl">
-                  Sponsor brands in a more premium <span className="text-brand-700">private hiring
-                  showcase</span>
-                </h2>
-                <p className="mt-4 max-w-3xl text-base leading-8 text-slate-500 md:text-lg">
-                  Curated sponsor companies stay visible, but job boards unlock only after login. Public
-                  view now works like a premium preview instead of exposing every company action upfront.
-                </p>
+      <div className="relative z-10 w-full px-4 md:px-6 xl:px-8">
+        {sectionState.error ? (
+          <div className="mx-auto max-w-2xl rounded-[24px] border border-red-200 bg-red-50 px-5 py-4 text-center text-sm text-red-700">
+            {sectionState.error}
+          </div>
+        ) : null}
 
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  {helperStats.map((item) => (
-                    <span
-                      key={item}
-                      className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                  <Link
-                    to="/companies"
-                    className="inline-flex items-center gap-2 rounded-full bg-navy px-5 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800"
-                  >
-                    Explore Company Preview
-                    <FiArrowRight size={15} />
-                  </Link>
-                </div>
-              </div>
-
-              <div className="rounded-[30px] border border-slate-200/80 bg-[linear-gradient(145deg,rgba(15,23,42,0.97),rgba(30,41,59,0.95))] p-5 text-white shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/55">
-                  Access Mode
-                </p>
-                <h3 className="mt-3 font-heading text-2xl font-black">
-                  {isAuthenticated ? 'Hiring lounge unlocked' : 'Private role board locked'}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-white/72">
-                  {isAuthenticated
-                    ? 'You can now open company hiring lounges directly from every sponsor card.'
-                    : 'Company sites are hidden and role boards stay behind login, while the visual preview still feels premium.'}
-                </p>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[22px] border border-white/10 bg-white/8 p-4 backdrop-blur">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">Company Links</p>
-                    <p className="mt-2 text-sm font-semibold text-white">Hidden from public cards</p>
-                  </div>
-                  <div className="rounded-[22px] border border-white/10 bg-white/8 p-4 backdrop-blur">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">Job Access</p>
-                    <p className="mt-2 text-sm font-semibold text-white">
-                      {isAuthenticated ? 'Unlocked after login' : 'Login required first'}
-                    </p>
-                  </div>
-                </div>
-              </div>
+        <div className={sectionState.error ? 'mt-6' : ''}>
+          <div className="mb-5 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/70 bg-white/70 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.28em] text-amber-700 shadow-[0_10px_24px_rgba(245,158,11,0.08)] backdrop-blur-sm">
+              Featured Network
+            </span>
+            <h2 className="mt-3 font-heading text-[2rem] font-black leading-none tracking-[-0.04em] text-transparent bg-[linear-gradient(135deg,#0f2747_0%,#173a67_48%,#c9851b_100%)] bg-clip-text md:text-[2.5rem]">
+              Sponsored Companies
+            </h2>
+            <div className="mt-3 flex items-center justify-center gap-3">
+              <span className="h-px w-12 bg-gradient-to-r from-transparent to-amber-300" />
+              <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                Trusted hiring partners
+              </span>
+              <span className="h-px w-12 bg-gradient-to-l from-transparent to-sky-300" />
             </div>
+          </div>
 
-            {sectionState.error ? (
-              <div className="mx-auto mt-8 max-w-2xl rounded-[24px] border border-red-200 bg-red-50 px-5 py-4 text-center text-sm text-red-700">
-                {sectionState.error}
-              </div>
-            ) : null}
-
-            <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4">
+          <div
+            ref={sliderViewportRef}
+            className="relative"
+            onMouseEnter={() => setIsAutoPaused(true)}
+            onMouseLeave={() => setIsAutoPaused(false)}
+          >
+            <div
+              ref={sliderRef}
+              className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
               {sectionState.loading
-                ? Array.from({ length: 5 }).map((_, index) => <LoadingCard key={index} />)
-                : sectionState.companies.map((company) => (
-                    <CompanyCard
-                      key={company.id}
-                      company={company}
-                      isAuthenticated={isAuthenticated}
-                    />
+                ? visibleItems.map((_, index) => (
+                    <div
+                      key={index}
+                      data-sponsored-slide
+                      className="min-w-0 shrink-0 basis-[88%] sm:basis-[calc((100%-1rem)/2)] md:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)] xl:basis-[calc((100%-4rem)/5)]"
+                    >
+                      <LoadingCard />
+                    </div>
+                  ))
+                : visibleItems.map((company, index) => (
+                    <div
+                      key={`${company.id}-${index}`}
+                      data-sponsored-slide
+                      className="min-w-0 shrink-0 basis-[88%] sm:basis-[calc((100%-1rem)/2)] md:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)] xl:basis-[calc((100%-4rem)/5)]"
+                    >
+                      <CompanyCard
+                        company={company}
+                        isAuthenticated={isAuthenticated}
+                      />
+                    </div>
                   ))}
             </div>
           </div>

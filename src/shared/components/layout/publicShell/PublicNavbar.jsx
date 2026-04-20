@@ -91,7 +91,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
             <motion.img
               src="/hhh-job-logo.png"
               alt="HHH Jobs"
-              className="h-10 w-10 object-contain"
+              className="h-14 w-14 object-contain"
               whileHover={{ rotate: [0, -5, 5, 0], scale: 1.1 }}
               transition={{ duration: 0.5 }}
             />

@@ -364,38 +364,6 @@ const CompanyJobsPage = () => {
     [activeFilter, allJobs, search]
   );
 
-  const topStats = useMemo(
-    () => [
-      {
-        key: 'total',
-        label: 'Open Roles',
-        value: formatCount(allJobs.length),
-        helper: 'Combined portal and live-fetched openings.'
-      },
-      {
-        key: 'portal',
-        label: 'Portal Jobs',
-        value: formatCount(detailState.jobs.portal?.length || 0),
-        helper: 'Roles listed directly inside HHH Jobs.'
-      },
-      {
-        key: 'external',
-        label: 'Live Fetched',
-        value: formatCount(detailState.jobs.external?.length || 0),
-        helper: 'Jobs verified from trusted employer feeds.'
-      },
-      {
-        key: 'access',
-        label: isAuthenticated ? 'Job Access' : 'Role Board',
-        value: isAuthenticated ? 'Unlocked' : 'Login',
-        helper: isAuthenticated
-          ? 'Search, filters, and role actions are active.'
-          : 'Login to reveal search, filters, and every role card.'
-      }
-    ],
-    [allJobs.length, detailState.jobs.external?.length, detailState.jobs.portal?.length, isAuthenticated]
-  );
-
   const handleJobAction = (job) => {
     if (!isAuthenticated) {
       saveCompanyJobIntent({
@@ -458,7 +426,7 @@ const CompanyJobsPage = () => {
         </Link>
 
         <section className="rounded-[36px] border border-white/70 bg-white/88 px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur md:px-8 xl:px-10">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] xl:items-start">
+          <div>
             <div>
               <div className="mb-5 flex flex-wrap items-center gap-2">
                 {company.sponsored ? (
@@ -505,7 +473,6 @@ const CompanyJobsPage = () => {
                   <SectionHeader
                     eyebrow="Company Hiring Lounge"
                     title={company.name}
-                    subtitle={company.description}
                   />
                 </div>
               </div>
@@ -557,26 +524,7 @@ const CompanyJobsPage = () => {
                   {isAuthenticated ? 'Browse All Jobs' : 'Login to Unlock Jobs'}
                   <FiArrowUpRight size={15} />
                 </Link>
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600">
-                  <FiShield size={15} />
-                  Company website stays hidden here
-                </div>
               </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              {topStats.map((item) => (
-                <div
-                  key={item.key}
-                  className="rounded-[28px] border border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92))] p-5 shadow-sm"
-                >
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                    {item.label}
-                  </p>
-                  <p className="mt-3 font-heading text-4xl font-black text-navy">{item.value}</p>
-                  <p className="mt-3 text-sm leading-6 text-slate-500">{item.helper}</p>
-                </div>
-              ))}
             </div>
           </div>
         </section>

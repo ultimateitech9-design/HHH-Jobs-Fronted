@@ -4,7 +4,6 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import {
   FiArrowUpRight,
   FiBriefcase,
-  FiCheckCircle,
   FiChevronLeft,
   FiChevronRight,
   FiExternalLink,
@@ -13,10 +12,8 @@ import {
   FiLock,
   FiMapPin,
   FiSearch,
-  FiShield,
   FiStar,
-  FiTrendingUp,
-  FiZap
+  FiTrendingUp
 } from 'react-icons/fi';
 
 import useAuthStore from '../../../core/auth/authStore';
@@ -100,7 +97,14 @@ const openApplyDestination = (url) => {
   }
 };
 
-export const ExternalJobCard = ({ isAuthenticated, job, onApply, sourceMap }) => {
+export const ExternalJobCard = ({
+  isAuthenticated,
+  job,
+  onApply,
+  sourceMap,
+  buttonMode = 'auto',
+  buttonLabel
+}) => {
   const sourceColor = getSourceColor(job.source_key);
   const sourceName = sourceMap[job.source_key]?.name || fallbackSourceName(job.source_key);
   const initials = (job.company_name || 'C').charAt(0).toUpperCase();
@@ -123,112 +127,118 @@ export const ExternalJobCard = ({ isAuthenticated, job, onApply, sourceMap }) =>
   }, [job.salary_currency, job.salary_max, job.salary_min]);
 
   const previewTags = Array.isArray(job.tags) ? job.tags.slice(0, 1) : [];
-  const primaryLabel = isAuthenticated ? 'Open Role' : 'Login to Apply';
+  const effectiveButtonMode = buttonMode === 'auto'
+    ? (isAuthenticated ? 'open' : 'locked')
+    : buttonMode;
+  const primaryLabel = buttonLabel || (effectiveButtonMode === 'open' ? 'Open Role' : 'Login to Apply');
   const locationText = job.job_location || 'Remote';
   const typeText = job.employment_type || 'Full-time';
 
   return (
-    <article className="group relative flex min-h-[20rem] h-full min-w-0 flex-col overflow-hidden rounded-[1.15rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-3 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_14px_28px_rgba(15,23,42,0.12)] md:h-[21rem]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.12),transparent_28%),linear-gradient(135deg,rgba(14,165,233,0.05),transparent_52%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/80 to-transparent" />
+    <article className="group relative flex min-h-[18.75rem] h-full min-w-0 flex-col overflow-hidden rounded-[1.35rem] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,250,255,0.96))] p-3 shadow-[0_18px_36px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_24px_48px_rgba(15,23,42,0.12)]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.14),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.08),transparent_24%)] opacity-80 transition-opacity duration-300 group-hover:opacity-100" />
 
-      <div className="relative z-10 flex min-w-0 items-start gap-2">
+      <div className="relative z-10 flex h-full flex-col rounded-[1.1rem] border border-slate-200/70 bg-white/90 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+        <div className="flex min-w-0 items-start gap-3">
           {job.company_logo && !logoError ? (
             <img
               src={job.company_logo}
               alt={job.company_name}
-              className="h-10 w-10 shrink-0 rounded-[0.8rem] border border-slate-200 bg-white object-contain p-1.5 shadow-sm"
+              className="h-11 w-11 shrink-0 rounded-[0.9rem] border border-slate-200 bg-white object-contain p-1.5 shadow-[0_8px_18px_rgba(15,23,42,0.08)]"
               onError={() => setLogoError(true)}
             />
           ) : (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.8rem] bg-gradient-to-br from-amber-100 via-white to-slate-100 text-sm font-black text-navy shadow-inner">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.9rem] bg-[linear-gradient(145deg,#fff7ed,#ffffff_55%,#e2e8f0)] text-xs font-black text-navy shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
               {initials}
             </div>
           )}
 
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-1">
-              <span className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.08em] ${sourceColor}`}>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] ${sourceColor}`}>
                 <FiGlobe size={9} />
                 <span className="truncate">{sourceName}</span>
               </span>
               {job.is_remote ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.08em] text-emerald-700">
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-emerald-700">
                   <FiTrendingUp size={8} />
                   Remote
                 </span>
               ) : null}
             </div>
-            <h3 className="mt-1 line-clamp-2 break-words text-[0.95rem] font-black leading-5 text-navy transition-colors group-hover:text-brand-700">
+            <h3 className="mt-2 line-clamp-3 break-words font-heading text-[1rem] font-black leading-5 text-navy transition-colors group-hover:text-brand-700">
               {job.job_title}
             </h3>
-            <p className="mt-0.5 line-clamp-1 text-[0.82rem] font-medium text-slate-500">{job.company_name}</p>
+            <p className="mt-1 line-clamp-1 text-[0.8rem] font-semibold text-slate-500">{job.company_name}</p>
           </div>
-      </div>
-
-      <div className="relative z-10 mt-2.5 grid grid-cols-2 gap-2 text-[10px] text-slate-600">
-        <div className="min-w-0 rounded-[0.95rem] border border-slate-200 bg-slate-50/90 px-2.5 py-2">
-          <div className="flex items-center gap-1 text-slate-400">
-            <FiMapPin size={9} />
-            <span className="font-semibold uppercase tracking-[0.1em]">Location</span>
-          </div>
-          <p className="mt-1 line-clamp-2 break-words text-[11px] font-semibold leading-4 text-slate-700">{locationText}</p>
         </div>
 
-        <div className="min-w-0 rounded-[0.95rem] border border-slate-200 bg-slate-50/90 px-2.5 py-2">
-          <div className="flex items-center gap-1 text-slate-400">
-            <FiBriefcase size={9} />
-            <span className="font-semibold uppercase tracking-[0.1em]">Type</span>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] text-slate-600">
+          <div className="min-w-0 rounded-[1rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(248,250,252,0.96),rgba(241,245,249,0.8))] px-2.5 py-2">
+            <div className="flex items-center gap-1 text-slate-400">
+              <FiMapPin size={9} />
+              <span className="font-semibold uppercase tracking-[0.1em]">Location</span>
+            </div>
+            <p className="mt-1 line-clamp-2 break-words text-[11px] font-semibold leading-4 text-slate-700">{locationText}</p>
           </div>
-          <p className="mt-1 line-clamp-1 text-[11px] font-semibold text-slate-700">{typeText}</p>
+
+          <div className="min-w-0 rounded-[1rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(248,250,252,0.96),rgba(241,245,249,0.8))] px-2.5 py-2">
+            <div className="flex items-center gap-1 text-slate-400">
+              <FiBriefcase size={9} />
+              <span className="font-semibold uppercase tracking-[0.1em]">Type</span>
+            </div>
+            <p className="mt-1 line-clamp-1 text-[11px] font-semibold text-slate-700">{typeText}</p>
+          </div>
         </div>
-      </div>
 
-      <div className="relative z-10 mt-2.5 flex flex-wrap gap-1.5">
-        {job.category ? (
-          <span className="max-w-full truncate rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-semibold text-slate-600">
-            {job.category}
-          </span>
-        ) : null}
-        {job.experience_level && job.experience_level !== 'Not specified' ? (
-          <span className="max-w-full truncate rounded-full border border-brand-100 bg-brand-50 px-2 py-0.5 text-[9px] font-semibold text-brand-700">
-            {job.experience_level}
-          </span>
-        ) : null}
-        {salaryText ? (
-          <span className="max-w-full truncate rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">
-            {salaryText}
-          </span>
-        ) : null}
-      </div>
-
-      {previewTags.length > 0 ? (
-        <div className="relative z-10 mt-2 flex flex-wrap gap-1.5">
-          {previewTags.map((tag, index) => (
-            <span
-              key={`${job.id}-${tag}-${index}`}
-              className="max-w-full truncate rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-medium text-slate-500"
-            >
-              {tag}
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {job.category ? (
+            <span className="max-w-full truncate rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[9px] font-semibold text-slate-600">
+              {job.category}
             </span>
-          ))}
-          {Array.isArray(job.tags) && job.tags.length > previewTags.length ? (
-            <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-medium text-slate-400">
-              +{job.tags.length - previewTags.length}
+          ) : null}
+          {job.experience_level && job.experience_level !== 'Not specified' ? (
+            <span className="max-w-full truncate rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[9px] font-semibold text-amber-700">
+              {job.experience_level}
+            </span>
+          ) : null}
+          {salaryText ? (
+            <span className="max-w-full truncate rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[9px] font-semibold text-emerald-700">
+              {salaryText}
             </span>
           ) : null}
         </div>
-      ) : null}
 
-      <div className="relative z-10 mt-auto border-t border-slate-100 pt-3">
-        <button
-          type="button"
-          onClick={() => onApply(job, sourceName)}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-orange-500 px-3 py-2 text-[12px] font-black text-white shadow-[0_10px_20px_rgba(245,158,11,0.24)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_26px_rgba(245,158,11,0.3)]"
-        >
-          {isAuthenticated ? <FiExternalLink size={11} /> : <FiLock size={11} />}
-          {primaryLabel}
-        </button>
+        {previewTags.length > 0 ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {previewTags.map((tag, index) => (
+              <span
+                key={`${job.id}-${tag}-${index}`}
+                className="max-w-full truncate rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[9px] font-medium text-slate-500"
+              >
+                {tag}
+              </span>
+            ))}
+            {Array.isArray(job.tags) && job.tags.length > previewTags.length ? (
+              <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[9px] font-medium text-slate-400">
+                +{job.tags.length - previewTags.length}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-auto pt-3">
+          <div className="border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={() => onApply(job, sourceName)}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[linear-gradient(135deg,#f59e0b,#ff7a18)] px-3 py-2.5 text-[11px] font-black text-white shadow-[0_12px_24px_rgba(245,158,11,0.24)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(245,158,11,0.3)]"
+            >
+              {effectiveButtonMode === 'open' ? <FiExternalLink size={11} /> : <FiLock size={11} />}
+              {primaryLabel}
+            </button>
+          </div>
+        </div>
       </div>
     </article>
   );
@@ -550,28 +560,30 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
           ) : null}
 
           {jobsState.pagination && jobsState.pagination.totalPages > 1 ? (
-            <div className="mt-10 flex w-max items-center gap-4 rounded-full border border-white/70 bg-white/90 px-6 py-4 shadow-[0_20px_45px_rgba(15,23,42,0.08)]">
-              <button
-                type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-slate-700 transition hover:border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={filters.page <= 1}
-                onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}
-              >
-                <FiChevronLeft size={18} />
-              </button>
+            <div className="mt-10 flex justify-center">
+              <div className="flex w-max items-center gap-4 rounded-full border border-white/70 bg-white/90 px-6 py-4 shadow-[0_20px_45px_rgba(15,23,42,0.08)]">
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-slate-700 transition hover:border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={filters.page <= 1}
+                  onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}
+                >
+                  <FiChevronLeft size={18} />
+                </button>
 
-              <span className="min-w-28 text-center text-sm font-bold text-slate-600">
-                Page {filters.page} <span className="mx-1 font-normal text-slate-400">/</span> {jobsState.pagination.totalPages}
-              </span>
+                <span className="min-w-28 text-center text-sm font-bold text-slate-600">
+                  Page {filters.page} <span className="mx-1 font-normal text-slate-400">/</span> {jobsState.pagination.totalPages}
+                </span>
 
-              <button
-                type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-slate-700 transition hover:border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={filters.page >= jobsState.pagination.totalPages}
-                onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}
-              >
-                <FiChevronRight size={18} />
-              </button>
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-slate-700 transition hover:border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={filters.page >= jobsState.pagination.totalPages}
+                  onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}
+                >
+                  <FiChevronRight size={18} />
+                </button>
+              </div>
             </div>
           ) : null}
         </>

@@ -63,19 +63,21 @@ const normalizeCompanyBranding = (entry) => {
   if (!entry || typeof entry !== 'object') return entry;
 
   const branding = findCompanyBrandingOverride(entry);
-  const preferredLogoUrl = buildCompanyLogoUrl(entry.logoUrl, branding?.logoUrl);
+  const websiteUrl = pickPreferredText(entry.websiteUrl, entry.companyWebsite, branding?.websiteUrl);
+  const preferredLogoUrl = buildCompanyLogoUrl(entry.logoUrl, branding?.logoUrl, websiteUrl);
 
   if (!branding) {
     return {
       ...entry,
-      logoUrl: preferredLogoUrl || null
+      logoUrl: preferredLogoUrl || null,
+      websiteUrl: websiteUrl || null
     };
   }
 
   return {
     ...entry,
     logoUrl: preferredLogoUrl || null,
-    websiteUrl: pickPreferredText(entry.websiteUrl, branding.websiteUrl) || null
+    websiteUrl: websiteUrl || null
   };
 };
 
@@ -89,7 +91,11 @@ const normalizeCompanyJobs = (jobs = {}) => ({
         const branding = findCompanyBrandingOverride(job);
         return {
           ...job,
-          companyLogo: buildCompanyLogoUrl(job.companyLogo, branding?.logoUrl) || null
+          companyLogo: buildCompanyLogoUrl(
+            job.companyLogo,
+            branding?.logoUrl,
+            pickPreferredText(job.companyWebsite, branding?.websiteUrl)
+          ) || null
         };
       })
     : [],
@@ -98,7 +104,11 @@ const normalizeCompanyJobs = (jobs = {}) => ({
         const branding = findCompanyBrandingOverride(job);
         return {
           ...job,
-          companyLogo: buildCompanyLogoUrl(job.companyLogo, branding?.logoUrl) || null
+          companyLogo: buildCompanyLogoUrl(
+            job.companyLogo,
+            branding?.logoUrl,
+            pickPreferredText(job.applyUrl, job.companyWebsite, branding?.websiteUrl)
+          ) || null
         };
       })
     : []
