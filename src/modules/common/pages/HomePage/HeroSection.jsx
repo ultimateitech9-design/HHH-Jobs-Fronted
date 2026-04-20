@@ -20,14 +20,13 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
   const postJobPath = isHrUser ? hrJobsPath : '/login/hr';
 
   return (
-    <section className="relative flex min-h-[72vh] items-center overflow-hidden bg-gradient-to-br from-white via-[#fbf8f2] to-[#eef3fb] px-4 pb-8 pt-10 md:pt-12">
-      <div className="absolute inset-x-0 top-0 h-1 gradient-gold" />
+    <section className="relative flex min-h-[60vh] items-center overflow-hidden bg-gradient-to-br from-white via-[#fbf8f2] to-[#eef3fb] px-4 pb-6 pt-0">
       <div className="absolute left-8 top-20 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
       <div className="absolute bottom-12 right-8 h-96 w-96 rounded-full bg-navy/10 blur-3xl" />
       <div className="absolute top-1/3 right-1/4 h-64 w-64 rounded-full bg-gold-light/10 blur-3xl" />
 
-      <div className="container mx-auto max-w-7xl py-2 md:py-3">
-        <div className="grid items-center gap-8 lg:grid-cols-2">
+      <div className="container mx-auto max-w-7xl pb-4 pt-3">
+        <div className="grid items-center gap-6 lg:grid-cols-2 lg:gap-10">
           <div>
             <motion.div
               initial={{ opacity: 0, y: 26 }}
@@ -43,7 +42,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.08 }}
-              className="mt-6 font-heading text-4xl font-extrabold leading-[1.05] text-navy sm:text-5xl lg:text-[3.55rem]"
+              className="mt-4 font-heading text-3xl font-extrabold leading-[1.05] text-navy sm:text-4xl lg:text-[3rem]"
             >
               Find Genuine Jobs.
               <span className="gradient-text block">Hire the Best Talent.</span>
@@ -53,7 +52,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.16 }}
-              className="mt-6 max-w-xl text-lg leading-8 text-slate-600"
+              className="mt-4 max-w-xl text-[15px] leading-7 text-slate-600 lg:text-base"
             >
               A trusted job portal for students, professionals, retired employees, and recruiters. Discover
               opportunities, hiring support, and public guidance inside a cleaner, more professional experience.
@@ -63,7 +62,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.24 }}
-              className="mt-6 flex flex-wrap items-center gap-4 text-sm text-slate-600"
+              className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-600"
             >
               {trustBadges.map((badge) => (
                 <span key={badge} className="inline-flex items-center gap-2">
@@ -78,7 +77,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.32 }}
               onSubmit={onSearch}
-              className="mt-8 flex flex-col gap-2 rounded-[28px] border border-slate-200 bg-white p-2 shadow-strong shadow-navy/5 sm:flex-row"
+              className="mt-6 flex flex-col gap-2 rounded-[24px] border border-slate-200 bg-white p-1.5 shadow-strong shadow-navy/5 sm:flex-row"
             >
               <div className="flex flex-1 items-center gap-2 px-3">
                 <Search className="h-4 w-4 text-slate-400" />
@@ -87,7 +86,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
                   value={filters.keyword}
                   onChange={(event) => onFiltersChange({ ...filters, keyword: event.target.value })}
                   placeholder="Job title or keyword"
-                  className="w-full bg-transparent py-3 text-sm outline-none"
+                  className="w-full bg-transparent py-2.5 text-sm outline-none"
                 />
               </div>
               <div className="flex flex-1 items-center gap-2 border-t border-slate-200 px-3 sm:border-l sm:border-t-0">
@@ -97,7 +96,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
                   value={filters.location}
                   onChange={(event) => onFiltersChange({ ...filters, location: event.target.value })}
                   placeholder="Location"
-                  className="w-full bg-transparent py-3 text-sm outline-none"
+                  className="w-full bg-transparent py-2.5 text-sm outline-none"
                 />
               </div>
               <motion.button
@@ -115,7 +114,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.55, delay: 0.45 }}
-              className="mt-5 flex flex-wrap justify-center gap-2"
+              className="mt-4 flex flex-wrap justify-center gap-2"
             >
               {quickTags.map((tag) => (
                 <button
@@ -133,7 +132,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.55, delay: 0.52 }}
-              className="mt-8 flex flex-wrap gap-3"
+              className="mt-6 flex flex-wrap gap-3"
             >
               <Link to="/portal/student/jobs">
                 <motion.span whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.96 }} className="btn-primary">
@@ -175,11 +174,11 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.55, delay: 0.6 }}
-              className="mt-10 grid gap-6 sm:grid-cols-3"
+              className="mt-7 grid gap-4 sm:grid-cols-3"
             >
               {statItems.map((item) => (
                 <div key={item.label}>
-                  <p className="font-heading text-3xl font-bold text-navy">{item.value}</p>
+                  <p className="font-heading text-2xl font-bold text-navy lg:text-[1.75rem]">{item.value}</p>
                   <p className="mt-1 text-sm text-slate-500">{item.label}</p>
                 </div>
               ))}
@@ -190,22 +189,22 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
             initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.75, delay: 0.28 }}
-            className="relative hidden lg:block"
+            className="relative hidden lg:block lg:max-w-[36rem] lg:justify-self-end"
           >
             <div className="absolute -inset-1 rounded-[30px] gradient-gold opacity-15 blur-xl" />
             <img
               src={heroImage}
               alt="Professionals collaborating in modern office"
-              className="relative z-10 w-full rounded-[30px] border border-gold/10 shadow-strong"
+              className="relative z-10 max-h-[520px] w-full rounded-[30px] border border-gold/10 object-cover shadow-strong"
             />
 
             <motion.div
               animate={{ y: [0, -8, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -bottom-6 -left-6 z-20 rounded-3xl border border-slate-200 bg-white p-4 shadow-strong"
+              className="absolute -bottom-4 -left-4 z-20 rounded-3xl border border-slate-200 bg-white p-3 shadow-strong"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl gradient-gold text-primary">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl gradient-gold text-primary">
                   <Briefcase className="h-5 w-5" />
                 </div>
                 <div>
@@ -218,7 +217,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
             <motion.div
               animate={{ y: [0, 8, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.7 }}
-              className="absolute -right-4 -top-4 z-20 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-strong"
+              className="absolute -right-3 -top-3 z-20 rounded-3xl border border-slate-200 bg-white px-4 py-2.5 shadow-strong"
             >
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-success-500 animate-pulse" />
@@ -229,7 +228,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
             <motion.div
               animate={{ y: [0, -6, 0] }}
               transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 1.4 }}
-              className="absolute bottom-16 -right-8 z-20 rounded-3xl border border-slate-200 bg-white p-3 shadow-strong"
+              className="absolute bottom-12 -right-6 z-20 rounded-3xl border border-slate-200 bg-white p-3 shadow-strong"
             >
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full gradient-primary text-white">

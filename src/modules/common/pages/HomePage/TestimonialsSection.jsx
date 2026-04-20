@@ -101,9 +101,9 @@ export function TestimonialsSection() {
   }, [isAutoPaused]);
 
   return (
-    <section className="bg-secondary-50/50 px-4 py-12 md:py-14">
+    <section className="bg-secondary-50/50 px-3 py-10 md:px-4 md:py-12">
       <div className="mx-auto w-full max-w-none">
-        <AnimatedSection className="mb-8 text-center md:mb-10">
+        <AnimatedSection className="mb-7 text-center md:mb-8">
           <h2 className="font-heading text-3xl font-extrabold text-navy md:text-4xl">
             What Our Users <span className="gradient-text">Say</span>
           </h2>
@@ -117,31 +117,31 @@ export function TestimonialsSection() {
           >
             <div
               ref={sliderRef}
-              className="flex gap-6 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex gap-2.5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-3"
             >
               {visibleTestimonials.map((item, index) => (
                 <motion.div
                   key={`${item.name}-${index}`}
                   data-testimonial-slide
                   whileHover={{ y: -5, scale: 1.01 }}
-                  className="glass-card group relative min-w-0 shrink-0 basis-[92%] overflow-hidden rounded-3xl p-5 sm:basis-[calc((100%-1.5rem)/2)]"
+                  className="glass-card group relative min-w-0 shrink-0 basis-[calc((100%-0.625rem)/2)] overflow-hidden rounded-[28px] px-3 py-4 sm:basis-[calc((100%-0.75rem)/2)] lg:basis-[calc((100%-2.5rem)/2.18)]"
                 >
                   <motion.div
                     animate={{ rotate: [0, 5, -5, 0] }}
                     transition={{ duration: 6, repeat: Infinity }}
                     className="absolute -right-2 -top-2 text-brand-100 transition-colors group-hover:text-brand-200"
                   >
-                    <Quote className="h-20 w-20" />
+                    <Quote className="h-16 w-16" />
                   </motion.div>
                   <div className="relative z-10">
-                    <div className="mb-4 flex gap-1">
+                    <div className="mb-3 flex gap-1">
                       {[0, 1, 2, 3, 4].map((star) => (
-                        <Star key={star} className="h-4 w-4 fill-gold text-gold" />
+                        <Star key={star} className="h-3.5 w-3.5 fill-gold text-gold" />
                       ))}
                     </div>
-                    <p className="leading-7 text-slate-700">&ldquo;{item.text}&rdquo;</p>
-                    <div className="mt-6 flex items-center gap-3 border-t border-slate-200 pt-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary font-heading text-sm font-bold text-white">
+                    <p className="text-[0.95rem] leading-6 text-slate-700">&ldquo;{item.text}&rdquo;</p>
+                    <div className="mt-5 flex items-center gap-3 border-t border-slate-200 pt-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full gradient-primary font-heading text-xs font-bold text-white">
                         {item.avatar}
                       </div>
                       <div>

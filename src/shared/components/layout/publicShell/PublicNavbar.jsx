@@ -84,7 +84,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-        className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/86 shadow-[0_12px_32px_rgba(17,33,59,0.08)] backdrop-blur-xl"
+        className="fixed inset-x-0 top-0 z-50 bg-white/86 backdrop-blur-xl"
       >
         <div className="container mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:gap-4 sm:px-4">
           <Link to="/" className="group flex min-w-0 items-center gap-2.5">
