@@ -42,9 +42,6 @@ export function CtaBanner() {
               <h2 className="font-heading text-3xl font-extrabold text-white md:text-4xl">
                 Ready to Transform Your Career?
               </h2>
-              <p className="mx-auto mt-3 max-w-2xl text-lg text-white/70">
-                Join the platform with the same module power underneath, but with the cleaner public UI you asked for.
-              </p>
               <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row">
                 <Link to="/jobs">
                   <motion.span whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.95 }} className="inline-flex items-center gap-2 rounded-full gradient-gold px-6 py-3 font-semibold text-primary shadow-xl">
