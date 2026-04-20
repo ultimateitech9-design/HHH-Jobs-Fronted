@@ -33,6 +33,34 @@ const safeRequest = async ({ path, options, emptyData, extract = (payload) => pa
   }
 };
 
+const mapRecommendation = (item = {}) => ({
+  ...item,
+  job: item?.job || null,
+  matchPercent: Number(item?.matchPercent || 0),
+  vectorSimilarityScore: Number(item?.vectorSimilarityScore || 0),
+  skillAlignmentScore: Number(item?.skillAlignmentScore || 0),
+  collaborativeScore: Number(item?.collaborativeScore || 0),
+  trendScore: Number(item?.trendScore || 0),
+  whyThisJob: Array.isArray(item?.whyThisJob) ? item.whyThisJob : [],
+  explanation: item?.explanation || '',
+  rankPosition: Number(item?.rankPosition || 0),
+  gapAnalysis: {
+    matchedSkills: Array.isArray(item?.gapAnalysis?.matchedSkills) ? item.gapAnalysis.matchedSkills : [],
+    missingSkills: Array.isArray(item?.gapAnalysis?.missingSkills) ? item.gapAnalysis.missingSkills : [],
+    courseSuggestion: item?.gapAnalysis?.courseSuggestion || null
+  },
+  collaborative: {
+    score: Number(item?.collaborative?.score || 0),
+    summary: item?.collaborative?.summary || '',
+    similarStudentsApplied: Number(item?.collaborative?.similarStudentsApplied || 0),
+    similarStudentsHired: Number(item?.collaborative?.similarStudentsHired || 0)
+  },
+  trend: {
+    score: Number(item?.trend?.score || 0),
+    label: item?.trend?.label || ''
+  }
+});
+
 export const mapProfileToForm = (profile = {}) => {
   const toLineArray = (items) => {
     if (!Array.isArray(items)) return [];
@@ -145,7 +173,9 @@ export const mapProfileToForm = (profile = {}) => {
     preferredJobType: profile.preferred_job_type || profile.preferredJobType || '',
     availabilityToJoin: profile.availability_to_join || profile.availabilityToJoin || '',
     willingToRelocate: profile.willing_to_relocate ?? profile.willingToRelocate ?? '',
-    noticePeriodDays: profile.notice_period_days ?? profile.noticePeriodDays ?? ''
+    noticePeriodDays: profile.notice_period_days ?? profile.noticePeriodDays ?? '',
+    isDiscoverable: Boolean(profile.is_discoverable ?? profile.isDiscoverable ?? false),
+    availableToHire: Boolean(profile.available_to_hire ?? profile.availableToHire ?? false)
   };
 };
 
@@ -255,7 +285,9 @@ const buildProfilePayload = (form = {}) => {
     preferredJobType: form.preferredJobType,
     availabilityToJoin: form.availabilityToJoin,
     willingToRelocate: toNullableBoolean(form.willingToRelocate),
-    noticePeriodDays: form.noticePeriodDays === '' ? null : Number(form.noticePeriodDays)
+    noticePeriodDays: form.noticePeriodDays === '' ? null : Number(form.noticePeriodDays),
+    isDiscoverable: Boolean(form.isDiscoverable),
+    availableToHire: Boolean(form.availableToHire)
   };
 };
 
@@ -295,6 +327,7 @@ export const getStudentDashboardOverview = async () => {
         moved: 0
       },
       recommendedJobs: [],
+      recommendedMatches: [],
       recentApplications: [],
       upcomingInterviews: [],
       recentNotifications: [],
@@ -325,6 +358,9 @@ export const getStudentDashboardOverview = async () => {
         moved: 0
       },
       recommendedJobs: result.data?.recommendedJobs || [],
+      recommendedMatches: Array.isArray(result.data?.recommendedMatches)
+        ? result.data.recommendedMatches.map(mapRecommendation)
+        : [],
       recentApplications: result.data?.recentApplications || [],
       upcomingInterviews: result.data?.upcomingInterviews || [],
       recentNotifications: result.data?.recentNotifications || [],
@@ -446,6 +482,54 @@ export const getStudentJobById = async (jobId) =>
     extract: (payload) => payload?.job || payload || null
   });
 
+export const getStudentRecommendations = async (filters = {}) => {
+  const params = new URLSearchParams();
+
+  Object.entries({
+    limit: filters.limit,
+    minMatchPercent: filters.minMatchPercent
+  }).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      params.set(key, value);
+    }
+  });
+
+  const query = params.toString();
+  return safeRequest({
+    path: `/student/recommendations${query ? `?${query}` : ''}`,
+    emptyData: {
+      generatedAt: null,
+      recommendations: [],
+      jobs: []
+    },
+    extract: (payload) => ({
+      generatedAt: payload?.generatedAt || null,
+      recommendations: Array.isArray(payload?.recommendations) ? payload.recommendations.map(mapRecommendation) : [],
+      jobs: Array.isArray(payload?.jobs) ? payload.jobs : []
+    })
+  });
+};
+
+export const trackStudentRecommendationView = async (jobId, source = 'recommendation_feed') =>
+  strictRequest({
+    path: `/student/recommendations/view-history/${jobId}`,
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ source })
+    },
+    extract: (payload) => payload?.view || payload
+  });
+
+export const sendStudentRecommendationDigest = async (limit = 5) =>
+  strictRequest({
+    path: '/student/recommendations/digest',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ limit })
+    },
+    extract: (payload) => payload?.digest || payload
+  });
+
 export const applyToJob = async ({ jobId, coverLetter = '' }) =>
   strictRequest({
     path: `/jobs/${jobId}/apply`,
@@ -510,6 +594,59 @@ export const deleteStudentAlert = async (alertId) =>
     path: `/student/alerts/${alertId}`,
     options: { method: 'DELETE', body: JSON.stringify({}) },
     extract: (payload) => payload?.removed || 0
+  });
+
+export const getStudentAutoApplyState = async () =>
+  safeRequest({
+    path: '/student/auto-apply',
+    emptyData: {
+      preference: {},
+      summary: {
+        appliedThisWeek: 0,
+        skippedThisWeek: 0,
+        failedThisWeek: 0,
+        shortlistedThisWeek: 0,
+        premiumSlotsUsedThisWeek: 0
+      },
+      recentActivity: []
+    },
+    extract: (payload) => payload?.autoApply || {}
+  });
+
+export const updateStudentAutoApply = async (autoApplyPayload) =>
+  strictRequest({
+    path: '/student/auto-apply',
+    options: {
+      method: 'PUT',
+      body: JSON.stringify(autoApplyPayload)
+    },
+    extract: (payload) => ({
+      autoApply: payload?.autoApply || {},
+      runResult: payload?.runResult || null
+    })
+  });
+
+export const runStudentAutoApplyNow = async (limit = 20) =>
+  strictRequest({
+    path: '/student/auto-apply/run',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ limit })
+    },
+    extract: (payload) => ({
+      autoApply: payload?.autoApply || {},
+      runResult: payload?.runResult || null
+    })
+  });
+
+export const sendStudentAutoApplyDigest = async (cadence = 'daily') =>
+  strictRequest({
+    path: '/student/auto-apply/digest',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ cadence })
+    },
+    extract: (payload) => payload?.digest || payload
   });
 
 export const getStudentInterviews = async () =>

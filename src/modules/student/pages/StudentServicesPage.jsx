@@ -21,11 +21,11 @@ import {
 const mainServices = [
   {
     title: 'Auto Apply',
-    description: 'Move faster on relevant jobs with a streamlined apply flow built for quick action.',
-    points: ['Faster apply steps', 'Less repeat work', 'Ready from jobs page'],
+    description: 'Set criteria once and let HHH Jobs run ATS-gated, AI-assisted applications on matching roles for you.',
+    points: ['Criteria builder', 'ATS threshold gate', 'AI cover letters'],
     icon: FiZap,
-    to: '/portal/student/jobs',
-    cta: 'Open jobs'
+    to: '/portal/student/auto-apply',
+    cta: 'Configure Auto Apply'
   },
   {
     title: 'Premium HR Visibility',

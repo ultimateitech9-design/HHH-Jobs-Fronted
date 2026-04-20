@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Briefcase, CheckCircle2, MapPin, Search, Users } from 'lucide-react';
+import { ArrowRight, Briefcase, CheckCircle2, GraduationCap, MapPin, Search, Users } from 'lucide-react';
 import heroImage from '../../../../assets/career-compass-hero.jpg';
 
 const trustBadges = ['Verified Jobs', 'AI Matching', 'Free to Apply'];
@@ -142,6 +142,16 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
                 >
                   <Briefcase className="h-4 w-4" />
                   Post a Job
+                </motion.span>
+              </Link>
+              <Link to="/campus-connect">
+                <motion.span
+                  whileHover={{ scale: 1.04, y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-gold/25 bg-gold/10 px-6 py-3 font-semibold text-gold-dark shadow-sm transition-colors hover:bg-gold hover:text-primary"
+                >
+                  <GraduationCap className="h-4 w-4" />
+                  Campus Connect
                 </motion.span>
               </Link>
             </motion.div>

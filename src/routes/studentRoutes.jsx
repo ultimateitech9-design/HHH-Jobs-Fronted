@@ -10,11 +10,14 @@ const StudentJobDetailsPage = lazy(() => import('../modules/student/pages/Studen
 const StudentApplicationsPage = lazy(() => import('../modules/student/pages/StudentApplicationsPage'));
 const StudentSavedJobsPage = lazy(() => import('../modules/student/pages/StudentSavedJobsPage'));
 const StudentInterviewsPage = lazy(() => import('../modules/student/pages/StudentInterviewsPage'));
+const StudentInterviewRoomPage = lazy(() => import('../modules/student/pages/StudentInterviewRoomPage'));
 const StudentAnalyticsPage = lazy(() => import('../modules/student/pages/StudentAnalyticsPage'));
 const StudentAtsPage = lazy(() => import('../modules/student/pages/StudentAtsPage'));
 const StudentServicesPage = lazy(() => import('../modules/student/pages/StudentServicesPage'));
+const StudentAutoApplyPage = lazy(() => import('../modules/student/pages/StudentAutoApplyPage'));
 const StudentNotificationsPage = lazy(() => import('../modules/student/pages/StudentNotificationsPage'));
 const StudentExternalJobsPage = lazy(() => import('../modules/student/pages/StudentExternalJobsPage'));
+const StudentHRInterestsPage = lazy(() => import('../modules/student/pages/StudentHRInterestsPage'));
 
 const studentRoutes = [
   {
@@ -34,14 +37,17 @@ const studentRoutes = [
       { path: 'jobs/:jobId', element: <StudentJobDetailsPage /> },
       { path: 'applications', element: <StudentApplicationsPage /> },
       { path: 'saved-jobs', element: <StudentSavedJobsPage /> },
-      { path: 'alerts', element: <Navigate to="/portal/student/notifications" replace /> },
+      { path: 'alerts', element: <Navigate to="/portal/student/auto-apply" replace /> },
+      { path: 'auto-apply', element: <StudentAutoApplyPage /> },
       { path: 'interviews', element: <StudentInterviewsPage /> },
+      { path: 'interviews/:interviewId/room', element: <StudentInterviewRoomPage /> },
       { path: 'analytics', element: <StudentAnalyticsPage /> },
       { path: 'ats', element: <StudentAtsPage /> },
       { path: 'services', element: <StudentServicesPage /> },
       { path: 'notifications', element: <StudentNotificationsPage /> },
       { path: 'company-reviews', element: <Navigate to="/portal/student/companies" replace /> },
-      { path: 'global-jobs', element: <StudentExternalJobsPage /> }
+      { path: 'global-jobs', element: <StudentExternalJobsPage /> },
+      { path: 'hr-interests', element: <StudentHRInterestsPage /> }
     ]
   },
   { path: 'student', element: <Navigate to="/portal/student/companies" replace /> }

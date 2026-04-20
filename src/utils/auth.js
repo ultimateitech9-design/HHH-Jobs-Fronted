@@ -146,6 +146,7 @@ export const getDashboardPathByRole = (role) => {
   if (normalizedRole === 'support') return '/portal/support/dashboard';
   if (normalizedRole === 'accounts') return '/portal/accounts/overview';
   if (normalizedRole === 'sales') return '/portal/sales/overview';
+  if (normalizedRole === 'campus_connect') return '/portal/campus-connect/dashboard';
   if (normalizedRole === 'retired_employee') return '/portal/student/companies';
   return '/portal/student/companies';
 };

@@ -12,6 +12,7 @@ import hrRoutes from './hrRoutes';
 import adminRoutes from './adminRoutes';
 import superAdminRoutes from './superAdminRoutes';
 import dataentryRoutes from './dataentryRoutes';
+import campusConnectRoutes from './campusConnectRoutes';
 import accountsRoutes from './accountsRoutes';
 import salesRoutes from './salesRoutes';
 import supportRoutes from './supportRoutes';
@@ -73,6 +74,7 @@ const router = createBrowserRouter([
       ...studentRoutes,
       ...retiredRoutes,
       ...dataentryRoutes,
+      ...campusConnectRoutes,
       ...accountsRoutes,
       ...salesRoutes,
       ...supportRoutes,

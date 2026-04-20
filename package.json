@@ -13,6 +13,7 @@
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "framer-motion": "^12.38.0",
     "localforage": "^1.10.0",
     "lucide-react": "^1.7.0",

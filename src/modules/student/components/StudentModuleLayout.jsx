@@ -6,9 +6,10 @@ import {
   FiCalendar,
   FiFileText,
   FiGlobe,
-  FiHome,
   FiLayers,
-  FiUser
+  FiSend,
+  FiUser,
+  FiZap
 } from 'react-icons/fi';
 import { useLocation } from 'react-router-dom';
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
@@ -30,8 +31,10 @@ const studentDashboardNavItems = [
   },
   { to: '/portal/student/applications', label: 'Applications', icon: FiFileText },
   { to: '/portal/student/saved-jobs', label: 'Saved Jobs', icon: FiBookmark },
+  { to: '/portal/student/auto-apply', label: 'Auto Apply', icon: FiZap },
   { to: '/portal/student/interviews', label: 'Interviews', icon: FiCalendar },
-  { to: '/portal/student/analytics', label: 'Analytics', icon: FiBarChart2 }
+  { to: '/portal/student/analytics', label: 'Analytics', icon: FiBarChart2 },
+  { to: '/portal/student/hr-interests', label: 'HR Interests', icon: FiSend }
 ];
 
 const studentHomeNavItems = [
@@ -42,6 +45,7 @@ const studentHeaderNavItems = [
   { label: 'Jobs', to: '/portal/student/jobs' },
   { label: 'Companies', to: '/portal/student/companies' },
   { label: 'ATS', to: '/portal/student/ats' },
+  { label: 'Auto Apply', to: '/portal/student/auto-apply' },
   { label: 'Services', to: '/portal/student/services' }
 ];
 

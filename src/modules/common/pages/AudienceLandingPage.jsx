@@ -346,6 +346,87 @@ const audienceContent = {
       ],
       chips: ['Retired employees', 'Advisory work', 'Flexible opportunities']
     }
+  },
+  'campus-connect': {
+    eyebrow: 'For Campuses',
+    title: <>Bring Placement Operations Into <span className="gradient-text">One Campus Workspace</span></>,
+    description: 'Campus Connect is built for colleges, placement cells, and training campuses that want student records, drives, company outreach, and reporting in one cleaner workflow instead of scattered sheets and inbox threads.',
+    chips: ['Placement cell', 'Campus drives', 'Student pipeline'],
+    metrics: [
+      { label: 'Student Records', value: 'Structured', helper: 'Keep batch, branch, CGPA, and placement status easier to manage' },
+      { label: 'Drive Ops', value: 'Faster', helper: 'Publish drives, monitor eligibility, and track status from one dashboard' },
+      { label: 'Employer Reach', value: 'Clearer', helper: 'Manage company connections and responses without fragmented follow-up' }
+    ],
+    heroActions: [
+      { label: 'Open Campus Connect', to: '/management/login/campus-connect' },
+      { label: 'Explore Hiring Platform', to: '/recruiters', variant: 'ghost' }
+    ],
+    asideTitle: 'What campuses get here',
+    asidePoints: [
+      'A dedicated dashboard for placement and college operations',
+      'Cleaner student data, drive planning, and recruiter connection tracking',
+      'A more institutional workflow than generic employer tools'
+    ],
+    featuresTitle: 'Campus workflows designed around placement teams',
+    featuresDescription: 'This lane focuses on campus-specific operations: managing students, publishing drives, handling company interest, and reporting outcomes clearly.',
+    featureCards: [
+      {
+        title: 'Student Database',
+        description: 'Maintain placement-ready student records with degree, branch, CGPA, skills, and placement status.',
+        icon: FiUsers,
+        badge: 'Campus Records'
+      },
+      {
+        title: 'Drive Management',
+        description: 'Run campus drives with eligibility, dates, packages, and workflow visibility in one place.',
+        icon: FiBriefcase,
+        badge: 'Placement Ops'
+      },
+      {
+        title: 'Company Connections',
+        description: 'Track outreach, responses, and recruiter relationships through a dedicated campus pipeline.',
+        icon: FiTarget,
+        badge: 'Outreach'
+      }
+    ],
+    stepsEyebrow: 'Campus Flow',
+    stepsTitle: 'How a placement team uses Campus Connect',
+    stepsDescription: 'The flow is designed to reduce manual follow-up and centralize college placement work.',
+    steps: [
+      {
+        title: 'Open the campus workspace',
+        description: 'Use the dedicated campus login to enter a dashboard built for placement operations.',
+        icon: FiShield
+      },
+      {
+        title: 'Manage students and drives',
+        description: 'Keep student records current, launch drives, and monitor participation through one system.',
+        icon: FiBookOpen
+      },
+      {
+        title: 'Track outreach and outcomes',
+        description: 'Follow recruiter interest, placements, and reporting from a cleaner campus CRM flow.',
+        icon: FiBarChart2
+      }
+    ],
+    spotlightEyebrow: 'Why Colleges Need It',
+    spotlightTitle: 'A placement workflow that feels closer to an operations system',
+    spotlightDescription: 'Campus Connect is not just another employer page. It is a dedicated lane for colleges that need structure around student readiness, recruiter outreach, and placement reporting.',
+    spotlightPoints: [
+      'Placement teams can centralize student and drive operations',
+      'College-recruiter communication stays easier to track and follow up',
+      'Reports and placement progress become more visible for each batch'
+    ],
+    cta: {
+      eyebrow: 'Campus Access',
+      title: 'Open the campus portal and manage placement operations properly',
+      description: 'If your college or placement cell needs a cleaner workflow for drives, students, and recruiter outreach, Campus Connect should be entered directly from the public home experience.',
+      actions: [
+        { label: 'Campus Login', to: '/management/login/campus-connect' },
+        { label: 'Back to Home', to: '/' }
+      ],
+      chips: ['Placement cell', 'Drive management', 'Employer outreach']
+    }
   }
 };
 

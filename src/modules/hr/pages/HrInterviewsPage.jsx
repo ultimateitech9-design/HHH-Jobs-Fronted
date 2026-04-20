@@ -1,18 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { 
-  FiCalendar, 
-  FiClock, 
-  FiVideo, 
-  FiMapPin, 
-  FiPhone,
-  FiLink,
-  FiUser,
-  FiBriefcase,
+import { Link } from 'react-router-dom';
+import {
+  FiArrowRight,
+  FiCalendar,
   FiCheckCircle,
-  FiXCircle,
-  FiPlus,
+  FiClock,
+  FiFileText,
+  FiInfo,
   FiMonitor,
-  FiChevronDown
+  FiStar,
+  FiUsers,
+  FiVideo
 } from 'react-icons/fi';
 import {
   createHrInterview,
@@ -26,79 +24,79 @@ import {
 const defaultInterviewForm = {
   jobId: '',
   applicationId: '',
+  title: '',
+  roundLabel: 'Technical Round',
   scheduledAt: '',
+  durationMinutes: 45,
+  timezone: 'Asia/Kolkata',
   mode: 'virtual',
   meetingLink: '',
   location: '',
-  note: ''
+  note: '',
+  calendarProvider: 'google',
+  candidateConsentRequired: true,
+  panelMode: false,
+  panelMembersInput: ''
 };
 
-const getStatusColor = (status) => {
-  const s = String(status || '').toLowerCase();
-  switch (s) {
-    case 'scheduled': return 'bg-blue-100 text-blue-700 border-blue-200';
-    case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-    case 'cancelled': return 'bg-red-100 text-red-700 border-red-200';
-    case 'rescheduled': return 'bg-amber-100 text-amber-700 border-amber-200';
-    default: return 'bg-neutral-100 text-neutral-700 border-neutral-200';
-  }
-};
+const parsePanelMembersInput = (value = '') =>
+  String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => ({
+      name: item.includes('<') ? item.split('<')[0].trim() : item,
+      email: item.includes('<') && item.includes('>') ? item.slice(item.indexOf('<') + 1, item.indexOf('>')).trim() : ''
+    }));
 
-const getModeIcon = (mode) => {
-  switch(String(mode).toLowerCase()) {
-    case 'virtual': return <FiVideo />;
-    case 'onsite': return <FiMapPin />;
-    case 'phone': return <FiPhone />;
-    default: return <FiMonitor />;
-  }
+const getStatusBadge = (status) => {
+  const normalized = String(status || 'scheduled').toLowerCase();
+  if (normalized === 'completed') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  if (normalized === 'cancelled') return 'border-red-200 bg-red-50 text-red-700';
+  if (normalized === 'no_show') return 'border-amber-200 bg-amber-50 text-amber-700';
+  return 'border-sky-200 bg-sky-50 text-sky-700';
 };
 
 const HrInterviewsPage = () => {
   const [jobs, setJobs] = useState([]);
   const [jobApplicants, setJobApplicants] = useState([]);
   const [interviews, setInterviews] = useState([]);
-  const [state, setState] = useState({ loading: true, error: '' });
+  const [state, setState] = useState({ loading: true, error: '', message: '' });
   const [form, setForm] = useState(defaultInterviewForm);
-  const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('upcoming'); // upcoming, completed, cancelled
+  const [activeTab, setActiveTab] = useState('upcoming');
 
   useEffect(() => {
     let mounted = true;
 
     const loadInitial = async () => {
-      const [jobsRes, interviewsRes] = await Promise.all([
+      const [jobsResponse, interviewsResponse] = await Promise.all([
         getHrJobs(),
         getHrInterviews()
       ]);
 
       if (!mounted) return;
 
-      const jobsList = jobsRes.data || [];
-      const fetchedInterviews = interviewsRes.data || [];
-      
-      // Sort interviews by date (newest first)
-      fetchedInterviews.sort((a, b) => new Date(b.scheduled_at || b.scheduledAt) - new Date(a.scheduled_at || a.scheduledAt));
+      const jobsList = jobsResponse.data || [];
+      const interviewList = (interviewsResponse.data || []).sort(
+        (left, right) => new Date(right.scheduled_at || right.scheduledAt) - new Date(left.scheduled_at || left.scheduledAt)
+      );
 
       setJobs(jobsList);
-      setInterviews(fetchedInterviews);
-
+      setInterviews(interviewList);
       setState({
         loading: false,
-        error: jobsRes.error || interviewsRes.error || ''
+        error: jobsResponse.error || interviewsResponse.error || '',
+        message: ''
       });
 
       if (jobsList.length > 0) {
-        const firstJobId = jobsList[0].id || jobsList[0]._id;
-        setForm((current) => ({ ...current, jobId: firstJobId }));
+        setForm((current) => ({ ...current, jobId: current.jobId || jobsList[0].id || jobsList[0]._id }));
       }
     };
 
     loadInitial();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   useEffect(() => {
@@ -113,247 +111,202 @@ const HrInterviewsPage = () => {
       const response = await getApplicantsForJob(form.jobId);
       if (!mounted) return;
 
-      setJobApplicants(response.data || []);
-      if ((response.data || []).length > 0) {
-        setForm((current) => ({ ...current, applicationId: current.applicationId || response.data[0].id }));
-      } else {
-        setForm((current) => ({ ...current, applicationId: '' }));
-      }
+      const applicants = response.data || [];
+      setJobApplicants(applicants);
+      setForm((current) => ({
+        ...current,
+        applicationId: current.applicationId || applicants[0]?.id || ''
+      }));
     };
 
     loadApplicants();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [form.jobId]);
 
-  const applicationOptions = useMemo(() => {
-    return jobApplicants.map((item) => ({
+  const applicantOptions = useMemo(
+    () => jobApplicants.map((item) => ({
       value: item.id,
-      label: `${item.applicant?.name || item.applicantEmail || item.applicant_id} (${item.status || 'applied'})`
-    }));
-  }, [jobApplicants]);
+      label: `${item.applicant?.name || item.applicantEmail || item.applicant_id} • ${item.status || 'applied'}`
+    })),
+    [jobApplicants]
+  );
+
+  const filteredInterviews = useMemo(() => interviews.filter((interview) => {
+    const normalized = String(interview.status || 'scheduled').toLowerCase();
+    if (activeTab === 'upcoming') return ['scheduled', 'rescheduled'].includes(normalized);
+    if (activeTab === 'completed') return normalized === 'completed';
+    return normalized === 'cancelled' || normalized === 'no_show';
+  }), [activeTab, interviews]);
+
+  const setMessage = (message, isError = false) => {
+    setState((current) => ({ ...current, message, error: isError ? message : current.error }));
+  };
 
   const handleCreateInterview = async (event) => {
     event.preventDefault();
-    setMessage('');
-
     if (!form.applicationId || !form.scheduledAt) {
-      setMessage('Application and scheduled datetime are required.');
+      setMessage('Application and time are required.', true);
       return;
     }
 
     setSaving(true);
-
     try {
-      const created = await createHrInterview(form);
+      const created = await createHrInterview({
+        ...form,
+        panelMembers: parsePanelMembersInput(form.panelMembersInput)
+      });
       setInterviews((current) => [created, ...current]);
-      setMessage('Interview scheduled successfully.');
-      setTimeout(() => setMessage(''), 3000);
-      setForm((current) => ({ ...current, scheduledAt: '', meetingLink: '', location: '', note: '' }));
+      setState((current) => ({ ...current, message: 'Interview scheduled inside HHH Jobs.', error: '' }));
+      setForm((current) => ({
+        ...current,
+        title: '',
+        scheduledAt: '',
+        note: '',
+        panelMembersInput: ''
+      }));
     } catch (error) {
-      setMessage(String(error.message || 'Unable to schedule interview.'));
+      setState((current) => ({ ...current, error: error.message || 'Unable to schedule interview.' }));
     } finally {
       setSaving(false);
     }
   };
 
-  const updateInterviewStatus = async (interviewId, status) => {
-    setMessage('');
-
+  const patchInterview = async (interviewId, payload, message) => {
     try {
-      const updated = await updateHrInterview(interviewId, { status });
+      const updated = await updateHrInterview(interviewId, payload);
       setInterviews((current) => current.map((item) => (item.id === interviewId ? { ...item, ...updated } : item)));
-      setMessage(`Interview marked as ${status}.`);
-      setTimeout(() => setMessage(''), 3000);
+      setState((current) => ({ ...current, error: '', message }));
     } catch (error) {
-      setMessage(String(error.message || 'Unable to update interview.'));
+      setState((current) => ({ ...current, error: error.message || 'Unable to update interview.' }));
     }
   };
 
-  const filteredInterviews = useMemo(() => {
-    return interviews.filter(inv => {
-      const status = String(inv.status || 'scheduled').toLowerCase();
-      if (activeTab === 'upcoming') return status === 'scheduled' || status === 'rescheduled';
-      if (activeTab === 'completed') return status === 'completed';
-      if (activeTab === 'cancelled') return status === 'cancelled';
-      return true;
-    });
-  }, [interviews, activeTab]);
-
   return (
-    <div className="space-y-8 pb-10 flex flex-col min-h-full">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
-            Interview Calendar
-          </h1>
-          <p className="text-neutral-500 text-lg">Schedule, track, and manage all candidate interview rounds.</p>
-        </div>
-      </header>
+    <div className="space-y-6 pb-8">
+      {state.error ? (
+        <div className="rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{state.error}</div>
+      ) : null}
+      {state.message && !state.error ? (
+        <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{state.message}</div>
+      ) : null}
 
-      {state.error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 border border-red-200 shadow-sm animate-fade-in">
-          <FiXCircle size={20} className="shrink-0" /> <span className="font-semibold">{state.error}</span>
-        </div>
-      )}
-      {message && !state.error && (
-        <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl flex items-center gap-3 border border-emerald-200 shadow-sm animate-fade-in">
-          {message.includes('Unable') || message.includes('required') ? <FiXCircle size={20} className="shrink-0 text-amber-600" /> : <FiCheckCircle size={20} className="shrink-0" />} 
-          <span className="font-semibold">{message}</span>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start flex-1 min-h-0">
-        
-        {/* Left Panel: Scheduling Form */}
-        <div className="xl:col-span-1 bg-white rounded-[2rem] border border-neutral-100 shadow-sm p-6 md:p-8 xl:sticky xl:top-6 shrink-0">
-          <div className="mb-6 flex flex-col border-b border-neutral-100 pb-6">
-             <div className="w-12 h-12 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mb-4 border border-brand-100">
-               <FiPlus size={24} />
-             </div>
-             <h2 className="text-xl font-extrabold text-primary">Schedule Invite</h2>
-             <p className="text-neutral-500 text-sm mt-1">Book a new interview slot</p>
+      <section className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+        <article className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.42)]">
+          <div className="space-y-2">
+            <span className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-brand-700">
+              Video interview
+            </span>
+            <h1 className="text-3xl font-extrabold text-navy">Schedule inside HHH Jobs</h1>
+            <p className="text-sm leading-6 text-slate-500">
+              Launch the full in-app room with consent, transcript, whiteboard, code editor, live notes, and stored recruiter ratings.
+            </p>
           </div>
 
-          <form onSubmit={handleCreateInterview} className="space-y-5">
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiBriefcase className="text-neutral-400"/> Select Job</label>
-              <div className="relative">
-                <select 
-                  value={form.jobId} 
-                  onChange={(e) => setForm({ ...form, jobId: e.target.value })}
-                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium appearance-none"
-                >
-                  <option value="" disabled>Choose a role...</option>
-                  {jobs.map((job) => (
-                    <option key={job.id || job._id} value={job.id || job._id}>
-                      {job.jobTitle}
-                    </option>
-                  ))}
+          <form onSubmit={handleCreateInterview} className="mt-6 space-y-4">
+            <div>
+              <label className="text-sm font-bold text-slate-700">Job</label>
+              <select value={form.jobId} onChange={(event) => setForm((current) => ({ ...current, jobId: event.target.value, applicationId: '' }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+                <option value="" disabled>Select a role</option>
+                {jobs.map((job) => (
+                  <option key={job.id || job._id} value={job.id || job._id}>{job.jobTitle}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-bold text-slate-700">Candidate</label>
+              <select value={form.applicationId} onChange={(event) => setForm((current) => ({ ...current, applicationId: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+                {applicantOptions.length > 0 ? applicantOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                )) : <option value="">No applicants available</option>}
+              </select>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-bold text-slate-700">Interview title</label>
+                <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" placeholder="Optional custom title" />
+              </div>
+              <div>
+                <label className="text-sm font-bold text-slate-700">Round label</label>
+                <input value={form.roundLabel} onChange={(event) => setForm((current) => ({ ...current, roundLabel: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" placeholder="Technical / Managerial / Final" />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-bold text-slate-700">Start time</label>
+                <input type="datetime-local" value={form.scheduledAt} onChange={(event) => setForm((current) => ({ ...current, scheduledAt: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" />
+              </div>
+              <div>
+                <label className="text-sm font-bold text-slate-700">Duration</label>
+                <input type="number" min="15" max="180" value={form.durationMinutes} onChange={(event) => setForm((current) => ({ ...current, durationMinutes: Number(event.target.value || 45) }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-bold text-slate-700">Mode</label>
+                <select value={form.mode} onChange={(event) => setForm((current) => ({ ...current, mode: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+                  <option value="virtual">HHH video room</option>
+                  <option value="onsite">On-site</option>
+                  <option value="phone">Phone</option>
                 </select>
-                <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
+              </div>
+              <div>
+                <label className="text-sm font-bold text-slate-700">Timezone</label>
+                <input value={form.timezone} onChange={(event) => setForm((current) => ({ ...current, timezone: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiUser className="text-neutral-400"/> Select Candidate</label>
-              <div className="relative">
-                <select
-                  value={form.applicationId}
-                  onChange={(e) => setForm({ ...form, applicationId: e.target.value })}
-                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium appearance-none"
-                  disabled={!form.jobId || applicationOptions.length === 0}
-                >
-                  {applicationOptions.length === 0 ? (
-                    <option value="" disabled>No applicants found</option>
-                  ) : (
-                    applicationOptions.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))
-                  )}
-                </select>
-                <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
-              </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <input type="checkbox" checked={form.candidateConsentRequired} onChange={(event) => setForm((current) => ({ ...current, candidateConsentRequired: event.target.checked }))} className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600" />
+                <span>
+                  <span className="block font-bold text-slate-700">Record with consent</span>
+                  <span className="mt-1 block text-xs">Require candidate approval for recording and AI transcript.</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <input type="checkbox" checked={form.panelMode} onChange={(event) => setForm((current) => ({ ...current, panelMode: event.target.checked }))} className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600" />
+                <span>
+                  <span className="block font-bold text-slate-700">Panel mode</span>
+                  <span className="mt-1 block text-xs">Track multiple interviewers and group-round context.</span>
+                </span>
+              </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                <label className="text-sm font-bold text-neutral-700">Date & Time</label>
-                <input
-                  type="datetime-local"
-                  value={form.scheduledAt}
-                  onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })}
-                  className="w-full px-3 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium text-sm"
-                />
-              </div>
-              <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                <label className="text-sm font-bold text-neutral-700">Format</label>
-                <div className="relative">
-                  <select
-                    value={form.mode}
-                    onChange={(e) => setForm({ ...form, mode: e.target.value, meetingLink: '', location: '' })}
-                    className="w-full pl-3 pr-8 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium text-sm appearance-none"
-                  >
-                    <option value="virtual">Virtual</option>
-                    <option value="onsite">On-Site</option>
-                    <option value="phone">Phone</option>
-                  </select>
-                  <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
-                </div>
-              </div>
+            <div>
+              <label className="text-sm font-bold text-slate-700">Panel members</label>
+              <input value={form.panelMembersInput} onChange={(event) => setForm((current) => ({ ...current, panelMembersInput: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" placeholder="Rahul, Priya <priya@company.com>" />
             </div>
 
-            {(form.mode === 'virtual' || form.mode === 'phone') && (
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-neutral-700">{form.mode === 'virtual' ? 'Meeting Link' : 'Contact Number'}</label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400">
-                    {form.mode === 'virtual' ? <FiLink /> : <FiPhone />}
-                  </span>
-                  <input
-                    value={form.meetingLink}
-                    onChange={(e) => setForm({ ...form, meetingLink: e.target.value })}
-                    placeholder={form.mode === 'virtual' ? "https://meet.google.com/..." : "+91..."}
-                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium"
-                  />
-                </div>
-              </div>
-            )}
-
-            {form.mode === 'onsite' && (
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-neutral-700">Office Location</label>
-                <div className="relative">
-                  <FiMapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-                  <input
-                    value={form.location}
-                    onChange={(e) => setForm({ ...form, location: e.target.value })}
-                    placeholder="Full address"
-                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-neutral-700">Interview Notes</label>
-              <textarea
-                rows={2}
-                value={form.note}
-                onChange={(e) => setForm({ ...form, note: e.target.value })}
-                placeholder="Instructions for the candidate..."
-                className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium resize-none"
-              />
+            <div>
+              <label className="text-sm font-bold text-slate-700">Interview notes</label>
+              <textarea value={form.note} onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))} rows={4} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" placeholder="Prep prompts, agenda, or role-specific guidance." />
             </div>
 
-            <button 
-              type="submit" 
-              disabled={saving}
-              className="w-full py-3.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-500 transition-colors shadow-sm disabled:opacity-70 flex justify-center items-center gap-2 mt-2"
-            >
-              {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Send Interview Invite'}
+            <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-[1.2rem] bg-[#2d5bff] px-4 py-3 text-sm font-bold text-white shadow-[0_10px_22px_rgba(45,91,255,0.28)]">
+              {saving ? 'Scheduling…' : 'Schedule interview room'}
             </button>
           </form>
-        </div>
+        </article>
 
-        {/* Right Panel: Interview Directory */}
-        <div className="xl:col-span-2 bg-white rounded-[2rem] border border-neutral-100 shadow-sm overflow-hidden flex flex-col h-full min-h-[600px]">
-          
-          <div className="p-4 md:p-6 border-b border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-neutral-50/50">
-            <h3 className="text-xl font-extrabold text-primary flex items-center gap-2">
-              <FiCalendar className="text-brand-500" /> Directory
-            </h3>
-            
-            <div className="flex bg-neutral-100 rounded-xl p-1 overflow-x-auto hide-scrollbar">
-              {['upcoming', 'completed', 'cancelled'].map(tab => (
+        <article className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.42)]">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+                Interview directory
+              </span>
+              <h2 className="mt-3 text-3xl font-extrabold text-navy">Upcoming rooms and completed rounds</h2>
+            </div>
+            <div className="flex rounded-full border border-slate-200 bg-slate-50 p-1">
+              {['upcoming', 'completed', 'attention'].map((tab) => (
                 <button
                   key={tab}
+                  type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold capitalize transition-all whitespace-nowrap ${
-                    activeTab === tab ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-primary'
-                  }`}
+                  className={`rounded-full px-4 py-2 text-sm font-bold capitalize ${activeTab === tab ? 'bg-white text-navy shadow-sm' : 'text-slate-500'}`}
                 >
                   {tab}
                 </button>
@@ -361,97 +314,83 @@ const HrInterviewsPage = () => {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-neutral-50/20">
+          <div className="mt-6 space-y-4">
             {state.loading ? (
-              <div className="space-y-4">
-                 {[1, 2, 3].map(i => <div key={i} className="h-40 bg-white border border-neutral-100 rounded-2xl animate-pulse"></div>)}
-              </div>
-            ) : filteredInterviews.length > 0 ? (
-              <div className="space-y-4">
-                {filteredInterviews.map((interview) => (
-                  <div key={interview.id} className="bg-white p-5 rounded-3xl border border-neutral-200 shadow-sm hover:shadow-md hover:border-brand-200 transition-all group flex flex-col sm:flex-row sm:items-start gap-5">
-                    
-                    <div className="flex-1 min-w-0 flex items-start gap-4">
-                      <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shrink-0 border border-indigo-100 shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                        {getModeIcon(interview.mode)}
+              [1, 2, 3].map((item) => <div key={item} className="h-40 animate-pulse rounded-[1.8rem] bg-slate-100" />)
+            ) : filteredInterviews.length > 0 ? filteredInterviews.map((interview) => (
+              <article key={interview.id} className="rounded-[1.7rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 shadow-[0_16px_30px_rgba(15,23,42,0.06)]">
+                <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className={`rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] ${getStatusBadge(interview.status)}`}>
+                        {interview.status || 'Scheduled'}
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
+                        {interview.room_status || 'scheduled'}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-extrabold text-navy">{interview.title || interview.job_title || 'Interview room'}</h3>
+                      <p className="mt-1 text-sm font-semibold text-slate-500">
+                        {interview.candidate_name || 'Candidate'} • {interview.company_name || 'HHH Jobs'} • {interview.round_label || 'Interview'}
+                      </p>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <p className="flex items-center gap-2 font-bold text-slate-700"><FiClock /> Timing</p>
+                        <p className="mt-2">{formatDateTime(interview.scheduled_at || interview.scheduledAt)}</p>
                       </div>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h4 className="font-extrabold text-primary text-lg truncate pr-2">
-                            {interview.mode ? String(interview.mode).charAt(0).toUpperCase() + String(interview.mode).slice(1) : 'Interview'} Round
-                          </h4>
-                          <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black tracking-wider border ${getStatusColor(interview.status)}`}>
-                            {interview.status || 'Scheduled'}
-                          </span>
-                        </div>
-                        <p className="text-sm font-bold text-neutral-500 mb-3 line-clamp-1">Job ID: <span className="font-mono bg-neutral-100 px-1 py-0.5 rounded text-neutral-600">{interview.job_id || interview.jobId || 'Unknown'}</span></p>
-                        
-                        <div className="flex flex-wrap gap-y-2 gap-x-4 text-xs font-bold text-neutral-500">
-                          <span className="flex items-center gap-1.5 bg-neutral-100 px-2.5 py-1 rounded-lg border border-neutral-200">
-                            <FiClock className="text-neutral-400"/> {formatDateTime(interview.scheduled_at || interview.scheduledAt)}
-                          </span>
-                          {(interview.location || interview.meetingLink || interview.meeting_link) && (
-                            <span className="flex items-center gap-1.5 px-2.5 py-1 text-brand-700 bg-brand-50 rounded-lg border border-brand-100 line-clamp-1 max-w-[200px]">
-                              {interview.mode === 'virtual' ? <FiVideo className="shrink-0" /> : <FiMapPin className="shrink-0" />} 
-                              <span className="truncate">{interview.location || interview.meetingLink || interview.meeting_link}</span>
-                            </span>
-                          )}
-                        </div>
+                      <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <p className="flex items-center gap-2 font-bold text-slate-700"><FiVideo /> Room tools</p>
+                        <p className="mt-2">Video, transcript, whiteboard, code editor</p>
+                      </div>
+                      <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <p className="flex items-center gap-2 font-bold text-slate-700"><FiUsers /> Panel + consent</p>
+                        <p className="mt-2">{interview.panel_mode ? 'Panel mode on' : 'Single interviewer'} • {interview.candidate_recording_consent ? 'consented' : 'awaiting consent'}</p>
                       </div>
                     </div>
-
-                    <div className="flex sm:flex-col gap-2 shrink-0 border-t sm:border-t-0 sm:border-l border-neutral-100 pt-4 sm:pt-0 sm:pl-5">
-                      {(interview.meeting_link || interview.meetingLink) && (
-                        <a
-                          href={interview.meeting_link || interview.meetingLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white font-bold rounded-xl transition-colors text-xs border border-indigo-100"
-                        >
-                          <FiLink /> Join Space
-                        </a>
-                      )}
-                      
-                      {String(interview.status).toLowerCase() === 'scheduled' || String(interview.status).toLowerCase() === 'rescheduled' ? (
-                        <>
-                           <button 
-                             onClick={() => updateInterviewStatus(interview.id, 'completed')}
-                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white text-emerald-600 hover:bg-emerald-50 border border-emerald-200 font-bold rounded-xl transition-colors text-xs"
-                           >
-                             <FiCheckCircle /> Mark Complete
-                           </button>
-                           <button 
-                             onClick={() => updateInterviewStatus(interview.id, 'cancelled')}
-                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white text-red-600 hover:bg-red-50 border border-red-200 font-bold rounded-xl transition-colors text-xs"
-                           >
-                             <FiXCircle /> Cancel
-                           </button>
-                        </>
-                      ) : (
-                        <button 
-                          onClick={() => updateInterviewStatus(interview.id, 'scheduled')}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white text-neutral-600 hover:bg-neutral-50 border border-neutral-200 font-bold rounded-xl transition-colors text-xs"
-                        >
-                          Reopen
-                        </button>
-                      )}
-                    </div>
+                    {interview.note ? (
+                      <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                        <p className="flex items-center gap-2 font-bold text-slate-700"><FiFileText /> Notes</p>
+                        <p className="mt-2">{interview.note}</p>
+                      </div>
+                    ) : null}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center p-12 text-center text-neutral-400">
-                <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
-                  <FiCalendar size={32} />
+
+                  <div className="flex min-w-[240px] flex-col gap-3">
+                    <Link to={`/portal/hr/interviews/${interview.id}/room`} className="inline-flex items-center justify-center gap-2 rounded-[1.1rem] bg-[#0f172a] px-4 py-3 text-sm font-bold text-white">
+                      <FiMonitor />
+                      Open room
+                    </Link>
+                    {interview.calendar_event_url ? (
+                      <a href={interview.calendar_event_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                        <FiCalendar />
+                        Calendar
+                      </a>
+                    ) : null}
+                    <button type="button" onClick={() => patchInterview(interview.id, { status: 'completed' }, 'Interview marked completed.')} className="inline-flex items-center justify-center gap-2 rounded-[1.1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                      <FiCheckCircle />
+                      Complete
+                    </button>
+                    <button type="button" onClick={() => patchInterview(interview.id, { status: 'cancelled' }, 'Interview cancelled.')} className="inline-flex items-center justify-center gap-2 rounded-[1.1rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+                      <FiInfo />
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-neutral-700 mb-2">No Interviews Found</h3>
-                <p>There are no {activeTab} interviews in the system.</p>
+              </article>
+            )) : (
+              <div className="rounded-[1.8rem] border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white text-brand-600 shadow-sm">
+                  <FiCalendar size={24} />
+                </div>
+                <h3 className="mt-4 text-2xl font-extrabold text-navy">No interviews in this view</h3>
+                <p className="mt-2 text-sm text-slate-500">Scheduled rooms, completed rounds, and no-show tracking will appear here.</p>
               </div>
             )}
           </div>
-        </div>
-
-      </div>
+        </article>
+      </section>
     </div>
   );
 };

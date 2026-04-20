@@ -15,6 +15,7 @@ const resolvePortalLoginPath = (pathname = '') => {
   if (normalizedPath.startsWith('/portal/sales')) return '/management/login/sales';
   if (normalizedPath.startsWith('/portal/accounts')) return '/management/login/accounts';
   if (normalizedPath.startsWith('/portal/dataentry')) return '/management/login/dataentry';
+  if (normalizedPath.startsWith('/portal/campus-connect')) return '/management/login/campus-connect';
   if (normalizedPath.startsWith('/portal/student')) return '/login/student';
 
   return '/login';

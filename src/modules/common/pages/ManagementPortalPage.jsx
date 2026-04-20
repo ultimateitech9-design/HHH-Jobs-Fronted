@@ -1,4 +1,15 @@
-import { FiArrowLeft, FiBarChart2, FiBriefcase, FiCreditCard, FiHeadphones, FiShield, FiUserCheck } from 'react-icons/fi';
+import {
+  FiArrowLeft,
+  FiBarChart2,
+  FiBookOpen,
+  FiBriefcase,
+  FiCreditCard,
+  FiHeadphones,
+  FiLayers,
+  FiSearch,
+  FiShield,
+  FiUserCheck
+} from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import { clearAuthSession, hasRole, isAuthenticated } from '../../../utils/auth';
 import { PORTAL_ACCESS } from '../../../routes/portalAccess';
@@ -6,14 +17,17 @@ import './ManagementPortalPage.css';
 
 const managementLinks = [
   { label: 'Admin Dashboard', to: '/portal/admin/dashboard', loginPath: '/management/login/admin', portalLabel: 'Admin Portal', icon: FiShield, roles: PORTAL_ACCESS.admin },
-  { label: 'Super Admin', to: '/portal/super-admin/dashboard', loginPath: '/management/login/super-admin', portalLabel: 'Super Admin Portal', icon: FiUserCheck, roles: PORTAL_ACCESS.superAdmin }
+  { label: 'Super Admin', to: '/portal/super-admin/dashboard', loginPath: '/management/login/super-admin', portalLabel: 'Super Admin Portal', icon: FiUserCheck, roles: PORTAL_ACCESS.superAdmin },
+  { label: 'Platform Ops', to: '/portal/platform/dashboard', loginPath: '/management/login/platform', portalLabel: 'Platform Operations Portal', icon: FiLayers, roles: PORTAL_ACCESS.platform },
+  { label: 'Audit Desk', to: '/portal/audit/dashboard', loginPath: '/management/login/audit', portalLabel: 'Audit Portal', icon: FiSearch, roles: PORTAL_ACCESS.audit }
 ];
 
 const employeeLinks = [
   { label: 'Support Desk', to: '/portal/support/dashboard', loginPath: '/management/login/support', portalLabel: 'Support Portal', icon: FiHeadphones, roles: PORTAL_ACCESS.support },
   { label: 'Sales Dashboard', to: '/portal/sales/overview', loginPath: '/management/login/sales', portalLabel: 'Sales Portal', icon: FiBarChart2, roles: PORTAL_ACCESS.sales },
   { label: 'Data Entry', to: '/portal/dataentry/dashboard', loginPath: '/management/login/dataentry', portalLabel: 'Data Entry Portal', icon: FiBriefcase, roles: PORTAL_ACCESS.dataentry },
-  { label: 'Accounts Dashboard', to: '/portal/accounts/overview', loginPath: '/management/login/accounts', portalLabel: 'Accounts Portal', icon: FiCreditCard, roles: PORTAL_ACCESS.accounts }
+  { label: 'Accounts Dashboard', to: '/portal/accounts/overview', loginPath: '/management/login/accounts', portalLabel: 'Accounts Portal', icon: FiCreditCard, roles: PORTAL_ACCESS.accounts },
+  { label: 'Campus Connect', to: '/portal/campus-connect/dashboard', loginPath: '/management/login/campus-connect', portalLabel: 'Campus Connect Portal', icon: FiBookOpen, roles: PORTAL_ACCESS.campusConnect }
 ];
 
 const ManagementPortalPage = () => {

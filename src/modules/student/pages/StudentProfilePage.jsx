@@ -51,6 +51,45 @@ const EMPTY_EDUCATION = {
   isHighestQualification: false
 };
 
+const EMPTY_EXPERIENCE = {
+  companyName: '',
+  designation: '',
+  employmentType: 'Full-time',
+  startYear: '',
+  endYear: '',
+  isCurrentlyWorking: false,
+  location: '',
+  responsibilities: '',
+  keyAchievement: '',
+  techStack: []
+};
+
+const EMPTY_PROJECT = {
+  title: '',
+  description: '',
+  techStack: [],
+  role: '',
+  githubUrl: '',
+  liveUrl: '',
+  startYear: '',
+  endYear: '',
+  isOngoing: false
+};
+
+const normalizeExperienceItems = (items = []) =>
+  (Array.isArray(items) ? items : []).map((item) =>
+    typeof item === 'string'
+      ? { ...EMPTY_EXPERIENCE, responsibilities: item }
+      : { ...EMPTY_EXPERIENCE, ...item }
+  );
+
+const normalizeProjectItems = (items = []) =>
+  (Array.isArray(items) ? items : []).map((item) =>
+    typeof item === 'string'
+      ? { ...EMPTY_PROJECT, title: item }
+      : { ...EMPTY_PROJECT, ...item }
+  );
+
 const EMPTY_FORM = {
   name: '',
   email: '',
@@ -91,7 +130,9 @@ const EMPTY_FORM = {
   preferredJobType: '',
   availabilityToJoin: '',
   willingToRelocate: '',
-  noticePeriodDays: ''
+  noticePeriodDays: '',
+  isDiscoverable: false,
+  availableToHire: false
 };
 
 const SECTION_META = [
@@ -175,10 +216,22 @@ const generatedResume = (form = EMPTY_FORM) =>
     joinCommaList(form.technicalSkills) || 'Add technical skills',
     '',
     'EXPERIENCE',
-    ...(form.experience.length ? form.experience.map((item) => `- ${item}`) : ['- Add experience']),
+    ...(form.experience.length
+      ? form.experience.map((item) =>
+          typeof item === 'string'
+            ? `- ${item}`
+            : `- ${[item.designation, item.companyName].filter(Boolean).join(' at ')}${item.employmentType ? ` (${item.employmentType})` : ''}${item.startYear ? ` | ${item.startYear}–${item.isCurrentlyWorking ? 'Present' : item.endYear || ''}` : ''}${item.keyAchievement ? ` | ${item.keyAchievement}` : ''}`
+        )
+      : ['- Add experience']),
     '',
     'PROJECTS',
-    ...(form.projects.length ? form.projects.map((item) => `- ${item}`) : ['- Add projects']),
+    ...(form.projects.length
+      ? form.projects.map((item) =>
+          typeof item === 'string'
+            ? `- ${item}`
+            : `- ${item.title || 'Untitled'}${item.role ? ` (${item.role})` : ''}${item.techStack?.length ? ` | ${item.techStack.join(', ')}` : ''}${item.githubUrl ? ` | ${item.githubUrl}` : ''}`
+        )
+      : ['- Add projects']),
     '',
     'EDUCATION',
     ...(form.educationEntries.some(hasEducationContent)
@@ -283,7 +336,9 @@ const StudentProfilePage = () => {
         email: data.email || user?.email || '',
         mobile: data.mobile || user?.mobile || '',
         avatarUrl: data.avatarUrl || user?.avatarUrl || user?.avatar_url || '',
-        educationEntries: ensureEducationEntries(data.educationEntries)
+        educationEntries: ensureEducationEntries(data.educationEntries),
+        experience: normalizeExperienceItems(data.experience),
+        projects: normalizeProjectItems(data.projects)
       });
       setMessage(response.error ? { type: 'error', text: response.error } : { type: '', text: '' });
       setLoading(false);
@@ -336,6 +391,46 @@ const StudentProfilePage = () => {
       ...current,
       educationEntries: current.educationEntries.map((item, entryIndex) =>
         entryIndex === index ? { ...item, [field]: value } : item
+      )
+    }));
+
+  const addExperience = () =>
+    setForm((current) => ({
+      ...current,
+      experience: [...current.experience, { ...EMPTY_EXPERIENCE }]
+    }));
+
+  const removeExperience = (index) =>
+    setForm((current) => ({
+      ...current,
+      experience: current.experience.filter((_, i) => i !== index)
+    }));
+
+  const updateExperience = (index, field, value) =>
+    setForm((current) => ({
+      ...current,
+      experience: current.experience.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+
+  const addProject = () =>
+    setForm((current) => ({
+      ...current,
+      projects: [...current.projects, { ...EMPTY_PROJECT }]
+    }));
+
+  const removeProject = (index) =>
+    setForm((current) => ({
+      ...current,
+      projects: current.projects.filter((_, i) => i !== index)
+    }));
+
+  const updateProject = (index, field, value) =>
+    setForm((current) => ({
+      ...current,
+      projects: current.projects.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
       )
     }));
 
@@ -629,6 +724,41 @@ const StudentProfilePage = () => {
                   <FiFileText size={14} />
                   {hasResume ? 'Resume ready' : 'Resume missing'}
                 </span>
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.82rem] font-bold ${form.isDiscoverable ? 'border-sky-100 bg-sky-50 text-sky-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                  <FiUser size={14} />
+                  {form.isDiscoverable ? 'Discoverable by HR' : 'Private profile'}
+                </span>
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.82rem] font-bold ${form.availableToHire ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                  <FiCheckCircle size={14} />
+                  {form.availableToHire ? 'Available to hire' : 'Availability hidden'}
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-3 rounded-[1.25rem] border border-slate-100 bg-slate-50 px-4 py-3 sm:grid-cols-2">
+                <label className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.isDiscoverable}
+                    onChange={(event) => updateField('isDiscoverable', event.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-slate-300 accent-brand-600"
+                  />
+                  <span>
+                    <span className="block text-sm font-bold text-navy">Show me in Candidate Database</span>
+                    <span className="mt-0.5 block text-xs text-slate-500">Recruiters can discover your profile only when this is enabled.</span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.availableToHire}
+                    onChange={(event) => updateField('availableToHire', event.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-slate-300 accent-brand-600"
+                  />
+                  <span>
+                    <span className="block text-sm font-bold text-navy">Mark me available to hire</span>
+                    <span className="mt-0.5 block text-xs text-slate-500">Adds a recruiter-facing availability badge for faster sourcing.</span>
+                  </span>
+                </label>
               </div>
 
               <div className="mt-3 grid gap-x-4 gap-y-2.5 text-[0.86rem] text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
@@ -931,9 +1061,7 @@ const StudentProfilePage = () => {
 
           <article
             id="employment"
-            ref={(node) => {
-              sectionRefs.current.employment = node;
-            }}
+            ref={(node) => { sectionRefs.current.employment = node; }}
             className={cardClassName}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -942,19 +1070,215 @@ const StudentProfilePage = () => {
                   <h2 className="text-2xl font-extrabold text-navy">Employment</h2>
                   <span className="text-base font-bold text-emerald-600">{hasEmployment ? 'Updated' : 'Add 18%'}</span>
                 </div>
-                <p className="mt-2 text-sm text-slate-500">Your employment details will help recruiters understand your experience.</p>
+                <p className="mt-2 text-sm text-slate-500">
+                  Add each job separately so recruiters can clearly see your career timeline, responsibilities, and impact.
+                </p>
               </div>
-              <button type="button" onClick={() => scrollToNode(sectionRefs.current.employment)} className="text-lg font-bold text-[#2d5bff]">
-                {hasEmployment ? 'Update employment' : 'Add employment'}
+              <button
+                type="button"
+                onClick={addExperience}
+                className="inline-flex items-center gap-2 rounded-full border border-[#2d5bff] px-4 py-2 text-sm font-bold text-[#2d5bff] transition hover:bg-[#eef2ff]"
+              >
+                <FiPlus size={15} />
+                Add employment
               </button>
             </div>
-            <textarea
-              rows="5"
-              value={joinLineList(form.experience)}
-              onChange={(event) => updateField('experience', parseLineList(event.target.value))}
-              className="mt-5 w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-              placeholder="Frontend Developer Intern - Built dashboards&#10;Software Engineer - Worked on APIs"
-            />
+
+            {form.experience.length === 0 ? (
+              <div className="mt-6 rounded-2xl border-2 border-dashed border-slate-200 px-6 py-10 text-center">
+                <FiBriefcase size={28} className="mx-auto mb-3 text-slate-300" />
+                <p className="text-sm font-semibold text-slate-400">No employment added yet.</p>
+                <p className="mt-1 text-xs text-slate-400">Click &ldquo;Add employment&rdquo; to tell recruiters about your work history.</p>
+                <button
+                  type="button"
+                  onClick={addExperience}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
+                >
+                  <FiPlus size={14} />
+                  Add first job
+                </button>
+              </div>
+            ) : (
+              <div className="mt-6 space-y-5">
+                {form.experience.map((entry, index) => (
+                  <div
+                    key={`exp-${index}`}
+                    className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-5"
+                  >
+                    {/* Card header */}
+                    <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-lg font-extrabold text-navy">
+                          {entry.designation || entry.companyName || `Experience #${index + 1}`}
+                        </p>
+                        {entry.designation && entry.companyName && (
+                          <p className="mt-0.5 text-sm text-slate-500">{entry.companyName}</p>
+                        )}
+                        {(entry.startYear || entry.isCurrentlyWorking) && (
+                          <p className="mt-0.5 text-xs text-slate-400">
+                            {entry.startYear || ''}
+                            {entry.startYear ? ' – ' : ''}
+                            {entry.isCurrentlyWorking ? 'Present' : entry.endYear || ''}
+                            {entry.location ? ` · ${entry.location}` : ''}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeExperience(index)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition hover:bg-red-50"
+                      >
+                        <FiTrash2 size={13} />
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {/* Company name */}
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Company name <span className="text-red-400">*</span></p>
+                        <input
+                          value={entry.companyName}
+                          onChange={(e) => updateExperience(index, 'companyName', e.target.value)}
+                          placeholder="e.g. Infosys, Startupname, Freelance"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      {/* Designation */}
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Designation / Role <span className="text-red-400">*</span></p>
+                        <input
+                          value={entry.designation}
+                          onChange={(e) => updateExperience(index, 'designation', e.target.value)}
+                          placeholder="e.g. Software Engineer, Intern, Team Lead"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      {/* Employment type */}
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Employment type</p>
+                        <select
+                          value={entry.employmentType}
+                          onChange={(e) => updateExperience(index, 'employmentType', e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        >
+                          <option value="Full-time">Full-time</option>
+                          <option value="Part-time">Part-time</option>
+                          <option value="Internship">Internship</option>
+                          <option value="Freelance">Freelance</option>
+                          <option value="Contract">Contract</option>
+                        </select>
+                      </div>
+
+                      {/* Location */}
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Location</p>
+                        <input
+                          value={entry.location}
+                          onChange={(e) => updateExperience(index, 'location', e.target.value)}
+                          placeholder="e.g. Mumbai / Remote / Hybrid"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      {/* Start year */}
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Start year</p>
+                        <input
+                          value={entry.startYear}
+                          onChange={(e) => updateExperience(index, 'startYear', e.target.value)}
+                          placeholder="e.g. 2022"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      {/* End year + currently working */}
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">End year</p>
+                        <input
+                          value={entry.endYear}
+                          onChange={(e) => updateExperience(index, 'endYear', e.target.value)}
+                          placeholder="e.g. 2024"
+                          disabled={entry.isCurrentlyWorking}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100 disabled:bg-slate-100 disabled:text-slate-400"
+                        />
+                        <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={entry.isCurrentlyWorking}
+                            onChange={(e) => {
+                              updateExperience(index, 'isCurrentlyWorking', e.target.checked);
+                              if (e.target.checked) updateExperience(index, 'endYear', '');
+                            }}
+                            className="h-4 w-4 rounded accent-[#2d5bff]"
+                          />
+                          I currently work here
+                        </label>
+                      </div>
+
+                      {/* Responsibilities */}
+                      <div className="md:col-span-2">
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Key responsibilities</p>
+                        <textarea
+                          rows="3"
+                          value={entry.responsibilities}
+                          onChange={(e) => updateExperience(index, 'responsibilities', e.target.value)}
+                          placeholder="Describe what you did day-to-day. e.g. Built REST APIs for user auth module, Led frontend migration from jQuery to React, Managed a team of 3 interns..."
+                          className="w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      {/* Key achievement */}
+                      <div className="md:col-span-2">
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">
+                          Key achievement <span className="font-normal text-slate-400">(quantify it — recruiters love numbers)</span>
+                        </p>
+                        <input
+                          value={entry.keyAchievement}
+                          onChange={(e) => updateExperience(index, 'keyAchievement', e.target.value)}
+                          placeholder="e.g. Reduced page load time by 40% · Increased sales conversions by ₹5L/month · Shipped feature used by 10k+ users"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      {/* Tech stack */}
+                      <div className="md:col-span-2">
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Technologies used <span className="font-normal text-slate-400">(comma-separated)</span></p>
+                        <input
+                          value={joinCommaList(entry.techStack)}
+                          onChange={(e) => updateExperience(index, 'techStack', parseCommaList(e.target.value))}
+                          placeholder="e.g. React, Node.js, PostgreSQL, Docker, AWS"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                        {entry.techStack?.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {entry.techStack.map((tech) => (
+                              <span
+                                key={tech}
+                                className="rounded-full bg-[#eef2ff] px-2.5 py-0.5 text-xs font-semibold text-[#2d5bff]"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addExperience}
+                  className="inline-flex items-center gap-2 rounded-full border border-dashed border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-500 transition hover:border-[#2d5bff] hover:text-[#2d5bff]"
+                >
+                  <FiPlus size={15} />
+                  Add another job
+                </button>
+              </div>
+            )}
           </article>
 
           <article
@@ -1048,27 +1372,211 @@ const StudentProfilePage = () => {
 
           <article
             id="projects"
-            ref={(node) => {
-              sectionRefs.current.projects = node;
-            }}
+            ref={(node) => { sectionRefs.current.projects = node; }}
             className={cardClassName}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-extrabold text-navy">Projects</h2>
-                <p className="mt-2 text-sm text-slate-500">Stand out to employers by adding details about projects that you have done so far.</p>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-extrabold text-navy">Projects</h2>
+                  <span className="text-base font-bold text-emerald-600">{hasProjects ? 'Updated' : 'Add 6%'}</span>
+                </div>
+                <p className="mt-2 text-sm text-slate-500">
+                  Projects show recruiters what you can build. Add tech stack, links, and your role so companies understand your actual contribution.
+                </p>
               </div>
-              <button type="button" onClick={() => scrollToNode(sectionRefs.current.projects)} className="text-lg font-bold text-[#2d5bff]">
+              <button
+                type="button"
+                onClick={addProject}
+                className="inline-flex items-center gap-2 rounded-full border border-[#2d5bff] px-4 py-2 text-sm font-bold text-[#2d5bff] transition hover:bg-[#eef2ff]"
+              >
+                <FiPlus size={15} />
                 Add project
               </button>
             </div>
-            <textarea
-              rows="5"
-              value={joinLineList(form.projects)}
-              onChange={(event) => updateField('projects', parseLineList(event.target.value))}
-              className="mt-5 w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-              placeholder="Portfolio website&#10;Campus hiring dashboard&#10;Inventory app"
-            />
+
+            {form.projects.length === 0 ? (
+              <div className="mt-6 rounded-2xl border-2 border-dashed border-slate-200 px-6 py-10 text-center">
+                <FiTrendingUp size={28} className="mx-auto mb-3 text-slate-300" />
+                <p className="text-sm font-semibold text-slate-400">No projects added yet.</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Projects are the #1 thing freshers can show. Add college projects, personal builds, or open-source work.
+                </p>
+                <button
+                  type="button"
+                  onClick={addProject}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
+                >
+                  <FiPlus size={14} />
+                  Add first project
+                </button>
+              </div>
+            ) : (
+              <div className="mt-6 space-y-5">
+                {form.projects.map((entry, index) => (
+                  <div
+                    key={`proj-${index}`}
+                    className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-5"
+                  >
+                    {/* Card header */}
+                    <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-lg font-extrabold text-navy">
+                          {entry.title || `Project #${index + 1}`}
+                        </p>
+                        {entry.role && (
+                          <p className="mt-0.5 text-sm text-slate-500">Your role: {entry.role}</p>
+                        )}
+                        {entry.techStack?.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {entry.techStack.map((tech) => (
+                              <span
+                                key={tech}
+                                className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[11px] font-semibold text-[#2d5bff]"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeProject(index)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition hover:bg-red-50"
+                      >
+                        <FiTrash2 size={13} />
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {/* Project title */}
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Project title <span className="text-red-400">*</span></p>
+                        <input
+                          value={entry.title}
+                          onChange={(e) => updateProject(index, 'title', e.target.value)}
+                          placeholder="e.g. Job Portal App, Expense Tracker, Chat Bot"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      {/* Your role */}
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Your role in this project</p>
+                        <input
+                          value={entry.role}
+                          onChange={(e) => updateProject(index, 'role', e.target.value)}
+                          placeholder="e.g. Solo developer, Frontend lead, Backend dev"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      {/* Description */}
+                      <div className="md:col-span-2">
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Project description</p>
+                        <textarea
+                          rows="3"
+                          value={entry.description}
+                          onChange={(e) => updateProject(index, 'description', e.target.value)}
+                          placeholder="What does this project do? What problem does it solve? What was your approach? e.g. Built a full-stack job portal with resume parsing and ATS scoring for 500+ users."
+                          className="w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      {/* Tech stack */}
+                      <div className="md:col-span-2">
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Technologies used <span className="font-normal text-slate-400">(comma-separated)</span></p>
+                        <input
+                          value={joinCommaList(entry.techStack)}
+                          onChange={(e) => updateProject(index, 'techStack', parseCommaList(e.target.value))}
+                          placeholder="e.g. React, Node.js, MongoDB, Tailwind CSS, OpenAI API"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                        {entry.techStack?.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {entry.techStack.map((tech) => (
+                              <span
+                                key={tech}
+                                className="rounded-full bg-[#eef2ff] px-2.5 py-0.5 text-xs font-semibold text-[#2d5bff]"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* GitHub URL */}
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">GitHub / Source code URL</p>
+                        <input
+                          value={entry.githubUrl}
+                          onChange={(e) => updateProject(index, 'githubUrl', e.target.value)}
+                          placeholder="https://github.com/yourname/project"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      {/* Live URL */}
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Live / Demo URL</p>
+                        <input
+                          value={entry.liveUrl}
+                          onChange={(e) => updateProject(index, 'liveUrl', e.target.value)}
+                          placeholder="https://myproject.vercel.app"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      {/* Year */}
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Start year</p>
+                        <input
+                          value={entry.startYear}
+                          onChange={(e) => updateProject(index, 'startYear', e.target.value)}
+                          placeholder="e.g. 2023"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        />
+                      </div>
+
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold text-slate-500">End year</p>
+                        <input
+                          value={entry.endYear}
+                          onChange={(e) => updateProject(index, 'endYear', e.target.value)}
+                          placeholder="e.g. 2024"
+                          disabled={entry.isOngoing}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100 disabled:bg-slate-100 disabled:text-slate-400"
+                        />
+                        <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={entry.isOngoing}
+                            onChange={(e) => {
+                              updateProject(index, 'isOngoing', e.target.checked);
+                              if (e.target.checked) updateProject(index, 'endYear', '');
+                            }}
+                            className="h-4 w-4 rounded accent-[#2d5bff]"
+                          />
+                          Ongoing / In progress
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addProject}
+                  className="inline-flex items-center gap-2 rounded-full border border-dashed border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-500 transition hover:border-[#2d5bff] hover:text-[#2d5bff]"
+                >
+                  <FiPlus size={15} />
+                  Add another project
+                </button>
+              </div>
+            )}
           </article>
           <article
             id="profile-summary"

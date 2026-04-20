@@ -12,7 +12,8 @@ const managementPortalKeySet = new Set([
   'support',
   'sales',
   'dataentry',
-  'accounts'
+  'accounts',
+  'campus-connect'
 ]);
 
 const loginPortals = {
@@ -249,6 +250,25 @@ const loginPortals = {
       'Dedicated access for accounts and financial operations teams.',
       'Cleaner role-specific login path with less confusion.',
       'Built to send each account only to its assigned portal.'
+    ]
+  },
+  'campus-connect': {
+    key: 'campus-connect',
+    title: 'Campus Connect login',
+    eyebrow: 'Institution access',
+    description: 'Access the campus workspace for placement operations, student records, drives, and outreach tracking.',
+    helperText: 'For authorized campus connect and placement-cell accounts only.',
+    emailLabel: 'Campus email',
+    emailPlaceholder: 'Enter your campus email',
+    passwordPlaceholder: 'Enter your password',
+    allowSocialLogin: false,
+    showCreateAccount: false,
+    showOtpLogin: true,
+    defaultRedirectPath: '/portal/campus-connect/dashboard',
+    benefits: [
+      'Open student records, drives, and campus reports from one portal.',
+      'Keeps campus access separate from admin and employee dashboards.',
+      'Sends each login directly to the placement workspace.'
     ]
   }
 };

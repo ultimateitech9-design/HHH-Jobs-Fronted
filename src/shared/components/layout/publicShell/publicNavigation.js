@@ -28,6 +28,12 @@ export const getPublicNavItems = ({ jobsNavPath }) => [
         label: 'For Veterans',
         to: '/veterans',
         matchers: [/^\/veterans(?:\/.*)?$/, /^\/retired-employee(?:\/.*)?$/]
+      },
+      {
+        key: 'for-campus-connect',
+        label: 'Campus Connect',
+        to: '/campus-connect',
+        matchers: [/^\/campus-connect(?:\/.*)?$/]
       }
     ]
   },

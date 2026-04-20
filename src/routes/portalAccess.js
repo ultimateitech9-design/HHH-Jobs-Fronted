@@ -6,5 +6,6 @@ export const PORTAL_ACCESS = Object.freeze({
   support: Object.freeze(['admin', 'super_admin', 'support']),
   platform: Object.freeze(['admin', 'super_admin', 'platform']),
   audit: Object.freeze(['admin', 'super_admin', 'audit']),
-  dataentry: Object.freeze(['admin', 'super_admin', 'dataentry'])
+  dataentry: Object.freeze(['admin', 'super_admin', 'dataentry']),
+  campusConnect: Object.freeze(['admin', 'super_admin', 'campus_connect'])
 });

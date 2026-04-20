@@ -357,10 +357,18 @@ export const createHrInterview = async (payload) =>
       body: JSON.stringify({
         applicationId: payload.applicationId,
         scheduledAt: payload.scheduledAt,
+        title: payload.title,
+        roundLabel: payload.roundLabel,
+        durationMinutes: payload.durationMinutes,
+        timezone: payload.timezone,
         mode: payload.mode,
         meetingLink: payload.meetingLink,
         location: payload.location,
-        note: payload.note
+        note: payload.note,
+        panelMode: payload.panelMode,
+        panelMembers: payload.panelMembers,
+        calendarProvider: payload.calendarProvider,
+        candidateConsentRequired: payload.candidateConsentRequired
       })
     },
     extract: (responsePayload) => responsePayload?.interview || responsePayload
@@ -374,9 +382,18 @@ export const updateHrInterview = async (interviewId, payload) =>
       body: JSON.stringify({
         status: payload.status,
         scheduledAt: payload.scheduledAt,
+        title: payload.title,
+        roundLabel: payload.roundLabel,
+        durationMinutes: payload.durationMinutes,
+        timezone: payload.timezone,
+        mode: payload.mode,
         meetingLink: payload.meetingLink,
         location: payload.location,
-        note: payload.note
+        note: payload.note,
+        panelMode: payload.panelMode,
+        panelMembers: payload.panelMembers,
+        calendarProvider: payload.calendarProvider,
+        candidateConsentRequired: payload.candidateConsentRequired
       })
     },
     extract: (responsePayload) => responsePayload?.interview || responsePayload
@@ -466,6 +483,137 @@ export const bulkUpdateApplications = async ({ jobId, applicationIds, action }) 
     options: { method: 'POST', body: JSON.stringify({ applicationIds, action }) },
     emptyData: { updatedCount: 0 },
     extract: (payload) => ({ updatedCount: payload?.updatedCount || 0 })
+  });
+
+export const searchHrCandidatesV2 = async (filters = {}) => {
+  const params = new URLSearchParams();
+  Object.entries({
+    q: filters.search,
+    skills: filters.skills,
+    location: filters.location,
+    experience: filters.experience,
+    minCgpa: filters.minCgpa,
+    degree: filters.degree,
+    branch: filters.branch,
+    college: filters.college,
+    batchYear: filters.batchYear,
+    available: filters.availableOnly ? 'true' : undefined
+  }).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== '') params.set(key, value);
+  });
+
+  return safeRequest({
+    path: `/hr/candidates/search${params.toString() ? `?${params.toString()}` : ''}`,
+    emptyData: {
+      access: { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
+      summary: { total: 0, blurred: 0, connected: 0, availableNow: 0 },
+      candidates: []
+    },
+    extract: (payload) => ({
+      access: payload?.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
+      summary: payload?.summary || { total: 0, blurred: 0, connected: 0, availableNow: 0 },
+      candidates: payload?.candidates || []
+    })
+  });
+};
+
+export const sendCandidateInterest = async (studentId, { message = '', templateId = '', campaignLabel = '' } = {}) =>
+  strictRequest({
+    path: `/hr/candidates/${studentId}/interest`,
+    options: { method: 'POST', body: JSON.stringify({ message, templateId, campaignLabel }) },
+    extract: (payload) => payload?.interest || payload
+  });
+
+export const sendBulkCandidateInterest = async (studentIds, { message = '', templateId = '', campaignLabel = '' } = {}) =>
+  strictRequest({
+    path: '/hr/candidates/bulk-interest',
+    options: { method: 'POST', body: JSON.stringify({ studentIds, message, templateId, campaignLabel }) },
+    extract: (payload) => ({ sentCount: payload?.sentCount || 0 })
+  });
+
+export const getHrCandidateMessageTemplates = async () =>
+  safeRequest({
+    path: '/hr/candidates/message-templates',
+    emptyData: {
+      access: { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
+      templates: []
+    },
+    extract: (payload) => ({
+      access: payload?.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
+      templates: payload?.templates || []
+    })
+  });
+
+export const createHrCandidateMessageTemplate = async ({ name, message, isDefault = false }) =>
+  strictRequest({
+    path: '/hr/candidates/message-templates',
+    options: { method: 'POST', body: JSON.stringify({ name, message, isDefault }) },
+    extract: (payload) => payload?.template || payload
+  });
+
+export const updateHrCandidateMessageTemplate = async (templateId, { name, message, isDefault = false }) =>
+  strictRequest({
+    path: `/hr/candidates/message-templates/${templateId}`,
+    options: { method: 'PATCH', body: JSON.stringify({ name, message, isDefault }) },
+    extract: (payload) => payload?.template || payload
+  });
+
+export const deleteHrCandidateMessageTemplate = async (templateId) =>
+  strictRequest({
+    path: `/hr/candidates/message-templates/${templateId}`,
+    options: { method: 'DELETE' },
+    extract: (payload) => payload
+  });
+
+export const getHrCandidateInterests = async () =>
+  safeRequest({
+    path: '/hr/candidates/interests',
+    emptyData: {
+      access: { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
+      summary: { total: 0, pending: 0, accepted: 0, declined: 0 },
+      interests: []
+    },
+    extract: (payload) => ({
+      access: payload?.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
+      summary: payload?.summary || { total: 0, pending: 0, accepted: 0, declined: 0 },
+      interests: payload?.interests || []
+    })
+  });
+
+export const getHrShortlisted = async () =>
+  safeRequest({
+    path: '/hr/shortlisted',
+    emptyData: {
+      access: { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
+      summary: { total: 0, connected: 0 },
+      shortlisted: []
+    },
+    extract: (payload) => ({
+      access: payload?.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
+      summary: payload?.summary || { total: 0, connected: 0 },
+      shortlisted: payload?.shortlisted || []
+    })
+  });
+
+export const addToShortlist = async (studentId, { tags = [], notes = '' } = {}) =>
+  strictRequest({
+    path: '/hr/shortlisted',
+    options: { method: 'POST', body: JSON.stringify({ studentId, tags, notes }) },
+    extract: (payload) => payload?.shortlisted || payload
+  });
+
+export const updateShortlistEntry = async (studentId, { tags, notes } = {}) =>
+  strictRequest({
+    path: `/hr/shortlisted/${studentId}`,
+    options: { method: 'PATCH', body: JSON.stringify({ tags, notes }) },
+    extract: (payload) => payload?.shortlisted || payload
+  });
+
+export const removeFromShortlist = async (studentId) =>
+  strictRequest({
+    path: `/hr/shortlisted/${studentId}`,
+    options: { method: 'DELETE' },
+    extract: (payload) => payload
   });
 
 export const getEmptyJobDraft = () => clone(defaultJobDraft);

@@ -5,6 +5,8 @@ import {
   FiCalendar,
   FiCheckSquare,
   FiHome,
+  FiSend,
+  FiStar,
   FiUser,
   FiUsers,
   FiFileText
@@ -15,7 +17,9 @@ import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLay
 const hrNavItems = [
   { to: '/portal/hr/dashboard', label: 'Dashboard', icon: FiHome },
   { to: '/portal/hr/jobs', label: 'Job Postings', icon: FiBriefcase },
-  { to: '/portal/hr/candidates', label: 'Applicants', icon: FiUsers },
+  { to: '/portal/hr/candidates', label: 'Candidate DB', icon: FiUsers },
+  { to: '/portal/hr/shortlisted', label: 'Shortlisted', icon: FiStar },
+  { to: '/portal/hr/interests', label: 'Sent Interests', icon: FiSend },
   { to: '/portal/hr/interviews', label: 'Interviews', icon: FiCalendar },
   { to: '/portal/hr/notifications', label: 'Hired', icon: FiBell },
   { to: '/portal/hr/analytics', label: 'Reports', icon: FiFileText },
