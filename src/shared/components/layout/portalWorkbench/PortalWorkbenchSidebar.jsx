@@ -124,7 +124,7 @@ const PortalWorkbenchSidebar = ({
         </div>
       )}
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-1">
+      <nav className={`flex-1 space-y-0.5 overflow-y-auto ${isCollapsed ? 'px-2 py-2' : 'px-3 py-1'}`}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const itemKey = getItemKey(item);
@@ -208,7 +208,9 @@ const PortalWorkbenchSidebar = ({
                 key={itemKey}
                 to={targetChild?.to || '/'}
                 className={({ isActive }) =>
-                  `group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition-all duration-150 ${
+                  `group flex w-full items-center text-sm font-medium transition-all duration-150 ${
+                    isCollapsed ? 'justify-center rounded-[1.1rem] px-0 py-1.5' : 'gap-3 rounded-2xl px-3 py-2'
+                  } ${
                     isActive || isGroupedItemActive
                       ? 'bg-gradient-to-r from-brand-50 to-brand-100 text-brand-800 shadow-sm ring-1 ring-brand-200'
                       : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
@@ -239,7 +241,9 @@ const PortalWorkbenchSidebar = ({
               key={itemKey}
               to={item.to}
               className={({ isActive }) =>
-                `group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition-all duration-150 ${
+                `group flex w-full items-center text-sm font-medium transition-all duration-150 ${
+                  isCollapsed ? 'justify-center rounded-[1.1rem] px-0 py-1.5' : 'gap-3 rounded-2xl px-3 py-2'
+                } ${
                   isActive
                     ? 'bg-gradient-to-r from-brand-50 to-brand-100 text-brand-800 shadow-sm ring-1 ring-brand-200'
                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'

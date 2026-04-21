@@ -2,9 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiArrowRight,
-  FiCheckCircle,
-  FiLock,
-  FiShield,
   FiStar
 } from 'react-icons/fi';
 
@@ -76,21 +73,10 @@ const CompanyCard = ({ company, isAuthenticated }) => {
           </div>
         </div>
 
-        <div className="mt-3 flex items-start justify-between gap-3 text-[10px] font-bold uppercase tracking-[0.14em]">
-          <div className="flex flex-col items-start gap-1.5 text-[#3d2c19]">
-            <span className="inline-flex items-center gap-1 whitespace-nowrap">
-              <FiStar size={10} className="text-[#c08a1f]" />
-              Sponsor
-            </span>
-            <span className="inline-flex items-center gap-1 whitespace-nowrap text-[#15803d]">
-              <FiCheckCircle size={10} />
-              Approved
-            </span>
-          </div>
-
-          <span className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full border border-[#d7c6ae] bg-white/80 px-2.5 py-1 text-[#4c3b28]">
-            {isAuthenticated ? <FiShield size={10} /> : <FiLock size={10} />}
-            {isAuthenticated ? entryIntent.accessLabel : 'Members only'}
+        <div className="mt-3 flex items-start gap-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#3d2c19]">
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            <FiStar size={10} className="text-[#c08a1f]" />
+            Sponsor
           </span>
         </div>
 
