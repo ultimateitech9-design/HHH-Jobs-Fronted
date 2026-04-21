@@ -5,9 +5,7 @@ import {
   FiArrowLeft,
   FiArrowUpRight,
   FiBriefcase,
-  FiCheckCircle,
   FiExternalLink,
-  FiLayers,
   FiLock,
   FiMapPin,
   FiSearch,
@@ -17,9 +15,9 @@ import {
 } from 'react-icons/fi';
 
 import useAuthStore from '../../../core/auth/authStore';
-import SectionHeader from '../../../shared/components/SectionHeader';
 import { normalizeRole } from '../../../utils/auth';
 import { getPublicCompanyDetail } from '../services/companyDirectoryApi';
+import { getCompanyOverviewContent } from '../services/companyOverviewContent';
 import { getLoginRedirectState, shouldLockJobBoards } from '../utils/publicAccess';
 import {
   clearCompanyJobIntent,
@@ -28,13 +26,6 @@ import {
   readCompanyJobIntent,
   saveCompanyJobIntent
 } from '../utils/companyJobIntent';
-
-const FILTER_OPTIONS = [
-  { key: 'all', label: 'All Jobs' },
-  { key: 'portal', label: 'Portal Jobs' },
-  { key: 'external', label: 'Live Fetched' },
-  { key: 'remote', label: 'Remote Roles' }
-];
 
 const SOURCE_COLOR_VARIANTS = [
   'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -304,7 +295,6 @@ const CompanyJobsPage = () => {
     error: ''
   });
   const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all');
   const [resumeIntent, setResumeIntent] = useState(null);
 
   useEffect(() => {
@@ -340,6 +330,7 @@ const CompanyJobsPage = () => {
   }, [currentPath, isAuthenticated]);
 
   const company = detailState.company;
+  const companyOverview = useMemo(() => getCompanyOverviewContent(company), [company]);
   const allJobs = useMemo(() => buildUnifiedJobs(detailState.jobs), [detailState.jobs]);
   const filteredJobs = useMemo(
     () =>
@@ -356,12 +347,9 @@ const CompanyJobsPage = () => {
         const matchesSearch =
           !search.trim() || haystack.includes(search.trim().toLowerCase());
         if (!matchesSearch) return false;
-        if (activeFilter === 'portal') return job.sourceType === 'portal';
-        if (activeFilter === 'external') return job.sourceType === 'external';
-        if (activeFilter === 'remote') return job.isRemote;
         return true;
       }),
-    [activeFilter, allJobs, search]
+    [allJobs, search]
   );
 
   const handleJobAction = (job) => {
@@ -425,107 +413,101 @@ const CompanyJobsPage = () => {
           Back to Companies
         </Link>
 
-        <section className="rounded-[36px] border border-white/70 bg-white/88 px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur md:px-8 xl:px-10">
-          <div>
+        <section className="relative overflow-hidden rounded-[38px] border border-[#ebddb8] bg-[linear-gradient(135deg,rgba(255,251,243,0.98),rgba(255,255,255,0.95)_46%,rgba(255,251,245,0.96))] px-6 py-7 shadow-[0_24px_70px_rgba(171,133,52,0.10)] md:px-8 md:py-8 xl:px-10">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(246,216,132,0.22),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(226,238,250,0.35),transparent_30%)]" />
+
+          <div className="relative grid gap-8 xl:grid-cols-[minmax(420px,0.96fr)_minmax(0,1fr)] xl:items-center">
             <div>
-              <div className="mb-5 flex flex-wrap items-center gap-2">
+              <div className="mb-6 flex flex-wrap items-center gap-2.5">
                 {company.sponsored ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700">
-                    <FiStar size={12} />
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8b55e] bg-[linear-gradient(180deg,#fff8e8,#f3dfaf)] px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.17em] text-[#7b5a12] shadow-[0_8px_24px_rgba(180,140,45,0.12)]">
+                    <FiStar size={11} />
                     Sponsor Company
                   </span>
                 ) : null}
                 {company.premium ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-amber-700">
-                    <FiStar size={12} />
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8b55e] bg-[linear-gradient(180deg,#fff8e8,#f3dfaf)] px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.17em] text-[#7b5a12] shadow-[0_8px_24px_rgba(180,140,45,0.12)]">
+                    <FiStar size={11} />
                     Premium Company
                   </span>
                 ) : null}
-                {company.verifiedEmployer ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">
-                    <FiCheckCircle size={12} />
-                    Verified Employer
-                  </span>
-                ) : null}
-                {company.liveFeed ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700">
-                    <FiTrendingUp size={12} />
-                    Live Hiring Feed
-                  </span>
-                ) : null}
               </div>
 
-              <div className="flex items-start gap-4">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                 {company.logoUrl ? (
-                  <img
-                    src={company.logoUrl}
-                    alt={company.name}
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                    className="h-16 w-16 rounded-[24px] border border-slate-200 bg-white object-contain p-2"
-                  />
+                  <div className="flex h-[122px] w-[122px] shrink-0 items-center justify-center rounded-full border-[3px] border-[#d8bd73] bg-white p-4 shadow-[0_14px_35px_rgba(184,145,61,0.14)]">
+                    <img
+                      src={company.logoUrl}
+                      alt={company.name}
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-[24px] bg-gradient-to-br from-amber-100 via-white to-slate-100 text-lg font-extrabold text-navy shadow-inner">
+                  <div className="flex h-[122px] w-[122px] shrink-0 items-center justify-center rounded-full border-[3px] border-[#d8bd73] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(248,240,217,0.92))] text-[2rem] font-black text-navy shadow-[0_14px_35px_rgba(184,145,61,0.14)]">
                     {getInitials(company.name)}
                   </div>
                 )}
+
                 <div className="min-w-0">
-                  <SectionHeader
-                    eyebrow="Company Hiring Lounge"
-                    title={company.name}
-                  />
-                </div>
-              </div>
+                  <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] text-[#8e6a1c]">
+                    Company Hiring Lounge
+                  </p>
+                  <h1 className="mt-2 break-words font-heading text-[2.1rem] font-black leading-tight text-navy sm:text-[2.35rem]">
+                    {company.name}
+                  </h1>
 
-              <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-600">
-                {company.location ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2">
-                    <FiMapPin size={14} />
-                    {company.location}
-                  </span>
-                ) : null}
-                {company.companySize ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2">
-                    <FiLayers size={14} />
-                    {company.companySize}
-                  </span>
-                ) : null}
-                {company.industry ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2">
-                    <FiBriefcase size={14} />
-                    {company.industry}
-                  </span>
-                ) : null}
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2">
-                  {isAuthenticated ? <FiShield size={14} /> : <FiLock size={14} />}
-                  {isAuthenticated ? 'Jobs unlocked' : 'Login required for jobs'}
-                </span>
-              </div>
-
-              {company.categories?.length ? (
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {company.categories.map((category) => (
-                    <span
-                      key={`${company.id}-${category}`}
-                      className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600"
-                    >
-                      {category}
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <span className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#d7d9e0] bg-white px-4 py-2 text-[0.98rem] font-medium text-slate-600 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                      {isAuthenticated ? <FiShield size={16} /> : <FiLock size={16} />}
+                      {isAuthenticated ? 'Jobs unlocked' : 'Login required'}
                     </span>
-                  ))}
-                </div>
-              ) : null}
+                  </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link
-                  to={isAuthenticated ? '/jobs' : '/login'}
-                  state={isAuthenticated ? undefined : loginRedirectState}
-                  className="inline-flex items-center gap-2 rounded-full bg-navy px-5 py-3 text-sm font-bold text-white transition hover:bg-navy/90"
-                >
-                  {isAuthenticated ? 'Browse All Jobs' : 'Login to Unlock Jobs'}
-                  <FiArrowUpRight size={15} />
-                </Link>
+                  {company.categories?.length ? (
+                    <div className="mt-4 flex flex-wrap gap-2.5">
+                      {company.categories.map((category) => (
+                        <span
+                          key={`${company.id}-${category}`}
+                          className="rounded-full bg-[#edf1f5] px-4 py-1.5 text-sm font-medium text-slate-600"
+                        >
+                          {category}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <Link
+                      to={isAuthenticated ? '/jobs' : '/login'}
+                      state={isAuthenticated ? undefined : loginRedirectState}
+                      className="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-navy px-6 py-3 text-sm font-bold text-white shadow-[0_16px_34px_rgba(22,38,75,0.22)] transition hover:bg-navy/92"
+                    >
+                      {isAuthenticated ? 'Browse All Jobs' : 'Login to Unlock Jobs'}
+                      <FiArrowUpRight size={15} />
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {companyOverview?.description ? (
+              <div className="xl:border-l xl:border-[#e7dbc3] xl:pl-8">
+                <div className="flex items-center gap-3">
+                  <p className="shrink-0 text-[12px] font-extrabold uppercase tracking-[0.2em] text-[#8e6a1c]">
+                    Company Overview
+                  </p>
+                  <span className="h-px flex-1 bg-[#ddd3c2]" />
+                </div>
+                <h3 className="mt-4 font-heading text-[2.05rem] font-black leading-tight text-[#101826] sm:text-[2.3rem]">
+                  {companyOverview.title}
+                </h3>
+                <p className="mt-4 max-w-[40rem] text-[15px] leading-8 text-[#2f3641]">
+                  {companyOverview.description}
+                </p>
+              </div>
+            ) : null}
           </div>
         </section>
 
@@ -586,47 +568,28 @@ const CompanyJobsPage = () => {
         ) : (
           <>
             <section className="rounded-[32px] border border-slate-200/70 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur">
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_auto] xl:items-center">
-                <div className="relative">
-                  <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="search"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search job title, category, location, source..."
-                    className="w-full rounded-full border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-brand-400 focus:bg-white focus:ring-4 focus:ring-brand-100"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {FILTER_OPTIONS.map((option) => (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={() => setActiveFilter(option.key)}
-                      className={`rounded-full px-4 py-2.5 text-sm font-bold transition ${
-                        activeFilter === option.key
-                          ? 'bg-navy text-white shadow-lg shadow-slate-900/10'
-                          : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:text-brand-700'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-[28px] border border-emerald-200 bg-emerald-50/90 px-5 py-4 text-sm text-emerald-800 shadow-sm">
-              <div className="flex items-start gap-3">
-                <FiShield size={18} className="mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-bold">Company role board is unlocked.</p>
-                  <p className="mt-1 leading-6 text-emerald-700">
-                    Search, filters, external apply actions, and portal job handoffs are active for
-                    logged-in members.
-                  </p>
-                </div>
-              </div>
+              <form
+                className="relative"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                }}
+              >
+                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search job title, category, location, source..."
+                  className="w-full rounded-full border border-slate-200 bg-slate-50 py-3 pl-11 pr-32 text-sm font-medium text-slate-700 outline-none transition focus:border-brand-400 focus:bg-white focus:ring-4 focus:ring-brand-100"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 inline-flex -translate-y-1/2 items-center gap-2 rounded-full bg-navy px-4 py-2 text-xs font-bold text-white transition hover:bg-navy/90"
+                >
+                  <FiSearch size={14} />
+                  Search
+                </button>
+              </form>
             </section>
 
             {isAuthenticated && resumeIntent ? (
@@ -683,21 +646,6 @@ const CompanyJobsPage = () => {
             ) : null}
 
             <section className="space-y-5">
-              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-700">
-                    Company Job Board
-                  </p>
-                  <h2 className="mt-2 font-heading text-3xl font-black text-navy">
-                    {formatCount(filteredJobs.length)} jobs found for {company.name}
-                  </h2>
-                </div>
-                <p className="max-w-2xl text-sm leading-6 text-slate-500">
-                  This page combines portal jobs and verified live-fetched openings for one company in
-                  a premium protected layout.
-                </p>
-              </div>
-
               {filteredJobs.length > 0 ? (
                 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                   {filteredJobs.map((job) => (
@@ -716,15 +664,8 @@ const CompanyJobsPage = () => {
                     <FiSearch size={28} />
                   </div>
                   <h3 className="mt-5 font-heading text-2xl font-black text-navy">
-                    No jobs match this filter
+                    No jobs available right now
                   </h3>
-                  <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-slate-500">
-                    {allJobs.length > 0
-                      ? 'Search by title, skill, category, source, or location. Only active jobs for this company are shown here.'
-                      : company.sponsored
-                        ? 'This sponsor company does not have any active jobs yet. As soon as it posts jobs, all of them will appear here automatically.'
-                        : 'This company does not have any active jobs right now.'}
-                  </p>
                 </div>
               )}
             </section>

@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import AiChatbot from '../../../components/AiChatbot';
 import useAuthStore from '../../../core/auth/authStore';
 import NotificationRuntime from '../../../core/notifications/NotificationRuntime';
 import { apiFetch, hasApiAccessToken } from '../../../utils/api';
@@ -8,6 +7,8 @@ import { getDashboardPathByRole, getToken, setAuthSession } from '../../../utils
 import PublicFooter from './publicShell/PublicFooter';
 import PublicNavbar from './publicShell/PublicNavbar';
 import ScrollToTopButton from './publicShell/ScrollToTopButton';
+
+const AiChatbot = lazy(() => import('../../../components/AiChatbot'));
 
 const portalRoutePattern =
   /^\/portal\/(admin|hr|student|platform|audit|dataentry|accounts|sales|support|super-admin)\b/i;
@@ -129,7 +130,11 @@ const RootLayout = () => {
       {!isPortalWorkbench && showScrollTop && !isChatbotOpen ? <ScrollToTopButton /> : null}
 
       <NotificationRuntime />
-      {!isPortalWorkbench ? <AiChatbot /> : null}
+      {!isPortalWorkbench ? (
+        <Suspense fallback={null}>
+          <AiChatbot />
+        </Suspense>
+      ) : null}
     </div>
   );
 };

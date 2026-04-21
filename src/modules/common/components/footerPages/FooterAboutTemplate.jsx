@@ -46,6 +46,7 @@ const FooterAboutTemplate = ({ pageData, relatedLinks }) => {
         eyebrow={pageData.eyebrow}
         title={pageData.title}
         description={pageData.summary}
+        tightTop
         chips={['Hiring clarity', 'Candidate trust', 'Employer workflows']}
         metrics={aboutMetrics}
         actions={[

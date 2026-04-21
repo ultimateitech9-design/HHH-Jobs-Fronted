@@ -103,8 +103,8 @@ const CompanyCard = ({ company, isAuthenticated, onOpenCompany }) => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(234,179,8,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_28%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
       <div className="relative z-10 flex h-full flex-col rounded-[30px] bg-white/88 p-1">
-        <div className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(150deg,rgba(15,23,42,1)_0%,rgba(30,41,59,0.98)_52%,rgba(217,119,6,0.92)_100%)] px-4 py-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(56,189,248,0.18),transparent_24%)] opacity-90" />
+        <div className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(150deg,rgba(39,58,92,0.98)_0%,rgba(67,88,126,0.94)_52%,rgba(220,161,64,0.9)_100%)] px-4 py-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.24),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(255,245,219,0.18),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(56,189,248,0.14),transparent_24%)] opacity-95" />
 
           <div className="relative z-10">
             <div className="flex items-start justify-between gap-2.5">
@@ -122,7 +122,7 @@ const CompanyCard = ({ company, isAuthenticated, onOpenCompany }) => {
                 ))}
               </div>
 
-              <div className="shrink-0 rounded-[20px] border border-white/15 bg-white/10 px-3 py-2.5 text-right shadow-lg shadow-black/10 backdrop-blur">
+              <div className="shrink-0 rounded-[20px] border border-white/20 bg-white/16 px-3 py-2.5 text-right shadow-lg shadow-black/10 backdrop-blur">
                 <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/60">
                   {isAuthenticated ? 'Open Roles' : 'Access'}
                 </p>
@@ -160,7 +160,7 @@ const CompanyCard = ({ company, isAuthenticated, onOpenCompany }) => {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-white/12 bg-white/10 px-3 py-2 text-[11px] text-white/82 backdrop-blur">
+            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-white/18 bg-white/16 px-3 py-2 text-[11px] text-white/86 backdrop-blur">
               {isAuthenticated ? <FiShield size={13} className="shrink-0 text-white/72" /> : <FiLock size={13} className="shrink-0 text-white/72" />}
               <span className="line-clamp-1">{entryIntent.helperText}</span>
             </div>
@@ -215,7 +215,7 @@ const CompanyCard = ({ company, isAuthenticated, onOpenCompany }) => {
               event.stopPropagation();
               handleOpen();
             }}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,rgba(15,23,42,1),rgba(30,64,175,0.94))] px-5 py-3.5 text-[13px] font-black text-white shadow-[0_16px_32px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_38px_rgba(15,23,42,0.24)]"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,rgba(39,58,92,0.98),rgba(84,107,150,0.94))] px-5 py-3.5 text-[13px] font-black text-white shadow-[0_16px_32px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_38px_rgba(15,23,42,0.24)]"
           >
             {isAuthenticated ? 'Open Hiring Lounge' : 'Login to Unlock'}
             <FiArrowRight size={15} />

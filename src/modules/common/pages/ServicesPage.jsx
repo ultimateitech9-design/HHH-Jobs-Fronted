@@ -2,45 +2,16 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiArrowRight,
-  FiBarChart2,
-  FiBell,
   FiBookmark,
-  FiBriefcase,
   FiCheckCircle,
   FiFileText,
   FiLayers,
   FiShield,
-  FiTrendingUp
 } from 'react-icons/fi';
 import { FaGem, FaMedal } from 'react-icons/fa';
 import PublicCallToAction from '../components/publicPages/PublicCallToAction';
-import PublicFeatureCard from '../components/publicPages/PublicFeatureCard';
-import PublicPageHero from '../components/publicPages/PublicPageHero';
 import PublicSectionHeader from '../components/publicPages/PublicSectionHeader';
 import { getCurrentUser } from '../../../utils/auth';
-
-const serviceCards = [
-  {
-    title: 'Job Discovery',
-    description: 'Discover stronger-fit opportunities with clearer search and more relevant recommendations.',
-    icon: FiBriefcase
-  },
-  {
-    title: 'Resume & Profile',
-    description: 'Strengthen resume quality and profile presentation so recruiters can assess you with confidence.',
-    icon: FiFileText
-  },
-  {
-    title: 'Career Growth',
-    description: 'Improve interview readiness, track progress, and build momentum with each application cycle.',
-    icon: FiTrendingUp
-  },
-  {
-    title: 'Alerts & Notifications',
-    description: 'Stay informed about important updates, application movement, and next steps without losing track.',
-    icon: FiBell
-  }
-];
 
 const premiumFeatures = [
   {
@@ -224,11 +195,8 @@ const ServicesPage = () => {
   const user = getCurrentUser();
   const isStudent = user?.role === 'student';
   const isHr = user?.role === 'hr' || user?.role === 'admin';
-  const fallbackPath = '/login';
   const [activePremiumKey, setActivePremiumKey] = useState(premiumFeatures[0].key);
 
-  const getServicePath = (title) => (isStudent ? (studentServicePaths[title] || '/portal/student/home') : fallbackPath);
-  const atsPath = isStudent ? '/portal/student/ats' : isHr ? '/portal/hr/ats' : '/login';
   const premiumCtaPath = isStudent ? '/contact-us' : isHr ? '/portal/hr/jobs' : '/sign-up';
   const premiumLearnMorePath = (featureKey) => {
     if (isStudent) {
@@ -247,80 +215,168 @@ const ServicesPage = () => {
 
   return (
     <div className="pb-16 md:pb-24">
-      <PublicPageHero
-        eyebrow="Career Services"
-        title={<>Career Services That Strengthen <span className="gradient-text">Every Hiring Move</span></>}
-        description="Explore the tools, plans, and premium advantages that help candidates present themselves better and help employers hire with more confidence."
-        chips={['Candidate tools', 'Employer plans', 'ATS support']}
-        actions={[
-          { label: 'Explore Candidate Tools', to: isStudent ? '/portal/student/jobs' : '/sign-up' },
-          { label: 'Open ATS Review', to: atsPath, variant: 'ghost' }
-        ]}
-        metrics={[
-          { label: 'Candidate Tools', value: '4 Core Services', helper: 'Discovery, profile, growth, and alerts' },
-          { label: 'Premium Features', value: '3 Visibility Boosts', helper: 'Priority, discoverability, and application clarity' },
-          { label: 'Employer Plans', value: '4 Hiring Options', helper: 'From entry-level posting to premium reach' }
-        ]}
-        aside={
-          <div className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 p-6 text-white shadow-xl">
-            <h2 className="font-heading text-2xl font-extrabold">Why these services matter</h2>
-            <div className="mt-6 space-y-3">
-              {[
-                'Improve search quality and application readiness',
-                'Strengthen recruiter trust through better visibility',
-                'Choose hiring plans that match real team demand'
-              ].map((item) => (
-                <div key={item} className="rounded-[1.4rem] border border-white/14 bg-white/10 px-4 py-3 text-sm font-semibold text-white/88">
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        }
-      />
-
-      <section className="container mx-auto max-w-7xl px-4">
+      <section className="container mx-auto mt-8 max-w-7xl px-4 md:mt-10">
         <PublicSectionHeader
           centered
-          eyebrow="Core Services"
-          title="Services that support a serious job search"
-          description="Each module is built around a practical need: discover stronger roles, improve presentation, apply with confidence, and track progress clearly."
+          eyebrow="For Employers"
+          title="Job posting plans designed for hiring volume and reach"
         />
 
-        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {serviceCards.map((item, index) => (
-            <PublicFeatureCard
-              key={item.title}
-              delay={index * 0.05}
-              icon={item.icon}
-              title={item.title}
-              description={item.description}
-              to={getServicePath(item.title)}
-              ctaLabel="Open module"
-            />
+        <div className="mt-7 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {jobPostingPlans.map((plan) => (
+            <article
+              key={plan.title}
+              className={`flex flex-col rounded-[1.45rem] border p-4 md:p-4.5 ${planWrapperClassByTone[plan.tone]}`}
+            >
+              <div>
+                <h3 className={`font-heading text-[1.65rem] font-extrabold ${plan.tone === 'premium' ? 'text-white' : 'text-navy'}`}>
+                  {plan.title}
+                </h3>
+                <div className="mt-2.5">
+                  <span className="text-[1.9rem] font-black leading-none">{plan.price}</span>
+                </div>
+                {plan.previousPrice ? (
+                  <div className={`mt-1 flex items-center gap-1.5 text-[13px] font-semibold ${plan.tone === 'premium' ? 'text-white/72' : 'text-slate-500'}`}>
+                    <s>{plan.previousPrice}</s>
+                    <span className={plan.tone === 'premium' ? 'text-amber-200' : 'text-emerald-700'}>
+                      {plan.discountText}
+                    </span>
+                  </div>
+                ) : null}
+                <p className={`mt-2 text-[10px] font-semibold uppercase tracking-[0.16em] ${plan.tone === 'premium' ? 'text-white/58' : 'text-slate-400'}`}>
+                  {plan.taxNote || plan.subTitle}
+                </p>
+                {plan.offerText ? (
+                  <p className={`mt-2.5 rounded-xl px-2.5 py-1.5 text-[10px] font-bold leading-4 ${plan.tone === 'premium' ? 'bg-white/10 text-white' : 'bg-orange-50 text-orange-700'}`}>
+                    {plan.offerText}
+                  </p>
+                ) : null}
+              </div>
+
+              <ul className="mt-4 space-y-2">
+                {plan.features.map((feature) => (
+                  <li
+                    key={feature.label}
+                    className={`flex items-start gap-2 text-[13px] leading-5 ${feature.included ? '' : 'opacity-40'} ${
+                      plan.tone === 'premium' ? 'text-white/86' : 'text-slate-600'
+                    }`}
+                  >
+                    <FiCheckCircle className={`mt-0.5 shrink-0 ${plan.tone === 'premium' ? 'text-amber-200' : 'text-brand-700'}`} />
+                    <span>{feature.label}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-auto pt-4">
+                {plan.withQuantity ? (
+                  <select
+                    defaultValue="01"
+                    className={`mb-2.5 w-full rounded-xl border px-3 py-2 text-[13px] font-semibold ${
+                      plan.tone === 'premium'
+                        ? 'border-white/20 bg-white/10 text-white'
+                        : 'border-slate-200 bg-slate-50 text-navy'
+                    }`}
+                  >
+                    <option value="01">1 Job Post</option>
+                    <option value="02">2 Job Posts</option>
+                    <option value="03">3 Job Posts</option>
+                    <option value="05">5 Job Posts</option>
+                  </select>
+                ) : null}
+                <Link
+                  to={plan.ctaTo}
+                  className={`block rounded-full px-4 py-2 text-center text-[13px] font-semibold ${
+                    plan.tone === 'premium'
+                      ? 'bg-white text-navy'
+                      : 'gradient-gold text-primary shadow-lg shadow-gold/20'
+                  }`}
+                >
+                  {plan.ctaLabel}
+                </Link>
+                <p className={`mt-2 text-center text-[10px] font-semibold uppercase tracking-[0.16em] ${plan.tone === 'premium' ? 'text-white/58' : 'text-slate-400'}`}>
+                  {plan.validity}
+                </p>
+              </div>
+            </article>
           ))}
         </div>
+      </section>
 
-        <Link
-          to={atsPath}
-          className="mt-8 flex flex-col items-start justify-between gap-6 rounded-[2rem] bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 p-8 text-white shadow-xl transition-all hover:-translate-y-1 md:flex-row md:items-center"
-        >
-          <div className="flex items-start gap-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/16 bg-white/10">
-              <FiBarChart2 size={24} />
-            </span>
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-white/65">ATS Resume Score</p>
-              <h3 className="mt-2 font-heading text-2xl font-extrabold">Review resume compatibility before you apply</h3>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-white/74">
-                Review keyword coverage, structure, and ATS readiness before your resume reaches employers.
-              </p>
-            </div>
+      <section className="mt-10 w-full px-4 md:px-6">
+        <div className="rounded-[2rem] bg-slate-950 p-5 text-white shadow-2xl md:p-6">
+          <PublicSectionHeader
+            centered
+            eyebrow="Resume Database"
+            title="Search a larger candidate pool with resume database access"
+            compact
+            className="text-white [&_h2]:text-white [&_h2]:max-w-[44rem] [&_h2]:mx-auto [&_p]:text-white/72 [&_p:first-child]:text-white/60"
+          />
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {resumeDatabasePlans.map((plan) => {
+              const Icon = plan.icon;
+              const isGold = plan.tone === 'gold';
+
+              return (
+                <article
+                  key={plan.title}
+                  className={`flex flex-col rounded-[1.55rem] border p-4 ${planWrapperClassByTone[plan.tone]}`}
+                >
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${isGold ? 'bg-white text-amber-600' : 'bg-slate-800 text-slate-200'}`}>
+                    <Icon size={19} />
+                  </span>
+                  <h3 className="mt-3 font-heading text-lg font-extrabold md:text-[1.5rem]">
+                    {plan.title} Plan
+                  </h3>
+                  <p className={`mt-2 min-h-[40px] text-sm leading-6 ${isGold ? 'text-white/78' : 'text-white/72'}`}>
+                    {plan.subTitle}
+                  </p>
+                  <div className="mt-3">
+                    <span className="text-[1.8rem] font-black md:text-[2rem]">{plan.price}</span>
+                  </div>
+                  <p className={`mt-2 text-xs font-semibold uppercase tracking-[0.18em] ${isGold ? 'text-amber-100' : 'text-slate-400'}`}>
+                    {plan.taxNote}
+                  </p>
+                  {plan.offerText ? (
+                    <p className={`mt-2.5 rounded-xl px-3 py-1.5 text-[11px] font-bold ${isGold ? 'bg-white/10 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                      {plan.offerText}
+                    </p>
+                  ) : null}
+
+                  <ul className="mt-4 space-y-2">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className={`flex items-start gap-2.5 text-sm leading-5 ${isGold ? 'text-white/86' : 'text-slate-200'}`}>
+                        <FiCheckCircle className={`mt-0.5 shrink-0 ${isGold ? 'text-amber-200' : 'text-brand-300'}`} />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-auto pt-4">
+                    {plan.withQuantity ? (
+                      <select defaultValue="01" className="mb-3 w-full rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white">
+                        <option value="01">1 Requirement</option>
+                        <option value="03">3 Requirements</option>
+                        <option value="05">5 Requirements</option>
+                      </select>
+                    ) : null}
+                    <Link
+                      to={plan.ctaTo}
+                      className={`block rounded-full px-5 py-2 text-center text-sm font-semibold ${
+                        isGold ? 'bg-white text-amber-700' : 'gradient-gold text-primary shadow-lg shadow-gold/20'
+                      }`}
+                    >
+                      {plan.ctaLabel}
+                    </Link>
+                    <p className={`mt-2.5 text-center text-xs font-semibold uppercase tracking-[0.18em] ${isGold ? 'text-amber-100' : 'text-slate-400'}`}>
+                      {plan.validity}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-          <span className="inline-flex rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-900">
-            Review My Resume
-          </span>
-        </Link>
+        </div>
       </section>
 
       <section className="container mx-auto mt-16 max-w-7xl px-4">
@@ -379,171 +435,6 @@ const ServicesPage = () => {
                 </Link>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="container mx-auto mt-16 max-w-7xl px-4">
-        <PublicSectionHeader
-          centered
-          eyebrow="For Employers"
-          title="Job posting plans designed for hiring volume and reach"
-          description="Choose the plan that fits your current recruiting volume, visibility needs, and shortlisting speed."
-        />
-
-        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {jobPostingPlans.map((plan) => (
-            <article
-              key={plan.title}
-              className={`flex flex-col rounded-[2rem] border p-7 ${planWrapperClassByTone[plan.tone]}`}
-            >
-              <div>
-                <h3 className={`font-heading text-2xl font-extrabold ${plan.tone === 'premium' ? 'text-white' : 'text-navy'}`}>
-                  {plan.title}
-                </h3>
-                <div className="mt-4">
-                  <span className="text-4xl font-black">{plan.price}</span>
-                </div>
-                {plan.previousPrice ? (
-                  <div className={`mt-2 flex items-center gap-2 text-sm font-semibold ${plan.tone === 'premium' ? 'text-white/72' : 'text-slate-500'}`}>
-                    <s>{plan.previousPrice}</s>
-                    <span className={plan.tone === 'premium' ? 'text-amber-200' : 'text-emerald-700'}>
-                      {plan.discountText}
-                    </span>
-                  </div>
-                ) : null}
-                <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.18em] ${plan.tone === 'premium' ? 'text-white/58' : 'text-slate-400'}`}>
-                  {plan.taxNote || plan.subTitle}
-                </p>
-                {plan.offerText ? (
-                  <p className={`mt-4 rounded-xl px-3 py-2 text-xs font-bold ${plan.tone === 'premium' ? 'bg-white/10 text-white' : 'bg-orange-50 text-orange-700'}`}>
-                    {plan.offerText}
-                  </p>
-                ) : null}
-              </div>
-
-              <ul className="mt-6 space-y-3">
-                {plan.features.map((feature) => (
-                  <li
-                    key={feature.label}
-                    className={`flex items-start gap-3 text-sm ${feature.included ? '' : 'opacity-40'} ${
-                      plan.tone === 'premium' ? 'text-white/86' : 'text-slate-600'
-                    }`}
-                  >
-                    <FiCheckCircle className={`mt-0.5 shrink-0 ${plan.tone === 'premium' ? 'text-amber-200' : 'text-brand-700'}`} />
-                    <span>{feature.label}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-auto pt-8">
-                {plan.withQuantity ? (
-                  <select
-                    defaultValue="01"
-                    className={`mb-4 w-full rounded-xl border px-4 py-3 text-sm font-semibold ${
-                      plan.tone === 'premium'
-                        ? 'border-white/20 bg-white/10 text-white'
-                        : 'border-slate-200 bg-slate-50 text-navy'
-                    }`}
-                  >
-                    <option value="01">1 Job Post</option>
-                    <option value="02">2 Job Posts</option>
-                    <option value="03">3 Job Posts</option>
-                    <option value="05">5 Job Posts</option>
-                  </select>
-                ) : null}
-                <Link
-                  to={plan.ctaTo}
-                  className={`block rounded-full px-5 py-3 text-center text-sm font-semibold ${
-                    plan.tone === 'premium'
-                      ? 'bg-white text-navy'
-                      : 'gradient-gold text-primary shadow-lg shadow-gold/20'
-                  }`}
-                >
-                  {plan.ctaLabel}
-                </Link>
-                <p className={`mt-3 text-center text-xs font-semibold uppercase tracking-[0.18em] ${plan.tone === 'premium' ? 'text-white/58' : 'text-slate-400'}`}>
-                  {plan.validity}
-                </p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="container mx-auto mt-16 max-w-7xl px-4">
-        <div className="rounded-[2.6rem] bg-slate-950 p-8 text-white shadow-2xl md:p-12">
-          <PublicSectionHeader
-            centered
-            eyebrow="Resume Database"
-            title="Search a larger candidate pool with resume database access"
-            description="For employers who need active sourcing instead of waiting only for inbound applications."
-            className="text-white [&_h2]:text-white [&_p]:text-white/72 [&_p:first-child]:text-white/60"
-          />
-
-          <div className="mt-10 grid gap-8 md:grid-cols-2">
-            {resumeDatabasePlans.map((plan) => {
-              const Icon = plan.icon;
-              const isGold = plan.tone === 'gold';
-
-              return (
-                <article
-                  key={plan.title}
-                  className={`flex flex-col rounded-[2rem] border p-7 ${planWrapperClassByTone[plan.tone]}`}
-                >
-                  <span className={`flex h-14 w-14 items-center justify-center rounded-2xl ${isGold ? 'bg-white text-amber-600' : 'bg-slate-800 text-slate-200'}`}>
-                    <Icon size={24} />
-                  </span>
-                  <h3 className="mt-6 font-heading text-2xl font-extrabold">
-                    {plan.title} Plan
-                  </h3>
-                  <p className={`mt-3 min-h-[56px] text-sm leading-7 ${isGold ? 'text-white/78' : 'text-white/72'}`}>
-                    {plan.subTitle}
-                  </p>
-                  <div className="mt-5">
-                    <span className="text-4xl font-black">{plan.price}</span>
-                  </div>
-                  <p className={`mt-2 text-xs font-semibold uppercase tracking-[0.18em] ${isGold ? 'text-amber-100' : 'text-slate-400'}`}>
-                    {plan.taxNote}
-                  </p>
-                  {plan.offerText ? (
-                    <p className={`mt-4 rounded-xl px-3 py-2 text-xs font-bold ${isGold ? 'bg-white/10 text-white' : 'bg-slate-800 text-slate-300'}`}>
-                      {plan.offerText}
-                    </p>
-                  ) : null}
-
-                  <ul className="mt-6 space-y-3">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className={`flex items-start gap-3 text-sm ${isGold ? 'text-white/86' : 'text-slate-200'}`}>
-                        <FiCheckCircle className={`mt-0.5 shrink-0 ${isGold ? 'text-amber-200' : 'text-brand-300'}`} />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-auto pt-8">
-                    {plan.withQuantity ? (
-                      <select defaultValue="01" className="mb-4 w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white">
-                        <option value="01">1 Requirement</option>
-                        <option value="03">3 Requirements</option>
-                        <option value="05">5 Requirements</option>
-                      </select>
-                    ) : null}
-                    <Link
-                      to={plan.ctaTo}
-                      className={`block rounded-full px-5 py-3 text-center text-sm font-semibold ${
-                        isGold ? 'bg-white text-amber-700' : 'gradient-gold text-primary shadow-lg shadow-gold/20'
-                      }`}
-                    >
-                      {plan.ctaLabel}
-                    </Link>
-                    <p className={`mt-3 text-center text-xs font-semibold uppercase tracking-[0.18em] ${isGold ? 'text-amber-100' : 'text-slate-400'}`}>
-                      {plan.validity}
-                    </p>
-                  </div>
-                </article>
-              );
-            })}
           </div>
         </div>
       </section>

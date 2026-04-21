@@ -4,25 +4,24 @@ import PublicPageHero from '../publicPages/PublicPageHero';
 import PublicSectionHeader from '../publicPages/PublicSectionHeader';
 import FooterContactChannels from './FooterContactChannels';
 import FooterContactForm from './FooterContactForm';
-import FooterPageAside from './FooterPageAside';
 
 const contactAside = (
-  <div className="overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 p-5 text-white shadow-2xl sm:rounded-[2rem] sm:p-7">
+  <div className="overflow-hidden rounded-[1.55rem] bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 p-4 text-white shadow-2xl sm:rounded-[1.8rem] sm:p-5">
     <p className="text-xs font-black uppercase tracking-[0.24em] text-white/65">Response Standards</p>
-    <div className="mt-5 grid gap-4 sm:mt-6 sm:gap-5">
+    <div className="mt-4 grid gap-3.5 sm:mt-5 sm:gap-4">
       {[
         { icon: FiMail, title: 'Support mailbox', text: 'support@hhh-jobs.com' },
         { icon: FiPhone, title: 'Hiring desk', text: 'Regional employer coordination' },
         { icon: FiMapPin, title: 'Coverage', text: 'India, Africa, Europe, Middle East' },
         { icon: FiClock, title: 'Turnaround', text: 'Initial response target within one business day' }
       ].map((item) => (
-        <div key={item.title} className="flex items-start gap-4 rounded-[1.5rem] border border-white/12 bg-white/10 p-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/14">
-            <item.icon size={18} />
+        <div key={item.title} className="flex items-start gap-3 rounded-[1.3rem] border border-white/12 bg-white/10 p-3.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/14">
+            <item.icon size={16} />
           </div>
           <div>
             <p className="text-sm font-semibold">{item.title}</p>
-            <p className="mt-1 text-xs leading-6 text-white/72">{item.text}</p>
+            <p className="mt-1 text-xs leading-5 text-white/72">{item.text}</p>
           </div>
         </div>
       ))}
@@ -37,12 +36,10 @@ const FooterContactTemplate = ({ pageData, relatedLinks }) => {
         eyebrow={pageData.eyebrow}
         title={pageData.title}
         description={pageData.summary}
+        compact
+        className="-mt-[20px] md:-mt-[24px]"
+        contentClassName="-mt-20 md:-mt-24"
         chips={['Employer support', 'Candidate help', 'Business partnerships']}
-        metrics={[
-          { value: '1 Day', label: 'Target response', helper: 'Initial acknowledgement for most support requests.' },
-          { value: '4 Regions', label: 'Sales routing', helper: 'Business conversations mapped across operating regions.' },
-          { value: 'Direct', label: 'Escalation path', helper: 'Public support and business mailboxes stay visible.' }
-        ]}
         actions={[
           { label: 'Send A Message', to: '/contact-us', variant: 'primary' },
           { label: 'Explore Services', to: '/services', variant: 'ghost' }
@@ -50,48 +47,41 @@ const FooterContactTemplate = ({ pageData, relatedLinks }) => {
         aside={contactAside}
       />
 
-      <section className="px-4 py-8 md:py-12">
+      <section className="px-4 py-6 md:py-8">
         <div className="container mx-auto max-w-7xl">
           <PublicSectionHeader
             eyebrow="Contact Paths"
             title="Dedicated contact flows for support, partnerships, and general enquiries"
             description="Every request is directed to the team best placed to help, so you receive a clear and timely response."
             centered
+            compact
           />
 
-          <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="mt-8 grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-8">
             <FooterContactChannels />
             <FooterContactForm />
           </div>
         </div>
       </section>
 
-      <section className="px-4 py-4 md:py-8">
-        <div className="container mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,300px)] lg:gap-10">
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+      <section className="px-4 py-3 md:py-6">
+        <div className="container mx-auto max-w-7xl">
+          <div className="rounded-[1.7rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-brand-700">Team Routing</p>
-            <h3 className="mt-4 font-heading text-2xl font-bold text-navy">How incoming requests are handled</h3>
-            <div className="mt-6 grid gap-4">
+            <h3 className="mt-3 font-heading text-xl font-bold text-navy sm:text-[1.55rem]">How incoming requests are handled</h3>
+            <div className="mt-5 grid gap-3">
               {pageData.sections.map((section) => (
-                <div key={section.heading} className="rounded-[1.5rem] bg-slate-50 px-5 py-4">
+                <div key={section.heading} className="rounded-[1.25rem] bg-slate-50 px-4 py-3.5">
                   <p className="text-sm font-semibold text-navy">{section.heading}</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-600">{section.body}</p>
+                  <p className="mt-1.5 text-sm leading-6 text-slate-600">{section.body}</p>
                 </div>
               ))}
             </div>
           </div>
-
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <FooterPageAside
-              relatedLinks={relatedLinks}
-              title="Need a different route?"
-              description="Use the quick links to move into help, policy, or issue-reporting pages if your request fits another support path."
-            />
-          </div>
         </div>
       </section>
 
-      <section className="px-4">
+      <section className="px-4 pt-1">
         <div className="container mx-auto max-w-7xl">
           <PublicCallToAction
             eyebrow="Need More Help"

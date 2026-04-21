@@ -34,84 +34,77 @@ const CompanyCard = ({ company, isAuthenticated }) => {
   });
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-[22px] shadow-[0_20px_46px_rgba(15,23,42,0.07)] backdrop-blur-md transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_rgba(15,23,42,0.12)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.14),transparent_26%),radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.12),transparent_22%)] opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-[22px] border border-[#e6d8c1] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(241,233,219,0.98))] shadow-[0_12px_26px_rgba(99,76,41,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_34px_rgba(99,76,41,0.24)]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.65),transparent_32%),radial-gradient(circle_at_85%_15%,rgba(214,172,103,0.18),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(148,163,184,0.1),transparent_24%)] opacity-90 transition-opacity duration-300 group-hover:opacity-100" />
 
-      <div className="relative z-10 flex h-full flex-col overflow-hidden rounded-[22px] bg-white/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-sm">
-        <div className="relative overflow-hidden bg-[linear-gradient(145deg,rgba(19,31,54,0.98)_0%,rgba(35,49,76,0.96)_55%,rgba(199,126,26,0.92)_100%)] px-3.5 pb-3.5 pt-3 text-white">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_84%_18%,rgba(125,211,252,0.16),transparent_24%)] opacity-90" />
-          <div className="absolute inset-x-0 bottom-0 h-8 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.08))]" />
-
-          <div className="relative z-10 flex items-start gap-3">
-            <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] border border-white/15 bg-white/95 p-2 shadow-lg shadow-black/10">
-              {company.logoUrl && !logoError ? (
-                <img
-                  src={company.logoUrl}
-                  alt={company.name}
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                  className="max-h-[34px] max-w-[34px] object-contain"
-                  onError={() => setLogoError(true)}
-                />
-              ) : (
-                <span className="font-heading text-xs font-black text-navy">{getInitials(company.name)}</span>
-              )}
-            </div>
-
-            <div className="min-w-0">
-              <h3 className="line-clamp-2 font-heading text-[1.08rem] font-black leading-tight text-white xl:text-[1rem] 2xl:text-[1.08rem]">
-                {company.name}
-              </h3>
-
-              <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-white/78">
-                {company.sponsorRating ? (
-                  <>
-                    <span className="inline-flex items-center gap-1 text-amber-200">
-                      <FiStar size={12} className="fill-current" />
-                      {formatRating(company.sponsorRating)}
-                    </span>
-                    <span className="text-white/25">|</span>
-                  </>
-                ) : null}
-                <span className="line-clamp-1">{company.sponsorReviewsLabel || 'Premium sponsor'}</span>
-              </div>
-            </div>
+      <div className="relative z-10 flex h-full flex-col rounded-[22px] bg-[linear-gradient(180deg,rgba(255,251,244,0.96),rgba(242,234,221,0.98))] px-3.5 pb-3.5 pt-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] border border-[#e8dcc9] bg-white p-2 shadow-[0_8px_18px_rgba(120,94,52,0.12)]">
+            {company.logoUrl && !logoError ? (
+              <img
+                src={company.logoUrl}
+                alt={company.name}
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                className="max-h-[34px] max-w-[34px] object-contain"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <span className="font-heading text-xs font-black text-navy">{getInitials(company.name)}</span>
+            )}
           </div>
 
-          <div className="relative z-10 mt-3 flex items-start justify-between gap-3">
-            <div className="flex flex-col items-start gap-1.5">
-              <span className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.14em] text-white/88">
-                <FiStar size={10} />
-                Sponsor
-              </span>
-              <span className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-100">
-                <FiCheckCircle size={10} />
-                Approved
+          <div className="min-w-0 flex-1">
+            <h3 className="line-clamp-2 font-heading text-[1.08rem] font-black leading-tight text-[#22170e] xl:text-[1rem] 2xl:text-[1.08rem]">
+              {company.name}
+            </h3>
+
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#7a5d33]">
+              {company.sponsorRating ? (
+                <>
+                  <span className="inline-flex items-center gap-1 text-[#bb8a22]">
+                    <FiStar size={12} className="fill-current" />
+                    {formatRating(company.sponsorRating)}
+                  </span>
+                  <span className="text-[#d4c4ad]">|</span>
+                </>
+              ) : null}
+              <span className="line-clamp-1 text-[#6d5640]">
+                {company.sponsorReviewsLabel || 'Premium sponsor'}
               </span>
             </div>
-
-            <span
-              className={`inline-flex items-center justify-center gap-1 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.14em] ${
-                isAuthenticated
-                  ? 'text-amber-100'
-                  : 'text-white/80'
-              }`}
-            >
-              {isAuthenticated ? <FiShield size={10} /> : <FiLock size={10} />}
-              {isAuthenticated ? entryIntent.accessLabel : 'Members only'}
-            </span>
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col bg-[linear-gradient(180deg,rgba(255,255,255,0.68),rgba(244,247,251,0.92))] px-3.5 pb-3 pt-3">
+        <div className="mt-3 flex items-start justify-between gap-3 text-[10px] font-bold uppercase tracking-[0.14em]">
+          <div className="flex flex-col items-start gap-1.5 text-[#3d2c19]">
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <FiStar size={10} className="text-[#c08a1f]" />
+              Sponsor
+            </span>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap text-[#15803d]">
+              <FiCheckCircle size={10} />
+              Approved
+            </span>
+          </div>
+
+          <span className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full border border-[#d7c6ae] bg-white/80 px-2.5 py-1 text-[#4c3b28]">
+            {isAuthenticated ? <FiShield size={10} /> : <FiLock size={10} />}
+            {isAuthenticated ? entryIntent.accessLabel : 'Members only'}
+          </span>
+        </div>
+
+        <div className="mt-3 rounded-[18px] border border-[#e7dbc8] bg-white/72 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+          <p className="line-clamp-2 text-[11px] leading-5 text-[#6a5441]">
+            {company.sponsorReviewsLabel || 'Trusted sponsor company on HHH Jobs'}
+          </p>
+        </div>
+
+        <div className="mt-auto pt-3">
           <Link
             to={entryIntent.to}
             state={entryIntent.state}
-            className={`mt-auto inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[12px] font-black shadow-[0_12px_24px_rgba(15,23,42,0.1)] transition hover:-translate-y-0.5 ${
-              isAuthenticated
-                ? 'bg-[linear-gradient(135deg,rgba(20,31,58,1),rgba(43,82,198,0.92))] text-white hover:shadow-[0_18px_34px_rgba(15,23,42,0.18)]'
-                : 'bg-[linear-gradient(135deg,rgba(20,31,58,1),rgba(61,76,107,0.92))] text-white hover:shadow-[0_18px_34px_rgba(15,23,42,0.18)]'
-            }`}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#263754] bg-[linear-gradient(135deg,rgba(44,61,94,0.98),rgba(67,86,122,0.94))] px-4 py-2.5 text-[12px] font-black text-white shadow-[0_10px_22px_rgba(32,45,72,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,45,72,0.28)]"
           >
             {isAuthenticated ? 'Open Hiring Lounge' : 'Login to Unlock'}
             <FiArrowRight size={14} />
@@ -123,24 +116,21 @@ const CompanyCard = ({ company, isAuthenticated }) => {
 };
 
 const LoadingCard = () => (
-  <div className="flex h-full flex-col rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,250,252,0.9))] p-1.5 shadow-[0_16px_36px_rgba(15,23,42,0.05)]">
-    <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white">
-      <div className="rounded-[24px] bg-slate-100 px-3.5 pb-3.5 pt-3">
-        <div className="flex justify-between gap-3">
-          <div className="h-5 w-20 rounded-full bg-slate-200" />
-          <div className="h-5 w-20 rounded-full bg-slate-200" />
-        </div>
-        <div className="mt-3 flex items-center gap-3">
-          <div className="h-[52px] w-[52px] rounded-[16px] bg-slate-200" />
-          <div className="min-w-0 flex-1">
-            <div className="h-5 rounded-full bg-slate-200" />
-            <div className="mt-2 h-3.5 rounded-full bg-slate-200" />
-          </div>
-        </div>
+  <div className="flex h-full flex-col rounded-[22px] border border-[#e6d8c1] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(241,233,219,0.98))] p-3.5 shadow-[0_12px_26px_rgba(99,76,41,0.14)]">
+    <div className="flex items-center gap-3">
+      <div className="h-[52px] w-[52px] rounded-[16px] bg-[#e9decd]" />
+      <div className="min-w-0 flex-1">
+        <div className="h-5 rounded-full bg-[#dfd1bc]" />
+        <div className="mt-2 h-3.5 w-3/4 rounded-full bg-[#eadfce]" />
       </div>
-      <div className="px-3.5 pb-3 pt-3">
-        <div className="h-9 rounded-full bg-slate-100" />
-      </div>
+    </div>
+    <div className="mt-3 flex justify-between gap-3">
+      <div className="h-4 w-20 rounded-full bg-[#e7dbc8]" />
+      <div className="h-6 w-24 rounded-full bg-[#efe6d8]" />
+    </div>
+    <div className="mt-3 h-12 rounded-[18px] bg-white/70" />
+    <div className="mt-auto pt-3">
+      <div className="h-9 rounded-full bg-[#304361]" />
     </div>
   </div>
 );

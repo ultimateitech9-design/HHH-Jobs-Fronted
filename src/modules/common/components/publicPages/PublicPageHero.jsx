@@ -16,40 +16,71 @@ const PublicPageHero = ({
   metrics = [],
   media,
   aside,
-  className = ''
+  className = '',
+  contentClassName = '',
+  compact = false,
+  tightTop = false
 }) => {
   return (
-    <section className={`relative overflow-hidden px-4 py-12 sm:py-14 md:py-20 ${className}`.trim()}>
+    <section
+      className={`relative overflow-hidden px-4 ${
+        compact
+          ? 'py-8 sm:py-10 md:py-12'
+          : tightTop
+            ? 'pt-6 pb-12 sm:pt-8 sm:pb-14 md:pt-10 md:pb-20'
+            : 'py-12 sm:py-14 md:py-20'
+      } ${className}`.trim()}
+    >
       <div className="absolute left-8 top-10 h-72 w-72 rounded-full bg-gold/8 blur-3xl" />
       <div className="absolute bottom-0 right-8 h-80 w-80 rounded-full bg-brand-500/10 blur-3xl" />
 
       <div className="container relative z-10 mx-auto max-w-7xl">
-        <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
+        <div
+          className={`grid items-center lg:grid-cols-[1.05fr_0.95fr] ${
+            compact ? 'gap-6 lg:gap-7' : 'gap-8 lg:gap-10'
+          }`}
+        >
           <AnimatedSection>
-            <div className="max-w-3xl">
+            <div className={`max-w-3xl ${contentClassName}`.trim()}>
               {eyebrow ? (
-                <span className="inline-flex items-center rounded-full border border-gold/20 bg-gold/10 px-4 py-1.5 text-sm font-semibold text-gold-dark">
+                <span
+                  className={`inline-flex items-center rounded-full border border-gold/20 bg-gold/10 font-semibold text-gold-dark ${
+                    compact ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'
+                  }`}
+                >
                   {eyebrow}
                 </span>
               ) : null}
 
-              <div className="mt-6">
-                <h1 className="font-heading text-3xl font-extrabold leading-tight text-navy sm:text-4xl md:text-5xl">
+              <div className={compact ? 'mt-4' : 'mt-6'}>
+                <h1
+                  className={`font-heading font-extrabold leading-tight text-navy ${
+                    compact ? 'text-2xl sm:text-3xl md:text-[2.7rem]' : 'text-3xl sm:text-4xl md:text-5xl'
+                  }`}
+                >
                   {title}
                 </h1>
                 {description ? (
-                  <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base md:mt-5 md:text-lg">
+                  <p
+                    className={`max-w-2xl text-slate-600 ${
+                      compact
+                        ? 'mt-3 text-sm leading-6 sm:text-[0.96rem]'
+                        : 'mt-4 text-sm leading-7 sm:text-base md:mt-5 md:text-lg'
+                    }`}
+                  >
                     {description}
                   </p>
                 ) : null}
               </div>
 
               {chips.length > 0 ? (
-                <div className="mt-6 flex flex-wrap gap-2">
+                <div className={`flex flex-wrap gap-2 ${compact ? 'mt-4' : 'mt-6'}`}>
                   {chips.map((chip) => (
                     <span
                       key={chip}
-                      className="rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm"
+                      className={`rounded-full border border-slate-200 bg-white/85 font-semibold text-slate-600 shadow-sm ${
+                        compact ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1 text-xs'
+                      }`}
                     >
                       {chip}
                     </span>
@@ -58,12 +89,14 @@ const PublicPageHero = ({
               ) : null}
 
               {actions.length > 0 ? (
-                <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <div className={`flex flex-col gap-3 sm:flex-row sm:flex-wrap ${compact ? 'mt-5' : 'mt-7'}`}>
                   {actions.map((action) => (
                     <Link
                       key={`${action.label}-${action.to || action.href}`}
                       to={action.to}
-                      className={`inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 sm:w-auto ${
+                      className={`inline-flex w-full items-center justify-center rounded-full font-semibold transition-all hover:-translate-y-0.5 sm:w-auto ${
+                        compact ? 'px-4 py-2.5 text-sm' : 'px-5 py-3 text-sm'
+                      } ${
                         buttonClassByVariant[action.variant || 'primary']
                       }`}
                     >
@@ -92,21 +125,25 @@ const PublicPageHero = ({
         </div>
 
         {metrics.length > 0 ? (
-          <AnimatedSection delay={0.18} className="mt-10">
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <AnimatedSection delay={0.18} className={compact ? 'mt-7' : 'mt-10'}>
+            <div className={`grid gap-4 sm:grid-cols-2 xl:grid-cols-4 ${compact ? 'xl:gap-3.5' : ''}`}>
               {metrics.map((metric) => (
                 <article
                   key={metric.label}
-                  className="rounded-[1.6rem] border border-slate-200 bg-white/88 p-4 shadow-sm backdrop-blur-sm sm:p-5"
+                  className={`rounded-[1.6rem] border border-slate-200 bg-white/88 shadow-sm backdrop-blur-sm ${
+                    compact ? 'p-3.5 sm:p-4' : 'p-4 sm:p-5'
+                  }`}
                 >
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
                     {metric.label}
                   </p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">
+                  <p className={`font-heading font-extrabold text-navy ${compact ? 'mt-2.5 text-[1.7rem]' : 'mt-3 text-3xl'}`}>
                     {metric.value}
                   </p>
                   {metric.helper ? (
-                    <p className="mt-2 text-sm leading-6 text-slate-500">{metric.helper}</p>
+                    <p className={`text-slate-500 ${compact ? 'mt-1.5 text-[13px] leading-5' : 'mt-2 text-sm leading-6'}`}>
+                      {metric.helper}
+                    </p>
                   ) : null}
                 </article>
               ))}

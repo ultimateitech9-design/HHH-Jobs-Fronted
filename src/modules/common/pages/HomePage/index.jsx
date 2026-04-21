@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch } from '../../../../utils/api';
 import './HomePage.css';
 
@@ -6,14 +6,29 @@ import { HeroSection } from './HeroSection';
 import { TrustedBySection } from './TrustedBySection';
 import { CategoryCards } from './CategoryCards';
 import { FeaturedJobs } from './FeaturedJobs';
-import { SponsoredCompaniesSection } from './SponsoredCompaniesSection';
-import { WhyHHHJobs } from './WhyHHHJobs';
-import { CampusConnectSection } from './CampusConnectSection';
-import { HowItWorks } from './HowItWorks';
-import { StatsSection } from './StatsSection';
-import { TestimonialsSection } from './TestimonialsSection';
-import { CtaBanner } from './CtaBanner';
 import { fallbackFeaturedJobs } from './data/fallbackFeaturedJobs';
+
+const SponsoredCompaniesSection = lazy(() =>
+  import('./SponsoredCompaniesSection').then((module) => ({ default: module.SponsoredCompaniesSection }))
+);
+const WhyHHHJobs = lazy(() =>
+  import('./WhyHHHJobs').then((module) => ({ default: module.WhyHHHJobs }))
+);
+const CampusConnectSection = lazy(() =>
+  import('./CampusConnectSection').then((module) => ({ default: module.CampusConnectSection }))
+);
+const HowItWorks = lazy(() =>
+  import('./HowItWorks').then((module) => ({ default: module.HowItWorks }))
+);
+const StatsSection = lazy(() =>
+  import('./StatsSection').then((module) => ({ default: module.StatsSection }))
+);
+const TestimonialsSection = lazy(() =>
+  import('./TestimonialsSection').then((module) => ({ default: module.TestimonialsSection }))
+);
+const CtaBanner = lazy(() =>
+  import('./CtaBanner').then((module) => ({ default: module.CtaBanner }))
+);
 
 const JOBS_PER_PAGE = 6;
 
@@ -32,6 +47,47 @@ const matchesCategory = (job = {}, category = null) => {
   ].join(' ').toLowerCase();
   return (category.keywords || []).some((keyword) =>
     haystack.includes(String(keyword).toLowerCase())
+  );
+};
+
+const DeferredSection = ({ children, minHeight = 220, rootMargin = '260px 0px' }) => {
+  const sectionRef = useRef(null);
+  const [shouldRender, setShouldRender] = useState(false);
+
+  useEffect(() => {
+    if (shouldRender) return undefined;
+
+    const node = sectionRef.current;
+    if (!node) return undefined;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      setShouldRender(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          setShouldRender(true);
+          observer.disconnect();
+        });
+      },
+      {
+        rootMargin,
+        threshold: 0.01
+      }
+    );
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, [rootMargin, shouldRender]);
+
+  return (
+    <div ref={sectionRef} style={shouldRender ? undefined : { minHeight }}>
+      {shouldRender ? <Suspense fallback={<div style={{ minHeight }} aria-hidden="true" />}>{children}</Suspense> : null}
+    </div>
   );
 };
 
@@ -225,33 +281,33 @@ const HomePage = () => {
         />
       </div>
 
-      <div data-reveal style={{ '--jg-reveal-delay': '110ms' }}>
+      <DeferredSection minHeight={340}>
         <SponsoredCompaniesSection />
-      </div>
+      </DeferredSection>
 
-      <div data-reveal style={{ '--jg-reveal-delay': '120ms' }}>
+      <DeferredSection minHeight={300}>
         <WhyHHHJobs />
-      </div>
+      </DeferredSection>
 
-      <div data-reveal style={{ '--jg-reveal-delay': '140ms' }}>
+      <DeferredSection minHeight={320}>
         <CampusConnectSection />
-      </div>
+      </DeferredSection>
 
-      <div data-reveal style={{ '--jg-reveal-delay': '160ms' }}>
+      <DeferredSection minHeight={320}>
         <HowItWorks />
-      </div>
+      </DeferredSection>
 
-      <div data-reveal style={{ '--jg-reveal-delay': '180ms' }}>
+      <DeferredSection minHeight={260}>
         <StatsSection />
-      </div>
+      </DeferredSection>
 
-      <div data-reveal style={{ '--jg-reveal-delay': '220ms' }}>
+      <DeferredSection minHeight={340}>
         <TestimonialsSection />
-      </div>
+      </DeferredSection>
 
-      <div data-reveal style={{ '--jg-reveal-delay': '300ms' }}>
+      <DeferredSection minHeight={260}>
         <CtaBanner />
-      </div>
+      </DeferredSection>
     </div>
   );
 };
