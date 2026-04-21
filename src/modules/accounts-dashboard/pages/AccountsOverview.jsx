@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
 import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
 import InvoiceTable from '../components/InvoiceTable';
@@ -9,19 +9,6 @@ import RevenueChart from '../components/RevenueChart';
 import TransactionTable from '../components/TransactionTable';
 import { getAccountsOverview } from '../services/accountsApi';
 import { formatCurrency } from '../utils/currencyFormat';
-
-const QuickLinkCard = ({ to, title, description, accent = 'brand' }) => (
-  <Link
-    to={to}
-    className={`group relative overflow-hidden rounded-[1.7rem] border-2 border-${accent}-200 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-1 hover:shadow-card-hover hover:border-${accent}-400`}
-  >
-    <div className={`absolute -right-4 -top-4 h-16 w-16 rounded-full bg-${accent}-50 opacity-70 transition-transform duration-300 group-hover:scale-150`} />
-    <div className="relative z-10">
-      <p className={`text-xs font-bold uppercase tracking-widest text-${accent}-500`}>{title}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
-    </div>
-  </Link>
-);
 
 const AccountsOverview = () => {
   const [state, setState] = useState({
@@ -120,29 +107,33 @@ const AccountsOverview = () => {
           <DashboardMetricCards cards={cards} />
 
           <div className="grid gap-4 md:grid-cols-4">
-            <QuickLinkCard
+            <DashboardQuickActionCard
               to="/portal/accounts/transactions"
               title="Transactions"
               description="Recent collections and settlement movement."
-              accent="brand"
+              tone="brand"
+              ctaLabel="Open transactions"
             />
-            <QuickLinkCard
+            <DashboardQuickActionCard
               to="/portal/accounts/subscriptions"
               title="Subscriptions"
               description="Monitor recurring billing and renewal health."
-              accent="secondary"
+              tone="accent"
+              ctaLabel="Open subscriptions"
             />
-            <QuickLinkCard
+            <DashboardQuickActionCard
               to="/portal/accounts/refunds"
               title="Refunds"
               description="Watch refund exposure and reversals."
-              accent="warning"
+              tone="warning"
+              ctaLabel="Review refunds"
             />
-            <QuickLinkCard
+            <DashboardQuickActionCard
               to="/portal/accounts/reports"
               title="Reports"
               description="Open finance summaries and exports."
-              accent="success"
+              tone="success"
+              ctaLabel="Open reports"
             />
           </div>
 

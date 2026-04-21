@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { FiAlertCircle, FiClock, FiMessageCircle, FiShield } from 'react-icons/fi';
 import StatusPill from '../../../shared/components/StatusPill';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
 import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
+import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import useSupportStats from '../hooks/useSupportStats';
 import useTickets from '../hooks/useTickets';
 import { formatDateTime } from '../utils/formatDate';
@@ -90,27 +92,27 @@ const SupportDashboard = () => {
           <DashboardMetricCards cards={cards} />
 
           <div className="grid gap-4 md:grid-cols-3">
-            <Link
+            <DashboardQuickActionCard
               to="/portal/support/tickets"
-              className="rounded-[1.7rem] border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-            >
-              <p className="font-heading text-lg font-bold text-navy">Tickets</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">Open, assign, and resolve customer issues from the central queue.</p>
-            </Link>
-            <Link
+              title="Tickets"
+              description="Open, assign, and resolve customer issues from the central queue."
+              tone="brand"
+              ctaLabel="Open ticket desk"
+            />
+            <DashboardQuickActionCard
               to="/portal/support/live-chat"
-              className="rounded-[1.7rem] border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-            >
-              <p className="font-heading text-lg font-bold text-navy">Live Chat</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">Handle real-time conversations before they become escalations.</p>
-            </Link>
-            <Link
+              title="Live Chat"
+              description="Handle real-time conversations before they become escalations."
+              tone="info"
+              ctaLabel="Open live chat"
+            />
+            <DashboardQuickActionCard
               to="/portal/support/knowledge-base"
-              className="rounded-[1.7rem] border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-            >
-              <p className="font-heading text-lg font-bold text-navy">Knowledge Base</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">Route common issues toward reusable answers and guides.</p>
-            </Link>
+              title="Knowledge Base"
+              description="Route common issues toward reusable answers and guides."
+              tone="success"
+              ctaLabel="Open knowledge base"
+            />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
@@ -160,7 +162,7 @@ const SupportDashboard = () => {
             title="Latest Queue Items"
             subtitle="Recent support tickets that need queue visibility."
             action={
-              <Link to="/portal/support/tickets" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+              <Link to="/portal/support/tickets" className={dashboardSectionActionClassName}>
                 Full Ticket Queue
               </Link>
             }

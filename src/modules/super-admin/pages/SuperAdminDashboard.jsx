@@ -6,6 +6,7 @@ import ReportsChart from '../components/ReportsChart';
 import StatusBadge from '../components/StatusBadge';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
 import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
+import { getDashboardWorkspaceButtonClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import useDashboardStats from '../hooks/useDashboardStats';
 import { formatCurrency } from '../utils/currencyFormat';
 import { formatDateTime } from '../utils/formatDate';
@@ -306,7 +307,7 @@ const SuperAdminDashboard = () => {
                 <button
                   key={workspace.key}
                   type="button"
-                  className={selectedWorkspace === workspace.key ? 'btn-primary' : 'btn-secondary'}
+                  className={getDashboardWorkspaceButtonClassName(selectedWorkspace === workspace.key)}
                   onClick={() => setSelectedWorkspace(workspace.key)}
                 >
                   {workspace.label}

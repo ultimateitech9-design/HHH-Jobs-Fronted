@@ -4,6 +4,7 @@ import StatusPill from '../../../shared/components/StatusPill';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
 import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
+import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import { getDataEntryDashboard } from '../services/dataentryApi';
 
 const emptyDashboard = {
@@ -271,7 +272,7 @@ const DataEntryDashboard = () => {
               title="Data Quality Monitoring"
               subtitle="Errors, duplicate entries, approvals, and drafts that need operator attention."
               action={
-                <Link to="/portal/dataentry/pending" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                <Link to="/portal/dataentry/pending" className={dashboardSectionActionClassName}>
                   Open Queue
                 </Link>
               }

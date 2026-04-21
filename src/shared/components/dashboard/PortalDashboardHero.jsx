@@ -1,4 +1,6 @@
+import { FiArrowRight } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
+import { getDashboardHeroActionClassName } from './dashboardActionStyles';
 
 const toneClasses = {
   brand: 'from-slate-950 via-brand-700 to-indigo-700',
@@ -45,12 +47,8 @@ const PortalDashboardHero = ({
     ? 'inline-flex rounded-full border border-white/18 bg-white/8 px-2 py-0.5 text-[9px] font-semibold leading-none text-white/88 sm:text-[10px]'
     : 'inline-flex rounded-full border border-white/18 bg-white/8 px-3 py-1 text-xs font-semibold text-white/88';
   const actionsWrapClass = compact ? 'mt-3 flex flex-wrap gap-1.5' : 'mt-5 flex flex-wrap gap-3';
-  const primaryActionClass = compact
-    ? 'inline-flex min-h-[34px] items-center justify-center rounded-full bg-white px-3.5 py-1.5 text-[12px] font-bold text-slate-900 transition-transform hover:-translate-y-0.5'
-    : 'inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-transform hover:-translate-y-0.5';
-  const secondaryActionClass = compact
-    ? 'inline-flex min-h-[34px] items-center justify-center rounded-full border border-white/18 bg-white/10 px-3.5 py-1.5 text-[12px] font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/16'
-    : 'inline-flex items-center justify-center rounded-full border border-white/18 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/16';
+  const primaryActionClass = getDashboardHeroActionClassName({ variant: 'primary', compact });
+  const secondaryActionClass = getDashboardHeroActionClassName({ variant: 'secondary', compact });
   const metricsWrapClass = compact ? 'grid gap-2 grid-cols-2 xl:grid-cols-2' : 'grid gap-3 sm:grid-cols-2';
   const metricCardClass = compact
     ? 'min-w-0 rounded-[0.9rem] border border-white/15 bg-slate-950/18 px-2.5 py-2.5 backdrop-blur-md'
@@ -109,6 +107,7 @@ const PortalDashboardHero = ({
                   className={`${primaryActionClass} w-full sm:w-auto`}
                 >
                   {primaryAction.label}
+                  <FiArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </Link>
               ) : null}
               {secondaryAction ? (
@@ -117,6 +116,7 @@ const PortalDashboardHero = ({
                   className={`${secondaryActionClass} w-full sm:w-auto`}
                 >
                   {secondaryAction.label}
+                  <FiArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </Link>
               ) : null}
             </div>

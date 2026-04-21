@@ -8,6 +8,7 @@ import {
 } from 'react-icons/fi';
 import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
 import StatusPill from '../../../shared/components/StatusPill';
+import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import {
   formatDateTime,
   getHrAnalytics,
@@ -283,7 +284,7 @@ const HrDashboardPage = () => {
               <h2 className="mt-2 font-heading text-2xl font-extrabold text-slate-900">Latest activity</h2>
               <p className="mt-1 text-sm text-slate-500">Fresh profiles entering your hiring flow.</p>
             </div>
-            <Link to="/portal/hr/candidates" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+            <Link to="/portal/hr/candidates" className={dashboardSectionActionClassName}>
               View Candidates
             </Link>
           </div>

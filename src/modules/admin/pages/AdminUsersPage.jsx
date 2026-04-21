@@ -226,38 +226,38 @@ const AdminUsersPage = () => {
   };
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-6 pb-8">
       
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <header className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
         <div>
-          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
+          <h1 className="mb-1.5 flex items-center gap-3 text-2xl font-extrabold font-heading tracking-tight text-primary md:text-[2rem]">
             Identity & Access
           </h1>
-          <p className="text-neutral-500 text-lg">Manage platform users, HR verifications, and internal workforce accounts.</p>
+          <p className="text-base text-neutral-500">Manage platform users, HR verifications, and internal workforce accounts.</p>
         </div>
       </header>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 border border-red-200 shadow-sm animate-fade-in">
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600 shadow-sm animate-fade-in">
           <FiXCircle size={20} className="shrink-0" /> <span className="font-semibold">{error}</span>
         </div>
       )}
       {message && !error && (
-        <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl flex items-center gap-3 border border-emerald-200 shadow-sm animate-fade-in">
+        <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 shadow-sm animate-fade-in">
           <FiCheckCircle size={20} className="shrink-0" /> <span className="font-semibold">{message}</span>
         </div>
       )}
 
       {/* Stats Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((card) => (
-          <article key={card.label} className="bg-white rounded-[2rem] p-6 border border-neutral-100 shadow-sm flex items-start gap-4">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 ${card.bg}`}>
+          <article key={card.label} className="flex items-start gap-3 rounded-[1.5rem] border border-neutral-100 bg-white p-4 shadow-sm">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg ${card.bg}`}>
               {card.icon}
             </div>
             <div>
-              <h3 className="text-2xl font-black text-primary mb-1">{card.value}</h3>
-              <p className="text-sm font-bold text-neutral-600 mb-0.5">{card.label}</p>
+              <h3 className="mb-0.5 text-xl font-black text-primary">{card.value}</h3>
+              <p className="mb-0.5 text-xs font-bold text-neutral-600">{card.label}</p>
               <p className="text-xs font-medium text-neutral-400">{card.helper}</p>
             </div>
           </article>
@@ -265,40 +265,40 @@ const AdminUsersPage = () => {
       </section>
 
       {/* Internal Workforce Management */}
-      <section className="bg-white rounded-[2.5rem] border border-neutral-100 shadow-sm overflow-hidden">
-        <div className="p-6 md:p-8 border-b border-neutral-100 flex flex-col md:flex-row justify-between items-start md:items-center bg-neutral-50/50">
+      <section className="overflow-hidden rounded-[2rem] border border-neutral-100 bg-white shadow-sm">
+        <div className="flex flex-col items-start justify-between border-b border-neutral-100 bg-neutral-50/50 p-5 md:flex-row md:items-center md:p-6">
           <div>
-            <h2 className="text-xl font-extrabold text-primary flex items-center gap-2">
+            <h2 className="flex items-center gap-2 text-lg font-extrabold text-primary">
               <FiKey className="text-brand-500" /> Internal Workforce Accounts
             </h2>
-            <p className="text-neutral-500 text-sm mt-1">Provision access credentials for Data Entry, Accounts, and Support teams.</p>
+            <p className="mt-1 text-xs text-neutral-500 md:text-sm">Provision access credentials for Data Entry, Accounts, and Support teams.</p>
           </div>
         </div>
 
         <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-neutral-100">
           
           {/* Create Form */}
-          <div className="w-full lg:w-1/3 p-6 md:p-8 bg-white shrink-0">
-            <h3 className="text-sm font-black uppercase tracking-widest text-neutral-400 mb-6">Create New Identity</h3>
-            <form className="space-y-4">
+          <div className="w-full shrink-0 bg-white p-5 lg:w-1/3 md:p-6">
+            <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-neutral-400">Create New Identity</h3>
+            <form className="space-y-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Full Name</label>
                 <input
                   value={accountForm.name}
                   placeholder="Employee Name"
                   onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium text-sm"
+                  className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-sm font-medium focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5 col-span-2 sm:col-span-1">
                   <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Email</label>
                   <input
                     value={accountForm.email}
                     placeholder="name@company.com"
                     onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium text-sm"
+                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-sm font-medium focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
                 <div className="space-y-1.5 col-span-2 sm:col-span-1">
@@ -308,19 +308,19 @@ const AdminUsersPage = () => {
                     value={accountForm.password}
                     placeholder="Min 6 chars"
                     onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium text-sm"
+                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-sm font-medium focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5 col-span-2 sm:col-span-1">
                   <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Role Assignment</label>
                   <div className="relative">
                     <select 
                       value={accountForm.role} 
                       onChange={(e) => setAccountForm({ ...accountForm, role: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm appearance-none"
+                      className="w-full appearance-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-500"
                     >
                       <option value="dataentry">Data Entry</option>
                       <option value="support">Support</option>
@@ -336,7 +336,7 @@ const AdminUsersPage = () => {
                     <select 
                       value={accountForm.department} 
                       onChange={(e) => setAccountForm({ ...accountForm, department: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm appearance-none"
+                      className="w-full appearance-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-500"
                     >
                       <option value="Operations">Operations</option>
                       <option value="Customer Support">Customer Support</option>
@@ -351,7 +351,7 @@ const AdminUsersPage = () => {
               <button 
                 type="button" 
                 onClick={handleCreateManagedAccount}
-                className="w-full py-3 bg-neutral-900 text-white font-bold rounded-xl hover:bg-neutral-800 transition-colors shadow-sm mt-4 flex justify-center items-center gap-2"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-neutral-800"
               >
                 <FiPlus /> Provision Account
               </button>
@@ -359,43 +359,43 @@ const AdminUsersPage = () => {
           </div>
 
           {/* Managed Accounts Table */}
-          <div className="w-full lg:w-2/3 p-0 bg-neutral-50/30 overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse min-w-[700px]">
+          <div className="w-full overflow-x-auto bg-neutral-50/30 p-0 custom-scrollbar lg:w-2/3">
+            <table className="w-full min-w-[640px] border-collapse text-left">
               <thead>
                 <tr className="bg-neutral-100/50">
-                  <th className="p-4 pl-6 text-xs font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-200">Employee</th>
-                  <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-200">Workspace</th>
-                  <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-200">Dept</th>
-                  <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-200 text-right pr-6">Access</th>
+                  <th className="border-b border-neutral-200 p-3 pl-5 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Employee</th>
+                  <th className="border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Workspace</th>
+                  <th className="border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Dept</th>
+                  <th className="border-b border-neutral-200 p-3 pr-5 text-right text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Access</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100 bg-white">
                 {managedAccounts.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="p-12 text-center text-neutral-500 font-medium">
+                    <td colSpan="4" className="p-10 text-center text-sm font-medium text-neutral-500">
                       No internal workforce accounts provisioned yet.
                     </td>
                   </tr>
                 ) : (
                   managedAccounts.map((acc) => (
                     <tr key={acc.id} className="hover:bg-neutral-50 transition-colors">
-                      <td className="p-4 pl-6">
-                        <div className="font-extrabold text-primary text-sm">{acc.name}</div>
+                      <td className="p-3 pl-5 align-middle">
+                        <div className="text-sm font-extrabold text-primary">{acc.name}</div>
                         <div className="font-medium text-neutral-500 text-xs">{acc.email}</div>
                       </td>
-                      <td className="p-4">
-                        <span className="px-2.5 py-1 bg-brand-50 text-brand-700 border border-brand-100 rounded-md text-[10px] uppercase font-black tracking-wider inline-block">
+                      <td className="p-3">
+                        <span className="inline-block rounded-md border border-brand-100 bg-brand-50 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-brand-700">
                           {acc.role}
                         </span>
                       </td>
-                      <td className="p-4 font-bold text-neutral-600 text-sm">{acc.department}</td>
-                      <td className="p-4 pr-6 text-right">
+                      <td className="p-3 text-sm font-bold text-neutral-600">{acc.department}</td>
+                      <td className="p-3 pr-5 text-right">
                         <button 
                           onClick={() => handleDeleteManagedAccount(acc.id)}
-                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                          className="rounded-lg border border-transparent p-1.5 text-red-500 transition-colors hover:border-red-100 hover:bg-red-50 hover:text-red-700"
                           title="Revoke Access"
                         >
-                          <FiTrash2 size={16} />
+                          <FiTrash2 size={15} />
                         </button>
                       </td>
                     </tr>
@@ -409,23 +409,23 @@ const AdminUsersPage = () => {
       </section>
 
       {/* Public Platform Users */}
-      <section className="bg-white rounded-[2.5rem] border border-neutral-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-        <div className="p-6 md:p-8 border-b border-neutral-100 bg-neutral-50/50">
-          <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
+      <section className="flex min-h-[420px] flex-col overflow-hidden rounded-[2rem] border border-neutral-100 bg-white shadow-sm">
+        <div className="border-b border-neutral-100 bg-neutral-50/50 p-5 md:p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-xl font-extrabold text-primary flex items-center gap-2">
+              <h2 className="flex items-center gap-2 text-lg font-extrabold text-primary">
                 <FiUsers className="text-brand-500" /> Platform Security Database
               </h2>
-              <p className="text-neutral-500 text-sm mt-1">Audit trail of all public users (Students & Recruiters).</p>
+              <p className="mt-1 text-xs text-neutral-500 md:text-sm">Audit trail of all public users (Students & Recruiters).</p>
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
               <div className="relative w-full sm:w-auto">
                 <select 
                   value={filters.role} 
                   onChange={(e) => setFilters({ ...filters, role: e.target.value })}
-                  className="w-full pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm sm:min-w-[160px]"
+                  className="w-full appearance-none rounded-xl border border-neutral-200 bg-white py-2 pl-3 pr-8 text-sm font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500 sm:min-w-[145px]"
                 >
                   <option value="all">All Roles</option>
                   <option value="admin">System Admin</option>
@@ -439,7 +439,7 @@ const AdminUsersPage = () => {
                 <select 
                   value={filters.status} 
                   onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                  className="w-full pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm sm:min-w-[160px]"
+                  className="w-full appearance-none rounded-xl border border-neutral-200 bg-white py-2 pl-3 pr-8 text-sm font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500 sm:min-w-[145px]"
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
@@ -449,20 +449,20 @@ const AdminUsersPage = () => {
                 <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
               </div>
 
-              <div className="relative w-full flex-1 sm:min-w-[220px]">
+              <div className="relative w-full flex-1 sm:min-w-[200px]">
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
                   value={filters.search}
                   placeholder="Search by name or email"
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   onKeyDown={(e) => e.key === 'Enter' && loadUsers(filters)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium text-sm shadow-sm"
+                  className="w-full rounded-xl border border-neutral-200 bg-white py-2 pl-9 pr-3 text-sm font-medium shadow-sm focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
               <button 
                 onClick={() => loadUsers(filters)}
-                className="w-full px-4 py-2.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-500 transition-colors shadow-sm flex items-center justify-center gap-2 sm:w-auto"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-500 sm:w-auto"
               >
                 <FiFilter /> Apply
               </button>
@@ -477,20 +477,20 @@ const AdminUsersPage = () => {
              </div>
           ) : null}
 
-          <table className="w-full text-left border-collapse min-w-[920px] xl:min-w-[1000px]">
+          <table className="w-full min-w-[920px] border-collapse text-left xl:min-w-[980px]">
             <thead>
               <tr className="bg-neutral-50">
-                <th className="p-4 pl-6 text-xs font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-200">Account Identity</th>
-                <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-200">System Role</th>
-                <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-200">Auth Status</th>
-                <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-200">HR Clearance</th>
-                <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-200 text-right pr-6">Security Actions</th>
+                <th className="border-b border-neutral-200 p-3 pl-5 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Account Identity</th>
+                <th className="w-[118px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">System Role</th>
+                <th className="w-[118px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Auth Status</th>
+                <th className="w-[126px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">HR Clearance</th>
+                <th className="min-w-[280px] border-b border-neutral-200 p-3 pr-5 text-right text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Security Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 bg-white">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="p-12 text-center text-neutral-500 font-medium">
+                  <td colSpan="5" className="p-10 text-center text-sm font-medium text-neutral-500">
                     No users matched the current security filters.
                   </td>
                 </tr>
@@ -501,38 +501,38 @@ const AdminUsersPage = () => {
                   const isApprovalBusy = busyAction === `approval:${user.id}`;
                   
                   return (
-                    <tr key={user.id} className="hover:bg-neutral-50/50 transition-colors group">
-                      <td className="p-4 pl-6">
-                        <div className="font-extrabold text-primary text-sm">{user.name || 'Unknown'}</div>
+                    <tr key={user.id} className="group transition-colors hover:bg-neutral-50/50">
+                      <td className="p-3 pl-5">
+                        <div className="text-sm font-extrabold text-primary">{user.name || 'Unknown'}</div>
                         <div className="font-medium text-neutral-500 text-xs">{user.email || 'No email'}</div>
                       </td>
-                      <td className="p-4">
-                        <span className="font-bold text-neutral-700 text-xs bg-neutral-100 px-2 py-1 rounded inline-block uppercase tracking-wider">
+                      <td className="p-3 align-middle">
+                        <span className="inline-flex min-w-[70px] items-center justify-center whitespace-nowrap rounded-md bg-neutral-100 px-2.5 py-1 text-center text-[11px] font-bold uppercase tracking-wider text-neutral-700">
                           {user.role}
                         </span>
                       </td>
-                      <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-md text-[10px] uppercase font-black tracking-wider border inline-block ${getStatusBadge(user.status || 'active')}`}>
+                      <td className="p-3 align-middle">
+                        <span className={`inline-flex min-w-[82px] items-center justify-center whitespace-nowrap rounded-md border px-2.5 py-1 text-center text-[10px] font-black uppercase tracking-wider ${getStatusBadge(user.status || 'active')}`}>
                           {user.status || 'Active'}
                         </span>
                       </td>
-                      <td className="p-4">
+                      <td className="p-3 align-middle">
                         {isHr ? (
-                          <span className={`px-2.5 py-1 rounded-md text-[10px] uppercase font-black tracking-wider border inline-flex items-center gap-1 ${user.is_hr_approved ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                          <span className={`inline-flex min-w-[92px] items-center justify-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-center text-[10px] font-black uppercase tracking-wider ${user.is_hr_approved ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                             {user.is_hr_approved ? <><FiCheckCircle /> Verified</> : <><FiShield /> Pending</>}
                           </span>
                         ) : (
                           <span className="text-neutral-300 text-xs font-bold">—</span>
                         )}
                       </td>
-                      <td className="p-4 pr-6">
-                        <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      <td className="p-3 pr-5 align-middle">
+                        <div className="flex flex-nowrap items-center justify-end gap-2 whitespace-nowrap opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                           {/* HR Verification Toggle */}
                           {isHr && (
                             <button
                               disabled={isApprovalBusy}
                               onClick={() => handleHrApproval(user.id, !user.is_hr_approved)}
-                              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors border ${
+                              className={`whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
                                 user.is_hr_approved 
                                   ? 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50' 
                                   : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
@@ -543,25 +543,25 @@ const AdminUsersPage = () => {
                           )}
                           
                           {/* Generic Status Actions */}
-                          <div className="flex bg-neutral-100 rounded-lg p-0.5 border border-neutral-200">
+                          <div className="flex flex-nowrap bg-neutral-100 rounded-lg p-0.5 border border-neutral-200">
                              <button
                                disabled={isStatusBusy}
                                onClick={() => handleStatusChange(user.id, 'active')}
-                               className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${user.status === 'active' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-neutral-700'} disabled:opacity-50`}
+                               className={`whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold transition-all ${user.status === 'active' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-neutral-700'} disabled:opacity-50`}
                              >
                                Active
                              </button>
                              <button
                                disabled={isStatusBusy}
                                onClick={() => handleStatusChange(user.id, 'blocked')}
-                               className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${user.status === 'blocked' ? 'bg-amber-100 text-amber-800 shadow-sm' : 'text-neutral-500 hover:text-amber-700'} disabled:opacity-50`}
+                               className={`whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold transition-all ${user.status === 'blocked' ? 'bg-amber-100 text-amber-800 shadow-sm' : 'text-neutral-500 hover:text-amber-700'} disabled:opacity-50`}
                              >
                                Block
                              </button>
                              <button
                                disabled={isStatusBusy}
                                onClick={() => handleStatusChange(user.id, 'banned')}
-                               className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${user.status === 'banned' ? 'bg-red-100 text-red-800 shadow-sm' : 'text-neutral-500 hover:text-red-700'} disabled:opacity-50`}
+                               className={`whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold transition-all ${user.status === 'banned' ? 'bg-red-100 text-red-800 shadow-sm' : 'text-neutral-500 hover:text-red-700'} disabled:opacity-50`}
                              >
                                Ban
                              </button>

@@ -10,6 +10,7 @@ import {
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
 import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
+import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import StatusPill from '../../../shared/components/StatusPill';
 import {
   formatDateTime,
@@ -215,7 +216,7 @@ const AdminDashboardPage = () => {
                 title="Pending recruiter approvals"
                 subtitle="Recent HR accounts waiting for verification."
                 action={
-                  <Link to="/portal/admin/users" className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                  <Link to="/portal/admin/users" className={dashboardSectionActionClassName}>
                     Open Users <FiArrowRight />
                   </Link>
                 }
@@ -244,7 +245,7 @@ const AdminDashboardPage = () => {
                 title="Jobs awaiting decision"
                 subtitle="Pending listings ready for admin review."
                 action={
-                  <Link to="/portal/admin/jobs" className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                  <Link to="/portal/admin/jobs" className={dashboardSectionActionClassName}>
                     Open Jobs <FiArrowRight />
                   </Link>
                 }

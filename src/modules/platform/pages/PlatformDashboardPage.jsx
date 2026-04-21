@@ -2,8 +2,10 @@ import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import StatusPill from '../../../shared/components/StatusPill';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
 import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
+import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import {
   formatDateTime,
   getPlatformIntegrations,
@@ -205,14 +207,14 @@ const PlatformDashboardPage = () => {
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {quickActions.map((action) => (
-              <Link
+              <DashboardQuickActionCard
                 key={action.title}
                 to={action.to}
-                className="rounded-[1.7rem] border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-              >
-                <p className="font-heading text-lg font-bold text-navy">{action.title}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">{action.description}</p>
-              </Link>
+                title={action.title}
+                description={action.description}
+                tone="info"
+                ctaLabel="Open workspace"
+              />
             ))}
           </div>
 
@@ -276,7 +278,7 @@ const PlatformDashboardPage = () => {
               eyebrow="Top Tenants"
               title="Active Tenant Footprint"
               action={
-                <Link to="/portal/platform/tenants" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                <Link to="/portal/platform/tenants" className={dashboardSectionActionClassName}>
                   Open Tenant Manager
                 </Link>
               }
@@ -304,7 +306,7 @@ const PlatformDashboardPage = () => {
               eyebrow="Support Queue"
               title="Recent Priority Tickets"
               action={
-                <Link to="/portal/platform/support" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                <Link to="/portal/platform/support" className={dashboardSectionActionClassName}>
                   Open Support Ops
                 </Link>
               }
@@ -337,7 +339,7 @@ const PlatformDashboardPage = () => {
               eyebrow="Integrations"
               title="Connector Health"
               action={
-                <Link to="/portal/platform/integrations" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                <Link to="/portal/platform/integrations" className={dashboardSectionActionClassName}>
                   Open Integration Manager
                 </Link>
               }
