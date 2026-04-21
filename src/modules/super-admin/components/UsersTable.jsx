@@ -17,9 +17,15 @@ const UsersTable = ({ rows = [], onDelete }) => {
       label: 'Actions',
       render: (_, row) => (
         ['super_admin', 'admin', 'hr', 'support', 'student', 'dataentry', 'accounts', 'sales', 'company_admin'].includes(row.role) ? (
-          <button type="button" className="btn-danger" onClick={() => onDelete?.(row)}>
-            Delete
-          </button>
+          <div className="flex min-w-[108px] justify-center sm:justify-start">
+            <button
+              type="button"
+              className="btn-danger inline-flex min-w-[92px] items-center justify-center whitespace-nowrap px-4 py-2 text-sm"
+              onClick={() => onDelete?.(row)}
+            >
+              Delete
+            </button>
+          </div>
         ) : 'Restricted'
       )
     }

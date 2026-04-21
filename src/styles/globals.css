@@ -3377,6 +3377,10 @@ select {
   background: linear-gradient(90deg, #c73a4b, #a91f35);
   color: #fff;
   border: 1px solid rgba(124, 17, 38, 0.28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .btn-link {
