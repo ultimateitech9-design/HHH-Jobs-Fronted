@@ -191,9 +191,6 @@ const FooterContactForm = () => {
                   className="h-[46px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-all focus:border-brand-300 focus:bg-white"
                 />
               </div>
-              <span className="text-xs font-medium text-slate-500">
-                {`Selected country allows ${selectedCountryDigits} digits.`}
-              </span>
             </label>
 
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700">

@@ -25,7 +25,9 @@ const ManagementLoginPage = () => {
               description={portalConfig.helperText}
               defaultRedirectPath={portalConfig.defaultRedirectPath}
               allowSocialLogin={false}
-              showCreateAccount={false}
+              showCreateAccount={portalKey === 'campus-connect'}
+              createAccountPath={portalKey === 'campus-connect' ? '/campus-connect/register?redirect=%2Fportal%2Fcampus-connect%2Fdashboard' : '/sign-up'}
+              createAccountLabel={portalKey === 'campus-connect' ? 'Register campus' : 'Create account'}
               showOtpLogin={true}
               showAccessNotice={false}
               emailLabel={portalConfig.emailLabel}

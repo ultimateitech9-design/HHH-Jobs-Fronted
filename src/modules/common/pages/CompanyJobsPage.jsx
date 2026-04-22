@@ -156,116 +156,93 @@ const CompanyJobCard = ({ canOpenPortalJobs, isAuthenticated, job, onAction }) =
     job.sourceType === 'portal'
       ? 'bg-navy/10 text-navy border-navy/10'
       : getSourceColor(job.sourceKey);
-  let primaryLabel = 'Login to View Job';
-  if (job.sourceType === 'external') primaryLabel = isAuthenticated ? `Apply on ${job.sourceLabel}` : 'Login to Apply';
-  else if (isAuthenticated && canOpenPortalJobs) primaryLabel = 'Open Portal Job';
-  else if (isAuthenticated) primaryLabel = 'Candidate Access Only';
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] p-5 shadow-[0_20px_55px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_80px_rgba(15,23,42,0.12)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_34%),linear-gradient(135deg,rgba(14,165,233,0.06),transparent_55%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+    <article
+      role="link"
+      tabIndex={0}
+      onClick={() => onAction(job)}
+      className="group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-[24px] border border-slate-200/60 bg-white/60 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-brand-200/80 hover:bg-white hover:shadow-[0_16px_40px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-brand-400"
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-slate-50/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
 
-      <div className="relative z-10 flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="relative z-10 flex items-start gap-4">
+        <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] border border-slate-100 bg-white p-2 shadow-[0_4px_12px_rgba(15,23,42,0.04)] transition-transform duration-300 group-hover:scale-[1.04]">
           {job.companyLogo ? (
             <img
               src={job.companyLogo}
               alt={job.companyName}
-              className="h-12 w-12 rounded-2xl border border-slate-200 bg-white object-contain p-1.5"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              className="h-full w-full object-contain"
             />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 via-white to-slate-100 text-sm font-black text-navy shadow-inner">
+            <span className="text-[14px] font-black tracking-wider text-slate-700">
               {initials}
-            </div>
-          )}
-          <div className="min-w-0">
-            <p className="truncate text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-              {job.companyName}
-            </p>
-            <h3 className="mt-1 line-clamp-2 text-sm font-black leading-6 text-navy">
-              {job.jobTitle}
-            </h3>
-          </div>
-        </div>
-        <div
-          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] ${sourceColor}`}
-        >
-          {job.sourceType === 'portal' ? <FiBriefcase size={11} /> : <FiTrendingUp size={11} />}
-          {job.sourceLabel}
-        </div>
-      </div>
-
-      <div className="relative z-10 mt-4 grid grid-cols-2 gap-2.5 text-[12px] text-slate-600">
-        <div className="rounded-2xl border border-slate-100 bg-slate-50/90 px-3 py-2.5">
-          <div className="flex items-center gap-1.5 text-slate-400">
-            <FiMapPin size={12} />
-            <span className="font-semibold uppercase tracking-[0.14em]">Location</span>
-          </div>
-          <p className="mt-1 line-clamp-2 font-semibold text-slate-700">
-            {job.jobLocation || 'Remote'}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-slate-100 bg-slate-50/90 px-3 py-2.5">
-          <div className="flex items-center gap-1.5 text-slate-400">
-            <FiBriefcase size={12} />
-            <span className="font-semibold uppercase tracking-[0.14em]">Type</span>
-          </div>
-          <p className="mt-1 line-clamp-1 font-semibold text-slate-700">
-            {job.employmentType || 'Full-time'}
-          </p>
-        </div>
-      </div>
-
-      <div className="relative z-10 mt-4 flex flex-wrap gap-2">
-        {job.category ? (
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-            {job.category}
-          </span>
-        ) : null}
-        {job.experienceLevel && job.experienceLevel !== 'Not specified' ? (
-          <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700">
-            {job.experienceLevel}
-          </span>
-        ) : null}
-        {job.salaryText ? (
-          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-            {job.salaryText}
-          </span>
-        ) : null}
-        {job.isFeatured ? (
-          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
-            Featured
-          </span>
-        ) : null}
-      </div>
-
-      {job.tags?.length ? (
-        <div className="relative z-10 mt-4 flex flex-wrap gap-2">
-          {job.tags.map((tag, index) => (
-            <span
-              key={`${job.id}-${tag}-${index}`}
-              className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500"
-            >
-              {tag}
             </span>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="relative z-10 mt-auto pt-5">
-        <button
-          type="button"
-          onClick={() => onAction(job)}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 via-amber-500 to-orange-500 px-4 py-3 text-sm font-black text-white shadow-[0_18px_36px_rgba(245,158,11,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(245,158,11,0.34)]"
-        >
-          {job.sourceType === 'external' && isAuthenticated ? (
-            <FiExternalLink size={14} />
-          ) : (
-            <FiLock size={14} />
           )}
-          {primaryLabel}
-        </button>
+        </div>
+        
+        <div className="min-w-0 flex-1 pt-0.5">
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+             <span className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] ${sourceColor}`}>
+               <span className="truncate">{job.sourceLabel}</span>
+             </span>
+             {job.isRemote ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-emerald-700">
+                  <FiTrendingUp size={9} />
+                  Remote
+                </span>
+             ) : null}
+          </div>
+          <h3 className="truncate font-heading text-[16px] font-bold leading-tight text-navy transition-colors group-hover:text-brand-600">
+            {job.jobTitle}
+          </h3>
+          <p className="mt-1 truncate text-[12px] font-semibold text-slate-500">
+            {job.companyName}
+          </p>
+        </div>
+
+        <div className="shrink-0 pt-1 text-slate-300 transition-colors duration-300 group-hover:text-brand-500">
+          <FiArrowUpRight size={18} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        </div>
       </div>
+
+      <div className="relative z-10 mt-5 flex flex-col gap-2 border-t border-slate-100/60 pt-4">
+        <div className="flex items-center gap-2.5 text-[12px] font-medium text-slate-600">
+          <FiBriefcase className="shrink-0 text-slate-400" size={14} />
+          <span className="truncate">{job.employmentType || 'Full-time'}</span>
+        </div>
+        <div className="flex items-center gap-2.5 text-[12px] font-medium text-slate-600">
+          <FiMapPin className="shrink-0 text-slate-400" size={14} />
+          <span className="truncate">{job.jobLocation || 'Remote'}</span>
+        </div>
+      </div>
+
+      {(job.category || (job.experienceLevel && job.experienceLevel !== 'Not specified') || job.salaryText || job.isFeatured) && (
+        <div className="relative z-10 mt-4 flex flex-wrap gap-2">
+          {job.category && (
+            <span className="rounded-lg bg-slate-50/80 px-2.5 py-1 text-[10px] font-semibold text-slate-600 border border-slate-100/80 transition-colors group-hover:bg-brand-50/50 group-hover:text-brand-700 group-hover:border-brand-100/50">
+              {job.category}
+            </span>
+          )}
+          {job.experienceLevel && job.experienceLevel !== 'Not specified' && (
+            <span className="rounded-lg bg-slate-50/80 px-2.5 py-1 text-[10px] font-semibold text-slate-600 border border-slate-100/80 transition-colors group-hover:bg-brand-50/50 group-hover:text-brand-700 group-hover:border-brand-100/50">
+              {job.experienceLevel}
+            </span>
+          )}
+          {job.salaryText && (
+            <span className="rounded-lg bg-slate-50/80 px-2.5 py-1 text-[10px] font-semibold text-slate-600 border border-slate-100/80 transition-colors group-hover:bg-emerald-50/50 group-hover:text-emerald-700 group-hover:border-emerald-100/50">
+              {job.salaryText}
+            </span>
+          )}
+          {job.isFeatured && (
+            <span className="rounded-lg bg-amber-50/80 px-2.5 py-1 text-[10px] font-semibold text-amber-700 border border-amber-200/80 transition-colors group-hover:bg-amber-100/80 group-hover:text-amber-800">
+              Featured
+            </span>
+          )}
+        </div>
+      )}
     </article>
   );
 };

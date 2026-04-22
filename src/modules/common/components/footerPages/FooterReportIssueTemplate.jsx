@@ -2,10 +2,9 @@ import PublicCallToAction from '../publicPages/PublicCallToAction';
 import PublicPageHero from '../publicPages/PublicPageHero';
 import PublicSectionHeader from '../publicPages/PublicSectionHeader';
 import FooterInfoSectionCard from './FooterInfoSectionCard';
-import FooterPageAside from './FooterPageAside';
 import FooterReportIssueForm from './FooterReportIssueForm';
 
-const FooterReportIssueTemplate = ({ pageData, relatedLinks }) => {
+const FooterReportIssueTemplate = ({ pageData }) => {
   return (
     <div className="pb-20">
       <PublicPageHero
@@ -50,7 +49,7 @@ const FooterReportIssueTemplate = ({ pageData, relatedLinks }) => {
       </section>
 
       <section className="px-4 py-4 md:py-8">
-        <div className="container mx-auto grid max-w-7xl gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="container mx-auto max-w-7xl">
           <div className="rounded-[2rem] border border-slate-200 bg-white p-7 shadow-sm">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-rose-600">What to include</p>
             <h3 className="mt-4 font-heading text-2xl font-bold text-navy">High-signal reports get resolved faster</h3>
@@ -66,14 +65,6 @@ const FooterReportIssueTemplate = ({ pageData, relatedLinks }) => {
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <FooterPageAside
-              relatedLinks={relatedLinks}
-              title="Need a policy route instead?"
-              description="Use the sidebar to move into grievances, trust and safety, or direct support depending on the nature of your concern."
-            />
           </div>
         </div>
       </section>

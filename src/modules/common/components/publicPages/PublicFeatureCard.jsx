@@ -12,22 +12,16 @@ const PublicFeatureCard = ({
   delay = 0
 }) => {
   const content = (
-    <div className="group rounded-[1.8rem] border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-gold/25 hover:shadow-xl">
+    <div className="group h-full rounded-[2rem] border border-slate-200/60 bg-white/60 p-7 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl transition-all hover:-translate-y-1 hover:border-brand-200 hover:shadow-lg sm:p-8">
       {Icon ? (
-        <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold-dark transition-all group-hover:gradient-gold group-hover:text-primary">
+        <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition-colors group-hover:bg-brand-50 group-hover:text-brand-700">
           <Icon size={22} />
         </div>
       ) : null}
 
-      {badge ? (
-        <span className="inline-flex rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700">
-          {badge}
-        </span>
-      ) : null}
-
-      <h3 className="mt-4 font-heading text-xl font-bold text-navy">{title}</h3>
+      <h3 className="mt-2 font-heading text-xl font-bold text-navy transition-colors group-hover:text-brand-700">{title}</h3>
       {description ? (
-        <p className="mt-3 text-sm leading-7 text-slate-600">{description}</p>
+        <p className="mt-3 text-sm leading-7 text-slate-500">{description}</p>
       ) : null}
       {meta ? <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{meta}</p> : null}
       {ctaLabel ? (

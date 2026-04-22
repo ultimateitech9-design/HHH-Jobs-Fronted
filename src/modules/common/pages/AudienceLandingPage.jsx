@@ -358,8 +358,8 @@ const audienceContent = {
       { label: 'Employer Reach', value: 'Clearer', helper: 'Manage company connections and responses without fragmented follow-up' }
     ],
     heroActions: [
-      { label: 'Open Campus Connect', to: '/management/login/campus-connect' },
-      { label: 'Explore Hiring Platform', to: '/recruiters', variant: 'ghost' }
+      { label: 'Register Campus', to: '/campus-connect/register?redirect=%2Fportal%2Fcampus-connect%2Fdashboard' },
+      { label: 'Campus Login', to: '/management/login/campus-connect', variant: 'ghost' }
     ],
     asideTitle: 'What campuses get here',
     asidePoints: [
@@ -422,8 +422,8 @@ const audienceContent = {
       title: 'Open the campus portal and manage placement operations properly',
       description: 'If your college or placement cell needs a cleaner workflow for drives, students, and recruiter outreach, Campus Connect should be entered directly from the public home experience.',
       actions: [
-        { label: 'Campus Login', to: '/management/login/campus-connect' },
-        { label: 'Back to Home', to: '/' }
+        { label: 'Register Campus', to: '/campus-connect/register?redirect=%2Fportal%2Fcampus-connect%2Fdashboard' },
+        { label: 'Campus Login', to: '/management/login/campus-connect' }
       ],
       chips: ['Placement cell', 'Drive management', 'Employer outreach']
     }
@@ -441,25 +441,9 @@ const AudienceLandingPage = ({ audienceKey }) => {
         eyebrow={content.eyebrow}
         title={content.title}
         description={content.description}
-        chips={content.chips}
         actions={content.heroActions}
-        metrics={content.metrics}
+        compact
         tightTop
-        aside={(
-          <div className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 p-6 text-white shadow-xl">
-            <h2 className="font-heading text-2xl font-extrabold">{content.asideTitle}</h2>
-            <div className="mt-6 space-y-3">
-              {content.asidePoints.map((item) => (
-                <div
-                  key={item}
-                  className="rounded-[1.4rem] border border-white/14 bg-white/10 px-4 py-3 text-sm font-semibold text-white/88"
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       />
 
       <section className="container mx-auto max-w-7xl px-4">
@@ -485,8 +469,8 @@ const AudienceLandingPage = ({ audienceKey }) => {
       </section>
 
       <section className="container mx-auto mt-16 max-w-7xl px-4">
-        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+          <div>
             <PublicSectionHeader
               eyebrow={content.stepsEyebrow}
               title={content.stepsTitle}
@@ -498,9 +482,9 @@ const AudienceLandingPage = ({ audienceKey }) => {
                 const Icon = step.icon;
 
                 return (
-                  <article key={step.title} className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-5">
+                  <article key={step.title} className="rounded-[1.4rem] border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
                     <div className="flex items-start gap-4">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-sm font-black text-brand-700">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-sm font-black text-brand-700">
                         {index + 1}
                       </span>
                       <div>
@@ -508,7 +492,7 @@ const AudienceLandingPage = ({ audienceKey }) => {
                           <span className="text-brand-700"><Icon size={17} /></span>
                           <h3 className="font-heading text-lg font-bold text-navy">{step.title}</h3>
                         </div>
-                        <p className="mt-2 text-sm leading-7 text-slate-600">{step.description}</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-500">{step.description}</p>
                       </div>
                     </div>
                   </article>
@@ -517,7 +501,7 @@ const AudienceLandingPage = ({ audienceKey }) => {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+          <div>
             <PublicSectionHeader
               eyebrow={content.spotlightEyebrow}
               title={content.spotlightTitle}
@@ -526,9 +510,9 @@ const AudienceLandingPage = ({ audienceKey }) => {
 
             <div className="mt-8 space-y-4">
               {content.spotlightPoints.map((point) => (
-                <article key={point} className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-5">
+                <article key={point} className="rounded-[1.4rem] border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
                   <div className="flex items-start gap-3">
-                    <span className="mt-1 text-brand-700">
+                    <span className="mt-1 text-brand-600">
                       <FiCheckCircle size={18} />
                     </span>
                     <p className="text-sm leading-7 text-slate-600">{point}</p>
@@ -537,21 +521,21 @@ const AudienceLandingPage = ({ audienceKey }) => {
               ))}
             </div>
 
-            <div className="mt-8 rounded-[1.6rem] border border-brand-100 bg-brand-50 p-5">
+            <div className="mt-8 rounded-[1.6rem] border border-brand-100/60 bg-brand-50/50 p-6 backdrop-blur-sm">
               <p className="font-heading text-lg font-bold text-navy">Ready to start?</p>
-              <p className="mt-2 text-sm leading-7 text-slate-600">
+              <p className="mt-2 text-sm leading-7 text-slate-500">
                 Open the right account type first, then continue into the matching login and dashboard flow.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
                   to={content.cta.actions[0].to}
-                  className="inline-flex rounded-full bg-navy px-5 py-3 text-sm font-semibold text-white"
+                  className="inline-flex rounded-full bg-navy px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-md"
                 >
                   {content.cta.actions[0].label}
                 </Link>
                 <Link
                   to={content.cta.actions[1].to}
-                  className="inline-flex rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-navy"
+                  className="inline-flex rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-navy transition-all hover:-translate-y-0.5 hover:shadow-md"
                 >
                   {content.cta.actions[1].label}
                 </Link>
@@ -560,16 +544,6 @@ const AudienceLandingPage = ({ audienceKey }) => {
           </div>
         </div>
       </section>
-
-      <div className="container mx-auto mt-16 max-w-7xl px-4">
-        <PublicCallToAction
-          eyebrow={content.cta.eyebrow}
-          title={content.cta.title}
-          description={content.cta.description}
-          actions={content.cta.actions}
-          chips={content.cta.chips}
-        />
-      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { FOOTER_LINK_COLUMNS, FOOTER_PAGE_CONTENT } from './footerPages';
+import { FOOTER_PAGE_CONTENT } from './footerPages';
 import FooterAboutTemplate from '../components/footerPages/FooterAboutTemplate';
 import FooterContactTemplate from '../components/footerPages/FooterContactTemplate';
 import FooterGenericTemplate from '../components/footerPages/FooterGenericTemplate';
@@ -17,28 +17,22 @@ const FALLBACK_PAGE = {
   ]
 };
 
-const getRelatedLinks = (pageKey) =>
-  FOOTER_LINK_COLUMNS.flatMap((column) => column.links)
-    .filter((link) => link.key !== pageKey)
-    .slice(0, 8);
-
 const FooterContentPage = ({ pageKey }) => {
   const pageData = FOOTER_PAGE_CONTENT[pageKey] || FALLBACK_PAGE;
-  const relatedLinks = getRelatedLinks(pageKey);
 
   if (pageKey === 'about-us') {
-    return <FooterAboutTemplate pageData={pageData} relatedLinks={relatedLinks} />;
+    return <FooterAboutTemplate pageData={pageData} />;
   }
 
   if (pageKey === 'contact-us') {
-    return <FooterContactTemplate pageData={pageData} relatedLinks={relatedLinks} />;
+    return <FooterContactTemplate pageData={pageData} />;
   }
 
   if (pageKey === 'report-issue') {
-    return <FooterReportIssueTemplate pageData={pageData} relatedLinks={relatedLinks} />;
+    return <FooterReportIssueTemplate pageData={pageData} />;
   }
 
-  return <FooterGenericTemplate pageKey={pageKey} pageData={pageData} relatedLinks={relatedLinks} />;
+  return <FooterGenericTemplate pageKey={pageKey} pageData={pageData} />;
 };
 
 export default FooterContentPage;

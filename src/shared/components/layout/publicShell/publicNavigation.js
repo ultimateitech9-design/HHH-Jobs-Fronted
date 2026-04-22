@@ -13,21 +13,15 @@ export const getPublicNavItems = ({ jobsNavPath }) => [
     children: [
       {
         key: 'for-job-seekers',
-        label: 'For Job Seekers',
+        label: 'Student/Professional',
         to: '/job-seekers',
         matchers: [/^\/job-seekers(?:\/.*)?$/]
       },
       {
         key: 'for-recruiters',
-        label: 'For Recruiters',
+        label: 'HR',
         to: '/recruiters',
         matchers: [/^\/recruiters(?:\/.*)?$/]
-      },
-      {
-        key: 'for-veterans',
-        label: 'For Veterans',
-        to: '/veterans',
-        matchers: [/^\/veterans(?:\/.*)?$/, /^\/retired-employee(?:\/.*)?$/]
       },
       {
         key: 'for-campus-connect',

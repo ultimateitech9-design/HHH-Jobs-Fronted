@@ -74,16 +74,36 @@ const OtpVerificationPage = () => {
   const legacyPendingEmail = legacyStoredUser && !isEmailVerifiedUser(legacyStoredUser)
     ? String(legacyStoredUser.email || '').trim().toLowerCase()
     : '';
+  const searchParams = new URLSearchParams(location.search || '');
+  const queryEmail = String(searchParams.get('email') || '').trim().toLowerCase();
+  const queryEmailWarning = String(searchParams.get('emailWarning') || searchParams.get('email_warning') || '').trim();
+  const queryAllowedLoginRoles = [
+    ...String(searchParams.get('allowedLoginRoles') || '').split(','),
+    ...searchParams.getAll('allowedLoginRoles'),
+    ...searchParams.getAll('role')
+  ]
+    .map((role) => normalizeRole(role))
+    .filter(Boolean);
+  const effectiveQueryAllowedLoginRoles = queryAllowedLoginRoles.length ? queryAllowedLoginRoles : null;
 
   const email = String(
     location.state?.email
+    || queryEmail
     || pendingVerification?.email
     || legacyPendingEmail
     || ''
   ).trim().toLowerCase();
-  const emailWarning = String(location.state?.emailWarning || pendingVerification?.emailWarning || '');
+  const emailWarning = String(
+    location.state?.emailWarning
+    || queryEmailWarning
+    || pendingVerification?.emailWarning
+    || ''
+  );
   const allowedLoginRoles = normalizeAllowedLoginRoles(
-    location.state?.allowedLoginRoles || pendingVerification?.allowedLoginRoles || []
+    location.state?.allowedLoginRoles
+    || effectiveQueryAllowedLoginRoles
+    || pendingVerification?.allowedLoginRoles
+    || []
   );
   const allowedLoginRolesKey = allowedLoginRoles.join('|');
 

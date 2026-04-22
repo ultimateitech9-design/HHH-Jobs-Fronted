@@ -28,8 +28,7 @@ const campusConnectRoutes = [
       { path: 'reports', element: <CampusReportsPage /> },
       { path: 'profile', element: <CampusProfilePage /> }
     ]
-  },
-  { path: 'campus-connect', element: <Navigate to="/portal/campus-connect/dashboard" replace /> }
+  }
 ];
 
 export default campusConnectRoutes;

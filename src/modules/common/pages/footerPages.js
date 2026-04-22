@@ -319,11 +319,6 @@ export const FOOTER_PAGE_CONTENT = {
           'HHH Jobs is built around a simple idea: people make better hiring decisions when information is clear, communication is timely, and the process feels dependable from the first click to the final decision.'
       },
       {
-        heading: 'Why the platform was built',
-        body:
-          'The platform was created to reduce the friction that slows modern recruitment. Employers need a cleaner path to qualified talent, and candidates deserve a process that feels organised, respectful, and worth their effort.'
-      },
-      {
         heading: 'What users should expect',
         body:
           'Every part of the experience is designed to support serious hiring and serious career movement:',
@@ -333,16 +328,6 @@ export const FOOTER_PAGE_CONTENT = {
           'Public support and policy pages that explain how the platform works',
           'A stronger emphasis on trust, safety, and professional conduct'
         ]
-      },
-      {
-        heading: 'How quality is measured',
-        body:
-          'We value accuracy, relevance, usability, and response quality. The goal is not to create noise, but to support decisions that are better informed and easier to act on.'
-      },
-      {
-        heading: 'Our mission',
-        body:
-          'Our mission is to build a hiring ecosystem where opportunity, credibility, and communication move together. We want employers to hire with more confidence and professionals to navigate opportunity with greater clarity.'
       }
     ]
   },

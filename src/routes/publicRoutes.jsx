@@ -17,6 +17,7 @@ const NotFoundPage = lazy(() => import('../modules/common/pages/NotFoundPage'));
 
 const LoginPage = lazy(() => import('../modules/auth/pages/LoginPage'));
 const SignupPage = lazy(() => import('../modules/auth/pages/SignupPage'));
+const CampusConnectRegisterPage = lazy(() => import('../modules/auth/pages/CampusConnectRegisterPage'));
 const OtpVerificationPage = lazy(() => import('../modules/auth/pages/OtpVerificationPage'));
 const ForgotPasswordPage = lazy(() => import('../modules/auth/pages/ForgotPasswordPage'));
 const OAuthCallbackPage = lazy(() => import('../modules/auth/pages/OAuthCallbackPage'));
@@ -57,6 +58,7 @@ const publicRoutes = [
   { path: 'login', element: <LoginPage /> },
   { path: 'login/:portalKey', element: <LoginPage /> },
   { path: 'sign-up', element: <SignupPage /> },
+  { path: 'campus-connect/register', element: <CampusConnectRegisterPage /> },
   { path: 'verify-otp', element: <OtpVerificationPage /> },
   { path: 'forgot-password', element: <ForgotPasswordPage /> },
   { path: 'oauth/callback', element: <OAuthCallbackPage /> },

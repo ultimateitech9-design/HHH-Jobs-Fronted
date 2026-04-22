@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { FiBriefcase, FiCheck, FiUser } from 'react-icons/fi';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AnimatedSection from '../../../shared/components/AnimatedSection';
 import { apiFetch, apiUrl, areDemoFallbacksEnabled, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
 import {
@@ -75,6 +75,14 @@ const signupRoleButtons = [
 const SignupPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const roleParam = new URLSearchParams(location.search).get('role');
+
+  if (roleParam === 'campus_connect') {
+    const redirectParam = new URLSearchParams(location.search).get('redirect');
+    const nextSearch = redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : '';
+    return <Navigate to={`/campus-connect/register${nextSearch}`} replace />;
+  }
+
   const [form, setForm] = useState(() => ({ ...initialFormState, role: getRoleFromSearch(location.search) }));
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
