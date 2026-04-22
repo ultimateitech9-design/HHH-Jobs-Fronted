@@ -6,6 +6,7 @@ import AuthInputField from '../components/AuthInputField';
 import AuthPageShell from '../components/AuthPageShell';
 import AuthPasswordField from '../components/AuthPasswordField';
 import { forgotPasswordBenefits } from '../config/authOptions';
+import { getPasswordPolicyError, PASSWORD_POLICY_HELPER } from '../../../utils/passwordPolicy';
 
 const ForgotPasswordPage = () => {
   const [step, setStep] = useState('email');
@@ -75,8 +76,9 @@ const ForgotPasswordPage = () => {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters.');
+    const passwordError = getPasswordPolicyError(newPassword, 'New password is required.');
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -155,6 +157,7 @@ const ForgotPasswordPage = () => {
             value={newPassword}
             onChange={(event) => setNewPassword(event.target.value)}
             disabled={isSubmitting}
+            helper={PASSWORD_POLICY_HELPER}
             showPassword={showNewPassword}
             onTogglePassword={() => setShowNewPassword((current) => !current)}
           />
@@ -163,6 +166,7 @@ const ForgotPasswordPage = () => {
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
             disabled={isSubmitting}
+            helper={PASSWORD_POLICY_HELPER}
             showPassword={showConfirmPassword}
             onTogglePassword={() => setShowConfirmPassword((current) => !current)}
           />

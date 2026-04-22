@@ -259,14 +259,6 @@ const PortalWorkbenchHeader = ({
         </div>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
-          <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1 lg:flex">
-            <Search className="h-4 w-4 text-slate-400" />
-            <input
-              placeholder={searchPlaceholder || 'Search dashboard'}
-              className="w-32 bg-transparent text-sm outline-none xl:w-44"
-            />
-          </div>
-
           {support?.to ? (
             <Link
               to={support.to}

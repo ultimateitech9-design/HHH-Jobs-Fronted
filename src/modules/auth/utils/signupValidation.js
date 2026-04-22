@@ -1,4 +1,5 @@
 import { countryCodeOptions } from '../config/authOptions';
+import { getPasswordPolicyError } from '../../../utils/passwordPolicy';
 
 const textOnlyRegex = /^[A-Za-z\s]+$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -65,9 +66,7 @@ export const validateSignupField = (key, value, nextForm) => {
     }
 
     case 'password':
-      if (!value) return 'Password is required.';
-      if (String(value).length < 6) return 'Password must be at least 6 characters.';
-      return '';
+      return getPasswordPolicyError(value);
 
     case 'dateOfBirth':
       if (nextForm.role !== 'hr') {

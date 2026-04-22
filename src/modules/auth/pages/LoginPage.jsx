@@ -29,6 +29,7 @@ const LoginPage = () => {
             createAccountLabel={portalConfig.createAccountLabel}
             showOtpLogin={portalConfig.showOtpLogin}
             socialRole={portalConfig.socialRole}
+            allowedLoginRoles={portalConfig.allowedLoginRoles}
             emailLabel={portalConfig.emailLabel}
             emailPlaceholder={portalConfig.emailPlaceholder}
             passwordPlaceholder={portalConfig.passwordPlaceholder}

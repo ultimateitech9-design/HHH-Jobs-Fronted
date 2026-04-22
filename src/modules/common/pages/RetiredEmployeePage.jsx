@@ -96,6 +96,7 @@ const RetiredEmployeePage = () => {
   return (
     <div className="pb-16 md:pb-24">
       <PublicPageHero
+        tightTop
         eyebrow="Retired Employee Program"
         title={<>Opportunities For <span className="gradient-text">Retired Professionals</span></>}
         description="Continue your professional journey with work that respects your experience, schedule, and expertise. HHH Jobs helps retired professionals move into flexible second-innings roles without losing credibility."

@@ -52,6 +52,7 @@ const EmpVerifyPage = ({ compact = false }) => {
     <div className={compact ? 'pb-10 md:pb-14' : 'pb-16 md:pb-24'}>
       <PublicPageHero
         className={compact ? 'py-3 md:py-5' : ''}
+        tightTop
         eyebrow="Employee Verification"
         title={<>Employee Verification Powered by <span className="gradient-text">Eimager</span></>}
         description="Understand how the Eimager verification workflow supports employer due diligence, reduces uncertainty, and adds stronger trust signals to hiring decisions."

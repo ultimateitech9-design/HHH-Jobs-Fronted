@@ -1,3 +1,5 @@
+import { getPasswordPolicyError } from './passwordPolicy';
+
 const USERS_KEY = 'job_portal_local_users';
 const PENDING_OTP_KEY = 'job_portal_pending_otps';
 
@@ -61,16 +63,22 @@ export const createLocalSignupFallback = ({
 }) => {
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const users = getUsers();
+  const passwordError = getPasswordPolicyError(password);
 
   if (users.some((user) => user.email === normalizedEmail)) {
     throw new Error('Email already registered.');
   }
 
+  if (passwordError) {
+    throw new Error(passwordError);
+  }
+
   const otp = generateOtp();
-  const user = {
+  const pendingOtps = getPendingOtps().filter((entry) => entry.email !== normalizedEmail);
+  pendingOtps.unshift({
     id: `local-user-${Date.now()}`,
-    name,
     email: normalizedEmail,
+    name,
     mobile,
     password,
     role,
@@ -79,16 +87,6 @@ export const createLocalSignupFallback = ({
     gender,
     caste,
     religion,
-    is_email_verified: false,
-    created_at: nowIso()
-  };
-
-  users.unshift(user);
-  setUsers(users);
-
-  const pendingOtps = getPendingOtps().filter((entry) => entry.email !== normalizedEmail);
-  pendingOtps.unshift({
-    email: normalizedEmail,
     otp,
     token: generateToken(),
     created_at: nowIso()
@@ -97,8 +95,6 @@ export const createLocalSignupFallback = ({
 
   return {
     status: true,
-    token: `pending-${user.id}`,
-    user,
     requiresOtpVerification: true,
     redirectTo: '/verify-otp',
     otp
@@ -115,18 +111,24 @@ export const verifyLocalSignupOtp = ({ email, otp }) => {
   }
 
   const users = getUsers();
-  const userIndex = users.findIndex((user) => user.email === normalizedEmail);
-  if (userIndex === -1) {
-    throw new Error('User not found.');
-  }
-
   const nextUser = {
-    ...users[userIndex],
+    id: pendingEntry.id || `local-user-${Date.now()}`,
+    name: pendingEntry.name,
+    email: pendingEntry.email,
+    mobile: pendingEntry.mobile,
+    password: pendingEntry.password,
+    role: pendingEntry.role,
+    companyName: pendingEntry.companyName || '',
+    dateOfBirth: pendingEntry.dateOfBirth || '',
+    gender: pendingEntry.gender || '',
+    caste: pendingEntry.caste || '',
+    religion: pendingEntry.religion || '',
     is_email_verified: true,
+    created_at: pendingEntry.created_at || nowIso(),
     updated_at: nowIso()
   };
-  users[userIndex] = nextUser;
-  setUsers(users);
+  users.unshift(nextUser);
+  setUsers(users.filter((user, index, list) => list.findIndex((item) => item.email === user.email) === index));
   setPendingOtps(pendingOtps.filter((entry) => entry.email !== normalizedEmail));
 
   return {

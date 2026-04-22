@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { FiCheck, FiShield } from 'react-icons/fi';
+import { FiBriefcase, FiCheck, FiUser } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AnimatedSection from '../../../shared/components/AnimatedSection';
 import { apiFetch, apiUrl, areDemoFallbacksEnabled, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
@@ -11,6 +11,7 @@ import {
   setAuthSession
 } from '../../../utils/auth';
 import { createLocalSignupFallback } from '../../../utils/localAuthFallback';
+import { PASSWORD_POLICY_HELPER } from '../../../utils/passwordPolicy';
 import {
   generateHrEmployerId,
   generateRetiredEmployeeId,
@@ -56,6 +57,20 @@ const socialProviderMeta = {
     icon: FcGoogle
   }
 };
+const signupRoleButtons = [
+  {
+    label: 'Candidate',
+    value: 'student',
+    description: 'For job seekers',
+    icon: FiUser
+  },
+  {
+    label: 'Recruiters',
+    value: 'hr',
+    description: 'For hiring teams',
+    icon: FiBriefcase
+  }
+];
 
 const SignupPage = () => {
   const location = useLocation();
@@ -148,6 +163,23 @@ const SignupPage = () => {
     setFieldErrors((current) => ({
       ...current,
       mobile: validateSignupField('mobile', cleanedMobile, nextForm)
+    }));
+
+    if (error) {
+      setError('');
+    }
+  };
+
+  const handleRoleSelect = (role) => {
+    const nextForm = {
+      ...form,
+      role
+    };
+
+    setForm(nextForm);
+    setFieldErrors((current) => ({
+      ...current,
+      companyName: validateSignupField('companyName', nextForm.companyName, nextForm)
     }));
 
     if (error) {
@@ -424,6 +456,45 @@ const SignupPage = () => {
               <h1 className="mt-2 text-[1.75rem] font-semibold tracking-[-0.04em] text-slate-950 md:text-[2.15rem]">
                 Create your HHH Jobs profile
               </h1>
+              <div className="mt-5">
+                <p className="mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Choose profile type
+                </p>
+                <div className="inline-flex w-full flex-col gap-1.5">
+                  <div className="inline-flex w-full flex-wrap gap-1.5 rounded-full border border-slate-200 bg-[linear-gradient(180deg,#fcfaf5_0%,#f7f3ea_100%)] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:w-auto sm:flex-nowrap">
+                    {signupRoleButtons.map((roleOption) => {
+                      const isActive = form.role === roleOption.value;
+                      const Icon = roleOption.icon;
+
+                      return (
+                        <button
+                          key={roleOption.value}
+                          type="button"
+                          onClick={() => handleRoleSelect(roleOption.value)}
+                          aria-pressed={isActive}
+                          className={`inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[0.87rem] font-semibold transition-all duration-200 sm:min-w-[156px] ${
+                            isActive
+                              ? 'bg-[#172033] text-white shadow-[0_12px_24px_rgba(15,23,42,0.16)]'
+                              : 'bg-transparent text-slate-600 hover:bg-white hover:text-slate-950'
+                          }`}
+                        >
+                          <span
+                            className={`inline-flex h-6 w-6 items-center justify-center rounded-full transition-colors ${
+                              isActive ? 'bg-white/12 text-gold-light' : 'bg-white/70 text-gold-dark'
+                            }`}
+                          >
+                            <Icon size={13} />
+                          </span>
+                          <span>{roleOption.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="pl-1 text-[0.76rem] text-slate-500">
+                    {signupRoleButtons.find((roleOption) => roleOption.value === form.role)?.description}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-6 md:mt-8">
@@ -472,6 +543,7 @@ const SignupPage = () => {
                     placeholder="Create a secure password"
                     disabled={isSubmitting || Boolean(socialLoading)}
                     error={fieldErrors.password}
+                    helper={PASSWORD_POLICY_HELPER}
                     showPassword={showPassword}
                     onTogglePassword={() => setShowPassword((current) => !current)}
                     className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 focus-within:!border-gold/60 focus-within:!bg-white"
@@ -546,16 +618,7 @@ const SignupPage = () => {
                         </p>
                       )}
                     </div>
-                  ) : (
-                    <div className="mt-3 rounded-[1.1rem] border border-slate-200 bg-[#f8f6f1] p-3 text-[0.84rem] leading-5 text-slate-600">
-                      <div className="flex items-start gap-2.5">
-                        <span className="mt-0.5 text-brand-600">
-                          <FiShield size={15} />
-                        </span>
-                        <span>Social sign-up is available for candidate and retired employee profiles.</span>
-                      </div>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
 

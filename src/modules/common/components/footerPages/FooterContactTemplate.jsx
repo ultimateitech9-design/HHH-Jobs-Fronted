@@ -37,8 +37,8 @@ const FooterContactTemplate = ({ pageData, relatedLinks }) => {
         title={pageData.title}
         description={pageData.summary}
         compact
-        className="-mt-[20px] md:-mt-[24px]"
-        contentClassName="-mt-20 md:-mt-24"
+        className="-mt-[54px] md:-mt-[62px]"
+        contentClassName="-mt-28 md:-mt-32"
         chips={['Employer support', 'Candidate help', 'Business partnerships']}
         actions={[
           { label: 'Send A Message', to: '/contact-us', variant: 'primary' },

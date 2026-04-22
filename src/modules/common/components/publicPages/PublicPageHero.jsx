@@ -27,7 +27,7 @@ const PublicPageHero = ({
         compact
           ? 'py-8 sm:py-10 md:py-12'
           : tightTop
-            ? 'pt-6 pb-12 sm:pt-8 sm:pb-14 md:pt-10 md:pb-20'
+            ? 'pt-2 pb-12 sm:pt-3 sm:pb-14 md:pt-4 md:pb-18'
             : 'py-12 sm:py-14 md:py-20'
       } ${className}`.trim()}
     >

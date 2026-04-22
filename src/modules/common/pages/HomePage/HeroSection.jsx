@@ -12,6 +12,8 @@ const statItems = [
   { label: 'Companies hiring', value: '10,000+' },
   { label: 'Verified listings', value: '98%' }
 ];
+const heroActionButtonClass =
+  'inline-flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold sm:flex-1';
 
 export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipClick }) {
   const user = useAuthStore((state) => state.user);
@@ -132,10 +134,14 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.55, delay: 0.52 }}
-              className="mt-6 flex flex-wrap gap-3"
+              className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-nowrap"
             >
               <Link to="/portal/student/jobs">
-                <motion.span whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.96 }} className="btn-primary">
+                <motion.span
+                  whileHover={{ scale: 1.04, y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                  className={`${heroActionButtonClass} btn-primary`}
+                >
                   Explore Opportunities
                   <ArrowRight className="h-4 w-4" />
                 </motion.span>
@@ -152,7 +158,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
                 <motion.span
                   whileHover={{ scale: 1.04, y: -2 }}
                   whileTap={{ scale: 0.96 }}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-navy/20 bg-white px-6 py-3 font-semibold text-navy shadow-sm transition-colors hover:bg-navy hover:text-white"
+                  className={`${heroActionButtonClass} border border-navy/20 bg-white text-navy shadow-sm transition-colors hover:bg-navy hover:text-white`}
                 >
                   <Briefcase className="h-4 w-4" />
                   Post a Job
@@ -162,7 +168,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
                 <motion.span
                   whileHover={{ scale: 1.04, y: -2 }}
                   whileTap={{ scale: 0.96 }}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-gold/25 bg-gold/10 px-6 py-3 font-semibold text-gold-dark shadow-sm transition-colors hover:bg-gold hover:text-primary"
+                  className={`${heroActionButtonClass} border border-gold/25 bg-gold/10 text-gold-dark shadow-sm transition-colors hover:bg-gold hover:text-primary`}
                 >
                   <GraduationCap className="h-4 w-4" />
                   Campus Connect

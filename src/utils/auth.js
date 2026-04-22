@@ -82,12 +82,22 @@ export const getPendingVerificationSession = () => {
 
   return {
     email,
-    emailWarning: String(pendingSession.emailWarning || '').trim()
+    emailWarning: String(pendingSession.emailWarning || '').trim(),
+    allowedLoginRoles: Array.isArray(pendingSession.allowedLoginRoles)
+      ? pendingSession.allowedLoginRoles
+        .map((role) => normalizeRole(role))
+        .filter(Boolean)
+      : []
   };
 };
 
-export const beginPendingVerificationSession = ({ email = '', emailWarning = '' } = {}) => {
+export const beginPendingVerificationSession = ({ email = '', emailWarning = '', allowedLoginRoles = [] } = {}) => {
   const normalizedEmail = String(email || '').trim().toLowerCase();
+  const normalizedAllowedLoginRoles = Array.isArray(allowedLoginRoles)
+    ? allowedLoginRoles
+      .map((role) => normalizeRole(role))
+      .filter(Boolean)
+    : [];
 
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
@@ -95,7 +105,8 @@ export const beginPendingVerificationSession = ({ email = '', emailWarning = '' 
   if (normalizedEmail) {
     localStorage.setItem(PENDING_VERIFICATION_KEY, JSON.stringify({
       email: normalizedEmail,
-      emailWarning: String(emailWarning || '').trim()
+      emailWarning: String(emailWarning || '').trim(),
+      allowedLoginRoles: normalizedAllowedLoginRoles
     }));
   } else {
     localStorage.removeItem(PENDING_VERIFICATION_KEY);

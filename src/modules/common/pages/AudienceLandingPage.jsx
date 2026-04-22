@@ -444,6 +444,7 @@ const AudienceLandingPage = ({ audienceKey }) => {
         chips={content.chips}
         actions={content.heroActions}
         metrics={content.metrics}
+        tightTop
         aside={(
           <div className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 p-6 text-white shadow-xl">
             <h2 className="font-heading text-2xl font-extrabold">{content.asideTitle}</h2>

@@ -8,6 +8,7 @@ import {
   clearAuthSession,
   getDashboardPathByRole,
   isRedirectPathAllowedForRole,
+  normalizeRole,
   normalizeRedirectPath,
   setAuthSession
 } from '../../../utils/auth';
@@ -23,9 +24,35 @@ import {
 import AuthFormMessage from './AuthFormMessage';
 import { calculateAge } from '../utils/signupValidation';
 
-const tryManagedAccountLogin = ({ email, password, navigate, redirectTo, setError }) => {
+const normalizeAllowedLoginRoles = (allowedLoginRoles = []) => (
+  Array.isArray(allowedLoginRoles)
+    ? allowedLoginRoles.map((role) => normalizeRole(role)).filter(Boolean)
+    : []
+);
+
+const isRoleAllowedOnLoginPage = (role, allowedLoginRoles = []) => {
+  const normalizedRole = normalizeRole(role);
+  if (!normalizedRole) return false;
+  if (!allowedLoginRoles.length) return true;
+  return allowedLoginRoles.includes(normalizedRole);
+};
+
+const buildPortalRoleErrorMessage = (allowedLoginRoles = []) => {
+  if (allowedLoginRoles.includes('student') && allowedLoginRoles.includes('hr') && allowedLoginRoles.length === 2) {
+    return 'This login page only allows Student and HR accounts. Use the dedicated management login page for management dashboards.';
+  }
+
+  return 'This account is not allowed on the selected login page.';
+};
+
+const tryManagedAccountLogin = ({ email, password, navigate, redirectTo, setError, allowedLoginRoles }) => {
   const managedAccount = findManagedAccountByEmail(email);
   if (!managedAccount || managedAccount.password !== password) return false;
+
+  if (!isRoleAllowedOnLoginPage(managedAccount.role, allowedLoginRoles)) {
+    setError?.(buildPortalRoleErrorMessage(allowedLoginRoles));
+    return true;
+  }
 
   if (!isRedirectPathAllowedForRole(redirectTo, managedAccount.role)) {
     setError?.(`This ID is not allowed for the selected portal. Use the ${managedAccount.role} account on its assigned dashboard.`);
@@ -64,6 +91,8 @@ const LoginPanelContent = ({
   createAccountPath = '/sign-up',
   createAccountLabel = 'Create account',
   showOtpLogin = true,
+  showAccessNotice = true,
+  allowedLoginRoles = [],
   emailLabel = 'Email ID / Username',
   emailPlaceholder = 'Enter your active Email ID / Username',
   passwordPlaceholder = 'Enter your password',
@@ -79,6 +108,7 @@ const LoginPanelContent = ({
   const navigate = useNavigate();
   const location = useLocation();
 
+  const normalizedAllowedLoginRoles = normalizeAllowedLoginRoles(allowedLoginRoles);
   const redirectTo = location.state?.from || defaultRedirectPath || null;
   const demoFallbacksEnabled = areDemoFallbacksEnabled();
 
@@ -106,9 +136,9 @@ const LoginPanelContent = ({
   }, [error]);
 
   const redirectToOtpVerification = ({ email, emailWarning = '' }) => {
-    beginPendingVerificationSession({ email, emailWarning });
+    beginPendingVerificationSession({ email, emailWarning, allowedLoginRoles: normalizedAllowedLoginRoles });
     navigate('/verify-otp', {
-      state: { email, emailWarning },
+      state: { email, emailWarning, allowedLoginRoles: normalizedAllowedLoginRoles },
       replace: true
     });
   };
@@ -122,7 +152,14 @@ const LoginPanelContent = ({
       return;
     }
 
-    if (demoFallbacksEnabled && tryManagedAccountLogin({ email: form.email, password: form.password, navigate, redirectTo, setError })) {
+    if (demoFallbacksEnabled && tryManagedAccountLogin({
+      email: form.email,
+      password: form.password,
+      navigate,
+      redirectTo,
+      setError,
+      allowedLoginRoles: normalizedAllowedLoginRoles
+    })) {
       return;
     }
 
@@ -189,6 +226,12 @@ const LoginPanelContent = ({
               })
             }
             : payload.user;
+
+      if (!isRoleAllowedOnLoginPage(nextUser?.role, normalizedAllowedLoginRoles)) {
+        clearAuthSession();
+        setError(buildPortalRoleErrorMessage(normalizedAllowedLoginRoles));
+        return;
+      }
 
       if (!isRedirectPathAllowedForRole(redirectTo, nextUser?.role)) {
         clearAuthSession();
@@ -322,11 +365,11 @@ const LoginPanelContent = ({
               <span>{socialLoading === 'google' ? 'Redirecting...' : 'Continue with Google'}</span>
             </button>
           </>
-        ) : (
+        ) : showAccessNotice ? (
           <div className="rounded-[1.15rem] border border-slate-200 bg-[#f8f6f1] px-4 py-3 text-left text-[0.88rem] leading-6 text-slate-500">
             This portal uses secure email-and-password access only.
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

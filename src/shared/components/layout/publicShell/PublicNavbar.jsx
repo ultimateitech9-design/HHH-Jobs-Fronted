@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import LoginPanelContent from '../../../../modules/auth/components/LoginPanelContent';
+import { getLoginPortalConfig } from '../../../../modules/auth/config/loginPortals';
 import { getPublicJobsNavPath } from '../../../../modules/common/utils/publicAccess';
 import { isExternalHref } from '../../../utils/externalLinks.js';
 import { getPublicNavItems } from './publicNavigation';
@@ -17,6 +18,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
   const location = useLocation();
 
   const jobsNavPath = getPublicJobsNavPath(Boolean(user));
+  const defaultLoginPortal = getLoginPortalConfig('default');
 
   const publicNavItems = useMemo(
     () => getPublicNavItems({ jobsNavPath }),
@@ -54,6 +56,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
       ? createPortal(
           <AnimatePresence>
             <motion.div
+              key="login-drawer-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -61,6 +64,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
               onClick={() => setLoginDrawerOpen(false)}
             />
             <motion.aside
+              key="login-drawer-panel"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -69,6 +73,13 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
             >
               <LoginPanelContent
                 portalLabel="Login"
+                allowSocialLogin={defaultLoginPortal.allowSocialLogin}
+                socialRole={defaultLoginPortal.socialRole}
+                showCreateAccount={defaultLoginPortal.showCreateAccount}
+                createAccountPath={defaultLoginPortal.createAccountPath}
+                createAccountLabel={defaultLoginPortal.createAccountLabel}
+                showOtpLogin={defaultLoginPortal.showOtpLogin}
+                allowedLoginRoles={defaultLoginPortal.allowedLoginRoles}
                 showHeader
                 onRequestClose={() => setLoginDrawerOpen(false)}
               />

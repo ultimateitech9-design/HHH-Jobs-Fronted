@@ -8,6 +8,7 @@ import {
   getPendingVerificationSession,
   getStoredUser,
   isEmailVerifiedUser,
+  normalizeRole,
   normalizeRedirectPath,
   setAuthSession
 } from '../../../utils/auth';
@@ -29,6 +30,27 @@ const normalizeOtpErrorMessage = (message = '') => {
   return normalized;
 };
 
+const normalizeAllowedLoginRoles = (allowedLoginRoles = []) => (
+  Array.isArray(allowedLoginRoles)
+    ? allowedLoginRoles.map((role) => normalizeRole(role)).filter(Boolean)
+    : []
+);
+
+const isRoleAllowedOnVerificationPage = (role, allowedLoginRoles = []) => {
+  const normalizedRole = normalizeRole(role);
+  if (!normalizedRole) return false;
+  if (!allowedLoginRoles.length) return true;
+  return allowedLoginRoles.includes(normalizedRole);
+};
+
+const buildPortalRoleErrorMessage = (allowedLoginRoles = []) => {
+  if (allowedLoginRoles.includes('student') && allowedLoginRoles.includes('hr') && allowedLoginRoles.length === 2) {
+    return 'This login page only allows Student and HR accounts. Use the dedicated management login page for management dashboards.';
+  }
+
+  return 'This account is not allowed on the selected login page.';
+};
+
 const OtpVerificationPage = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [notice, setNotice] = useState('');
@@ -38,6 +60,14 @@ const OtpVerificationPage = () => {
   const inputRefs = useRef([]);
   const navigate = useNavigate();
   const location = useLocation();
+  const focusOtpInput = (index) => {
+    requestAnimationFrame(() => {
+      const nextInput = inputRefs.current[index];
+      if (!nextInput) return;
+      nextInput.focus();
+      nextInput.select?.();
+    });
+  };
 
   const pendingVerification = getPendingVerificationSession();
   const legacyStoredUser = getStoredUser();
@@ -52,6 +82,10 @@ const OtpVerificationPage = () => {
     || ''
   ).trim().toLowerCase();
   const emailWarning = String(location.state?.emailWarning || pendingVerification?.emailWarning || '');
+  const allowedLoginRoles = normalizeAllowedLoginRoles(
+    location.state?.allowedLoginRoles || pendingVerification?.allowedLoginRoles || []
+  );
+  const allowedLoginRolesKey = allowedLoginRoles.join('|');
 
   useEffect(() => {
     if (!email) {
@@ -59,9 +93,9 @@ const OtpVerificationPage = () => {
       return;
     }
 
-    beginPendingVerificationSession({ email, emailWarning });
-    inputRefs.current[0]?.focus();
-  }, [email, emailWarning, navigate]);
+    beginPendingVerificationSession({ email, emailWarning, allowedLoginRoles });
+    focusOtpInput(0);
+  }, [allowedLoginRolesKey, email, emailWarning, navigate]);
 
   useEffect(() => {
     const normalizedWarning = String(emailWarning || '').trim();
@@ -87,28 +121,76 @@ const OtpVerificationPage = () => {
   }, [counter]);
 
   const handleChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return;
+    const digits = String(value || '').replace(/\D/g, '');
+
+    if (!digits) {
+      const updated = [...otp];
+      updated[index] = '';
+      setOtp(updated);
+      return;
+    }
+
+    if (digits.length === 1) {
+      const updated = [...otp];
+      updated[index] = digits;
+      setOtp(updated);
+
+      if (index < 5) {
+        focusOtpInput(index + 1);
+      }
+      return;
+    }
 
     const updated = [...otp];
-    updated[index] = value.slice(-1);
+    digits.slice(0, 6 - index).split('').forEach((digit, offset) => {
+      updated[index + offset] = digit;
+    });
     setOtp(updated);
 
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
+    const nextIndex = Math.min(index + digits.length, 5);
+    focusOtpInput(nextIndex);
   };
 
   const handleKeyDown = (index, event) => {
-    if (event.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    if (event.key === 'Backspace') {
+      event.preventDefault();
+      const updated = [...otp];
+
+      if (otp[index]) {
+        updated[index] = '';
+        setOtp(updated);
+        return;
+      }
+
+      if (index > 0) {
+        updated[index - 1] = '';
+        setOtp(updated);
+        focusOtpInput(index - 1);
+      }
+      return;
     }
 
     if (event.key === 'ArrowLeft' && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+      event.preventDefault();
+      focusOtpInput(index - 1);
+      return;
     }
 
     if (event.key === 'ArrowRight' && index < 5) {
-      inputRefs.current[index + 1]?.focus();
+      event.preventDefault();
+      focusOtpInput(index + 1);
+      return;
+    }
+
+    if (/^\d$/.test(event.key)) {
+      event.preventDefault();
+      const updated = [...otp];
+      updated[index] = event.key;
+      setOtp(updated);
+
+      if (index < 5) {
+        focusOtpInput(index + 1);
+      }
     }
   };
 
@@ -119,7 +201,7 @@ const OtpVerificationPage = () => {
     event.preventDefault();
     const nextOtp = pasted.padEnd(6, ' ').slice(0, 6).split('').map((char) => (char === ' ' ? '' : char));
     setOtp(nextOtp);
-    inputRefs.current[Math.min(pasted.length - 1, 5)]?.focus();
+    focusOtpInput(Math.min(pasted.length - 1, 5));
   };
 
   const handleVerify = async () => {
@@ -164,6 +246,11 @@ const OtpVerificationPage = () => {
           }
           : payload.user;
 
+      if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
+        setError(buildPortalRoleErrorMessage(allowedLoginRoles));
+        return;
+      }
+
       clearPendingVerificationSession();
       setAuthSession(payload.token, nextUser);
       navigate(normalizeRedirectPath(payload.redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
@@ -188,6 +275,11 @@ const OtpVerificationPage = () => {
               })
             }
             : payload.user;
+
+        if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
+          setError(buildPortalRoleErrorMessage(allowedLoginRoles));
+          return;
+        }
 
         clearPendingVerificationSession();
         setAuthSession(payload.token, nextUser);
@@ -225,17 +317,17 @@ const OtpVerificationPage = () => {
 
       setCounter(60);
       setNotice('A fresh OTP is on the way. Check your inbox and spam folder.');
-      beginPendingVerificationSession({ email, emailWarning: '' });
+      beginPendingVerificationSession({ email, emailWarning: '', allowedLoginRoles });
       setOtp(['', '', '', '', '', '']);
-      inputRefs.current[0]?.focus();
+      focusOtpInput(0);
     } catch (requestError) {
       try {
         resendLocalSignupOtp(email);
         setCounter(60);
         setNotice('A fresh OTP has been generated for this session.');
-        beginPendingVerificationSession({ email, emailWarning: '' });
+        beginPendingVerificationSession({ email, emailWarning: '', allowedLoginRoles });
         setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
+        focusOtpInput(0);
       } catch (fallbackError) {
         setError(normalizeOtpErrorMessage(fallbackError.message || 'Network error while resending OTP.'));
       }
