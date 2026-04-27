@@ -272,6 +272,7 @@ const toProfileEditorDraft = (source = {}) => ({
   mobile: source.mobile || '',
   email: source.email || '',
   location: source.location || '',
+  availabilityToJoin: source.availabilityToJoin || '',
   gender: source.gender || '',
   dateOfBirth: source.dateOfBirth || ''
 });
@@ -292,6 +293,7 @@ const StudentProfilePage = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [profileEditorOpen, setProfileEditorOpen] = useState(false);
   const [profileEditorDraft, setProfileEditorDraft] = useState(() => toProfileEditorDraft(EMPTY_FORM));
+  const [profileEditorFocusField, setProfileEditorFocusField] = useState('');
 
   const setFlash = (type, text) => {
     if (timerRef.current) window.clearTimeout(timerRef.current);
@@ -368,14 +370,16 @@ const StudentProfilePage = () => {
 
   const updateField = (name, value) => setForm((current) => ({ ...current, [name]: value }));
 
-  const openProfileEditor = () => {
+  const openProfileEditor = (focusField = '') => {
     setProfileEditorDraft(toProfileEditorDraft(form));
+    setProfileEditorFocusField(focusField);
     setProfileEditorOpen(true);
   };
 
   const closeProfileEditor = () => {
     if (saving) return;
     setProfileEditorOpen(false);
+    setProfileEditorFocusField('');
   };
 
   const updateProfileEditorField = (name, value) =>
@@ -793,8 +797,19 @@ const StudentProfilePage = () => {
                 <input
                   value={profileEditorDraft.location}
                   onChange={(event) => updateProfileEditorField('location', event.target.value)}
+                  autoFocus={profileEditorFocusField === 'location'}
                   className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                   placeholder="Add location"
+                />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Availability to join</p>
+                <input
+                  value={profileEditorDraft.availabilityToJoin}
+                  onChange={(event) => updateProfileEditorField('availabilityToJoin', event.target.value)}
+                  autoFocus={profileEditorFocusField === 'availabilityToJoin'}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  placeholder="Add availability to join"
                 />
               </div>
               <div>
@@ -939,18 +954,26 @@ const StudentProfilePage = () => {
               </div>
 
               <div className="mt-2 grid gap-x-3 gap-y-1.5 text-[0.8rem] text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
-                <span className="inline-flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openProfileEditor('location')}
+                  className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-left transition hover:bg-brand-50 hover:text-brand-700"
+                >
                   <FiMapPin size={15} className="text-brand-600" />
                   {form.location || 'Add location'}
-                </span>
+                </button>
                 <span className="inline-flex items-center gap-2">
                   <FiBriefcase size={15} className="text-brand-600" />
                   {employmentLabel}
                 </span>
-                <span className="inline-flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openProfileEditor('availabilityToJoin')}
+                  className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-left transition hover:bg-brand-50 hover:text-brand-700"
+                >
                   <FiRefreshCw size={15} className="text-brand-600" />
                   {availabilityLabel}
-                </span>
+                </button>
                 <span className="inline-flex items-center gap-2">
                   <FiPhone size={15} className="text-brand-600" />
                   {form.mobile || 'Add phone number'}
