@@ -733,10 +733,10 @@ const StudentProfilePage = () => {
                       onChange={(event) => updateField('isDiscoverable', event.target.checked)}
                       className="h-4 w-4 rounded border-slate-300 accent-brand-600"
                     />
-                    <span className="truncate text-[0.84rem] font-bold text-navy">Show me in Candidate Database</span>
+                    <span className="truncate text-[0.84rem] font-bold text-navy">Show profile to recruiters</span>
                   </span>
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${form.isDiscoverable ? 'bg-white text-sky-700' : 'bg-slate-100 text-slate-500'}`}>
-                    {form.isDiscoverable ? 'On' : 'Off'}
+                    {form.isDiscoverable ? 'Visible' : 'Hidden'}
                   </span>
                 </label>
                 <label className={`inline-flex min-h-[2.8rem] min-w-[240px] flex-1 items-center justify-between gap-3 rounded-full border px-3.5 py-2 shadow-sm transition ${form.availableToHire ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
@@ -747,10 +747,10 @@ const StudentProfilePage = () => {
                       onChange={(event) => updateField('availableToHire', event.target.checked)}
                       className="h-4 w-4 rounded border-slate-300 accent-brand-600"
                     />
-                    <span className="truncate text-[0.84rem] font-bold text-navy">Mark me available to hire</span>
+                    <span className="truncate text-[0.84rem] font-bold text-navy">Open to new job opportunities</span>
                   </span>
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${form.availableToHire ? 'bg-white text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                    {form.availableToHire ? 'On' : 'Off'}
+                    {form.availableToHire ? 'Active' : 'Inactive'}
                   </span>
                 </label>
               </div>
