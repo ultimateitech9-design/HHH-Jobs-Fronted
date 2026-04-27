@@ -77,6 +77,15 @@ const EMPTY_PROJECT = {
   isOngoing: false
 };
 
+const EDUCATION_LEVEL_OPTIONS = [
+  'Doctorate / PhD',
+  'Masters / Post Graduation',
+  'Graduation / Diploma',
+  'Class XII',
+  'Class X',
+  'Below 10th'
+];
+
 const normalizeExperienceItems = (items = []) =>
   (Array.isArray(items) ? items : []).map((item) =>
     typeof item === 'string'
@@ -276,6 +285,9 @@ const formatAvailabilityToJoin = (value = '') => {
   if (/^\d+$/.test(trimmed)) return `${trimmed} month${trimmed === '1' ? '' : 's'}`;
   return trimmed;
 };
+
+const getEducationCardTitle = (entry = {}, index = 0) =>
+  entry.courseName || entry.educationLevel || `Qualification ${index + 1}`;
 
 const toProfileEditorDraft = (source = {}) => ({
   name: source.name || '',
@@ -1473,22 +1485,22 @@ const StudentProfilePage = () => {
                   <h2 className="text-2xl font-extrabold text-navy">Education</h2>
                   <span className="text-base font-bold text-emerald-600">{hasEducation ? 'Updated' : 'Add 10%'}</span>
                 </div>
-                <p className="mt-2 text-sm text-slate-500">Your qualifications help employers know your educational background.</p>
+                <p className="mt-2 text-sm text-slate-500">Add your highest and most relevant qualifications so recruiters can understand your academic background clearly.</p>
               </div>
               <button type="button" onClick={() => addEducation()} className="text-lg font-bold text-[#2d5bff]">
-                Add education
+                Add another qualification
               </button>
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {['Doctorate/PhD', 'Masters/Post-graduation', 'Graduation/Diploma', 'Class XII', 'Class X', 'Below 10th'].map((label) => (
+              {EDUCATION_LEVEL_OPTIONS.map((label) => (
                 <button
                   key={label}
                   type="button"
                   onClick={() => addEducation(label)}
-                  className="text-left text-base font-semibold text-[#2d5bff] transition hover:text-[#2449d8]"
+                  className="text-left text-sm font-semibold text-[#2d5bff] transition hover:text-[#2449d8]"
                 >
-                  Add {label.toLowerCase()}
+                  {label}
                 </button>
               ))}
             </div>
@@ -1497,7 +1509,10 @@ const StudentProfilePage = () => {
               {form.educationEntries.map((entry, index) => (
                 <div key={`education-entry-${index}`} className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="text-lg font-bold text-slate-900">Education #{index + 1}</h3>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">{getEducationCardTitle(entry, index)}</h3>
+                      <p className="text-xs text-slate-500">Qualification {index + 1}</p>
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeEducation(index)}
@@ -1510,14 +1525,33 @@ const StudentProfilePage = () => {
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
-                    <input value={entry.educationLevel} onChange={(event) => updateEducation(index, 'educationLevel', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Education level" />
-                    <input value={entry.courseName} onChange={(event) => updateEducation(index, 'courseName', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Course or degree" />
-                    <input value={entry.instituteName} onChange={(event) => updateEducation(index, 'instituteName', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Institute name" />
-                    <input value={entry.universityBoard} onChange={(event) => updateEducation(index, 'universityBoard', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="University or board" />
-                    <input value={entry.specialization} onChange={(event) => updateEducation(index, 'specialization', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Specialization" />
+                    <select
+                      value={entry.educationLevel}
+                      onChange={(event) => updateEducation(index, 'educationLevel', event.target.value)}
+                      className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                    >
+                      {EDUCATION_LEVEL_OPTIONS.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                    <input value={entry.courseName} onChange={(event) => updateEducation(index, 'courseName', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Degree, course, or stream" />
+                    <input value={entry.instituteName} onChange={(event) => updateEducation(index, 'instituteName', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="College or school name" />
+                    <input value={entry.universityBoard} onChange={(event) => updateEducation(index, 'universityBoard', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="University or board name" />
+                    <input value={entry.specialization} onChange={(event) => updateEducation(index, 'specialization', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Specialization or major" />
+                    <select
+                      value={entry.educationStatus}
+                      onChange={(event) => updateEducation(index, 'educationStatus', event.target.value)}
+                      className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                    >
+                      <option value="completed">Completed</option>
+                      <option value="pursuing">Pursuing</option>
+                    </select>
                     <input value={entry.startYear} onChange={(event) => updateEducation(index, 'startYear', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Start year" />
-                    <input value={entry.endYear} onChange={(event) => updateEducation(index, 'endYear', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="End year" />
-                    <input value={entry.expectedCompletionYear} onChange={(event) => updateEducation(index, 'expectedCompletionYear', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Expected completion year" />
+                    {entry.educationStatus === 'pursuing' ? (
+                      <input value={entry.expectedCompletionYear} onChange={(event) => updateEducation(index, 'expectedCompletionYear', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Expected completion year" />
+                    ) : (
+                      <input value={entry.endYear} onChange={(event) => updateEducation(index, 'endYear', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Completion year" />
+                    )}
                   </div>
                 </div>
               ))}
