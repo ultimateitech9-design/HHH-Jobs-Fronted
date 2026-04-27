@@ -268,7 +268,7 @@ const cardClassName =
   'rounded-[1.75rem] border border-[#e6ecf5] bg-white p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.22)] sm:p-6';
 
 const profileMetaItemClassName =
-  'inline-flex min-h-[2.5rem] items-center gap-2 rounded-[0.95rem] border border-slate-200 bg-white px-3 py-2 text-left text-[0.79rem] text-slate-600 shadow-[0_12px_24px_-26px_rgba(15,23,42,0.34)]';
+  'inline-flex items-center gap-2 text-left text-[0.8rem] text-slate-600';
 
 const formatAvailabilityToJoin = (value = '') => {
   const trimmed = String(value || '').trim();
@@ -964,11 +964,11 @@ const StudentProfilePage = () => {
                 </label>
               </div>
 
-              <div className="mt-2 grid gap-2 text-[0.8rem] text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-2 grid gap-x-5 gap-y-2 text-[0.8rem] text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
                 <button
                   type="button"
                   onClick={() => openProfileEditor('location')}
-                  className={`${profileMetaItemClassName} transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700`}
+                  className={`${profileMetaItemClassName} transition hover:text-brand-700`}
                 >
                   <FiMapPin size={15} className="text-brand-600" />
                   {form.location || 'Add location'}
@@ -980,7 +980,7 @@ const StudentProfilePage = () => {
                 <button
                   type="button"
                   onClick={() => openProfileEditor('availabilityToJoin')}
-                  className={`${profileMetaItemClassName} transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700`}
+                  className={`${profileMetaItemClassName} transition hover:text-brand-700`}
                 >
                   <FiClock size={15} className="text-brand-600" />
                   {availabilityLabel}
