@@ -744,7 +744,6 @@ const StudentProfilePage = () => {
                   />
                   <span>
                     <span className="block text-[0.88rem] font-bold text-navy">Show me in Candidate Database</span>
-                    <span className="mt-0.5 block text-xs text-slate-500">Recruiters can discover your profile only when this is enabled.</span>
                   </span>
                 </label>
                 <label className="flex items-start gap-2 rounded-[1rem] bg-white px-3 py-2 shadow-sm">
@@ -756,7 +755,6 @@ const StudentProfilePage = () => {
                   />
                   <span>
                     <span className="block text-[0.88rem] font-bold text-navy">Mark me available to hire</span>
-                    <span className="mt-0.5 block text-xs text-slate-500">Adds a recruiter-facing availability badge for faster sourcing.</span>
                   </span>
                 </label>
               </div>
