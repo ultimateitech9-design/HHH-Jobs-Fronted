@@ -724,8 +724,8 @@ const StudentProfilePage = () => {
                 </span>
               </div>
 
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                <label className={`inline-flex min-h-[2.45rem] min-w-[250px] flex-1 items-center justify-between gap-2.5 rounded-full border px-3 py-1.5 shadow-sm transition ${form.isDiscoverable ? 'border-sky-200 bg-sky-50' : 'border-slate-200 bg-white'}`}>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <label className={`inline-flex h-10 max-w-full items-center gap-2 rounded-full border px-3 py-1.5 shadow-sm transition ${form.isDiscoverable ? 'border-sky-200 bg-sky-50 shadow-[0_10px_22px_-18px_rgba(14,165,233,0.45)]' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
                   <span className="inline-flex min-w-0 items-center gap-1.5">
                     <input
                       type="checkbox"
@@ -733,13 +733,13 @@ const StudentProfilePage = () => {
                       onChange={(event) => updateField('isDiscoverable', event.target.checked)}
                       className="h-3.5 w-3.5 rounded border-slate-300 accent-brand-600"
                     />
-                    <span className="truncate text-[0.8rem] font-bold text-navy">Show profile to recruiters</span>
+                    <span className="truncate text-[0.79rem] font-bold text-navy">Recruiter visibility</span>
                   </span>
                   <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[0.64rem] font-bold ${form.isDiscoverable ? 'bg-white text-sky-700' : 'bg-slate-100 text-slate-500'}`}>
                     {form.isDiscoverable ? 'Visible' : 'Hidden'}
                   </span>
                 </label>
-                <label className={`inline-flex min-h-[2.45rem] min-w-[240px] flex-1 items-center justify-between gap-2.5 rounded-full border px-3 py-1.5 shadow-sm transition ${form.availableToHire ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
+                <label className={`inline-flex h-10 max-w-full items-center gap-2 rounded-full border px-3 py-1.5 shadow-sm transition ${form.availableToHire ? 'border-emerald-200 bg-emerald-50 shadow-[0_10px_22px_-18px_rgba(16,185,129,0.45)]' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
                   <span className="inline-flex min-w-0 items-center gap-1.5">
                     <input
                       type="checkbox"
@@ -747,7 +747,7 @@ const StudentProfilePage = () => {
                       onChange={(event) => updateField('availableToHire', event.target.checked)}
                       className="h-3.5 w-3.5 rounded border-slate-300 accent-brand-600"
                     />
-                    <span className="truncate text-[0.8rem] font-bold text-navy">Open to new job opportunities</span>
+                    <span className="truncate text-[0.79rem] font-bold text-navy">Open to work</span>
                   </span>
                   <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[0.64rem] font-bold ${form.availableToHire ? 'bg-white text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                     {form.availableToHire ? 'Active' : 'Inactive'}
