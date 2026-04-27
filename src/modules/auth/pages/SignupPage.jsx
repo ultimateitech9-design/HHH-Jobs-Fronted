@@ -412,11 +412,11 @@ const SignupPage = () => {
   const visibleSocialProviders = (Array.isArray(availableProviders) ? availableProviders : ['google'])
     .filter((provider) => provider === 'google');
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#f5f1e8] px-4 py-6 md:px-6 md:py-8">
+    <section className="relative min-h-screen overflow-hidden bg-[#f5f1e8] px-4 pb-6 pt-1 md:px-6 md:pb-8 md:pt-2">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.14),transparent_26%),radial-gradient(circle_at_100%_0%,rgba(15,23,42,0.06),transparent_28%),linear-gradient(180deg,#f6f1e8_0%,#fbfaf7_52%,#f6f8fb_100%)]" />
 
       <div className="relative mx-auto grid w-full max-w-[74rem] gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
-        <div className="hidden lg:block lg:pt-6">
+        <div className="hidden lg:block">
           <aside className="sticky top-6 mx-auto w-full max-w-[16rem] max-h-[calc(100vh-3rem)] overflow-y-auto rounded-[1rem] border border-slate-200 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] xl:max-w-[17rem] xl:p-5">
             <div className="flex justify-center rounded-[1.3rem] bg-[#f6f8fe] px-4 py-5">
               <svg viewBox="0 0 220 160" className="h-[7.75rem] w-full max-w-[10.75rem]" aria-hidden="true">
@@ -506,7 +506,7 @@ const SignupPage = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-6 md:mt-8">
-              <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_160px] xl:grid-cols-[minmax(0,1fr)_176px]">
+              <div className={`grid gap-6 ${isSocialSignupAllowed ? 'lg:grid-cols-[minmax(0,1fr)_160px] xl:grid-cols-[minmax(0,1fr)_176px]' : ''}`}>
                 <div className="space-y-4">
                   <AuthInputField
                     label="Full name"
@@ -580,19 +580,19 @@ const SignupPage = () => {
                   </div>
                 </div>
 
-                <div className="relative lg:pl-10">
-                  <div className="flex items-center gap-3 pb-4 lg:hidden">
-                    <span className="h-px flex-1 bg-slate-200" />
-                    <span className="text-[0.76rem] font-semibold text-slate-400">Or</span>
-                    <span className="h-px flex-1 bg-slate-200" />
-                  </div>
+                {isSocialSignupAllowed ? (
+                  <div className="relative lg:pl-10">
+                    <div className="flex items-center gap-3 pb-4 lg:hidden">
+                      <span className="h-px flex-1 bg-slate-200" />
+                      <span className="text-[0.76rem] font-semibold text-slate-400">Or</span>
+                      <span className="h-px flex-1 bg-slate-200" />
+                    </div>
 
-                  <span className="pointer-events-none hidden lg:block lg:absolute lg:bottom-6 lg:left-0 lg:top-6 lg:w-px lg:bg-slate-200" />
-                  <span className="hidden lg:block lg:absolute lg:left-0 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:bg-white lg:px-1.5 lg:text-[1rem] lg:text-[#8c90b3]">
-                    Or
-                  </span>
+                    <span className="pointer-events-none hidden lg:block lg:absolute lg:bottom-6 lg:left-0 lg:top-6 lg:w-px lg:bg-slate-200" />
+                    <span className="hidden lg:block lg:absolute lg:left-0 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:bg-white lg:px-1.5 lg:text-[1rem] lg:text-[#8c90b3]">
+                      Or
+                    </span>
 
-                  {isSocialSignupAllowed ? (
                     <div className="mt-3 flex flex-col gap-3 lg:mt-0 lg:min-h-full lg:items-center lg:justify-center lg:pt-14">
                       <p className="text-[0.92rem] font-semibold text-slate-800 lg:text-[1.05rem]">Continue with</p>
 
@@ -626,8 +626,8 @@ const SignupPage = () => {
                         </p>
                       )}
                     </div>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </div>
 
               <AuthFormMessage>{error}</AuthFormMessage>

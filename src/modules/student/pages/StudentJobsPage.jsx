@@ -201,8 +201,7 @@ const StudentJobsPage = ({
             search: filters.search,
             location: filters.location,
             category: filters.category,
-            audience: effectiveAudience,
-            includeUnapproved: true
+            audience: effectiveAudience
           })
           : Promise.resolve({ jobs: [], error: '' }),
         shouldLoadExternal

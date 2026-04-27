@@ -167,6 +167,7 @@ export const getNotificationPathByRole = (role) => {
   if (normalizedRole === 'student' || normalizedRole === 'retired_employee') return '/portal/student/notifications';
   if (normalizedRole === 'hr') return '/portal/hr/notifications';
   if (normalizedRole === 'dataentry') return '/portal/dataentry/notifications';
+  if (normalizedRole === 'campus_connect') return '/portal/campus-connect/notifications';
   return '';
 };
 

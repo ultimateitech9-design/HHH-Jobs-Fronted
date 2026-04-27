@@ -7,6 +7,7 @@ const CampusConnectModuleLayout = lazy(() => import('../modules/campus-connect/c
 const CampusDashboardPage = lazy(() => import('../modules/campus-connect/pages/CampusDashboardPage'));
 const CampusStudentsPage = lazy(() => import('../modules/campus-connect/pages/CampusStudentsPage'));
 const CampusDrivesPage = lazy(() => import('../modules/campus-connect/pages/CampusDrivesPage'));
+const CampusNotificationsPage = lazy(() => import('../modules/campus-connect/pages/CampusNotificationsPage'));
 const CampusConnectionsPage = lazy(() => import('../modules/campus-connect/pages/CampusConnectionsPage'));
 const CampusReportsPage = lazy(() => import('../modules/campus-connect/pages/CampusReportsPage'));
 const CampusProfilePage = lazy(() => import('../modules/campus-connect/pages/CampusProfilePage'));
@@ -24,6 +25,7 @@ const campusConnectRoutes = [
       { path: 'dashboard', element: <CampusDashboardPage /> },
       { path: 'students', element: <CampusStudentsPage /> },
       { path: 'drives', element: <CampusDrivesPage /> },
+      { path: 'notifications', element: <CampusNotificationsPage /> },
       { path: 'connections', element: <CampusConnectionsPage /> },
       { path: 'reports', element: <CampusReportsPage /> },
       { path: 'profile', element: <CampusProfilePage /> }

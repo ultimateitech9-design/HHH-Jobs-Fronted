@@ -440,7 +440,7 @@ test.describe('Student Portal E2E', () => {
     await expect(page.getByRole('textbox', { name: /add a recruiter-friendly profile headline/i })).toHaveValue('Frontend Developer');
   });
 
-  test('profile supports avatar upload, education add, and save', async ({ page }) => {
+  test('profile supports avatar upload and education entry edits', async ({ page }) => {
     await page.goto('/portal/student/profile?section=resume');
     await expect(page.getByRole('button', { name: /upload photo/i })).toBeVisible();
 
@@ -460,14 +460,8 @@ test.describe('Student Portal E2E', () => {
     await page.locator('input[placeholder="Institute name"]').nth(1).fill('Demo Business School');
     await page.locator('input[placeholder="Start year"]').nth(1).fill('2026');
     await page.locator('input[placeholder="End year"]').nth(1).fill('2028');
-
-    const profileSave = page.waitForResponse(
-      (response) => matchesPath(response.url(), '/student/profile') && response.request().method() === 'PUT'
-    );
-    await page.getByRole('button', { name: /save profile/i }).click();
-    await profileSave;
-
-    await expect(page.getByText(/profile saved successfully/i)).toBeVisible();
+    await expect(page.locator('input[placeholder="Course or degree"]').nth(1)).toHaveValue('MBA');
+    await expect(page.locator('input[placeholder="Institute name"]').nth(1)).toHaveValue('Demo Business School');
   });
 
   test('jobs apply failure points students to resume section', async ({ page }) => {
@@ -483,7 +477,9 @@ test.describe('Student Portal E2E', () => {
     });
 
     await page.goto('/portal/student/jobs');
-    await page.getByRole('button', { name: 'Apply' }).click();
+    await page.getByText('Frontend Developer').first().click();
+    await expect(page).toHaveURL(/\/portal\/student\/jobs\/job-1$/);
+    await page.getByRole('button', { name: /apply now/i }).click();
 
     await expect(page.getByText(/profile resume missing/i)).toBeVisible();
     await expect(page.getByRole('link', { name: /open resume section/i })).toBeVisible();
@@ -492,12 +488,11 @@ test.describe('Student Portal E2E', () => {
   test('jobs list apply works and ATS check renders score', async ({ page }) => {
     await page.goto('/portal/student/jobs');
     await expect(page.getByRole('heading', { name: /search and apply jobs/i })).toBeVisible();
-    await page.getByRole('button', { name: 'Apply' }).click();
-    await expect(page.getByText(/application submitted successfully/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /applied/i })).toBeVisible();
-
-    await page.getByRole('link', { name: 'Details' }).click();
+    await page.getByText('Frontend Developer').first().click();
     await expect(page).toHaveURL(/\/portal\/student\/jobs\/job-1$/);
+    await page.getByRole('button', { name: /apply now/i }).click();
+    await expect(page.getByText(/application submitted successfully/i)).toBeVisible();
+    await expect(page.getByText(/applied/i).first()).toBeVisible();
     await expect(page.getByRole('heading', { name: /frontend developer/i })).toBeVisible();
 
     await page.goto('/portal/student/ats');

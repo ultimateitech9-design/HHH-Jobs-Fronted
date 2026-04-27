@@ -265,8 +265,10 @@ export default function CampusDrivesPage() {
       )}
 
       {loading ? (
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <FiRefreshCw size={24} className="animate-spin text-brand-500" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[1, 2, 3, 4].map((item) => (
+            <div key={item} className="h-56 animate-pulse rounded-[1.5rem] border border-slate-100 bg-white shadow-[0_4px_16px_-8px_rgba(15,23,42,0.10)]" />
+          ))}
         </div>
       ) : drives.length === 0 ? (
         <div className="flex min-h-[40vh] flex-col items-center justify-center rounded-[1.75rem] border-2 border-dashed border-slate-200 bg-white text-center">

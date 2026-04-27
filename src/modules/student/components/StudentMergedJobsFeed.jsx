@@ -441,6 +441,10 @@ const StudentMergedJobsFeed = () => {
   const handleSendDigest = async () => {
     try {
       const result = await sendStudentRecommendationDigest(5);
+      if (result?.queued) {
+        toast.success('Your digest has been queued and will reach your email shortly.');
+        return;
+      }
       if (result?.sent) {
         toast.success('Today’s top matches were emailed to you.');
         return;

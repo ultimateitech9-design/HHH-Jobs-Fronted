@@ -249,9 +249,6 @@ const HrJobsPage = () => {
 
   const filteredJobs = useMemo(() => {
     if (statusFilter === 'all') return jobs;
-    if (statusFilter === 'pending') {
-      return jobs.filter((job) => String(job.approvalStatus || '').toLowerCase() === 'pending');
-    }
     return jobs.filter((job) => String(job.status || '').toLowerCase() === statusFilter);
   }, [jobs, statusFilter]);
 
@@ -470,7 +467,7 @@ const HrJobsPage = () => {
             <div className="flex items-center gap-3">
               <span className="font-bold text-primary">Filter By Status:</span>
               <div className="flex bg-neutral-50 rounded-lg p-1">
-                {['all', 'open', 'closed', 'pending'].map(filter => (
+                {['all', 'open', 'closed'].map(filter => (
                   <button
                     key={filter}
                     onClick={() => setStatusFilter(filter)}

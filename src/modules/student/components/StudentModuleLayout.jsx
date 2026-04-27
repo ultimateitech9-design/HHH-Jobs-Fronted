@@ -1,6 +1,7 @@
 import {
   FiActivity,
   FiBarChart2,
+  FiBookOpen,
   FiBookmark,
   FiBriefcase,
   FiCalendar,
@@ -18,6 +19,7 @@ import { getCurrentUser } from '../../../utils/auth';
 const studentDashboardNavItems = [
   { to: '/portal/student/companies', label: 'Companies', icon: FiLayers },
   { to: '/portal/student/jobs', label: 'Jobs', icon: FiBriefcase },
+  { to: '/portal/student/campus-connect', label: 'Campus Connect', icon: FiBookOpen },
   { to: '/portal/student/profile', label: 'Profile', icon: FiUser },
   { to: '/portal/student/ats', label: 'ATS', icon: FiActivity },
   {
@@ -44,6 +46,7 @@ const studentHomeNavItems = [
 const studentHeaderNavItems = [
   { label: 'Jobs', to: '/portal/student/jobs' },
   { label: 'Companies', to: '/portal/student/companies' },
+  { label: 'Campus Connect', to: '/portal/student/campus-connect' },
   { label: 'ATS', to: '/portal/student/ats' },
   { label: 'Auto Apply', to: '/portal/student/auto-apply' },
   { label: 'Services', to: '/portal/student/services' }

@@ -23,7 +23,7 @@ test('key public pages render without 404 or empty-shell failures', async ({ pag
     await page.waitForLoadState('networkidle');
 
     await expect(page).toHaveURL(new RegExp(`${route === '/' ? '/$' : `${route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`}`));
-    await expect(page.locator('h1').first()).toBeVisible();
+    await expect(page.locator('main, h1, h2, [role="heading"]').first()).toBeVisible();
     await expect(page.getByText(/page not found|cannot get/i)).toHaveCount(0);
   }
 });

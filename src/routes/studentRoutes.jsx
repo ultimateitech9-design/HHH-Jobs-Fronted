@@ -18,6 +18,7 @@ const StudentAutoApplyPage = lazy(() => import('../modules/student/pages/Student
 const StudentNotificationsPage = lazy(() => import('../modules/student/pages/StudentNotificationsPage'));
 const StudentExternalJobsPage = lazy(() => import('../modules/student/pages/StudentExternalJobsPage'));
 const StudentHRInterestsPage = lazy(() => import('../modules/student/pages/StudentHRInterestsPage'));
+const StudentCampusConnectPage = lazy(() => import('../modules/student/pages/StudentCampusConnectPage'));
 
 const studentRoutes = [
   {
@@ -34,6 +35,7 @@ const studentRoutes = [
       { path: 'companies', element: <StudentCompaniesPage /> },
       { path: 'profile', element: <StudentProfilePage /> },
       { path: 'jobs', element: <StudentJobsPage /> },
+      { path: 'campus-connect', element: <StudentCampusConnectPage /> },
       { path: 'jobs/:jobId', element: <StudentJobDetailsPage /> },
       { path: 'applications', element: <StudentApplicationsPage /> },
       { path: 'saved-jobs', element: <StudentSavedJobsPage /> },

@@ -534,7 +534,7 @@ const StudentAutoApplyPage = () => {
           <StudentSurfaceCard
             eyebrow="Quick Actions"
             title="Commit and launch"
-            subtitle="Save criteria, then let the engine start watching approved jobs automatically."
+            subtitle="Save criteria, then let the engine start watching live jobs automatically."
             className="p-5"
           >
             <div className="grid gap-3">

@@ -76,14 +76,6 @@ export default function CampusProfilePage() {
   const inputClass = 'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100';
   const cardClass = 'rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.10)]';
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <FiRefreshCw size={28} className="animate-spin text-brand-500" />
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto w-full max-w-[860px] space-y-6 pb-12">
       {/* Header */}
@@ -117,29 +109,49 @@ export default function CampusProfilePage() {
 
       {/* Profile preview banner */}
       <div className="rounded-[1.75rem] border border-brand-200 bg-gradient-to-r from-brand-50 to-white p-6">
-        <div className="flex gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-brand-100 bg-white text-2xl font-extrabold text-brand-600">
-            {form.logoUrl
-              ? <img src={form.logoUrl} alt="College logo" className="h-full w-full object-cover" />
-              : (form.name || 'C').charAt(0).toUpperCase()
-            }
-          </div>
-          <div>
-            <h2 className="text-xl font-extrabold text-navy">{form.name || 'Your College Name'}</h2>
-            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-              {form.city && <span className="flex items-center gap-1"><FiMapPin size={11} />{form.city}{form.state ? `, ${form.state}` : ''}</span>}
-              {form.affiliation && <span>{form.affiliation}</span>}
-              {form.establishedYear && <span>Est. {form.establishedYear}</span>}
-              {form.website && <span className="flex items-center gap-1"><FiGlobe size={11} />{form.website}</span>}
+        {loading ? (
+          <div className="flex gap-4">
+            <div className="h-16 w-16 animate-pulse rounded-2xl bg-white/80" />
+            <div className="flex-1 space-y-3">
+              <div className="h-6 w-1/3 animate-pulse rounded bg-white/80" />
+              <div className="h-4 w-2/3 animate-pulse rounded bg-white/70" />
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-brand-100 bg-white text-2xl font-extrabold text-brand-600">
+              {form.logoUrl
+                ? <img src={form.logoUrl} alt="College logo" className="h-full w-full object-cover" />
+                : (form.name || 'C').charAt(0).toUpperCase()
+              }
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold text-navy">{form.name || 'Your College Name'}</h2>
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                {form.city && <span className="flex items-center gap-1"><FiMapPin size={11} />{form.city}{form.state ? `, ${form.state}` : ''}</span>}
+                {form.affiliation && <span>{form.affiliation}</span>}
+                {form.establishedYear && <span>Est. {form.establishedYear}</span>}
+                {form.website && <span className="flex items-center gap-1"><FiGlobe size={11} />{form.website}</span>}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Basic info */}
       <div className={cardClass}>
         <h2 className="mb-5 text-lg font-extrabold text-navy">Basic Information</h2>
-        <div className="grid gap-4 md:grid-cols-2">
+        {loading ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className={`${index === 0 ? 'md:col-span-2' : ''} space-y-2`}>
+                <div className="h-3 w-1/3 animate-pulse rounded bg-slate-100" />
+                <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
             <label className="mb-1.5 block text-xs font-semibold text-slate-500">College / University Name <span className="text-red-400">*</span></label>
             <input value={form.name} onChange={(e) => update('name', e.target.value)}
@@ -176,13 +188,24 @@ export default function CampusProfilePage() {
             <input value={form.logoUrl} onChange={(e) => update('logoUrl', e.target.value)}
               placeholder="https://yoursite.com/logo.png" className={inputClass} />
           </div>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Contact info */}
       <div className={cardClass}>
         <h2 className="mb-5 text-lg font-extrabold text-navy">Placement Cell Contact</h2>
-        <div className="grid gap-4 md:grid-cols-2">
+        {loading ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="space-y-2">
+                <div className="h-3 w-1/3 animate-pulse rounded bg-slate-100" />
+                <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-slate-500">
               <FiUser size={11} className="mr-1 inline" />
@@ -208,7 +231,8 @@ export default function CampusProfilePage() {
             <input value={form.contactPhone} onChange={(e) => update('contactPhone', e.target.value)}
               placeholder="+91 98765 43210" className={inputClass} />
           </div>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* About */}
@@ -217,13 +241,17 @@ export default function CampusProfilePage() {
           <FiEdit2 size={18} />
           About the College
         </h2>
-        <textarea
-          rows="5"
-          value={form.about}
-          onChange={(e) => update('about', e.target.value)}
-          placeholder="Write a short description of your college — history, specializations, notable alumni, NAAC grade, NBA accreditation, etc. This is shown to companies browsing your campus profile."
-          className="w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-        />
+        {loading ? (
+          <div className="h-36 animate-pulse rounded-[1.25rem] bg-slate-100" />
+        ) : (
+          <textarea
+            rows="5"
+            value={form.about}
+            onChange={(e) => update('about', e.target.value)}
+            placeholder="Write a short description of your college — history, specializations, notable alumni, NAAC grade, NBA accreditation, etc. This is shown to companies browsing your campus profile."
+            className="w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+          />
+        )}
       </div>
 
       <div className="flex justify-end">

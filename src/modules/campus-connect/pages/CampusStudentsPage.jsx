@@ -24,7 +24,7 @@ const PlacedBadge = ({ isPlaced }) => (
     isPlaced ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
   }`}>
     {isPlaced ? <FiCheckCircle size={11} /> : <FiAlertCircle size={11} />}
-    {isPlaced ? 'Placed' : 'Seeking'}
+    {isPlaced ? 'Placed' : 'Placement seeking'}
   </span>
 );
 
@@ -259,14 +259,30 @@ export default function CampusStudentsPage() {
         >
           <option value="">All Students</option>
           <option value="true">Placed</option>
-          <option value="false">Seeking</option>
+          <option value="false">Placement seeking</option>
         </select>
       </div>
 
       {/* Student table */}
       {loading ? (
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <FiRefreshCw size={24} className="animate-spin text-brand-500" />
+        <div className="overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white shadow-[0_8px_24px_-12px_rgba(15,23,42,0.10)]">
+          <div className="grid grid-cols-8 gap-4 border-b border-slate-100 bg-slate-50 px-5 py-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="h-3 animate-pulse rounded bg-slate-200" />
+            ))}
+          </div>
+          <div className="space-y-4 px-5 py-5">
+            {Array.from({ length: 5 }).map((_, rowIndex) => (
+              <div key={rowIndex} className="grid grid-cols-8 gap-4">
+                {Array.from({ length: 8 }).map((__, columnIndex) => (
+                  <div
+                    key={`${rowIndex}-${columnIndex}`}
+                    className={`animate-pulse rounded bg-slate-100 ${columnIndex === 0 ? 'h-12' : 'h-10'}`}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       ) : students.length === 0 ? (
         <div className="flex min-h-[40vh] flex-col items-center justify-center rounded-[1.75rem] border-2 border-dashed border-slate-200 bg-white text-center">
@@ -291,7 +307,7 @@ export default function CampusStudentsPage() {
                 <th className="px-4 py-3">Branch / Degree</th>
                 <th className="px-4 py-3">Year</th>
                 <th className="px-4 py-3">CGPA</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Placement</th>
                 <th className="px-4 py-3">Account</th>
                 <th className="px-4 py-3">Placed At</th>
                 <th className="px-4 py-3">Actions</th>
@@ -337,7 +353,7 @@ export default function CampusStudentsPage() {
                           onClick={() => markUnplaced(student)}
                           className="rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 hover:bg-amber-100"
                         >
-                          Mark seeking
+                          Mark placement-seeking
                         </button>
                       ) : (
                         <button

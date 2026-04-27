@@ -38,17 +38,18 @@ const FeaturedCompanyMark = ({ companyLogo, companyName }) => {
 
 function SkeletonCard() {
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm animate-pulse" aria-hidden="true">
-      <div className="mb-4 flex items-start justify-between">
-        <div className="h-10 w-10 rounded-2xl bg-slate-200" />
-        <div className="h-6 w-16 rounded-full bg-slate-100" />
+    <article className="min-h-[300px] animate-pulse rounded-[24px] border border-slate-200 bg-white/90 p-4 shadow-sm" aria-hidden="true">
+      <div className="mb-3 flex items-start justify-between">
+        <div className="h-8 w-8 rounded-2xl bg-slate-200" />
+        <div className="h-6 w-14 rounded-full bg-slate-100" />
       </div>
-      <div className="space-y-3">
-        <div className="h-4 w-3/4 rounded bg-slate-300" />
-        <div className="h-3 w-1/2 rounded bg-slate-200" />
+      <div className="space-y-2.5">
+        <div className="h-4 w-2/3 rounded bg-slate-300" />
+        <div className="h-3 w-1/3 rounded bg-slate-200" />
+        <div className="h-3 w-full rounded bg-slate-100" />
         <div className="flex gap-2 pt-2">
-          <div className="h-6 w-24 rounded-full bg-slate-100" />
-          <div className="h-6 w-24 rounded-full bg-slate-100" />
+          <div className="h-6 w-20 rounded-full bg-slate-100" />
+          <div className="h-6 w-20 rounded-full bg-slate-100" />
         </div>
       </div>
     </article>
@@ -79,17 +80,20 @@ export function FeaturedJobs({
   onRefresh
 }) {
   return (
-    <section id="jobs" className="bg-secondary-50/50 px-4 py-20">
-      <div className="container mx-auto max-w-7xl">
-        <AnimatedSection className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="font-heading text-3xl font-extrabold text-navy md:text-4xl">
+    <section id="jobs" className="bg-[linear-gradient(180deg,rgba(243,247,253,0.4),rgba(255,248,236,0.2))] px-4 py-12 md:py-14">
+      <div className="container mx-auto max-w-[1420px]">
+        <AnimatedSection className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-[11px] font-medium uppercase tracking-[0.26em] text-brand-700">Featured hiring</p>
+            <h2 className="mt-1.5 font-heading text-[1.65rem] font-semibold tracking-[-0.04em] text-navy md:text-[2.15rem]">
               Featured <span className="gradient-text">Opportunities</span>
             </h2>
-            <p className="mt-3 text-slate-500">Hand-picked jobs from verified companies.</p>
+            <p className="mt-2 text-[14px] leading-7 text-slate-500">
+              Hand-picked roles from verified companies, presented in a cleaner and more approachable HHH Jobs style.
+            </p>
           </div>
           <Link to="/portal/student/jobs" className="inline-flex">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-brand-700 transition-transform hover:translate-x-1">
+            <span className="inline-flex items-center gap-2 text-sm font-medium text-brand-700 transition-transform hover:translate-x-1">
               View all jobs <ArrowRight className="h-4 w-4" />
             </span>
           </Link>
@@ -102,7 +106,7 @@ export function FeaturedJobs({
         ) : null}
 
         {loading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 6 }).map((_, index) => (
               <SkeletonCard key={index} />
             ))}
@@ -110,22 +114,23 @@ export function FeaturedJobs({
         ) : null}
 
         {!loading && !error && jobs.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
             {jobs.map((job, index) => (
               <AnimatedSection key={job.id || job._id || index} delay={index * 0.05}>
                 <motion.article
-                  whileHover={{ y: -5, boxShadow: '0 25px 50px -12px rgba(17, 33, 59, 0.1)' }}
-                  whileTap={{ scale: 0.985 }}
-                  className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 transition-colors hover:border-brand-200"
+                  whileHover={{ y: -3, boxShadow: '0 22px 42px -16px rgba(17, 33, 59, 0.14)' }}
+                  whileTap={{ scale: 0.99 }}
+                  className="group relative flex min-h-[300px] w-full flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] p-3.5 transition-colors hover:border-brand-200"
                 >
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-brand-100/30 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-200/80 to-transparent" />
+                  <div className="absolute -right-10 top-0 h-16 w-16 rounded-full bg-brand-50/80 blur-3xl" aria-hidden="true" />
 
-                  <div className="relative z-10 flex h-full flex-col">
-                    <div className="mb-4 flex items-start justify-between">
+                  <div className="relative z-10 flex flex-col">
+                    <div className="mb-2.5 flex items-start justify-between">
                       <FeaturedCompanyMark companyLogo={job.companyLogo} companyName={job.companyName} />
                       <div className="flex items-center gap-2">
                         {index % 2 === 0 ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-gold/10 px-2 py-1 text-[11px] font-semibold text-gold-dark">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-brand-100 bg-brand-50/80 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-brand-700">
                             <Sparkles className="h-3 w-3" /> Hot
                           </span>
                         ) : null}
@@ -135,13 +140,13 @@ export function FeaturedJobs({
                       </div>
                     </div>
 
-                    <h3 className="line-clamp-2 min-h-[56px] font-heading text-lg font-semibold text-slate-900 transition-colors group-hover:text-brand-700">
+                    <h3 className="line-clamp-2 font-sans text-[0.94rem] font-medium leading-5 text-slate-900 transition-colors group-hover:text-brand-700">
                       {job.jobTitle || 'Open Role'}
                     </h3>
-                    <p className="mt-1 line-clamp-1 min-h-[20px] text-sm text-slate-500">{job.companyName || 'Hiring Company'}</p>
-                    <p className="mt-4 line-clamp-3 min-h-[72px] text-sm leading-6 text-slate-600">{getJobExcerpt(job)}</p>
+                    <p className="mt-1 line-clamp-1 text-[12px] text-slate-500">{job.companyName || 'Hiring Company'}</p>
+                    <p className="mt-2 line-clamp-2 text-[12px] leading-5 text-slate-600">{getJobExcerpt(job)}</p>
 
-                    <div className="mt-5 flex flex-wrap gap-3 text-xs text-slate-500">
+                    <div className="mt-2.5 flex flex-wrap gap-x-2.5 gap-y-1 text-[11px] text-slate-500">
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5" />
                         {job.jobLocation || 'India'}
@@ -156,10 +161,10 @@ export function FeaturedJobs({
                       </span>
                     </div>
 
-                    <div className="mt-auto flex items-center justify-between border-t border-slate-200 pt-4">
-                      <span className="text-xs text-slate-500">{job.isFallback ? 'Verified fallback role' : 'Recently updated'}</span>
+                    <div className="mt-3 flex items-center justify-between border-t border-slate-200/90 pt-2.5">
+                      <span className="text-[11px] text-slate-500">{job.isFallback ? 'Verified fallback role' : 'Recently updated'}</span>
                       <Link to={getJobHref(job)}>
-                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 transition-transform hover:translate-x-1">
+                        <span className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 transition-transform hover:translate-x-1">
                           Apply Now <ArrowRight className="h-3.5 w-3.5" />
                         </span>
                       </Link>
@@ -172,8 +177,8 @@ export function FeaturedJobs({
         ) : null}
 
         {!loading && !error && jobs.length === 0 ? (
-          <article className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-            <h3 className="text-lg font-bold text-slate-900">No featured jobs available right now.</h3>
+          <article className="rounded-[24px] border border-slate-200 bg-white p-6 text-center text-slate-500">
+            <h3 className="text-lg font-medium text-slate-900">No featured jobs available right now.</h3>
           </article>
         ) : null}
 
@@ -210,7 +215,7 @@ export function FeaturedJobs({
           </div>
         ) : null}
 
-        <div className="mt-10 flex items-center justify-center gap-4 border-t border-slate-200 pt-8">
+        <div className="mt-7 flex items-center justify-center gap-4 border-t border-slate-200 pt-6">
           <button
             type="button"
             className="text-sm font-medium text-slate-500 transition-colors hover:text-navy"

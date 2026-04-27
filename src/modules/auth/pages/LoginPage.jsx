@@ -14,11 +14,11 @@ const LoginPage = () => {
   const portalLabel = location.state?.portalLabel || portalConfig.title;
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#f5f1e8] px-4 py-6 md:px-6 md:py-8">
+    <section className="relative min-h-screen overflow-hidden bg-[#f5f1e8] px-2 py-3 md:px-3 md:py-4">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.14),transparent_24%),radial-gradient(circle_at_100%_0%,rgba(15,23,42,0.08),transparent_28%),linear-gradient(180deg,#f7f3ea_0%,#fcfbf8_48%,#f7f8fb_100%)]" />
 
-      <div className="relative mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-[40rem] items-center justify-center">
-        <div className="w-full max-w-[34rem]">
+      <div className="relative mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-[46rem] items-center justify-center">
+        <div className="w-full max-w-[40rem]">
           <LoginPanelContent
             portalLabel={portalLabel}
             description={portalConfig.helperText}

@@ -257,14 +257,14 @@ const LoginPanelContent = ({
     window.location.assign(endpoint.toString());
   };
 
-  const fieldClassName = 'mt-2 w-full rounded-[1.15rem] border border-slate-200 bg-[#f7f5ef] px-4 py-3.5 text-[15px] leading-6 text-navy outline-none transition-all placeholder:text-slate-400 focus:border-gold/60 focus:bg-white focus:shadow-[0_0_0_3px_rgba(212,175,55,0.12)]';
+  const fieldClassName = 'mt-1.5 w-full rounded-[1.05rem] border border-slate-200 bg-[#f7f5ef] px-4 py-3 text-[15px] leading-6 text-navy outline-none transition-all placeholder:text-slate-400 focus:border-gold/60 focus:bg-white focus:shadow-[0_0_0_3px_rgba(212,175,55,0.12)]';
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-5 pb-2">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[0.76rem] font-semibold uppercase tracking-[0.22em] text-gold-dark">Secure access</p>
-          <h1 className="mt-2 font-heading text-[1.85rem] font-semibold tracking-[-0.04em] text-slate-950">{portalLabel}</h1>
+          <h1 className="mt-1.5 font-heading text-[1.65rem] font-semibold tracking-[-0.04em] text-slate-950">{portalLabel}</h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -283,7 +283,7 @@ const LoginPanelContent = ({
 
       <AuthFormMessage>{error}</AuthFormMessage>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="text-[0.98rem] font-semibold text-slate-800">{emailLabel}</label>
           <input
@@ -299,7 +299,7 @@ const LoginPanelContent = ({
 
         <div>
           <label className="text-[0.98rem] font-semibold text-slate-800">Password</label>
-          <div className="mt-2 flex items-center rounded-[1.15rem] border border-slate-200 bg-[#f7f5ef] px-4 py-3.5 transition-all focus-within:border-gold/60 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(212,175,55,0.12)]">
+          <div className="mt-1.5 flex items-center rounded-[1.05rem] border border-slate-200 bg-[#f7f5ef] px-4 py-3 transition-all focus-within:border-gold/60 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(212,175,55,0.12)]">
             <input
               type={showPassword ? 'text' : 'password'}
               placeholder={passwordPlaceholder}
@@ -322,13 +322,13 @@ const LoginPanelContent = ({
 
         <button
           type="submit"
-          className="inline-flex w-full items-center justify-center rounded-full bg-[#172033] px-6 py-3.5 text-[1rem] font-semibold text-white shadow-[0_18px_36px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex w-full items-center justify-center rounded-full bg-[#172033] px-6 py-3 text-[1rem] font-semibold text-white shadow-[0_18px_36px_rgba(15,23,42,0.14)] transition-all hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
           disabled={isSubmitting || Boolean(socialLoading)}
         >
           {isSubmitting ? 'Signing in...' : 'Sign in'}
         </button>
 
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 px-1 text-[0.92rem] font-semibold">
+        <div className="mt-1 flex flex-wrap items-center justify-center gap-x-7 gap-y-2 px-1 text-[0.92rem] font-semibold">
           <Link to="/forgot-password" className="text-gold-dark transition-colors hover:text-navy">
             Forgot password?
           </Link>
@@ -340,7 +340,7 @@ const LoginPanelContent = ({
         </div>
       </form>
 
-      <div ref={retryActionsRef} className="space-y-4 text-center">
+      <div ref={retryActionsRef} className="space-y-3 text-center">
         {showOtpLogin ? (
           <Link to="/forgot-password" className="inline-flex justify-center text-[0.98rem] font-semibold text-navy transition-colors hover:text-gold-dark">
             Use OTP to sign in
@@ -359,7 +359,7 @@ const LoginPanelContent = ({
               type="button"
               onClick={() => startSocialLogin('google')}
               disabled={isSubmitting || Boolean(socialLoading)}
-              className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-3 text-[1rem] font-semibold text-navy shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:bg-[#fffaf1] disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-2.5 text-[1rem] font-semibold text-navy shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:bg-[#fffaf1] disabled:cursor-not-allowed disabled:opacity-70"
             >
               <FcGoogle size={22} />
               <span>{socialLoading === 'google' ? 'Redirecting...' : 'Continue with Google'}</span>

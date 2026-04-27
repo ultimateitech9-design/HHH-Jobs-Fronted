@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiActivity,
+  FiBookOpen,
   FiBookmark,
   FiBriefcase,
+  FiCalendar,
   FiGrid,
   FiHome,
+  FiMapPin,
   FiTrendingUp
 } from 'react-icons/fi';
 import careerCompassDashboard from '../../../assets/career-compass-dashboard.jpg';
@@ -20,7 +23,8 @@ const defaultOverview = {
   counters: {
     totalApplications: 0,
     unreadNotifications: 0
-  }
+  },
+  campusConnect: null
 };
 
 const emptyProfile = {
@@ -34,9 +38,24 @@ const menuItems = [
   { label: 'My home', icon: FiHome, to: '/portal/student/home' },
   { label: 'Jobs', icon: FiBriefcase, to: '/portal/student/home?jobsView=all' },
   { label: 'Saved Jobs', icon: FiBookmark, to: '/portal/student/saved-jobs' },
+  { label: 'Campus Connect', icon: FiBookOpen, to: '/portal/student/campus-connect' },
   { label: 'ATS', icon: FiActivity, to: '/portal/student/ats' },
   { label: 'Services', icon: FiGrid, to: '/portal/student/services' }
 ];
+
+const accountStatusLabel = {
+  pending_activation: 'OTP invite sent',
+  linked_existing: 'Linked existing account',
+  active: 'Active account',
+  needs_review: 'Needs review'
+};
+
+const formatDriveDate = (value) => {
+  if (!value) return 'Date to be announced';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString();
+};
 
 const StudentMarketplaceShell = ({ children }) => {
   const currentUser = useMemo(() => getCurrentUser(), []);
@@ -64,7 +83,8 @@ const StudentMarketplaceShell = ({ children }) => {
         counters: {
           totalApplications: Number(overviewPayload.counters?.totalApplications || 0),
           unreadNotifications: Number(overviewPayload.counters?.unreadNotifications || 0)
-        }
+        },
+        campusConnect: overviewPayload.campusConnect || null
       });
       setProfile({
         ...emptyProfile,
@@ -90,6 +110,11 @@ const StudentMarketplaceShell = ({ children }) => {
   const userName = currentUser?.name || profile?.name || 'Student';
   const profileProgress = overview.profileCompletion || 25;
   const headline = profile?.headline || profile?.targetRole || 'Not Mentioned';
+  const campusConnect = overview.campusConnect;
+  const campusStudent = campusConnect?.student || null;
+  const campusCollege = campusConnect?.college || null;
+  const campusDrives = Array.isArray(campusConnect?.upcomingDrives) ? campusConnect.upcomingDrives.slice(0, 2) : [];
+  const campusDriveCount = Number(campusConnect?.counts?.eligibleUpcomingDrives || 0);
 
   return (
     <div className="space-y-3 px-[30px] pb-5">
@@ -147,6 +172,63 @@ const StudentMarketplaceShell = ({ children }) => {
               </div>
             </Link>
 
+            <Link
+              to="/portal/student/campus-connect"
+              className="mt-3.5 block rounded-[1.35rem] border border-emerald-100 bg-[linear-gradient(135deg,#f5fff8_0%,#ecfdf3_100%)] p-3 transition hover:border-emerald-200 hover:shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-extrabold text-navy">Campus Connect</h2>
+                <FiBookOpen className="text-emerald-600" />
+              </div>
+
+              {campusConnect?.connected && campusCollege ? (
+                <>
+                  <p className="mt-2 text-sm font-semibold text-slate-800">{campusCollege.name}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {[
+                      campusStudent?.branch || '',
+                      campusStudent?.degree || '',
+                      campusCollege.city || '',
+                      campusCollege.state || ''
+                    ].filter(Boolean).join(' · ') || 'Campus profile linked'}
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2 border-b border-emerald-100 pb-3 text-left">
+                    <div className="rounded-2xl bg-white/80 px-3 py-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Account</p>
+                      <p className="mt-1 text-sm font-bold text-emerald-700">
+                        {accountStatusLabel[campusStudent?.accountStatus] || 'Linked'}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white/80 px-3 py-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Eligible Drives</p>
+                      <p className="mt-1 text-sm font-bold text-emerald-700">{campusDriveCount}</p>
+                    </div>
+                  </div>
+                  {campusDrives.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {campusDrives.map((drive) => (
+                        <div key={drive.id} className="rounded-2xl bg-white/80 px-3 py-2">
+                          <p className="text-sm font-bold text-navy">{drive.companyName || 'Campus drive'}</p>
+                          <p className="mt-1 text-xs text-slate-500">{drive.jobTitle || 'Role details pending'}</p>
+                          <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
+                            <FiCalendar size={12} /> {formatDriveDate(drive.driveDate)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-3 rounded-2xl bg-white/80 px-3 py-2 text-[12px] font-medium text-slate-500">
+                      No eligible drives are live right now.
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="mt-3 rounded-2xl bg-white/80 px-3 py-3 text-[12px] text-slate-500">
+                  No campus is attached to this student profile yet.
+                </div>
+              )}
+            </Link>
+
             <div className="mt-3.5 space-y-1">
               {menuItems.map((item) => {
                 const isActive = item.to.includes('?')
@@ -172,6 +254,30 @@ const StudentMarketplaceShell = ({ children }) => {
         <div className="space-y-3">{children}</div>
 
         <aside className="space-y-3 xl:sticky xl:top-24 xl:self-start">
+          {campusConnect?.connected && campusCollege ? (
+            <Link
+              to="/portal/student/campus-connect"
+              className="block w-full rounded-[1.5rem] border border-emerald-100 bg-white p-3.5 text-left transition hover:border-emerald-200 hover:shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex h-[52px] w-[52px] items-center justify-center rounded-[1rem] border border-emerald-100 bg-emerald-50 text-emerald-700">
+                  <FiBookOpen size={18} />
+                </div>
+                <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
+                  {campusDriveCount} drives
+                </span>
+              </div>
+              <p className="mt-3 text-[15px] font-extrabold leading-6 text-navy">{campusCollege.name}</p>
+              <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
+                <FiMapPin size={12} />
+                {[campusCollege.city, campusCollege.state].filter(Boolean).join(', ') || 'Campus linked'}
+              </p>
+              <p className="mt-3 text-xs leading-5 text-slate-500">
+                Open your campus workspace to view drive dates, eligibility, and attached campus details.
+              </p>
+            </Link>
+          ) : null}
+
           <button
             type="button"
             onClick={() => navigate('/portal/student/jobs')}

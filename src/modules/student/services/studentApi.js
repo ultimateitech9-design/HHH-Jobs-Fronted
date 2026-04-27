@@ -61,6 +61,16 @@ const mapRecommendation = (item = {}) => ({
   }
 });
 
+const emptyCampusConnectData = {
+  connected: false,
+  student: null,
+  college: null,
+  upcomingDrives: [],
+  counts: {
+    eligibleUpcomingDrives: 0
+  }
+};
+
 export const mapProfileToForm = (profile = {}) => {
   const toLineArray = (items) => {
     if (!Array.isArray(items)) return [];
@@ -331,7 +341,8 @@ export const getStudentDashboardOverview = async () => {
       recentApplications: [],
       upcomingInterviews: [],
       recentNotifications: [],
-      nextInterview: null
+      nextInterview: null,
+      campusConnect: emptyCampusConnectData
     },
     extract: (payload) => payload?.overview || {}
   });
@@ -365,10 +376,17 @@ export const getStudentDashboardOverview = async () => {
       upcomingInterviews: result.data?.upcomingInterviews || [],
       recentNotifications: result.data?.recentNotifications || [],
       nextInterview: result.data?.nextInterview || null,
-      profileCompletion: Number(result.data?.profileCompletion || 0)
+      profileCompletion: Number(result.data?.profileCompletion || 0),
+      campusConnect: result.data?.campusConnect || clone(emptyCampusConnectData)
     }
   };
 };
+
+export const getStudentCampusConnect = async () => safeRequest({
+  path: '/student/campus-connect',
+  emptyData: emptyCampusConnectData,
+  extract: (payload) => payload?.campusConnection || emptyCampusConnectData
+});
 
 export const updateStudentProfile = async (formState, options = {}) => {
   const payload = options?.prebuiltPayload ? formState : buildProfilePayload(formState);
@@ -454,7 +472,7 @@ export const getStudentJobs = async (filters = {}) => {
     experienceLevel: filters.experienceLevel,
     category: filters.category,
     audience: filters.audience,
-    includeUnapproved: filters.includeUnapproved ?? true,
+    includeUnapproved: filters.includeUnapproved ?? false,
     status: 'open'
   }).forEach(([key, value]) => {
     if (value !== undefined && value !== null && String(value).trim() !== '') {

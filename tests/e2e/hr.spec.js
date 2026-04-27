@@ -115,7 +115,7 @@ test.describe('HR Portal E2E', () => {
 
   test('hr can view interview schedule', async ({ page }) => {
     await page.goto('/portal/hr/interviews');
-    await expect(page.getByRole('heading', { name: /Interview Calendar/i }).first()).toBeVisible();
-    await expect(page.getByText(/Interview Round/i).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Schedule inside HHH Jobs/i }).first()).toBeVisible();
+    await expect(page.getByText(/Upcoming rooms and completed rounds/i).first()).toBeVisible();
   });
 });

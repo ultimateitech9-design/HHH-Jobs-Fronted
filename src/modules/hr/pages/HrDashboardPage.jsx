@@ -172,14 +172,6 @@ const HrDashboardPage = () => {
     }));
   }, [candidatePool]);
 
-  if (state.loading) {
-    return (
-      <div className="flex items-center justify-center p-20">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-3 pb-2">
       {state.error ? (
@@ -198,21 +190,23 @@ const HrDashboardPage = () => {
         compact
         tone="hr"
         eyebrow="HR Dashboard"
-        badge={isApprovedHr ? 'Hiring live' : 'Approval pending'}
+        badge={state.loading ? 'Loading' : (isApprovedHr ? 'Hiring live' : 'Approval pending')}
         title="Run hiring from one clean workspace"
         description="See open roles, candidate activity, and interviews without extra clutter."
         chips={[]}
         primaryAction={{ to: '/portal/hr/jobs', label: 'Post New Job' }}
         secondaryAction={{ to: '/portal/hr/candidates', label: 'Review Applicants' }}
         metrics={[
-          { label: 'Open roles', value: String(analytics.openJobs || analytics.totalJobs || 0), helper: 'Currently live', to: '/portal/hr/jobs' },
-          { label: 'Applicants', value: String(analytics.totalApplications || 0), helper: 'In pipeline', to: '/portal/hr/candidates' },
-          { label: 'Interviews', value: String(totalInterviews), helper: 'Scheduled', to: '/portal/hr/interviews' }
+          { label: 'Open roles', value: state.loading ? '—' : String(analytics.openJobs || analytics.totalJobs || 0), helper: 'Currently live', to: '/portal/hr/jobs' },
+          { label: 'Applicants', value: state.loading ? '—' : String(analytics.totalApplications || 0), helper: 'In pipeline', to: '/portal/hr/candidates' },
+          { label: 'Interviews', value: state.loading ? '—' : String(totalInterviews), helper: 'Scheduled', to: '/portal/hr/interviews' }
         ]}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {compactStats.map((item) => {
+        {state.loading ? [1, 2, 3, 4].map((item) => (
+          <div key={item} className="h-32 animate-pulse rounded-[1.35rem] border border-slate-200 bg-white" />
+        )) : compactStats.map((item) => {
           const Icon = item.icon;
           return (
             <Link
@@ -243,7 +237,9 @@ const HrDashboardPage = () => {
             <p className="mt-1 text-sm text-slate-500">See how applications are moving right now.</p>
           </div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
-            {pipelineColumns.map((column) => (
+            {state.loading ? [1, 2, 3, 4, 5].map((item) => (
+              <div key={item} className="h-52 animate-pulse rounded-[1.2rem] bg-slate-100" />
+            )) : pipelineColumns.map((column) => (
               <Link
                 key={column.key}
                 to={column.to}
@@ -289,7 +285,11 @@ const HrDashboardPage = () => {
             </Link>
           </div>
           <ul className="space-y-3">
-            {recentApplicants.length > 0 ? (
+            {state.loading ? (
+              [1, 2, 3].map((item) => (
+                <li key={item} className="h-24 animate-pulse rounded-[1.15rem] bg-slate-100" />
+              ))
+            ) : recentApplicants.length > 0 ? (
               recentApplicants.map((applicant) => (
                 <li key={applicant.id}>
                   <Link
@@ -328,7 +328,11 @@ const HrDashboardPage = () => {
           </Link>
         </div>
         <ul className="grid gap-3 xl:grid-cols-2">
-          {state.interviews.slice(0, 4).length > 0 ? (
+          {state.loading ? (
+            [1, 2].map((item) => (
+              <li key={item} className="h-28 animate-pulse rounded-[1.15rem] bg-slate-100" />
+            ))
+          ) : state.interviews.slice(0, 4).length > 0 ? (
             state.interviews.slice(0, 4).map((interview, index) => (
               <li key={interview.id || `interview-${index}`}>
                 <Link

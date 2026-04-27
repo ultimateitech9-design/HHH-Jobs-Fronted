@@ -53,14 +53,6 @@ export default function CampusDashboardPage() {
     return () => { mounted = false; };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <FiRefreshCw size={28} className="animate-spin text-brand-500" />
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto w-full max-w-[1120px] space-y-7 pb-12">
       {/* Header */}
@@ -95,24 +87,45 @@ export default function CampusDashboardPage() {
 
       {/* Key Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Students" value={stats.totalStudents} icon={FiUsers} color="text-[#2d5bff]" sub="Registered in portal" />
-        <StatCard label="Students Placed" value={stats.placedStudents} icon={FiCheckCircle} color="text-emerald-600" sub={`${stats.placementRate}% placement rate`} />
-        <StatCard label="Campus Drives" value={stats.totalDrives} icon={FiBriefcase} color="text-brand-600" sub={`${stats.upcomingDrives} upcoming`} />
-        <StatCard label="Company Connections" value={stats.acceptedConnections} icon={FiLink} color="text-violet-600" sub={`${stats.pendingConnections} pending`} />
+        {loading ? [1, 2, 3, 4].map((item) => (
+          <div key={item} className="h-[124px] animate-pulse rounded-[1.5rem] border border-slate-100 bg-white" />
+        )) : (
+          <>
+            <StatCard label="Total Students" value={stats.totalStudents} icon={FiUsers} color="text-[#2d5bff]" sub="Registered in portal" />
+            <StatCard label="Students Placed" value={stats.placedStudents} icon={FiCheckCircle} color="text-emerald-600" sub={`${stats.placementRate}% placement rate`} />
+            <StatCard label="Campus Drives" value={stats.totalDrives} icon={FiBriefcase} color="text-brand-600" sub={`${stats.upcomingDrives} upcoming`} />
+            <StatCard label="Company Connections" value={stats.acceptedConnections} icon={FiLink} color="text-violet-600" sub={`${stats.pendingConnections} pending`} />
+          </>
+        )}
       </div>
 
       {/* Salary highlights */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Placement Rate" value={`${stats.placementRate}%`} icon={FiTrendingUp} color="text-emerald-600" />
-        <StatCard label="Avg Package" value={stats.avgSalary ? `₹${(stats.avgSalary / 100000).toFixed(1)}L` : '—'} icon={FiAward} color="text-brand-600" sub="Per annum" />
-        <StatCard label="Highest Package" value={stats.highestSalary ? `₹${(stats.highestSalary / 100000).toFixed(1)}L` : '—'} icon={FiAward} color="text-[#ff6b3d]" sub="Per annum" />
+        {loading ? [1, 2, 3].map((item) => (
+          <div key={item} className="h-[124px] animate-pulse rounded-[1.5rem] border border-slate-100 bg-white" />
+        )) : (
+          <>
+            <StatCard label="Placement Rate" value={`${stats.placementRate}%`} icon={FiTrendingUp} color="text-emerald-600" />
+            <StatCard label="Avg Package" value={stats.avgSalary ? `₹${(stats.avgSalary / 100000).toFixed(1)}L` : '—'} icon={FiAward} color="text-brand-600" sub="Per annum" />
+            <StatCard label="Highest Package" value={stats.highestSalary ? `₹${(stats.highestSalary / 100000).toFixed(1)}L` : '—'} icon={FiAward} color="text-[#ff6b3d]" sub="Per annum" />
+          </>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Branch-wise placement */}
         <div className="rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.10)]">
           <h2 className="mb-5 text-lg font-extrabold text-navy">Branch-wise Placement</h2>
-          {stats.branchStats?.length === 0 ? (
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="space-y-2">
+                  <div className="h-4 w-2/5 animate-pulse rounded bg-slate-100" />
+                  <div className="h-2 w-full animate-pulse rounded-full bg-slate-100" />
+                </div>
+              ))}
+            </div>
+          ) : stats.branchStats?.length === 0 ? (
             <p className="text-sm text-slate-400">No branch data yet. Import students to see stats.</p>
           ) : (
             <div className="space-y-3">
@@ -140,7 +153,13 @@ export default function CampusDashboardPage() {
             <h2 className="text-lg font-extrabold text-navy">Recent Drives</h2>
             <Link to="/portal/campus-connect/drives" className="text-sm font-bold text-[#2d5bff]">View all</Link>
           </div>
-          {stats.recentDrives?.length === 0 ? (
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="h-20 animate-pulse rounded-xl bg-slate-100" />
+              ))}
+            </div>
+          ) : stats.recentDrives?.length === 0 ? (
             <div className="py-6 text-center">
               <p className="text-sm text-slate-400">No drives scheduled yet.</p>
               <Link

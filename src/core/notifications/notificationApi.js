@@ -10,6 +10,7 @@ export const SUPPORTED_NOTIFICATION_ROLES = new Set([
   'sales',
   'accounts',
   'dataentry',
+  'campus_connect',
   'platform',
   'audit'
 ]);
