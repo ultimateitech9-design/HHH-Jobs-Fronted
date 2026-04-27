@@ -17,8 +17,7 @@ import {
   FiTrash2,
   FiTrendingUp,
   FiUploadCloud,
-  FiUser,
-  FiX
+  FiUser
 } from 'react-icons/fi';
 import useAuthStore from '../../../core/auth/authStore';
 import { getToken, setAuthSession } from '../../../utils/auth';
@@ -280,7 +279,6 @@ const StudentProfilePage = () => {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [resumeImporting, setResumeImporting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false);
 
   const setFlash = (type, text) => {
     if (timerRef.current) window.clearTimeout(timerRef.current);
@@ -308,17 +306,6 @@ const StudentProfilePage = () => {
   };
 
   useEffect(() => () => timerRef.current && window.clearTimeout(timerRef.current), []);
-
-  useEffect(() => {
-    if (!avatarPreviewOpen) return undefined;
-
-    const handleEscape = (event) => {
-      if (event.key === 'Escape') setAvatarPreviewOpen(false);
-    };
-
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [avatarPreviewOpen]);
 
   useEffect(() => {
     let mounted = true;
@@ -675,9 +662,9 @@ const StudentProfilePage = () => {
         <div className="flex flex-col gap-2.5 sm:flex-row">
             <button
               type="button"
-              aria-label={form.avatarUrl ? 'Preview profile photo' : 'Profile photo'}
-              className={`relative shrink-0 self-start rounded-full ${form.avatarUrl ? 'cursor-zoom-in' : 'cursor-default'}`}
-              onClick={() => form.avatarUrl && setAvatarPreviewOpen(true)}
+              aria-label="Update profile photo"
+              className="group relative shrink-0 self-start rounded-full"
+              onClick={() => avatarInputRef.current?.click()}
             >
               <div
                 className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full p-1"
@@ -695,6 +682,9 @@ const StudentProfilePage = () => {
               </div>
               <span className="absolute bottom-0 left-1/2 inline-flex -translate-x-1/2 rounded-full border border-red-100 bg-white px-1.5 py-0.5 text-[9px] font-bold text-red-500 shadow-sm">
                 {completion}%
+              </span>
+              <span className="absolute -right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white bg-navy text-white shadow-md transition group-hover:bg-brand-600">
+                <FiCamera size={12} />
               </span>
             </button>
 
@@ -734,27 +724,33 @@ const StudentProfilePage = () => {
                 </span>
               </div>
 
-              <div className="mt-2.5 grid gap-2 rounded-[1rem] border border-slate-100 bg-slate-50 px-2.5 py-2 sm:grid-cols-2">
-                <label className="flex items-start gap-2 rounded-[1rem] bg-white px-3 py-2 shadow-sm">
-                  <input
-                    type="checkbox"
-                    checked={form.isDiscoverable}
-                    onChange={(event) => updateField('isDiscoverable', event.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-slate-300 accent-brand-600"
-                  />
-                  <span>
-                    <span className="block text-[0.88rem] font-bold text-navy">Show me in Candidate Database</span>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                <label className={`inline-flex min-h-[2.8rem] min-w-[260px] flex-1 items-center justify-between gap-3 rounded-full border px-3.5 py-2 shadow-sm transition ${form.isDiscoverable ? 'border-sky-200 bg-sky-50' : 'border-slate-200 bg-white'}`}>
+                  <span className="inline-flex min-w-0 items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={form.isDiscoverable}
+                      onChange={(event) => updateField('isDiscoverable', event.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 accent-brand-600"
+                    />
+                    <span className="truncate text-[0.84rem] font-bold text-navy">Show me in Candidate Database</span>
+                  </span>
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${form.isDiscoverable ? 'bg-white text-sky-700' : 'bg-slate-100 text-slate-500'}`}>
+                    {form.isDiscoverable ? 'On' : 'Off'}
                   </span>
                 </label>
-                <label className="flex items-start gap-2 rounded-[1rem] bg-white px-3 py-2 shadow-sm">
-                  <input
-                    type="checkbox"
-                    checked={form.availableToHire}
-                    onChange={(event) => updateField('availableToHire', event.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-slate-300 accent-brand-600"
-                  />
-                  <span>
-                    <span className="block text-[0.88rem] font-bold text-navy">Mark me available to hire</span>
+                <label className={`inline-flex min-h-[2.8rem] min-w-[240px] flex-1 items-center justify-between gap-3 rounded-full border px-3.5 py-2 shadow-sm transition ${form.availableToHire ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
+                  <span className="inline-flex min-w-0 items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={form.availableToHire}
+                      onChange={(event) => updateField('availableToHire', event.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 accent-brand-600"
+                    />
+                    <span className="truncate text-[0.84rem] font-bold text-navy">Mark me available to hire</span>
+                  </span>
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${form.availableToHire ? 'bg-white text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                    {form.availableToHire ? 'On' : 'Off'}
                   </span>
                 </label>
               </div>
@@ -783,17 +779,8 @@ const StudentProfilePage = () => {
               </div>
 
               <div className="mt-2.5 flex flex-wrap items-center gap-1.5 md:flex-nowrap">
-                <button
-                  type="button"
-                  onClick={() => avatarInputRef.current?.click()}
-                  disabled={avatarUploading}
-                  className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[0.8rem] font-bold leading-none text-amber-700 transition hover:bg-amber-100 disabled:opacity-70"
-                >
-                  {avatarUploading ? <FiRefreshCw size={15} className="animate-spin" /> : <FiCamera size={15} />}
-                  {avatarUploading ? 'Uploading photo...' : 'Upload Photo'}
-                </button>
                 <span className="min-w-0 flex-1 text-[0.76rem] text-slate-400 md:whitespace-nowrap">
-                  PNG, JPG, or WEBP up to 4 MB
+                  {avatarUploading ? 'Uploading profile photo...' : 'Click profile image to update photo. PNG, JPG, or WEBP up to 4 MB'}
                 </span>
                 <button
                   type="button"
@@ -842,31 +829,6 @@ const StudentProfilePage = () => {
           </div>
         </aside>
       </section>
-
-      {avatarPreviewOpen && form.avatarUrl ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/75 p-4 backdrop-blur-sm"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) setAvatarPreviewOpen(false);
-          }}
-        >
-          <div className="w-full max-w-xl rounded-[1.75rem] bg-white p-5 shadow-2xl">
-            <div className="mb-4 flex items-center justify-end">
-              <button
-                type="button"
-                onClick={() => setAvatarPreviewOpen(false)}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-              >
-                <FiX size={16} />
-                Close
-              </button>
-            </div>
-            <div className="overflow-hidden rounded-[1.5rem] bg-slate-100">
-              <img src={form.avatarUrl} alt="Profile preview" className="max-h-[75vh] w-full object-contain" />
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[238px_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-24 lg:self-start">
