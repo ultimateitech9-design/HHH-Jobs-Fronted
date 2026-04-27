@@ -17,7 +17,8 @@ import {
   FiTrash2,
   FiTrendingUp,
   FiUploadCloud,
-  FiUser
+  FiUser,
+  FiX
 } from 'react-icons/fi';
 import useAuthStore from '../../../core/auth/authStore';
 import { getToken, setAuthSession } from '../../../utils/auth';
@@ -265,6 +266,16 @@ const scrollToNode = (node) => {
 const cardClassName =
   'rounded-[1.75rem] border border-[#e6ecf5] bg-white p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.22)] sm:p-6';
 
+const toProfileEditorDraft = (source = {}) => ({
+  name: source.name || '',
+  headline: source.headline || '',
+  mobile: source.mobile || '',
+  email: source.email || '',
+  location: source.location || '',
+  gender: source.gender || '',
+  dateOfBirth: source.dateOfBirth || ''
+});
+
 const StudentProfilePage = () => {
   const location = useLocation();
   const { user, refreshUser } = useAuthStore();
@@ -279,6 +290,8 @@ const StudentProfilePage = () => {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [resumeImporting, setResumeImporting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [profileEditorOpen, setProfileEditorOpen] = useState(false);
+  const [profileEditorDraft, setProfileEditorDraft] = useState(() => toProfileEditorDraft(EMPTY_FORM));
 
   const setFlash = (type, text) => {
     if (timerRef.current) window.clearTimeout(timerRef.current);
@@ -354,6 +367,22 @@ const StudentProfilePage = () => {
   }, [loading, location.search]);
 
   const updateField = (name, value) => setForm((current) => ({ ...current, [name]: value }));
+
+  const openProfileEditor = () => {
+    setProfileEditorDraft(toProfileEditorDraft(form));
+    setProfileEditorOpen(true);
+  };
+
+  const closeProfileEditor = () => {
+    if (saving) return;
+    setProfileEditorOpen(false);
+  };
+
+  const updateProfileEditorField = (name, value) =>
+    setProfileEditorDraft((current) => ({
+      ...current,
+      [name]: value
+    }));
 
   const addEducation = (educationLevel = 'Graduation') =>
     setForm((current) => ({
@@ -437,6 +466,33 @@ const StudentProfilePage = () => {
       setFlash('success', 'Profile saved successfully.');
     } catch (error) {
       setFlash('error', error.message || 'Failed to save profile.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleProfileEditorSave = async () => {
+    const nextForm = {
+      ...form,
+      ...profileEditorDraft
+    };
+
+    setSaving(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const updated = await updateStudentProfile(nextForm);
+      setForm((current) => ({
+        ...current,
+        ...updated,
+        email: updated.email || current.email,
+        educationEntries: ensureEducationEntries(updated.educationEntries || current.educationEntries)
+      }));
+      syncUser(updated);
+      setProfileEditorOpen(false);
+      setFlash('success', 'Profile updated successfully.');
+    } catch (error) {
+      setFlash('error', error.message || 'Failed to update profile.');
     } finally {
       setSaving(false);
     }
@@ -546,6 +602,19 @@ const StudentProfilePage = () => {
     setForm((current) => ({ ...current, resumeUrl: '', resumeText: '' }));
     setFlash('success', 'Resume cleared from the draft. Save profile to keep this change.');
   };
+
+  useEffect(() => {
+    if (!profileEditorOpen) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape' && !saving) {
+        setProfileEditorOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [profileEditorOpen, saving]);
 
   const completion = completionOf(form);
   const hasResume = Boolean(form.resumeUrl || form.resumeText);
@@ -658,6 +727,120 @@ const StudentProfilePage = () => {
         </div>
       ) : null}
 
+      {profileEditorOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeProfileEditor();
+          }}
+        >
+          <div className="w-full max-w-2xl rounded-[1.9rem] border border-[#e6ecf5] bg-white p-5 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.35)] sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[0.72rem] font-bold uppercase tracking-[0.26em] text-brand-700">Quick Update</p>
+                <h2 className="mt-1 text-[1.45rem] font-extrabold tracking-tight text-navy">Update profile</h2>
+                <p className="mt-1 text-sm text-slate-500">Edit your basic details here and save instantly.</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeProfileEditor}
+                disabled={saving}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:text-slate-700 disabled:opacity-60"
+                aria-label="Close profile editor"
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-sm text-slate-400">Full name</p>
+                <input
+                  value={profileEditorDraft.name}
+                  onChange={(event) => updateProfileEditorField('name', event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  placeholder="Add full name"
+                />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Profile headline</p>
+                <input
+                  value={profileEditorDraft.headline}
+                  onChange={(event) => updateProfileEditorField('headline', event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  placeholder="Add profile headline"
+                />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Email</p>
+                <input
+                  value={profileEditorDraft.email}
+                  disabled
+                  className="mt-2 w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-500"
+                />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Mobile number</p>
+                <input
+                  value={profileEditorDraft.mobile}
+                  onChange={(event) => updateProfileEditorField('mobile', event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  placeholder="Add mobile number"
+                />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Location</p>
+                <input
+                  value={profileEditorDraft.location}
+                  onChange={(event) => updateProfileEditorField('location', event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  placeholder="Add location"
+                />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Gender</p>
+                <input
+                  value={profileEditorDraft.gender}
+                  onChange={(event) => updateProfileEditorField('gender', event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                  placeholder="Add gender"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <p className="text-sm text-slate-400">Date of birth</p>
+              <input
+                type="date"
+                value={profileEditorDraft.dateOfBirth}
+                max={new Date().toISOString().split('T')[0]}
+                onChange={(event) => updateProfileEditorField('dateOfBirth', event.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              />
+            </div>
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeProfileEditor}
+                disabled={saving}
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleProfileEditorSave}
+                disabled={saving}
+                className="inline-flex items-center justify-center rounded-full bg-[#ff6b3d] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#ef5c30] disabled:opacity-60"
+              >
+                {saving ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <section className="grid gap-2.5 rounded-[1.6rem] border border-[#e6ecf5] bg-white p-3.5 shadow-[0_16px_36px_-32px_rgba(15,23,42,0.22)] sm:p-4 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start xl:grid-cols-[minmax(0,1fr)_272px]">
         <div className="flex flex-col gap-2.5 sm:flex-row">
             <button
@@ -693,7 +876,7 @@ const StudentProfilePage = () => {
                 <h1 className="text-[1.24rem] font-extrabold tracking-tight text-navy">{userName}</h1>
                 <button
                   type="button"
-                  onClick={() => scrollToNode(sectionRefs.current['personal-details'])}
+                  onClick={openProfileEditor}
                   className="inline-flex h-5.5 w-5.5 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-brand-200 hover:text-brand-700"
                   aria-label="Edit personal details"
                 >
