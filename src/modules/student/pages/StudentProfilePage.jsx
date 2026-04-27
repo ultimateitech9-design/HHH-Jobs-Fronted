@@ -1492,19 +1492,6 @@ const StudentProfilePage = () => {
               </button>
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {EDUCATION_LEVEL_OPTIONS.map((label) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => addEducation(label)}
-                  className="text-left text-sm font-semibold text-[#2d5bff] transition hover:text-[#2449d8]"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
             <div className="mt-6 space-y-4">
               {form.educationEntries.map((entry, index) => (
                 <div key={`education-entry-${index}`} className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
