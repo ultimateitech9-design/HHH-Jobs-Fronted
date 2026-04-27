@@ -725,31 +725,31 @@ const StudentProfilePage = () => {
               </div>
 
               <div className="mt-2.5 flex flex-wrap gap-2">
-                <label className={`inline-flex min-h-[2.8rem] min-w-[260px] flex-1 items-center justify-between gap-3 rounded-full border px-3.5 py-2 shadow-sm transition ${form.isDiscoverable ? 'border-sky-200 bg-sky-50' : 'border-slate-200 bg-white'}`}>
-                  <span className="inline-flex min-w-0 items-center gap-2">
+                <label className={`inline-flex min-h-[2.45rem] min-w-[250px] flex-1 items-center justify-between gap-2.5 rounded-full border px-3 py-1.5 shadow-sm transition ${form.isDiscoverable ? 'border-sky-200 bg-sky-50' : 'border-slate-200 bg-white'}`}>
+                  <span className="inline-flex min-w-0 items-center gap-1.5">
                     <input
                       type="checkbox"
                       checked={form.isDiscoverable}
                       onChange={(event) => updateField('isDiscoverable', event.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 accent-brand-600"
+                      className="h-3.5 w-3.5 rounded border-slate-300 accent-brand-600"
                     />
-                    <span className="truncate text-[0.84rem] font-bold text-navy">Show profile to recruiters</span>
+                    <span className="truncate text-[0.8rem] font-bold text-navy">Show profile to recruiters</span>
                   </span>
-                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${form.isDiscoverable ? 'bg-white text-sky-700' : 'bg-slate-100 text-slate-500'}`}>
+                  <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[0.64rem] font-bold ${form.isDiscoverable ? 'bg-white text-sky-700' : 'bg-slate-100 text-slate-500'}`}>
                     {form.isDiscoverable ? 'Visible' : 'Hidden'}
                   </span>
                 </label>
-                <label className={`inline-flex min-h-[2.8rem] min-w-[240px] flex-1 items-center justify-between gap-3 rounded-full border px-3.5 py-2 shadow-sm transition ${form.availableToHire ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
-                  <span className="inline-flex min-w-0 items-center gap-2">
+                <label className={`inline-flex min-h-[2.45rem] min-w-[240px] flex-1 items-center justify-between gap-2.5 rounded-full border px-3 py-1.5 shadow-sm transition ${form.availableToHire ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
+                  <span className="inline-flex min-w-0 items-center gap-1.5">
                     <input
                       type="checkbox"
                       checked={form.availableToHire}
                       onChange={(event) => updateField('availableToHire', event.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 accent-brand-600"
+                      className="h-3.5 w-3.5 rounded border-slate-300 accent-brand-600"
                     />
-                    <span className="truncate text-[0.84rem] font-bold text-navy">Open to new job opportunities</span>
+                    <span className="truncate text-[0.8rem] font-bold text-navy">Open to new job opportunities</span>
                   </span>
-                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${form.availableToHire ? 'bg-white text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                  <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[0.64rem] font-bold ${form.availableToHire ? 'bg-white text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                     {form.availableToHire ? 'Active' : 'Inactive'}
                   </span>
                 </label>
@@ -778,10 +778,12 @@ const StudentProfilePage = () => {
                 </span>
               </div>
 
-              <div className="mt-2.5 flex flex-wrap items-center gap-1.5 md:flex-nowrap">
-                <span className="min-w-0 flex-1 text-[0.76rem] text-slate-400 md:whitespace-nowrap">
-                  {avatarUploading ? 'Uploading profile photo...' : 'Click profile image to update photo. PNG, JPG, or WEBP up to 4 MB'}
-                </span>
+              <div className="mt-2.5 flex flex-wrap items-center justify-end gap-1.5 md:flex-nowrap">
+                {avatarUploading ? (
+                  <span className="min-w-0 flex-1 text-[0.76rem] text-slate-400 md:whitespace-nowrap">
+                    Uploading profile photo...
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   onClick={handleSave}
