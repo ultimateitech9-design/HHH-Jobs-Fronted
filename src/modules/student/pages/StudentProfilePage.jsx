@@ -671,8 +671,8 @@ const StudentProfilePage = () => {
         </div>
       ) : null}
 
-      <section className={`${cardClassName} grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start xl:grid-cols-[minmax(0,1fr)_320px]`}>
-        <div className="flex flex-col gap-4 sm:flex-row">
+      <section className="grid gap-2.5 rounded-[1.6rem] border border-[#e6ecf5] bg-white p-3.5 shadow-[0_16px_36px_-32px_rgba(15,23,42,0.22)] sm:p-4 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start xl:grid-cols-[minmax(0,1fr)_272px]">
+        <div className="flex flex-col gap-2.5 sm:flex-row">
             <button
               type="button"
               aria-label={form.avatarUrl ? 'Preview profile photo' : 'Profile photo'}
@@ -680,12 +680,12 @@ const StudentProfilePage = () => {
               onClick={() => form.avatarUrl && setAvatarPreviewOpen(true)}
             >
               <div
-                className="flex h-24 w-24 items-center justify-center rounded-full p-1"
+                className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full p-1"
                 style={{
                   background: `conic-gradient(#ef4444 0 ${Math.max(completion, 4)}%, #e8ecf6 ${Math.max(completion, 4)}% 100%)`
                 }}
               >
-                <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-slate-100 text-3xl font-black text-slate-400">
+                <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-slate-100 text-[1.8rem] font-black text-slate-400">
                   {form.avatarUrl ? (
                     <img src={form.avatarUrl} alt="Profile avatar" className="h-full w-full object-cover" />
                   ) : (
@@ -693,49 +693,49 @@ const StudentProfilePage = () => {
                   )}
                 </div>
               </div>
-              <span className="absolute bottom-0 left-1/2 inline-flex -translate-x-1/2 rounded-full border border-red-100 bg-white px-2.5 py-0.5 text-[11px] font-bold text-red-500 shadow-sm">
+              <span className="absolute bottom-0 left-1/2 inline-flex -translate-x-1/2 rounded-full border border-red-100 bg-white px-1.5 py-0.5 text-[9px] font-bold text-red-500 shadow-sm">
                 {completion}%
               </span>
             </button>
 
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-[1.5rem] font-extrabold tracking-tight text-navy">{userName}</h1>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <h1 className="text-[1.24rem] font-extrabold tracking-tight text-navy">{userName}</h1>
                 <button
                   type="button"
                   onClick={() => scrollToNode(sectionRefs.current['personal-details'])}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-brand-200 hover:text-brand-700"
+                  className="inline-flex h-5.5 w-5.5 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-brand-200 hover:text-brand-700"
                   aria-label="Edit personal details"
                 >
-                  <FiEdit2 size={13} />
+                  <FiEdit2 size={11} />
                 </button>
               </div>
-              <p className="mt-1 text-[0.92rem] text-slate-500">
+              <p className="mt-0.5 text-[0.84rem] text-slate-500">
                 {form.headline || form.targetRole || 'Add your professional headline'}
               </p>
-              <p className="mt-0.5 text-[0.8rem] text-slate-400">Profile last updated - Yesterday</p>
+              <p className="mt-0.5 text-[0.72rem] text-slate-400">Profile last updated - Yesterday</p>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[0.82rem] font-bold text-emerald-700">
-                  <FiTrendingUp size={14} />
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[0.74rem] font-bold text-emerald-700">
+                  <FiTrendingUp size={12} />
                   Completion {completion}%
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-[0.82rem] font-bold text-amber-700">
-                  <FiFileText size={14} />
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-0.5 text-[0.74rem] font-bold text-amber-700">
+                  <FiFileText size={12} />
                   {hasResume ? 'Resume ready' : 'Resume missing'}
                 </span>
-                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.82rem] font-bold ${form.isDiscoverable ? 'border-sky-100 bg-sky-50 text-sky-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                  <FiUser size={14} />
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.74rem] font-bold ${form.isDiscoverable ? 'border-sky-100 bg-sky-50 text-sky-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                  <FiUser size={12} />
                   {form.isDiscoverable ? 'Discoverable by HR' : 'Private profile'}
                 </span>
-                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.82rem] font-bold ${form.availableToHire ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                  <FiCheckCircle size={14} />
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.74rem] font-bold ${form.availableToHire ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                  <FiCheckCircle size={12} />
                   {form.availableToHire ? 'Available to hire' : 'Availability hidden'}
                 </span>
               </div>
 
-              <div className="mt-4 grid gap-3 rounded-[1.25rem] border border-slate-100 bg-slate-50 px-4 py-3 sm:grid-cols-2">
-                <label className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+              <div className="mt-2.5 grid gap-2 rounded-[1rem] border border-slate-100 bg-slate-50 px-2.5 py-2 sm:grid-cols-2">
+                <label className="flex items-start gap-2 rounded-[1rem] bg-white px-3 py-2 shadow-sm">
                   <input
                     type="checkbox"
                     checked={form.isDiscoverable}
@@ -743,11 +743,11 @@ const StudentProfilePage = () => {
                     className="mt-1 h-4 w-4 rounded border-slate-300 accent-brand-600"
                   />
                   <span>
-                    <span className="block text-sm font-bold text-navy">Show me in Candidate Database</span>
+                    <span className="block text-[0.88rem] font-bold text-navy">Show me in Candidate Database</span>
                     <span className="mt-0.5 block text-xs text-slate-500">Recruiters can discover your profile only when this is enabled.</span>
                   </span>
                 </label>
-                <label className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+                <label className="flex items-start gap-2 rounded-[1rem] bg-white px-3 py-2 shadow-sm">
                   <input
                     type="checkbox"
                     checked={form.availableToHire}
@@ -755,13 +755,13 @@ const StudentProfilePage = () => {
                     className="mt-1 h-4 w-4 rounded border-slate-300 accent-brand-600"
                   />
                   <span>
-                    <span className="block text-sm font-bold text-navy">Mark me available to hire</span>
+                    <span className="block text-[0.88rem] font-bold text-navy">Mark me available to hire</span>
                     <span className="mt-0.5 block text-xs text-slate-500">Adds a recruiter-facing availability badge for faster sourcing.</span>
                   </span>
                 </label>
               </div>
 
-              <div className="mt-3 grid gap-x-4 gap-y-2.5 text-[0.86rem] text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-2 grid gap-x-3 gap-y-1.5 text-[0.8rem] text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
                 <span className="inline-flex items-center gap-2">
                   <FiMapPin size={15} className="text-brand-600" />
                   {form.location || 'Add location'}
@@ -784,24 +784,24 @@ const StudentProfilePage = () => {
                 </span>
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-2.5 md:flex-nowrap">
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5 md:flex-nowrap">
                 <button
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={avatarUploading}
-                  className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-[0.88rem] font-bold leading-none text-amber-700 transition hover:bg-amber-100 disabled:opacity-70"
+                  className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[0.8rem] font-bold leading-none text-amber-700 transition hover:bg-amber-100 disabled:opacity-70"
                 >
                   {avatarUploading ? <FiRefreshCw size={15} className="animate-spin" /> : <FiCamera size={15} />}
                   {avatarUploading ? 'Uploading photo...' : 'Upload Photo'}
                 </button>
-                <span className="min-w-0 flex-1 text-[0.84rem] text-slate-400 md:whitespace-nowrap">
+                <span className="min-w-0 flex-1 text-[0.76rem] text-slate-400 md:whitespace-nowrap">
                   PNG, JPG, or WEBP up to 4 MB
                 </span>
                 <button
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[#ff6b3d] px-4 py-2 text-[0.88rem] font-bold leading-none text-white transition hover:bg-[#ef5c30] disabled:opacity-70"
+                  className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[#ff6b3d] px-3 py-1.5 text-[0.8rem] font-bold leading-none text-white transition hover:bg-[#ef5c30] disabled:opacity-70"
                 >
                   {saving ? <FiRefreshCw size={15} className="animate-spin" /> : <FiCheckCircle size={15} />}
                   {saving ? 'Saving...' : 'Save profile'}
@@ -810,8 +810,8 @@ const StudentProfilePage = () => {
             </div>
           </div>
 
-        <aside className="rounded-[1.5rem] border border-[#f7dfbf] bg-[linear-gradient(180deg,#fff5e8_0%,#fffaf2_100%)] p-4 shadow-[0_14px_30px_-24px_rgba(245,158,11,0.22)] sm:p-5">
-          <div className="space-y-3">
+        <aside className="rounded-[1.2rem] border border-[#f7dfbf] bg-[linear-gradient(180deg,#fff5e8_0%,#fffaf2_100%)] p-3 shadow-[0_12px_24px_-22px_rgba(245,158,11,0.22)] sm:p-3.5">
+          <div className="space-y-2">
             {missingSections.slice(0, 3).map((item) => {
               const Icon = item.icon;
               return (
@@ -819,12 +819,12 @@ const StudentProfilePage = () => {
                   key={item.id}
                   type="button"
                   onClick={() => scrollToNode(sectionRefs.current[item.id])}
-                  className="flex w-full items-start gap-2.5 text-left"
+                  className="flex w-full items-start gap-1.5 text-left"
                 >
-                  <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-700 shadow-sm">
-                    <Icon size={16} />
+                  <span className="mt-0.5 flex h-7.5 w-7.5 items-center justify-center rounded-full bg-white text-brand-700 shadow-sm">
+                    <Icon size={14} />
                   </span>
-                  <span className="min-w-0 flex-1 text-[0.94rem] font-semibold leading-5 text-navy">
+                  <span className="min-w-0 flex-1 text-[0.84rem] font-semibold leading-5 text-navy">
                     Add {item.label.toLowerCase()}
                   </span>
                   <span className="inline-flex rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-emerald-600">
@@ -837,7 +837,7 @@ const StudentProfilePage = () => {
             <button
               type="button"
               onClick={() => scrollToNode(sectionRefs.current[missingSections[0]?.id || 'personal-details'])}
-              className="mt-1 inline-flex rounded-full bg-[#ff6b3d] px-4 py-2.5 text-[0.88rem] font-bold text-white transition hover:bg-[#ef5c30]"
+              className="mt-0.5 inline-flex rounded-full bg-[#ff6b3d] px-3.5 py-1.5 text-[0.8rem] font-bold text-white transition hover:bg-[#ef5c30]"
             >
               {missingSections.length > 0 ? `Add ${missingSections.length} missing details` : 'Profile looks complete'}
             </button>
