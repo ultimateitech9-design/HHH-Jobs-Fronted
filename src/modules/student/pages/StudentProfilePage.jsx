@@ -6,6 +6,7 @@ import {
   FiBriefcase,
   FiCamera,
   FiCheckCircle,
+  FiClock,
   FiDownload,
   FiEdit2,
   FiFileText,
@@ -265,6 +266,16 @@ const scrollToNode = (node) => {
 
 const cardClassName =
   'rounded-[1.75rem] border border-[#e6ecf5] bg-white p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.22)] sm:p-6';
+
+const profileMetaItemClassName =
+  'inline-flex min-h-[2.5rem] items-center gap-2 rounded-[0.95rem] border border-slate-200 bg-white px-3 py-2 text-left text-[0.79rem] text-slate-600 shadow-[0_12px_24px_-26px_rgba(15,23,42,0.34)]';
+
+const formatAvailabilityToJoin = (value = '') => {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return 'Add joining timeline';
+  if (/^\d+$/.test(trimmed)) return `${trimmed} month${trimmed === '1' ? '' : 's'}`;
+  return trimmed;
+};
 
 const toProfileEditorDraft = (source = {}) => ({
   name: source.name || '',
@@ -647,7 +658,7 @@ const StudentProfilePage = () => {
   const userName = form.name || 'Your Name';
   const preferredSalary = form.expectedSalary || [form.preferredSalaryMin, form.preferredSalaryMax].filter(Boolean).join(' - ');
   const employmentLabel = hasEmployment ? 'Experienced' : 'Fresher';
-  const availabilityLabel = form.availabilityToJoin || 'Add availability to join';
+  const availabilityLabel = formatAvailabilityToJoin(form.availabilityToJoin);
   const resumeFileName = getResumeFileName(form);
 
   const sectionStates = useMemo(
@@ -809,7 +820,7 @@ const StudentProfilePage = () => {
                   onChange={(event) => updateProfileEditorField('availabilityToJoin', event.target.value)}
                   autoFocus={profileEditorFocusField === 'availabilityToJoin'}
                   className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                  placeholder="Add availability to join"
+                  placeholder="e.g. 3 months"
                 />
               </div>
               <div>
@@ -953,32 +964,32 @@ const StudentProfilePage = () => {
                 </label>
               </div>
 
-              <div className="mt-2 grid gap-x-3 gap-y-1.5 text-[0.8rem] text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-2 grid gap-2 text-[0.8rem] text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
                 <button
                   type="button"
                   onClick={() => openProfileEditor('location')}
-                  className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-left transition hover:bg-brand-50 hover:text-brand-700"
+                  className={`${profileMetaItemClassName} transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700`}
                 >
                   <FiMapPin size={15} className="text-brand-600" />
                   {form.location || 'Add location'}
                 </button>
-                <span className="inline-flex items-center gap-2">
+                <span className={profileMetaItemClassName}>
                   <FiBriefcase size={15} className="text-brand-600" />
                   {employmentLabel}
                 </span>
                 <button
                   type="button"
                   onClick={() => openProfileEditor('availabilityToJoin')}
-                  className="inline-flex items-center gap-2 rounded-full px-2 py-1 text-left transition hover:bg-brand-50 hover:text-brand-700"
+                  className={`${profileMetaItemClassName} transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700`}
                 >
-                  <FiRefreshCw size={15} className="text-brand-600" />
+                  <FiClock size={15} className="text-brand-600" />
                   {availabilityLabel}
                 </button>
-                <span className="inline-flex items-center gap-2">
+                <span className={profileMetaItemClassName}>
                   <FiPhone size={15} className="text-brand-600" />
                   {form.mobile || 'Add phone number'}
                 </span>
-                <span className="inline-flex items-center gap-2">
+                <span className={profileMetaItemClassName}>
                   <FiMail size={15} className="text-brand-600" />
                   {form.email || 'Add email'}
                 </span>
@@ -1873,7 +1884,7 @@ const StudentProfilePage = () => {
               </div>
               <div>
                 <p className="text-sm text-slate-400">Availability to join</p>
-                <input value={form.availabilityToJoin} onChange={(event) => updateField('availabilityToJoin', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add availability" />
+                <input value={form.availabilityToJoin} onChange={(event) => updateField('availabilityToJoin', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="e.g. 3 months" />
               </div>
               <div>
                 <p className="text-sm text-slate-400">Expected salary</p>
