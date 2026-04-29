@@ -349,11 +349,15 @@ const audienceContent = {
   },
   'campus-connect': {
     eyebrow: 'For Campuses',
-    title: <>Bring Placement Operations Into <span className="gradient-text">One Campus Workspace</span></>,
+    title: <>
+      <span className="block">Bring Placement</span>
+      <span className="block">Operations Into</span>
+      <span className="gradient-text block">One Campus Workspace</span>
+    </>,
     description: 'Campus Connect is built for colleges, placement cells, and training campuses that want student records, drives, company outreach, and reporting in one cleaner workflow instead of scattered sheets and inbox threads.',
     heroContentClassName: 'max-w-[58rem]',
     heroEyebrowClassName: 'px-4 py-1.5 text-[0.78rem] font-bold tracking-[0.01em]',
-    heroTitleClassName: 'max-w-[12ch] text-[2.55rem] font-black leading-[0.94] tracking-[-0.05em] sm:text-[3.15rem] md:text-[4.1rem]',
+    heroTitleClassName: 'max-w-[15ch] text-[2.55rem] font-black leading-[1.02] tracking-[-0.05em] sm:max-w-[16ch] sm:text-[3.15rem] md:max-w-[15ch] md:text-[4rem] md:leading-[0.98] lg:text-[4.3rem]',
     heroDescriptionClassName: 'mt-5 max-w-[44rem] text-[1.02rem] leading-8 text-slate-600 sm:text-[1.08rem]',
     heroActionsClassName: 'mt-8 gap-4',
     heroActionClassName: 'min-w-[11.5rem] px-6 py-3 text-[0.98rem]',
