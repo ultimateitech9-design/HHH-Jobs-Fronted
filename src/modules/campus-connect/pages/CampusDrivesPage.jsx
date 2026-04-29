@@ -40,11 +40,60 @@ const EMPTY_FORM = {
 const BRANCH_OPTIONS = ['CSE', 'IT', 'ECE', 'EEE', 'ME', 'CE', 'MBA', 'MCA', 'All Branches'];
 const APPLICATION_STATUS_OPTIONS = ['applied', 'shortlisted', 'selected', 'rejected', 'withdrawn'];
 
+const getLocalIsoDate = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatDateInputValue = (value) => {
+  if (!value) return '';
+
+  const text = String(value).trim();
+  const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return '';
+
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getDriveDeadlineValue = (drive = {}) =>
+  formatDateInputValue(drive.application_deadline || drive.applicationDeadline || drive.drive_date || drive.driveDate || '');
+
+const isDriveAcceptingApplications = (drive = {}) => {
+  const status = String(drive.status || '').trim().toLowerCase();
+  if (['completed', 'closed', 'cancelled', 'archived', 'past'].includes(status)) return false;
+
+  const deadline = getDriveDeadlineValue(drive);
+  if (!deadline) return true;
+
+  return deadline >= getLocalIsoDate();
+};
+
+const getDriveDisplayStatus = (drive = {}) => {
+  const status = String(drive.status || 'upcoming').trim().toLowerCase();
+  if (!isDriveAcceptingApplications(drive) && ['upcoming', 'ongoing'].includes(status)) {
+    return 'expired';
+  }
+
+  return status || 'upcoming';
+};
+
 const STATUS_STYLES = {
   upcoming: 'bg-brand-50 text-brand-700',
   ongoing: 'bg-blue-50 text-blue-700',
   completed: 'bg-emerald-50 text-emerald-700',
-  cancelled: 'bg-red-50 text-red-600'
+  cancelled: 'bg-red-50 text-red-600',
+  expired: 'bg-amber-50 text-amber-700'
 };
 
 const APPLICATION_STATUS_STYLES = {
@@ -72,8 +121,8 @@ const mapDriveToForm = (drive = {}) => ({
   id: drive.id,
   companyName: drive.company_name || drive.companyName || '',
   jobTitle: drive.job_title || drive.jobTitle || '',
-  driveDate: drive.drive_date || drive.driveDate || '',
-  applicationDeadline: drive.application_deadline || drive.applicationDeadline || drive.drive_date || drive.driveDate || '',
+  driveDate: formatDateInputValue(drive.drive_date || drive.driveDate || ''),
+  applicationDeadline: formatDateInputValue(drive.application_deadline || drive.applicationDeadline || drive.drive_date || drive.driveDate || ''),
   driveMode: drive.drive_mode || drive.driveMode || 'on-campus',
   location: drive.location || '',
   eligibleBranches: Array.isArray(drive.eligible_branches)
@@ -113,6 +162,7 @@ const DriveFormModal = ({ initial, onClose, onSaved }) => {
   const [form, setForm] = useState({ ...EMPTY_FORM, ...(initial ? mapDriveToForm(initial) : {}) });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const today = getLocalIsoDate();
 
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
 
@@ -131,13 +181,33 @@ const DriveFormModal = ({ initial, onClose, onSaved }) => {
       return;
     }
 
+    const normalizedDriveDate = formatDateInputValue(form.driveDate);
+    const normalizedApplicationDeadline = formatDateInputValue(form.applicationDeadline || form.driveDate);
+    if (!normalizedDriveDate || !normalizedApplicationDeadline) {
+      setError('Please select valid drive and application dates.');
+      return;
+    }
+    if (normalizedDriveDate < today) {
+      setError('Drive date cannot be in the past.');
+      return;
+    }
+    if (normalizedApplicationDeadline < today) {
+      setError('Application deadline cannot be in the past.');
+      return;
+    }
+    if (normalizedApplicationDeadline > normalizedDriveDate) {
+      setError('Application deadline cannot be after the drive date.');
+      return;
+    }
+
     setSaving(true);
     setError('');
 
     try {
       const payload = {
         ...form,
-        applicationDeadline: form.applicationDeadline || form.driveDate
+        driveDate: normalizedDriveDate,
+        applicationDeadline: normalizedApplicationDeadline
       };
       const saved = initial?.id
         ? await updateCampusDrive(initial.id, payload)
@@ -187,6 +257,7 @@ const DriveFormModal = ({ initial, onClose, onSaved }) => {
               type="date"
               value={form.driveDate}
               onChange={(event) => update('driveDate', event.target.value)}
+              min={today}
               className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
             />
           </div>
@@ -196,6 +267,8 @@ const DriveFormModal = ({ initial, onClose, onSaved }) => {
               type="date"
               value={form.applicationDeadline}
               onChange={(event) => update('applicationDeadline', event.target.value)}
+              min={form.driveDate ? today : today}
+              max={form.driveDate || undefined}
               className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
             />
           </div>
@@ -666,8 +739,14 @@ export default function CampusDrivesPage() {
     )));
   }, []);
 
-  const upcoming = useMemo(() => drives.filter((drive) => drive.status === 'upcoming' || drive.status === 'ongoing'), [drives]);
-  const past = useMemo(() => drives.filter((drive) => !['upcoming', 'ongoing'].includes(drive.status)), [drives]);
+  const upcoming = useMemo(
+    () => drives.filter((drive) => ['upcoming', 'ongoing'].includes(getDriveDisplayStatus(drive))),
+    [drives]
+  );
+  const past = useMemo(
+    () => drives.filter((drive) => !['upcoming', 'ongoing'].includes(getDriveDisplayStatus(drive))),
+    [drives]
+  );
 
   return (
     <div className="mx-auto w-full max-w-[1180px] space-y-6 pb-12">
@@ -768,6 +847,8 @@ export default function CampusDrivesPage() {
 
 function DriveCard({ drive, onEdit, onDelete, onApplicants }) {
   const visibilityLabel = VISIBILITY_OPTIONS.find((item) => item.value === (drive.visibility_scope || 'campus_only'))?.label || 'Campus Only';
+  const displayStatus = getDriveDisplayStatus(drive);
+  const isExpired = displayStatus === 'expired';
 
   return (
     <div className="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.10)]">
@@ -775,8 +856,8 @@ function DriveCard({ drive, onEdit, onDelete, onApplicants }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-base font-extrabold text-navy">{drive.company_name}</p>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${STATUS_STYLES[drive.status] || 'bg-slate-100 text-slate-600'}`}>
-              {drive.status}
+            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${STATUS_STYLES[displayStatus] || 'bg-slate-100 text-slate-600'}`}>
+              {displayStatus}
             </span>
             <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-600">
               {visibilityLabel}
@@ -839,6 +920,12 @@ function DriveCard({ drive, onEdit, onDelete, onApplicants }) {
 
       {drive.description ? (
         <p className="mt-3 text-xs text-slate-400 line-clamp-3">{drive.description}</p>
+      ) : null}
+
+      {isExpired ? (
+        <p className="mt-3 text-xs font-semibold text-amber-700">
+          This pool is no longer live for student applications because its deadline or drive date has already passed.
+        </p>
       ) : null}
 
       <div className="mt-4 flex flex-wrap gap-2">
