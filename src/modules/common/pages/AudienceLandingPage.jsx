@@ -351,6 +351,12 @@ const audienceContent = {
     eyebrow: 'For Campuses',
     title: <>Bring Placement Operations Into <span className="gradient-text">One Campus Workspace</span></>,
     description: 'Campus Connect is built for colleges, placement cells, and training campuses that want student records, drives, company outreach, and reporting in one cleaner workflow instead of scattered sheets and inbox threads.',
+    heroContentClassName: 'max-w-[58rem]',
+    heroEyebrowClassName: 'px-4 py-1.5 text-[0.78rem] font-bold tracking-[0.01em]',
+    heroTitleClassName: 'max-w-[12ch] text-[2.55rem] font-black leading-[0.94] tracking-[-0.05em] sm:text-[3.15rem] md:text-[4.1rem]',
+    heroDescriptionClassName: 'mt-5 max-w-[44rem] text-[1.02rem] leading-8 text-slate-600 sm:text-[1.08rem]',
+    heroActionsClassName: 'mt-8 gap-4',
+    heroActionClassName: 'min-w-[11.5rem] px-6 py-3 text-[0.98rem]',
     chips: ['Placement cell', 'Campus drives', 'Student pipeline'],
     metrics: [
       { label: 'Student Records', value: 'Structured', helper: 'Keep batch, branch, CGPA, and placement status easier to manage' },
@@ -442,6 +448,12 @@ const AudienceLandingPage = ({ audienceKey }) => {
         title={content.title}
         description={content.description}
         actions={content.heroActions}
+        contentClassName={content.heroContentClassName}
+        eyebrowClassName={content.heroEyebrowClassName}
+        titleClassName={content.heroTitleClassName}
+        descriptionClassName={content.heroDescriptionClassName}
+        actionsClassName={content.heroActionsClassName}
+        actionClassName={content.heroActionClassName}
         compact
         tightTop
       />

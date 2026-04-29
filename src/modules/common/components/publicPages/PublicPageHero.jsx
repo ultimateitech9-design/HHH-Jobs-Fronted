@@ -18,9 +18,16 @@ const PublicPageHero = ({
   aside,
   className = '',
   contentClassName = '',
+  eyebrowClassName = '',
+  titleClassName = '',
+  descriptionClassName = '',
+  actionsClassName = '',
+  actionClassName = '',
   compact = false,
   tightTop = false
 }) => {
+  const hasVisual = Boolean(aside || media);
+
   return (
     <section
       className={`relative overflow-hidden px-4 ${
@@ -36,17 +43,19 @@ const PublicPageHero = ({
 
       <div className="container relative z-10 mx-auto max-w-7xl">
         <div
-          className={`grid items-center lg:grid-cols-[1.05fr_0.95fr] ${
+          className={`grid items-center ${
+            hasVisual ? 'lg:grid-cols-[1.05fr_0.95fr]' : 'grid-cols-1'
+          } ${
             compact ? 'gap-6 lg:gap-7' : 'gap-8 lg:gap-10'
           }`}
         >
           <AnimatedSection>
-            <div className={`max-w-3xl ${contentClassName}`.trim()}>
+            <div className={`${hasVisual ? 'max-w-3xl' : 'max-w-4xl'} ${contentClassName}`.trim()}>
               {eyebrow ? (
                 <span
                   className={`inline-flex items-center rounded-full border border-gold/20 bg-gold/10 font-semibold text-gold-dark ${
                     compact ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'
-                  }`}
+                  } ${eyebrowClassName}`.trim()}
                 >
                   {eyebrow}
                 </span>
@@ -56,7 +65,7 @@ const PublicPageHero = ({
                 <h1
                   className={`font-heading font-extrabold leading-tight text-navy ${
                     compact ? 'text-2xl sm:text-3xl md:text-[2.7rem]' : 'text-3xl sm:text-4xl md:text-5xl'
-                  }`}
+                  } ${titleClassName}`.trim()}
                 >
                   {title}
                 </h1>
@@ -66,7 +75,7 @@ const PublicPageHero = ({
                       compact
                         ? 'mt-3 text-sm leading-6 sm:text-[0.96rem]'
                         : 'mt-4 text-sm leading-7 sm:text-base md:mt-5 md:text-lg'
-                    }`}
+                    } ${descriptionClassName}`.trim()}
                   >
                     {description}
                   </p>
@@ -89,7 +98,7 @@ const PublicPageHero = ({
               ) : null}
 
               {actions.length > 0 ? (
-                <div className={`flex flex-col gap-3 sm:flex-row sm:flex-wrap ${compact ? 'mt-5' : 'mt-7'}`}>
+                <div className={`flex flex-col gap-3 sm:flex-row sm:flex-wrap ${compact ? 'mt-5' : 'mt-7'} ${actionsClassName}`.trim()}>
                   {actions.map((action) => (
                     <Link
                       key={`${action.label}-${action.to || action.href}`}
@@ -98,7 +107,7 @@ const PublicPageHero = ({
                         compact ? 'px-4 py-2.5 text-sm' : 'px-5 py-3 text-sm'
                       } ${
                         buttonClassByVariant[action.variant || 'primary']
-                      }`}
+                      } ${actionClassName}`.trim()}
                     >
                       {action.label}
                     </Link>
