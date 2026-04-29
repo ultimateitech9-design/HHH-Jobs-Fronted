@@ -80,10 +80,6 @@ const DriveFormModal = ({ initial, onClose, onSaved }) => {
           <button type="button" onClick={onClose}><FiX size={20} className="text-slate-400" /></button>
         </div>
 
-        {error && (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
-        )}
-
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-slate-500">Company Name <span className="text-red-400">*</span></label>
@@ -193,6 +189,10 @@ const DriveFormModal = ({ initial, onClose, onSaved }) => {
             {saving ? 'Saving...' : initial?.id ? 'Update Drive' : 'Schedule Drive'}
           </button>
         </div>
+
+        {error && (
+          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+        )}
       </div>
     </div>
   );
