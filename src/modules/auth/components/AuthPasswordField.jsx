@@ -10,7 +10,7 @@ const AuthPasswordField = ({
   ...inputProps
 }) => {
   return (
-    <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
+    <label className="grid h-fit content-start gap-1.5 text-sm font-semibold text-slate-700">
       {label}
       <div
         className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 transition-all ${
@@ -22,6 +22,7 @@ const AuthPasswordField = ({
         <input
           {...inputProps}
           type={showPassword ? 'text' : 'password'}
+          aria-invalid={Boolean(error)}
           className="min-w-0 flex-1 bg-transparent text-sm outline-none"
         />
         <button

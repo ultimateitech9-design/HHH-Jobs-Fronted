@@ -1,9 +1,16 @@
+import { useLocation } from 'react-router-dom';
 import FooterBottomBar from './FooterBottomBar';
 import FooterBrand from './FooterBrand';
 import FooterLinkColumn from './FooterLinkColumn';
 import { footerLinkColumns } from './footerLinkColumns';
 
 const PublicFooter = () => {
+  const location = useLocation();
+
+  if (/^\/campus-connect(?:\/.*)?$/i.test(location.pathname)) {
+    return null;
+  }
+
   return (
     <footer className="relative overflow-hidden bg-navy text-white">
       <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 rounded-full bg-gold/10 blur-3xl" />

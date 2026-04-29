@@ -388,6 +388,16 @@ export const getStudentCampusConnect = async () => safeRequest({
   extract: (payload) => payload?.campusConnection || emptyCampusConnectData
 });
 
+export const applyToCampusDrive = async (driveId) =>
+  strictRequest({
+    path: `/student/campus-connect/drives/${driveId}/apply`,
+    options: {
+      method: 'POST',
+      body: JSON.stringify({})
+    },
+    extract: (payload) => payload?.application || payload
+  });
+
 export const updateStudentProfile = async (formState, options = {}) => {
   const payload = options?.prebuiltPayload ? formState : buildProfilePayload(formState);
   const updated = await strictRequest({

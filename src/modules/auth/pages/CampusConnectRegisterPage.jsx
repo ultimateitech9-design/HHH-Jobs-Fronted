@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiArrowRight, FiCheck, FiShield, FiUsers } from 'react-icons/fi';
 import AnimatedSection from '../../../shared/components/AnimatedSection';
@@ -158,6 +158,7 @@ const CampusConnectRegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const formRef = useRef(null);
 
   const redirectAfterSignupRaw = new URLSearchParams(location.search).get('redirect');
   const redirectAfterSignup = redirectAfterSignupRaw && redirectAfterSignupRaw.startsWith('/')
@@ -165,6 +166,17 @@ const CampusConnectRegisterPage = () => {
     : '/portal/campus-connect/dashboard';
 
   const selectedCountry = useMemo(() => getSelectedCountry(form.countryCode), [form.countryCode]);
+
+  const focusFirstInvalidField = () => {
+    requestAnimationFrame(() => {
+      const firstInvalidField = formRef.current?.querySelector('[aria-invalid="true"]');
+
+      if (firstInvalidField instanceof HTMLElement) {
+        firstInvalidField.focus({ preventScroll: true });
+        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  };
 
   const handleChange = (key, value) => {
     let nextValue = value;
@@ -236,7 +248,8 @@ const CampusConnectRegisterPage = () => {
       setCurrentStep(2);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      setError('Please fix the highlighted fields to continue.');
+      setError('Please fill all required data.');
+      focusFirstInvalidField();
     }
   };
 
@@ -263,7 +276,8 @@ const CampusConnectRegisterPage = () => {
     setError('');
 
     if (!validateForm()) {
-      setError('Please fix the highlighted campus registration fields.');
+      setError('Please fill all required data.');
+      focusFirstInvalidField();
       return;
     }
 
@@ -362,7 +376,7 @@ const CampusConnectRegisterPage = () => {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+            <form ref={formRef} onSubmit={handleSubmit} className="mt-8 space-y-6">
               {currentStep === 1 && (
                 <AnimatedSection>
                   <div className="grid gap-4 md:grid-cols-2">
@@ -521,7 +535,12 @@ const CampusConnectRegisterPage = () => {
                     onChange={(event) => handleChange('about', event.target.value)}
                     placeholder="Add a short overview covering campus background, programs, student strength, and placement focus."
                     disabled={isSubmitting}
-                    className="w-full rounded-[1.1rem] border border-slate-200 bg-white/80 px-4 py-3.5 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-brand-300 focus:bg-white"
+                    aria-invalid={Boolean(fieldErrors.about)}
+                    className={`w-full rounded-[1.1rem] border px-4 py-3.5 text-sm outline-none transition-all placeholder:text-slate-400 ${
+                      fieldErrors.about
+                        ? 'border-rose-300 bg-rose-50 text-rose-900'
+                        : 'border-slate-200 bg-white/80 focus:border-brand-300 focus:bg-white'
+                    }`}
                   />
                   {fieldErrors.about ? <span className="text-xs font-medium text-rose-600">{fieldErrors.about}</span> : null}
                 </label>

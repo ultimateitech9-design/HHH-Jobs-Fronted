@@ -19,7 +19,11 @@ import {
   studentPrimaryButtonClassName,
   studentSecondaryButtonClassName
 } from '../components/StudentExperience';
-import { getStudentCampusConnect } from '../services/studentApi';
+import {
+  applyToCampusDrive,
+  getFriendlyApplyErrorMessage,
+  getStudentCampusConnect
+} from '../services/studentApi';
 
 const emptyCampusState = {
   loading: true,
@@ -58,6 +62,8 @@ const formatPackage = (minValue, maxValue) => {
 
 const StudentCampusConnectPage = () => {
   const [state, setState] = useState(emptyCampusState);
+  const [applyingDriveId, setApplyingDriveId] = useState('');
+  const [actionNotice, setActionNotice] = useState({ type: '', text: '' });
 
   useEffect(() => {
     let mounted = true;
@@ -84,6 +90,46 @@ const StudentCampusConnectPage = () => {
   const college = campusData.college || null;
   const student = campusData.student || null;
   const drives = Array.isArray(campusData.upcomingDrives) ? campusData.upcomingDrives : [];
+
+  const handleApply = async (driveId) => {
+    setActionNotice({ type: '', text: '' });
+    setApplyingDriveId(driveId);
+
+    try {
+      const application = await applyToCampusDrive(driveId);
+
+      setState((current) => ({
+        ...current,
+        data: {
+          ...current.data,
+          upcomingDrives: (current.data?.upcomingDrives || []).map((drive) => (
+            drive.id === driveId
+              ? {
+                  ...drive,
+                  hasApplied: true,
+                  canApply: false,
+                  applicationId: application?.id || drive.applicationId || null,
+                  applicationStatus: application?.status || 'applied',
+                  appliedAt: application?.appliedAt || new Date().toISOString()
+                }
+              : drive
+          ))
+        }
+      }));
+
+      setActionNotice({
+        type: 'success',
+        text: 'Campus drive application submitted successfully.'
+      });
+    } catch (error) {
+      setActionNotice({
+        type: 'error',
+        text: getFriendlyApplyErrorMessage(error, 'Unable to apply to this campus drive right now.')
+      });
+    } finally {
+      setApplyingDriveId('');
+    }
+  };
 
   const stats = useMemo(() => {
     if (!campusData.connected || !student || !college) {
@@ -121,6 +167,7 @@ const StudentCampusConnectPage = () => {
       }
     >
       {state.error ? <StudentNotice type="error" text={state.error} /> : null}
+      {actionNotice.text ? <StudentNotice type={actionNotice.type || 'success'} text={actionNotice.text} /> : null}
 
       {state.loading ? (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -271,6 +318,29 @@ const StudentCampusConnectPage = () => {
                         {drive.description}
                       </p>
                     ) : null}
+
+                    <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        {drive.hasApplied
+                          ? `Applied ${formatDriveDate(drive.appliedAt)}`
+                          : 'Apply before the drive expires'}
+                      </p>
+
+                      {drive.hasApplied ? (
+                        <span className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+                          Applied
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleApply(drive.id)}
+                          disabled={applyingDriveId === drive.id}
+                          className={`${studentPrimaryButtonClassName} min-w-[170px] justify-center px-5 py-2.5 disabled:cursor-not-allowed disabled:opacity-70`}
+                        >
+                          {applyingDriveId === drive.id ? 'Applying...' : 'Apply for Drive'}
+                        </button>
+                      )}
+                    </div>
                   </article>
                 ))}
               </div>

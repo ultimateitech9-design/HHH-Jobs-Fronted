@@ -11,7 +11,8 @@ import ScrollToTopButton from './publicShell/ScrollToTopButton';
 const AiChatbot = lazy(() => import('../../../components/AiChatbot'));
 
 const portalRoutePattern =
-  /^\/portal\/(admin|hr|student|platform|audit|dataentry|accounts|sales|support|super-admin)\b/i;
+  /^\/portal\/(admin|hr|student|platform|audit|dataentry|accounts|sales|support|super-admin|campus-connect)\b/i;
+const campusConnectPublicRoutePattern = /^\/campus-connect(?:\/.*)?$/i;
 
 const publicShellStyle = {
   background:
@@ -65,6 +66,7 @@ const RootLayout = () => {
 
   const dashboardPath = user ? getDashboardPathByRole(user.role) : null;
   const isPortalWorkbench = portalRoutePattern.test(location.pathname);
+  const hidePublicFooter = campusConnectPublicRoutePattern.test(location.pathname);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -126,7 +128,7 @@ const RootLayout = () => {
         <Outlet />
       </main>
 
-      {!isPortalWorkbench ? <PublicFooter /> : null}
+      {!isPortalWorkbench && !hidePublicFooter ? <PublicFooter /> : null}
       {!isPortalWorkbench && showScrollTop && !isChatbotOpen ? <ScrollToTopButton /> : null}
 
       <NotificationRuntime />

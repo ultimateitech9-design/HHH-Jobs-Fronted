@@ -8,7 +8,7 @@ const AuthFormMessage = ({ children, tone = 'error' }) => {
   if (!children) return null;
 
   return (
-    <div className={`rounded-[1.1rem] border px-4 py-2.5 text-sm font-medium ${toneClassMap[tone]}`}>
+    <div role={tone === 'error' ? 'alert' : 'status'} className={`rounded-[1.1rem] border px-4 py-2.5 text-sm font-medium ${toneClassMap[tone]}`}>
       {children}
     </div>
   );
