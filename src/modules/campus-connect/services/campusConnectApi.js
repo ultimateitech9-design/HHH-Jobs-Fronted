@@ -87,6 +87,42 @@ export const updateCampusDrive = (id, payload) =>
 export const deleteCampusDrive = (id) =>
   strictRequest({ path: `/campus-connect/drives/${id}`, options: { method: 'DELETE' } });
 
+export const getCampusDriveApplications = (driveId) =>
+  safeRequest({
+    path: `/campus-connect/drives/${driveId}/applications`,
+    emptyData: {
+      drive: null,
+      applications: [],
+      summary: {
+        total: 0,
+        applied: 0,
+        shortlisted: 0,
+        selected: 0,
+        rejected: 0,
+        withdrawn: 0
+      }
+    },
+    extract: (p) => ({
+      drive: p.drive || null,
+      applications: p.applications || [],
+      summary: p.summary || {
+        total: 0,
+        applied: 0,
+        shortlisted: 0,
+        selected: 0,
+        rejected: 0,
+        withdrawn: 0
+      }
+    })
+  });
+
+export const updateCampusDriveApplication = (driveId, applicationId, payload) =>
+  strictRequest({
+    path: `/campus-connect/drives/${driveId}/applications/${applicationId}`,
+    options: { method: 'PATCH', body: JSON.stringify(payload) },
+    extract: (p) => p.application || p
+  });
+
 // ── Connections ───────────────────────────────────────────────────────────────
 export const getCampusConnections = () =>
   safeRequest({ path: '/campus-connect/connections', emptyData: [], extract: (p) => p.connections || [] });

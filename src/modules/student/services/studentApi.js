@@ -66,8 +66,10 @@ const emptyCampusConnectData = {
   student: null,
   college: null,
   upcomingDrives: [],
+  openPlatformDrives: [],
   counts: {
-    eligibleUpcomingDrives: 0
+    eligibleUpcomingDrives: 0,
+    openPlatformDrives: 0
   }
 };
 
