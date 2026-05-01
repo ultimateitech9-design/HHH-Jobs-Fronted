@@ -238,6 +238,82 @@ export const getHrPricingPurchases = async (filters = {}) => {
   });
 };
 
+export const getRolePricingPlans = async (audienceRole = 'hr') =>
+  safeRequest({
+    path: `/pricing/role-plans?${buildQueryString({ audienceRole })}`,
+    emptyData: [],
+    extract: (payload) => payload?.plans || []
+  });
+
+export const getRolePricingPlanQuote = async ({ planSlug, quantity, couponCode = '' }) =>
+  strictRequest({
+    path: '/pricing/role-plans/quote',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ planSlug, quantity, couponCode })
+    },
+    extract: (payload) => payload?.quote || payload
+  });
+
+export const checkoutRolePlan = async ({
+  planSlug,
+  quantity,
+  couponCode = '',
+  provider = 'manual',
+  referenceId = '',
+  note = '',
+  paymentStatus = 'pending'
+}) =>
+  strictRequest({
+    path: '/pricing/role-plans/checkout',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({
+        planSlug,
+        quantity,
+        couponCode,
+        provider,
+        referenceId: referenceId || null,
+        note: note || null,
+        paymentStatus
+      })
+    },
+    extract: (payload) => payload
+  });
+
+export const getRolePlanPurchases = async (filters = {}) =>
+  safeRequest({
+    path: `/pricing/role-plan-purchases${buildQueryString({
+      status: filters.status || '',
+      audienceRole: filters.audienceRole || ''
+    }) ? `?${buildQueryString({
+      status: filters.status || '',
+      audienceRole: filters.audienceRole || ''
+    })}` : ''}`,
+    emptyData: [],
+    extract: (payload) => payload?.purchases || []
+  });
+
+export const getRolePlanSubscriptions = async (filters = {}) =>
+  safeRequest({
+    path: `/pricing/role-subscriptions${buildQueryString({
+      status: filters.status || '',
+      audienceRole: filters.audienceRole || ''
+    }) ? `?${buildQueryString({
+      status: filters.status || '',
+      audienceRole: filters.audienceRole || ''
+    })}` : ''}`,
+    emptyData: [],
+    extract: (payload) => payload?.subscriptions || []
+  });
+
+export const getCurrentRolePlanSubscription = async (audienceRole = 'hr') =>
+  safeRequest({
+    path: `/pricing/role-subscriptions/current?${buildQueryString({ audienceRole })}`,
+    emptyData: null,
+    extract: (payload) => payload?.subscription || null
+  });
+
 export const createHrJob = async (jobDraft) => {
   const payload = formatJobDraftForApi(jobDraft);
   return strictRequest({
@@ -630,3 +706,32 @@ export const formatDateTime = (value) => {
   if (Number.isNaN(date.getTime())) return String(value);
   return date.toLocaleString();
 };
+
+// ── HR Campus Drives ────────────────────────────────────────────────────────
+
+export const fetchHrCampusDrives = async () =>
+  safeRequest({
+    path: '/hr/campus-drives',
+    emptyData: [],
+    extract: (payload) => payload?.drives || []
+  });
+
+export const fetchHrCampusDriveApplications = async (driveId) =>
+  strictRequest({
+    path: `/hr/campus-drives/${driveId}/applications`,
+    extract: (payload) => ({
+      drive: payload?.drive || null,
+      applications: payload?.applications || [],
+      summary: payload?.summary || { total: 0 }
+    })
+  });
+
+export const updateHrCampusDriveApplication = async (driveId, applicationId, { status, currentRound, notes, eliminatedInRound } = {}) =>
+  strictRequest({
+    path: `/hr/campus-drives/${driveId}/applications/${applicationId}`,
+    options: {
+      method: 'PATCH',
+      body: JSON.stringify({ status, currentRound, notes, eliminatedInRound })
+    },
+    extract: (payload) => payload?.application || payload
+  });

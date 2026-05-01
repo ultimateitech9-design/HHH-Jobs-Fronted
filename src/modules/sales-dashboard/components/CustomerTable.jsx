@@ -18,6 +18,7 @@ const CustomerTable = ({ rows = [] }) => {
     { key: 'company', label: 'Company' },
     { key: 'contactName', label: 'Contact' },
     { key: 'email', label: 'Email' },
+    { key: 'audienceRole', label: 'Audience' },
     { key: 'plan', label: 'Plan' },
     {
       key: 'lifetimeValue',

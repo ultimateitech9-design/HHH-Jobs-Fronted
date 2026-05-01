@@ -41,7 +41,9 @@ const CustomerDetails = () => {
             <li><strong>Contact</strong><span>{customer.contactName}</span></li>
             <li><strong>Email</strong><span>{customer.email}</span></li>
             <li><strong>Phone</strong><span>{customer.phone}</span></li>
+            <li><strong>Audience</strong><span>{customer.audienceRole || '-'}</span></li>
             <li><strong>Plan</strong><span>{customer.plan}</span></li>
+            <li><strong>Subscription ID</strong><span>{customer.subscriptionId || '-'}</span></li>
             <li><strong>Lifetime Value</strong><span>{formatCurrency(customer.lifetimeValue)}</span></li>
             <li><strong>Status</strong><span><StatusPill value={customer.status} /></span></li>
             <li><strong>Created</strong><span>{formatDateTime(customer.createdAt)}</span></li>

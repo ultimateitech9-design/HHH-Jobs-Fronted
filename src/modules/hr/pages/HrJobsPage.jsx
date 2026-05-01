@@ -14,11 +14,13 @@ import {
   FiMapPin 
 } from 'react-icons/fi';
 import {
+  checkoutRolePlan,
   checkoutPlanCredits,
   closeHrJob,
   createHrJob,
   deleteHrJob,
   formatDateTime,
+  getCurrentRolePlanSubscription,
   getEmptyJobDraft,
   getHrJobs,
   getHrPricingCredits,
@@ -26,6 +28,10 @@ import {
   getJobDraftFromJob,
   getPricingPlanQuote,
   getPricingPlans,
+  getRolePlanPurchases,
+  getRolePlanSubscriptions,
+  getRolePricingPlanQuote,
+  getRolePricingPlans,
   updateHrJob
 } from '../services/hrApi';
 
@@ -35,6 +41,14 @@ const initialCheckoutForm = {
   provider: 'manual',
   referenceId: '',
   note: '',
+  paymentStatus: 'pending'
+};
+
+const initialRoleCheckoutForm = {
+  planSlug: '',
+  quantity: 1,
+  couponCode: '',
+  provider: 'manual',
   paymentStatus: 'pending'
 };
 
@@ -84,6 +98,16 @@ const HrJobsPage = () => {
   const [quote, setQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState('');
+  const [rolePlans, setRolePlans] = useState([]);
+  const [roleSubscriptions, setRoleSubscriptions] = useState([]);
+  const [currentRoleSubscription, setCurrentRoleSubscription] = useState(null);
+  const [rolePurchases, setRolePurchases] = useState([]);
+  const [rolePricingError, setRolePricingError] = useState('');
+  const [roleCheckoutForm, setRoleCheckoutForm] = useState(initialRoleCheckoutForm);
+  const [roleCheckoutSaving, setRoleCheckoutSaving] = useState(false);
+  const [roleQuote, setRoleQuote] = useState(null);
+  const [roleQuoteLoading, setRoleQuoteLoading] = useState(false);
+  const [roleQuoteError, setRoleQuoteError] = useState('');
 
   const normalizedPlans = useMemo(
     () => plans.map((plan) => ({
@@ -110,6 +134,10 @@ const HrJobsPage = () => {
     () => normalizedPlans.find((plan) => plan.slug === checkoutForm.planSlug) || paidPlans[0] || null,
     [normalizedPlans, paidPlans, checkoutForm.planSlug]
   );
+  const selectedRolePlan = useMemo(
+    () => rolePlans.find((plan) => plan.slug === roleCheckoutForm.planSlug) || rolePlans[0] || null,
+    [rolePlans, roleCheckoutForm.planSlug]
+  );
 
   const selectedPlanCredits = useMemo(() => {
     if (!selectedPlan) return 0;
@@ -121,10 +149,19 @@ const HrJobsPage = () => {
     if (!Number.isFinite(parsed) || parsed < 1) return 1;
     return Math.floor(parsed);
   }, [checkoutForm.quantity]);
+  const roleCheckoutQuantity = useMemo(() => {
+    const parsed = Number(roleCheckoutForm.quantity);
+    if (!Number.isFinite(parsed) || parsed < 1) return 1;
+    return Math.floor(parsed);
+  }, [roleCheckoutForm.quantity]);
 
   const planNameBySlug = useMemo(
     () => Object.fromEntries(normalizedPlans.map((plan) => [plan.slug, plan.name || plan.slug])),
     [normalizedPlans]
+  );
+  const rolePlanNameBySlug = useMemo(
+    () => Object.fromEntries(rolePlans.map((plan) => [plan.slug, plan.name || plan.slug])),
+    [rolePlans]
   );
 
   const requestedAudience = useMemo(() => {
@@ -183,6 +220,26 @@ const HrJobsPage = () => {
     }
   };
 
+  const loadRolePricingState = async () => {
+    const [plansRes, subscriptionsRes, currentSubscriptionRes, purchasesRes] = await Promise.all([
+      getRolePricingPlans('hr'),
+      getRolePlanSubscriptions({ audienceRole: 'hr' }),
+      getCurrentRolePlanSubscription('hr'),
+      getRolePlanPurchases({ audienceRole: 'hr' })
+    ]);
+
+    const nextPlans = plansRes.data || [];
+    setRolePlans(nextPlans);
+    setRoleSubscriptions(subscriptionsRes.data || []);
+    setCurrentRoleSubscription(currentSubscriptionRes.data || null);
+    setRolePurchases(purchasesRes.data || []);
+    setRolePricingError([plansRes.error, subscriptionsRes.error, currentSubscriptionRes.error, purchasesRes.error].filter(Boolean).join(' | '));
+    setRoleCheckoutForm((current) => ({
+      ...current,
+      planSlug: nextPlans.some((plan) => plan.slug === current.planSlug) ? current.planSlug : (nextPlans[0]?.slug || '')
+    }));
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -195,6 +252,7 @@ const HrJobsPage = () => {
       setLoading(false);
 
       await loadPricingState();
+      await loadRolePricingState();
     };
 
     loadAll();
@@ -240,6 +298,43 @@ const HrJobsPage = () => {
       active = false;
     };
   }, [checkoutPlan, checkoutQuantity]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadRoleQuote = async () => {
+      if (!selectedRolePlan) {
+        setRoleQuote(null);
+        setRoleQuoteError('');
+        return;
+      }
+
+      setRoleQuoteLoading(true);
+      setRoleQuoteError('');
+
+      try {
+        const response = await getRolePricingPlanQuote({
+          planSlug: selectedRolePlan.slug,
+          quantity: roleCheckoutQuantity,
+          couponCode: roleCheckoutForm.couponCode
+        });
+        if (!active) return;
+        setRoleQuote(response);
+      } catch (roleQuoteRequestError) {
+        if (!active) return;
+        setRoleQuote(null);
+        setRoleQuoteError(String(roleQuoteRequestError.message || 'Unable to fetch recruiter plan quote.'));
+      } finally {
+        if (active) setRoleQuoteLoading(false);
+      }
+    };
+
+    loadRoleQuote();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedRolePlan, roleCheckoutQuantity, roleCheckoutForm.couponCode]);
 
   useEffect(() => {
     if (!requestedAudience || editingJobId) return;
@@ -411,6 +506,46 @@ const HrJobsPage = () => {
       setError(errText);
     } finally {
       setCheckoutSaving(false);
+    }
+  };
+
+  const handleRolePlanCheckout = async (event) => {
+    event.preventDefault();
+    setMessage('');
+    setError('');
+
+    if (!selectedRolePlan) {
+      setError('No recruiter plan is available right now. Contact admin.');
+      return;
+    }
+
+    setRoleCheckoutSaving(true);
+
+    try {
+      const response = await checkoutRolePlan({
+        planSlug: selectedRolePlan.slug,
+        quantity: roleCheckoutQuantity,
+        couponCode: roleCheckoutForm.couponCode,
+        provider: roleCheckoutForm.provider,
+        paymentStatus: roleCheckoutForm.paymentStatus
+      });
+
+      await loadRolePricingState();
+      await loadPricingState();
+      setMessage(
+        response?.purchase?.status === 'paid'
+          ? 'Recruiter plan activated successfully.'
+          : 'Recruiter plan request created. Admin approval is required before activation.'
+      );
+      setRoleCheckoutForm((current) => ({
+        ...current,
+        quantity: 1,
+        couponCode: ''
+      }));
+    } catch (checkoutError) {
+      setError(String(checkoutError.message || 'Unable to purchase recruiter plan.'));
+    } finally {
+      setRoleCheckoutSaving(false);
     }
   };
 
@@ -668,6 +803,151 @@ const HrJobsPage = () => {
       {/* BILLING & CREDITS TAB */}
       {activeTab === 'billing' && (
         <div className="space-y-8 animate-fade-in">
+          <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_0.9fr] gap-6">
+            <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm p-6 md:p-8">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-600">Recruiter Subscription</p>
+                  <h3 className="mt-2 text-2xl font-black text-primary">Plans for hiring, follow-up, and onboarding</h3>
+                  <p className="mt-2 text-sm text-neutral-500">
+                    Recruiter plans sit above job-posting credits. Admin can approve, sales can follow up, and accounts can reconcile each purchase.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 min-w-[220px]">
+                  <p className="text-xs font-bold uppercase tracking-wider text-brand-700">Current Subscription</p>
+                  <p className="mt-2 text-lg font-black text-brand-800">
+                    {currentRoleSubscription ? (rolePlanNameBySlug[currentRoleSubscription.role_plan_slug] || currentRoleSubscription.role_plan_slug) : 'No active plan'}
+                  </p>
+                  <p className="mt-1 text-xs text-brand-700">
+                    {currentRoleSubscription?.ends_at
+                      ? `Active until ${formatDateTime(currentRoleSubscription.ends_at)}`
+                      : 'Choose a plan to unlock recruiter-side billing and onboarding flow.'}
+                  </p>
+                </div>
+              </div>
+
+              {rolePricingError ? (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+                  {rolePricingError}
+                </div>
+              ) : null}
+
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {rolePlans.map((plan) => {
+                  const isActivePlan = currentRoleSubscription?.role_plan_slug === plan.slug;
+                  return (
+                    <div key={plan.slug} className={`rounded-[1.6rem] border p-5 transition-all ${isActivePlan ? 'border-brand-500 bg-brand-50/60 shadow-sm' : 'border-neutral-200 bg-white'}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-lg font-black text-primary">{plan.name}</p>
+                          <p className="mt-1 text-sm text-neutral-500">{plan.description || 'Commercial recruiter plan'}</p>
+                        </div>
+                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-wider ${isActivePlan ? 'bg-brand-600 text-white' : 'bg-neutral-100 text-neutral-600'}`}>
+                          {plan.billingCycle || 'monthly'}
+                        </span>
+                      </div>
+                      <div className="mt-4 flex items-end gap-2">
+                        <span className="text-3xl font-black text-primary">{plan.currency} {plan.price}</span>
+                        <span className="pb-1 text-sm font-bold text-neutral-400">/{plan.durationDays} days</span>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                        <div className="rounded-xl bg-neutral-50 px-3 py-2">
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Included credits</p>
+                          <p className="mt-1 font-black text-primary">{plan.includedJobCredits || 0}</p>
+                        </div>
+                        <div className="rounded-xl bg-neutral-50 px-3 py-2">
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Trial</p>
+                          <p className="mt-1 font-black text-primary">{plan.trialDays || 0} days</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm p-6">
+              <h3 className="text-xl font-extrabold text-primary mb-6 flex items-center gap-2"><FiUsers className="text-brand-500" /> Recruiter Plan Checkout</h3>
+              <form onSubmit={handleRolePlanCheckout} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-500">Select Recruiter Plan</label>
+                  <select
+                    value={roleCheckoutForm.planSlug}
+                    onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, planSlug: e.target.value })}
+                    className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold text-primary focus:ring-2 focus:ring-brand-500"
+                    disabled={rolePlans.length === 0}
+                  >
+                    {rolePlans.map((plan) => <option key={plan.slug} value={plan.slug}>{plan.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-500">Seats / Quantity</label>
+                  <input type="number" min="1" value={roleCheckoutForm.quantity} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, quantity: e.target.value })} className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold text-primary focus:ring-2 focus:ring-brand-500" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-500">Coupon Code</label>
+                  <input value={roleCheckoutForm.couponCode} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, couponCode: e.target.value.toUpperCase() })} className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold uppercase text-primary focus:ring-2 focus:ring-brand-500" placeholder="Optional coupon" />
+                </div>
+
+                {roleQuoteError ? <p className="text-sm font-medium text-red-600">{roleQuoteError}</p> : null}
+                {roleQuoteLoading ? <p className="text-sm text-neutral-500">Refreshing quote...</p> : null}
+                {roleQuote ? (
+                  <div className="bg-brand-50 p-4 rounded-xl border border-brand-100 space-y-2 text-sm mt-4">
+                    <div className="flex justify-between font-medium text-neutral-600"><span>Subtotal:</span> <span>{roleQuote.currency} {Number(roleQuote.subtotal).toFixed(2)}</span></div>
+                    <div className="flex justify-between font-medium text-emerald-600"><span>Discount:</span> <span>-{roleQuote.currency} {Number(roleQuote.discountAmount).toFixed(2)}</span></div>
+                    <div className="flex justify-between font-medium text-neutral-600"><span>GST:</span> <span>{roleQuote.currency} {Number(roleQuote.gstAmount).toFixed(2)}</span></div>
+                    <div className="flex justify-between font-medium text-neutral-600"><span>Included posting credits:</span> <span>{roleQuote.includedJobCredits}</span></div>
+                    <div className="border-t border-brand-200 pt-2 flex justify-between font-bold text-lg text-brand-700"><span>Total:</span> <span>{roleQuote.currency} {Number(roleQuote.totalAmount).toFixed(2)}</span></div>
+                  </div>
+                ) : null}
+
+                <button type="submit" disabled={roleCheckoutSaving || rolePlans.length === 0} className="w-full py-3.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-500 transition-colors disabled:opacity-50 mt-4">
+                  {roleCheckoutSaving ? 'Processing...' : 'Activate Recruiter Plan'}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-neutral-100">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+              <div>
+                <h3 className="text-xl font-extrabold text-primary">Recruiter Plan Purchase History</h3>
+                <p className="text-sm text-neutral-500 mt-1">These purchases are visible to admin, sales, and accounts for onboarding and reconciliation.</p>
+              </div>
+            </div>
+            {rolePurchases.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-neutral-100 text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                      <th className="pb-4 pr-4">Plan</th>
+                      <th className="pb-4 px-4">Qty</th>
+                      <th className="pb-4 px-4">Coupon</th>
+                      <th className="pb-4 px-4">Amount</th>
+                      <th className="pb-4 px-4">Status</th>
+                      <th className="pb-4 pl-4 text-right">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-sm">
+                    {rolePurchases.slice(0, 10).map((purchase, index) => (
+                      <tr key={purchase.id || index} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors">
+                        <td className="py-4 pr-4 font-bold text-primary">{rolePlanNameBySlug[purchase.role_plan_slug] || purchase.role_plan_slug}</td>
+                        <td className="py-4 px-4 font-medium text-neutral-600">{purchase.quantity}</td>
+                        <td className="py-4 px-4 font-medium text-neutral-600">{purchase.coupon_code || '-'}</td>
+                        <td className="py-4 px-4 font-bold text-neutral-700">{purchase.currency || 'INR'} {purchase.total_amount}</td>
+                        <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded text-[10px] uppercase font-bold border ${getStatusColor(purchase.status)}`}>{purchase.status}</span></td>
+                        <td className="py-4 pl-4 text-right text-neutral-500">{formatDateTime(purchase.created_at || purchase.createdAt).split(' ')[0]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-neutral-500 font-medium bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+                No recruiter plan purchases yet.
+              </div>
+            )}
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {plans.map(plan => {

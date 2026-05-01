@@ -49,7 +49,14 @@ export const mapSalesLead = (lead = {}) => ({
   assignedTo: lead.assignedTo || lead.assigned_name || '-',
   expectedValue: Number(lead.expectedValue ?? lead.value ?? 0),
   stage: normalizeStatus(lead.stage || lead.status, 'new'),
-  createdAt: lead.createdAt || lead.created_at || null
+  createdAt: lead.createdAt || lead.created_at || null,
+  targetRole: lead.targetRole || lead.target_role || '',
+  onboardingStatus: normalizeStatus(lead.onboardingStatus || lead.onboarding_status, 'prospect'),
+  nextFollowupAt: lead.nextFollowupAt || lead.next_followup_at || null,
+  lastFollowupAt: lead.lastFollowupAt || lead.last_followup_at || null,
+  planInterestSlug: lead.planInterestSlug || lead.plan_interest_slug || '',
+  couponCode: lead.couponCode || lead.coupon_code || '',
+  followupNotes: lead.followupNotes || lead.followup_notes || ''
 });
 
 export const mapSalesCustomer = (customer = {}) => ({
@@ -61,7 +68,10 @@ export const mapSalesCustomer = (customer = {}) => ({
   plan: customer.plan || '-',
   lifetimeValue: Number(customer.lifetimeValue ?? customer.total_spent ?? 0),
   status: normalizeStatus(customer.status, 'active'),
-  createdAt: customer.createdAt || customer.created_at || null
+  createdAt: customer.createdAt || customer.created_at || null,
+  audienceRole: customer.audienceRole || customer.audience_role || '',
+  salesOwnerId: customer.salesOwnerId || customer.sales_owner_id || '',
+  subscriptionId: customer.subscriptionId || customer.subscription_id || ''
 });
 
 export const mapSalesCoupon = (coupon = {}) => {
@@ -77,7 +87,12 @@ export const mapSalesCoupon = (coupon = {}) => {
       : coupon.discountValue ?? coupon.discount_value ?? 0,
     usageCount: Number(coupon.usageCount ?? coupon.used_count ?? 0),
     status: isExpired ? 'expired' : (isActive ? 'active' : 'inactive'),
-    expiresAt
+    expiresAt,
+    validFrom: coupon.validFrom || coupon.valid_from || null,
+    audienceRoles: Array.isArray(coupon.audienceRoles) ? coupon.audienceRoles : (Array.isArray(coupon.audience_roles) ? coupon.audience_roles : []),
+    planSlugs: Array.isArray(coupon.planSlugs) ? coupon.planSlugs : (Array.isArray(coupon.plan_slugs) ? coupon.plan_slugs : []),
+    minAmount: Number(coupon.minAmount ?? coupon.min_amount ?? 0),
+    maxDiscountAmount: coupon.maxDiscountAmount ?? coupon.max_discount_amount ?? null
   };
 };
 

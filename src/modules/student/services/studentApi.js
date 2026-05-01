@@ -809,6 +809,47 @@ export const getResumeScore = async () =>
     })
   });
 
+export const getStudentRolePlans = async () =>
+  safeRequest({
+    path: '/pricing/role-plans?audienceRole=student',
+    emptyData: [],
+    extract: (payload) => payload?.plans || []
+  });
+
+export const getStudentRolePlanQuote = async ({ planSlug, quantity = 1, couponCode = '' }) =>
+  strictRequest({
+    path: '/pricing/role-plans/quote',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ planSlug, quantity, couponCode })
+    },
+    extract: (payload) => payload?.quote || payload
+  });
+
+export const checkoutStudentRolePlan = async ({ planSlug, quantity = 1, couponCode = '', provider = 'manual', paymentStatus = 'pending' }) =>
+  strictRequest({
+    path: '/pricing/role-plans/checkout',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ planSlug, quantity, couponCode, provider, paymentStatus })
+    },
+    extract: (payload) => payload
+  });
+
+export const getStudentRoleSubscriptions = async () =>
+  safeRequest({
+    path: '/pricing/role-subscriptions?audienceRole=student',
+    emptyData: [],
+    extract: (payload) => payload?.subscriptions || []
+  });
+
+export const getCurrentStudentRoleSubscription = async () =>
+  safeRequest({
+    path: '/pricing/role-subscriptions/current?audienceRole=student',
+    emptyData: null,
+    extract: (payload) => payload?.subscription || null
+  });
+
 export const formatDateTime = (value) => {
   if (!value) return '-';
   const date = new Date(value);

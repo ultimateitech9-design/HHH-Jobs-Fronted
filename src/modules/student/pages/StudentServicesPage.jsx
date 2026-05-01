@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiActivity,
@@ -17,6 +18,12 @@ import {
   studentPrimaryButtonClassName,
   studentSecondaryButtonClassName
 } from '../components/StudentExperience';
+import {
+  checkoutStudentRolePlan,
+  getCurrentStudentRoleSubscription,
+  getStudentRolePlanQuote,
+  getStudentRolePlans
+} from '../services/studentApi';
 
 const mainServices = [
   {
@@ -55,6 +62,54 @@ const supportServices = [
 ];
 
 const StudentServicesPage = () => {
+  const [plans, setPlans] = useState([]);
+  const [selectedPlanSlug, setSelectedPlanSlug] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [quote, setQuote] = useState(null);
+  const [currentPlan, setCurrentPlan] = useState(null);
+  const [billingMessage, setBillingMessage] = useState('');
+  const [billingLoading, setBillingLoading] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      getStudentRolePlans(),
+      getCurrentStudentRoleSubscription()
+    ]).then(([plansRes, subscriptionRes]) => {
+      setPlans(plansRes.data || []);
+      setSelectedPlanSlug((plansRes.data || [])[0]?.slug || '');
+      setCurrentPlan(subscriptionRes.data || null);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!selectedPlanSlug) {
+      setQuote(null);
+      return;
+    }
+
+    getStudentRolePlanQuote({ planSlug: selectedPlanSlug, quantity: 1, couponCode })
+      .then((response) => setQuote(response))
+      .catch(() => setQuote(null));
+  }, [selectedPlanSlug, couponCode]);
+
+  const handleCheckout = async () => {
+    if (!selectedPlanSlug) return;
+    setBillingLoading(true);
+    setBillingMessage('');
+    try {
+      const response = await checkoutStudentRolePlan({ planSlug: selectedPlanSlug, quantity: 1, couponCode, paymentStatus: 'pending' });
+      setBillingMessage(response?.purchase?.status === 'paid'
+        ? 'Student plan activated successfully.'
+        : 'Student plan request submitted for admin approval.');
+      const subscriptionRes = await getCurrentStudentRoleSubscription();
+      setCurrentPlan(subscriptionRes.data || null);
+    } catch (checkoutError) {
+      setBillingMessage(String(checkoutError.message || 'Unable to submit student plan request.'));
+    } finally {
+      setBillingLoading(false);
+    }
+  };
+
   return (
     <StudentPageShell showHero={false} bodyClassName="mx-auto max-w-[1180px] space-y-4 pb-8">
       <section className="overflow-hidden rounded-[1.8rem] border border-white/70 bg-[linear-gradient(135deg,rgba(255,251,245,0.98),rgba(255,255,255,0.98)_48%,rgba(247,250,255,0.98)_100%)] p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
@@ -189,6 +244,48 @@ const StudentServicesPage = () => {
               <p className="mt-3 text-sm font-semibold leading-6 text-slate-700">{item}</p>
             </div>
           ))}
+        </div>
+      </StudentSurfaceCard>
+
+      <StudentSurfaceCard
+        eyebrow="Student Plans"
+        title="Premium plan checkout"
+        subtitle="Student-side subscription flow is now available inside the current services page."
+        className="p-4 xl:p-5"
+      >
+        <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="grid gap-3 md:grid-cols-2">
+            {plans.map((plan) => (
+              <button
+                type="button"
+                key={plan.slug}
+                onClick={() => setSelectedPlanSlug(plan.slug)}
+                className={`rounded-[1.1rem] border p-4 text-left transition ${selectedPlanSlug === plan.slug ? 'border-brand-400 bg-brand-50/50' : 'border-slate-200 bg-white hover:border-brand-200'}`}
+              >
+                <p className="text-lg font-extrabold text-navy">{plan.name}</p>
+                <p className="mt-1 text-sm text-slate-500">{plan.description || 'Student growth plan'}</p>
+                <p className="mt-3 text-2xl font-black text-brand-700">{plan.currency} {plan.price}</p>
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Current Plan</p>
+            <p className="mt-2 text-lg font-extrabold text-navy">{currentPlan?.role_plan_slug || 'No active plan'}</p>
+            <input value={couponCode} onChange={(event) => setCouponCode(event.target.value.toUpperCase())} placeholder="Coupon code" className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2 font-semibold uppercase" />
+            {quote ? (
+              <div className="mt-4 rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm">
+                <div className="flex justify-between"><span>Subtotal</span><span>{quote.currency} {quote.subtotal}</span></div>
+                <div className="mt-1 flex justify-between text-emerald-700"><span>Discount</span><span>-{quote.currency} {quote.discountAmount}</span></div>
+                <div className="mt-1 flex justify-between"><span>GST</span><span>{quote.currency} {quote.gstAmount}</span></div>
+                <div className="mt-2 flex justify-between border-t border-brand-200 pt-2 font-black text-brand-800"><span>Total</span><span>{quote.currency} {quote.totalAmount}</span></div>
+              </div>
+            ) : null}
+            {billingMessage ? <p className="mt-4 text-sm font-semibold text-brand-700">{billingMessage}</p> : null}
+            <button onClick={handleCheckout} disabled={billingLoading || !selectedPlanSlug} className="mt-5 w-full rounded-full bg-brand-600 px-4 py-3 text-sm font-bold text-white hover:bg-brand-500 disabled:opacity-50">
+              {billingLoading ? 'Submitting...' : 'Request Student Plan'}
+            </button>
+          </div>
         </div>
       </StudentSurfaceCard>
     </StudentPageShell>

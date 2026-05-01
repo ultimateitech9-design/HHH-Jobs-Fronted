@@ -17,8 +17,14 @@ const LeadTable = ({ rows = [] }) => {
     },
     { key: 'company', label: 'Company' },
     { key: 'contactName', label: 'Contact' },
+    { key: 'targetRole', label: 'Audience' },
     { key: 'source', label: 'Source' },
     { key: 'assignedTo', label: 'Owner' },
+    {
+      key: 'onboardingStatus',
+      label: 'Onboarding',
+      render: (value) => <StatusPill value={value || 'prospect'} />
+    },
     {
       key: 'expectedValue',
       label: 'Expected Value',
@@ -28,6 +34,11 @@ const LeadTable = ({ rows = [] }) => {
       key: 'stage',
       label: 'Stage',
       render: (value) => <StatusPill value={value || 'new'} />
+    },
+    {
+      key: 'nextFollowupAt',
+      label: 'Next Follow-up',
+      render: (value) => formatDateTime(value)
     },
     {
       key: 'createdAt',

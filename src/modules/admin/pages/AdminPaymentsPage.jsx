@@ -14,11 +14,17 @@ import {
   FiX
 } from 'react-icons/fi';
 import {
+  createAdminSalesCoupon,
   formatDateTime,
   getAdminPayments,
   getAdminPlanPurchases,
+  getAdminRolePlanPurchases,
+  getAdminRolePricingPlans,
+  getAdminSalesCoupons,
   updateAdminPayment,
-  updateAdminPlanPurchaseStatus
+  updateAdminPlanPurchaseStatus,
+  updateAdminRolePlanPurchaseStatus,
+  updateAdminRolePricingPlan
 } from '../services/adminApi';
 
 const initialFilters = {
@@ -31,6 +37,16 @@ const emptyDraft = {
   provider: '',
   referenceId: '',
   note: ''
+};
+
+const emptyCouponDraft = {
+  code: '',
+  discount_type: 'percent',
+  discount_value: '',
+  max_uses: '',
+  valid_until: '',
+  audience_roles: 'hr',
+  plan_slugs: ''
 };
 
 const statusToApi = (status) => (status === 'all' ? '' : status);
@@ -53,12 +69,20 @@ const getStatusBadge = (status) => {
 const AdminPaymentsPage = () => {
   const [payments, setPayments] = useState([]);
   const [planPurchases, setPlanPurchases] = useState([]);
+  const [commercialPurchases, setCommercialPurchases] = useState([]);
+  const [rolePlans, setRolePlans] = useState([]);
+  const [rolePlanDrafts, setRolePlanDrafts] = useState({});
+  const [coupons, setCoupons] = useState([]);
+  const [couponDraft, setCouponDraft] = useState(emptyCouponDraft);
   const [filters, setFilters] = useState(initialFilters);
   const [loading, setLoading] = useState(true);
   const [loadingPurchases, setLoadingPurchases] = useState(true);
+  const [loadingCommercial, setLoadingCommercial] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [savingPlanSlug, setSavingPlanSlug] = useState('');
+  const [savingCoupon, setSavingCoupon] = useState(false);
   const [editPaymentId, setEditPaymentId] = useState('');
   const [draft, setDraft] = useState(emptyDraft);
 
@@ -79,9 +103,37 @@ const AdminPaymentsPage = () => {
     setLoadingPurchases(false);
   };
 
+  const loadCommercialState = async (nextStatus = filters.status) => {
+    setLoadingCommercial(true);
+    const [purchasesRes, plansRes, couponsRes] = await Promise.all([
+      getAdminRolePlanPurchases({ status: statusToApi(nextStatus) }),
+      getAdminRolePricingPlans(),
+      getAdminSalesCoupons()
+    ]);
+
+    const nextPlans = plansRes.data || [];
+    setCommercialPurchases(purchasesRes.data || []);
+    setRolePlans(nextPlans);
+    setCoupons(couponsRes.data || []);
+    setRolePlanDrafts(Object.fromEntries(nextPlans.map((plan) => [plan.slug, {
+      price: String(plan.price ?? ''),
+      durationDays: String(plan.durationDays ?? ''),
+      includedJobCredits: String(plan.includedJobCredits ?? ''),
+      trialDays: String(plan.trialDays ?? ''),
+      sortOrder: String(plan.sortOrder ?? ''),
+      isActive: Boolean(plan.isActive),
+      isFeatured: Boolean(plan.isFeatured)
+    }])));
+
+    const combinedError = [purchasesRes.error, plansRes.error, couponsRes.error].filter(Boolean).join(' | ');
+    if (combinedError) setError((current) => current || combinedError);
+    setLoadingCommercial(false);
+  };
+
   useEffect(() => {
     loadPayments(initialFilters.status);
     loadPlanPurchases(initialFilters.status);
+    loadCommercialState(initialFilters.status);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -202,6 +254,89 @@ const AdminPaymentsPage = () => {
     }
   };
 
+  const patchLocalCommercialPurchase = (purchaseId, patch) => {
+    setCommercialPurchases((current) => current.map((purchase) => (purchase.id === purchaseId ? { ...purchase, ...patch } : purchase)));
+  };
+
+  const handleUpdateCommercialPurchaseStatus = async (purchaseId, status) => {
+    setError('');
+    setMessage('');
+
+    try {
+      const updated = await updateAdminRolePlanPurchaseStatus(purchaseId, { status });
+      patchLocalCommercialPurchase(purchaseId, updated);
+      setMessage(`Commercial purchase ${purchaseId.slice(-6).toUpperCase()} marked as ${status}.`);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (actionError) {
+      setError(String(actionError.message || 'Unable to reconcile commercial purchase.'));
+    }
+  };
+
+  const handleRolePlanDraftChange = (planSlug, key, value) => {
+    setRolePlanDrafts((current) => ({
+      ...current,
+      [planSlug]: {
+        ...(current[planSlug] || {}),
+        [key]: value
+      }
+    }));
+  };
+
+  const handleSaveRolePlan = async (planSlug) => {
+    setSavingPlanSlug(planSlug);
+    setError('');
+    setMessage('');
+
+    try {
+      const draftValues = rolePlanDrafts[planSlug] || {};
+      const updated = await updateAdminRolePricingPlan(planSlug, {
+        price: Number(draftValues.price || 0),
+        durationDays: Number(draftValues.durationDays || 30),
+        includedJobCredits: Number(draftValues.includedJobCredits || 0),
+        trialDays: Number(draftValues.trialDays || 0),
+        sortOrder: Number(draftValues.sortOrder || 100),
+        isActive: Boolean(draftValues.isActive),
+        isFeatured: Boolean(draftValues.isFeatured)
+      });
+
+      setRolePlans((current) => current.map((plan) => (plan.slug === planSlug ? updated : plan)));
+      setMessage(`Commercial plan ${updated.name} updated.`);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (actionError) {
+      setError(String(actionError.message || 'Unable to update role plan.'));
+    } finally {
+      setSavingPlanSlug('');
+    }
+  };
+
+  const handleCreateCoupon = async (event) => {
+    event.preventDefault();
+    setSavingCoupon(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const created = await createAdminSalesCoupon({
+        code: couponDraft.code,
+        discount_type: couponDraft.discount_type,
+        discount_value: Number(couponDraft.discount_value || 0),
+        max_uses: couponDraft.max_uses ? Number(couponDraft.max_uses) : null,
+        valid_until: couponDraft.valid_until || null,
+        audience_roles: couponDraft.audience_roles.split(',').map((item) => item.trim()).filter(Boolean),
+        plan_slugs: couponDraft.plan_slugs.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean)
+      });
+
+      setCoupons((current) => [created, ...current]);
+      setCouponDraft(emptyCouponDraft);
+      setMessage(`Coupon ${created.code} created.`);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (actionError) {
+      setError(String(actionError.message || 'Unable to create coupon.'));
+    } finally {
+      setSavingCoupon(false);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-10 relative">
       
@@ -239,6 +374,167 @@ const AdminPaymentsPage = () => {
             </div>
           </article>
         ))}
+      </section>
+
+      <section className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">
+        <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm p-6">
+          <div className="flex items-center justify-between gap-3 mb-5">
+            <div>
+              <h2 className="text-xl font-extrabold text-primary">Commercial Role Plans</h2>
+              <p className="text-sm text-neutral-500 mt-1">Control HR, Campus Connect, and Student subscriptions from one place.</p>
+            </div>
+            {loadingCommercial ? <span className="text-sm text-neutral-500">Loading...</span> : null}
+          </div>
+          <div className="space-y-4">
+            {rolePlans.map((plan) => {
+              const draftValues = rolePlanDrafts[plan.slug] || {};
+              return (
+                <div key={plan.slug} className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50/70 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                    <div>
+                      <p className="text-lg font-black text-primary">{plan.name}</p>
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">{plan.audienceRole}</p>
+                    </div>
+                    <button onClick={() => handleSaveRolePlan(plan.slug)} disabled={savingPlanSlug === plan.slug} className="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-500 disabled:opacity-50">
+                      {savingPlanSlug === plan.slug ? 'Saving...' : 'Save Plan'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                    <label className="space-y-1">
+                      <span className="block text-xs font-bold uppercase tracking-wide text-neutral-500">Price</span>
+                      <input value={draftValues.price || ''} onChange={(e) => handleRolePlanDraftChange(plan.slug, 'price', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 font-semibold" />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="block text-xs font-bold uppercase tracking-wide text-neutral-500">Duration</span>
+                      <input value={draftValues.durationDays || ''} onChange={(e) => handleRolePlanDraftChange(plan.slug, 'durationDays', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 font-semibold" />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="block text-xs font-bold uppercase tracking-wide text-neutral-500">Included Credits</span>
+                      <input value={draftValues.includedJobCredits || ''} onChange={(e) => handleRolePlanDraftChange(plan.slug, 'includedJobCredits', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 font-semibold" />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="block text-xs font-bold uppercase tracking-wide text-neutral-500">Trial Days</span>
+                      <input value={draftValues.trialDays || ''} onChange={(e) => handleRolePlanDraftChange(plan.slug, 'trialDays', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 font-semibold" />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="block text-xs font-bold uppercase tracking-wide text-neutral-500">Sort</span>
+                      <input value={draftValues.sortOrder || ''} onChange={(e) => handleRolePlanDraftChange(plan.slug, 'sortOrder', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 font-semibold" />
+                    </label>
+                    <div className="flex items-center gap-4 pt-6">
+                      <label className="flex items-center gap-2 text-sm font-semibold text-neutral-700">
+                        <input type="checkbox" checked={Boolean(draftValues.isActive)} onChange={(e) => handleRolePlanDraftChange(plan.slug, 'isActive', e.target.checked)} />
+                        Active
+                      </label>
+                      <label className="flex items-center gap-2 text-sm font-semibold text-neutral-700">
+                        <input type="checkbox" checked={Boolean(draftValues.isFeatured)} onChange={(e) => handleRolePlanDraftChange(plan.slug, 'isFeatured', e.target.checked)} />
+                        Featured
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm p-6">
+          <h2 className="text-xl font-extrabold text-primary">Coupon Control</h2>
+          <p className="text-sm text-neutral-500 mt-1 mb-5">Admin creates role-based coupons that sales can later share during follow-up.</p>
+          <form onSubmit={handleCreateCoupon} className="space-y-3">
+            <input value={couponDraft.code} onChange={(e) => setCouponDraft((current) => ({ ...current, code: e.target.value.toUpperCase() }))} placeholder="Coupon code" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold uppercase" />
+            <div className="grid grid-cols-2 gap-3">
+              <select value={couponDraft.discount_type} onChange={(e) => setCouponDraft((current) => ({ ...current, discount_type: e.target.value }))} className="rounded-xl border border-neutral-200 px-3 py-2 font-semibold">
+                <option value="percent">Percent</option>
+                <option value="fixed">Fixed</option>
+              </select>
+              <input value={couponDraft.discount_value} onChange={(e) => setCouponDraft((current) => ({ ...current, discount_value: e.target.value }))} placeholder="Discount value" className="rounded-xl border border-neutral-200 px-3 py-2 font-semibold" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input value={couponDraft.max_uses} onChange={(e) => setCouponDraft((current) => ({ ...current, max_uses: e.target.value }))} placeholder="Max uses" className="rounded-xl border border-neutral-200 px-3 py-2 font-semibold" />
+              <input type="datetime-local" value={couponDraft.valid_until} onChange={(e) => setCouponDraft((current) => ({ ...current, valid_until: e.target.value }))} className="rounded-xl border border-neutral-200 px-3 py-2 font-semibold" />
+            </div>
+            <input value={couponDraft.audience_roles} onChange={(e) => setCouponDraft((current) => ({ ...current, audience_roles: e.target.value }))} placeholder="Roles: hr,campus_connect,student" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold" />
+            <input value={couponDraft.plan_slugs} onChange={(e) => setCouponDraft((current) => ({ ...current, plan_slugs: e.target.value }))} placeholder="Plan slugs: hr_growth,student_plus" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold" />
+            <button type="submit" disabled={savingCoupon} className="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white hover:bg-brand-500 disabled:opacity-50">
+              {savingCoupon ? 'Creating...' : 'Create Coupon'}
+            </button>
+          </form>
+          <div className="mt-5 space-y-3 max-h-[420px] overflow-auto">
+            {coupons.map((coupon) => (
+              <div key={coupon.id} className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-black text-primary">{coupon.code}</p>
+                    <p className="text-xs text-neutral-500">{coupon.discount_type} · {coupon.discount_value}{coupon.discount_type === 'percent' ? '%' : ''}</p>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-black uppercase ${coupon.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-neutral-100 text-neutral-600'}`}>
+                    {coupon.is_active ? 'active' : 'inactive'}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs text-neutral-500">
+                  Roles: {(coupon.audience_roles || []).join(', ') || 'all'} | Plans: {(coupon.plan_slugs || []).join(', ') || 'all'} | Used: {coupon.used_count || 0}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] border border-neutral-100 shadow-sm overflow-hidden flex flex-col min-h-[420px]">
+        <div className="p-6 md:p-8 border-b border-neutral-100 bg-neutral-50/50">
+          <h2 className="text-xl font-extrabold text-primary flex items-center gap-2">
+            <FiBriefcase className="text-brand-500" /> Commercial Plan Purchases
+          </h2>
+          <p className="text-sm text-neutral-500 mt-1">Review subscriptions bought by HR, Campus Connect, and Student accounts.</p>
+        </div>
+        <div className="flex-1 overflow-x-auto custom-scrollbar relative">
+          {loadingCommercial ? (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
+              <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+            </div>
+          ) : null}
+          <table className="w-full text-left border-collapse min-w-[980px]">
+            <thead>
+              <tr className="bg-neutral-50 border-b border-neutral-200">
+                <th className="p-4 pl-6 text-xs font-black text-neutral-400 uppercase tracking-widest">Purchase</th>
+                <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest">Audience</th>
+                <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest">Plan</th>
+                <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest">Amount</th>
+                <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest">Status</th>
+                <th className="p-4 pr-6 text-xs font-black text-neutral-400 uppercase tracking-widest text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {commercialPurchases.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="p-12 text-center text-neutral-500 font-medium">No commercial plan purchases yet.</td>
+                </tr>
+              ) : commercialPurchases.map((purchase) => (
+                <tr key={purchase.id} className="hover:bg-neutral-50 transition-colors">
+                  <td className="p-4 pl-6 align-top">
+                    <div className="font-mono text-primary text-sm font-bold">{String(purchase.id).slice(-8).toUpperCase()}</div>
+                    <div className="text-xs text-neutral-500 mt-1">{formatDateTime(purchase.created_at)}</div>
+                  </td>
+                  <td className="p-4 align-top font-semibold text-neutral-700 uppercase">{purchase.audience_role}</td>
+                  <td className="p-4 align-top font-bold text-primary">{purchase.role_plan_slug}</td>
+                  <td className="p-4 align-top font-bold text-emerald-600">{purchase.currency || 'INR'} {purchase.total_amount}</td>
+                  <td className="p-4 align-top">
+                    <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase ${purchase.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : purchase.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-neutral-100 text-neutral-600'}`}>
+                      {purchase.status}
+                    </span>
+                  </td>
+                  <td className="p-4 pr-6 align-top text-right">
+                    {purchase.status === 'pending' ? (
+                      <button onClick={() => handleUpdateCommercialPurchaseStatus(purchase.id, 'paid')} className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-black text-white hover:bg-emerald-400">
+                        Approve
+                      </button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {/* Edit Payment Overlay */}
@@ -446,6 +742,7 @@ const AdminPaymentsPage = () => {
                     setFilters({ ...filters, status: nextStatus });
                     loadPayments(nextStatus);
                     loadPlanPurchases(nextStatus);
+                    loadCommercialState(nextStatus);
                   }}
                   className="pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm min-w-[160px]"
                 >

@@ -150,3 +150,44 @@ export const exportPlacementReport = async () => {
   a.click();
   URL.revokeObjectURL(url);
 };
+
+export const getCampusRolePlans = () =>
+  safeRequest({
+    path: '/pricing/role-plans?audienceRole=campus_connect',
+    emptyData: [],
+    extract: (payload) => payload?.plans || []
+  });
+
+export const getCampusRolePlanQuote = ({ planSlug, quantity = 1, couponCode = '' }) =>
+  strictRequest({
+    path: '/pricing/role-plans/quote',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ planSlug, quantity, couponCode })
+    },
+    extract: (payload) => payload?.quote || payload
+  });
+
+export const checkoutCampusRolePlan = ({ planSlug, quantity = 1, couponCode = '', provider = 'manual', paymentStatus = 'pending' }) =>
+  strictRequest({
+    path: '/pricing/role-plans/checkout',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ planSlug, quantity, couponCode, provider, paymentStatus })
+    },
+    extract: (payload) => payload
+  });
+
+export const getCampusRoleSubscriptions = () =>
+  safeRequest({
+    path: '/pricing/role-subscriptions?audienceRole=campus_connect',
+    emptyData: [],
+    extract: (payload) => payload?.subscriptions || []
+  });
+
+export const getCurrentCampusRoleSubscription = () =>
+  safeRequest({
+    path: '/pricing/role-subscriptions/current?audienceRole=campus_connect',
+    emptyData: null,
+    extract: (payload) => payload?.subscription || null
+  });

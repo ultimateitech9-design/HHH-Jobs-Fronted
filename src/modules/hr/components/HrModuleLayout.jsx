@@ -1,6 +1,7 @@
 import {
   FiBarChart2,
   FiBell,
+  FiBook,
   FiBriefcase,
   FiCalendar,
   FiCheckSquare,
@@ -21,6 +22,7 @@ const hrNavItems = [
   { to: '/portal/hr/shortlisted', label: 'Shortlisted', icon: FiStar },
   { to: '/portal/hr/interests', label: 'Sent Interests', icon: FiSend },
   { to: '/portal/hr/interviews', label: 'Interviews', icon: FiCalendar },
+  { to: '/portal/hr/campus-drives', label: 'Campus Drives', icon: FiBook },
   { to: '/portal/hr/notifications', label: 'Hired', icon: FiBell },
   { to: '/portal/hr/analytics', label: 'Reports', icon: FiFileText },
   { to: '/portal/hr/employee-verification', label: 'Employee Verification', icon: FiCheckSquare },

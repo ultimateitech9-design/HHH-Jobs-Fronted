@@ -371,6 +371,74 @@ export const grantAdminPostingCredits = async (payload) =>
     extract: (responsePayload) => responsePayload?.credit || responsePayload
   });
 
+export const getAdminRolePricingPlans = async (audienceRole = '') =>
+  safeRequest({
+    path: `/pricing/admin/role-plans${buildQueryString({ audienceRole }) ? `?${buildQueryString({ audienceRole })}` : ''}`,
+    emptyData: [],
+    extract: (payload) => payload?.plans || []
+  });
+
+export const updateAdminRolePricingPlan = async (planSlug, payload) =>
+  strictRequest({
+    path: `/pricing/role-plans/${planSlug}`,
+    options: { method: 'PATCH', body: JSON.stringify(payload) },
+    extract: (responsePayload) => responsePayload?.plan || responsePayload
+  });
+
+export const getAdminRolePlanPurchases = async (filters = {}) =>
+  readEntityCollection({
+    path: '/pricing/role-plan-purchases',
+    key: 'purchases',
+    params: {
+      status: filters.status || '',
+      audienceRole: filters.audienceRole || '',
+      userId: filters.userId || ''
+    },
+    emptyData: []
+  });
+
+export const updateAdminRolePlanPurchaseStatus = async (purchaseId, payload) =>
+  strictRequest({
+    path: `/pricing/role-plan-purchases/${purchaseId}/status`,
+    options: {
+      method: 'PATCH',
+      body: JSON.stringify({
+        status: payload.status,
+        provider: payload.provider || null,
+        referenceId: payload.referenceId || null,
+        note: payload.note || null
+      })
+    },
+    extract: (responsePayload) => responsePayload?.purchase || responsePayload
+  });
+
+export const getAdminSalesCoupons = async () =>
+  safeRequest({
+    path: '/sales/coupons',
+    emptyData: [],
+    extract: (payload) => payload?.coupons || []
+  });
+
+export const createAdminSalesCoupon = async (payload) =>
+  strictRequest({
+    path: '/sales/coupons',
+    options: {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    extract: (responsePayload) => responsePayload?.coupon || responsePayload
+  });
+
+export const updateAdminSalesCoupon = async (couponId, payload) =>
+  strictRequest({
+    path: `/sales/coupons/${couponId}`,
+    options: {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    },
+    extract: (responsePayload) => responsePayload?.coupon || responsePayload
+  });
+
 // Audit logs
 export const getAdminAuditLogs = async (filters = {}) =>
   safeRequest({
