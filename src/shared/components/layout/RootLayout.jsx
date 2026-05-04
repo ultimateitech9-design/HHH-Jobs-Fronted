@@ -124,7 +124,7 @@ const RootLayout = () => {
         <PublicNavbar user={user} dashboardPath={dashboardPath} onLogout={handleLogout} />
       ) : null}
 
-      <main className={`flex min-h-screen flex-col ${!isPortalWorkbench ? 'pt-[74px]' : ''}`}>
+      <main className={`flex min-h-screen flex-col ${!isPortalWorkbench ? 'pt-[calc(var(--public-navbar-height,74px)+2px)]' : ''}`}>
         <Outlet />
       </main>
 

@@ -23,39 +23,37 @@ const PublicPageHero = ({
   descriptionClassName = '',
   actionsClassName = '',
   actionClassName = '',
+  visualClassName = '',
   compact = false,
-  tightTop = false
+  tightTop = false,
+  alignVisualTop = false
 }) => {
   const hasVisual = Boolean(aside || media);
 
   return (
     <section
-      className={`relative overflow-hidden px-4 ${
-        compact
-          ? 'py-8 sm:py-10 md:py-12'
-          : tightTop
-            ? 'pt-2 pb-12 sm:pt-3 sm:pb-14 md:pt-4 md:pb-18'
-            : 'py-12 sm:py-14 md:py-20'
-      } ${className}`.trim()}
+      className={`relative overflow-hidden px-4 ${compact
+        ? 'py-8 sm:py-10 md:py-12'
+        : tightTop
+          ? 'pt-0.5 pb-10 sm:pt-1 sm:pb-12 md:pt-1.5 md:pb-14'
+          : 'pt-5 pb-12 sm:pt-6 sm:pb-14 md:pt-7 md:pb-16'
+        } ${className}`.trim()}
     >
       <div className="absolute left-8 top-10 h-72 w-72 rounded-full bg-gold/8 blur-3xl" />
       <div className="absolute bottom-0 right-8 h-80 w-80 rounded-full bg-brand-500/10 blur-3xl" />
 
       <div className="container relative z-10 mx-auto max-w-7xl">
         <div
-          className={`grid items-center ${
-            hasVisual ? 'lg:grid-cols-[1.05fr_0.95fr]' : 'grid-cols-1'
-          } ${
-            compact ? 'gap-6 lg:gap-7' : 'gap-8 lg:gap-10'
-          }`}
+          className={`grid ${alignVisualTop ? 'items-start' : 'items-center'} ${hasVisual ? 'lg:grid-cols-[1.05fr_0.95fr]' : 'grid-cols-1'
+            } ${compact ? 'gap-6 lg:gap-7' : 'gap-8 lg:gap-10'
+            }`}
         >
           <AnimatedSection>
             <div className={`${hasVisual ? 'max-w-3xl' : 'max-w-4xl'} ${contentClassName}`.trim()}>
               {eyebrow ? (
                 <span
-                  className={`inline-flex items-center rounded-full border border-gold/20 bg-gold/10 font-semibold text-gold-dark ${
-                    compact ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'
-                  } ${eyebrowClassName}`.trim()}
+                  className={`inline-flex items-center rounded-full border border-gold/20 bg-gold/10 font-semibold text-gold-dark ${compact ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'
+                    } ${eyebrowClassName}`.trim()}
                 >
                   {eyebrow}
                 </span>
@@ -63,19 +61,17 @@ const PublicPageHero = ({
 
               <div className={compact ? 'mt-4' : 'mt-6'}>
                 <h1
-                  className={`font-heading font-extrabold leading-tight text-navy ${
-                    compact ? 'text-2xl sm:text-3xl md:text-[2.7rem]' : 'text-3xl sm:text-4xl md:text-5xl'
-                  } ${titleClassName}`.trim()}
+                  className={`font-heading font-extrabold leading-tight text-navy ${compact ? 'text-2xl sm:text-3xl md:text-[2.7rem]' : 'text-3xl sm:text-4xl md:text-5xl'
+                    } ${titleClassName}`.trim()}
                 >
                   {title}
                 </h1>
                 {description ? (
                   <p
-                    className={`max-w-2xl text-slate-600 ${
-                      compact
-                        ? 'mt-3 text-sm leading-6 sm:text-[0.96rem]'
-                        : 'mt-4 text-sm leading-7 sm:text-base md:mt-5 md:text-lg'
-                    } ${descriptionClassName}`.trim()}
+                    className={`max-w-2xl text-slate-600 ${compact
+                      ? 'mt-3 text-sm leading-6 sm:text-[0.96rem]'
+                      : 'mt-4 text-sm leading-7 sm:text-base md:mt-5 md:text-lg'
+                      } ${descriptionClassName}`.trim()}
                   >
                     {description}
                   </p>
@@ -87,9 +83,8 @@ const PublicPageHero = ({
                   {chips.map((chip) => (
                     <span
                       key={chip}
-                      className={`rounded-full border border-slate-200 bg-white/85 font-semibold text-slate-600 shadow-sm ${
-                        compact ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1 text-xs'
-                      }`}
+                      className={`rounded-full border border-slate-200 bg-white/85 font-semibold text-slate-600 shadow-sm ${compact ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1 text-xs'
+                        }`}
                     >
                       {chip}
                     </span>
@@ -103,11 +98,9 @@ const PublicPageHero = ({
                     <Link
                       key={`${action.label}-${action.to || action.href}`}
                       to={action.to}
-                      className={`inline-flex w-full items-center justify-center rounded-full font-semibold transition-all hover:-translate-y-0.5 sm:w-auto ${
-                        compact ? 'px-4 py-2.5 text-sm' : 'px-5 py-3 text-sm'
-                      } ${
-                        buttonClassByVariant[action.variant || 'primary']
-                      } ${actionClassName}`.trim()}
+                      className={`inline-flex w-full items-center justify-center rounded-full font-semibold transition-all hover:-translate-y-0.5 sm:w-auto ${compact ? 'px-4 py-2.5 text-sm' : 'px-5 py-3 text-sm'
+                        } ${buttonClassByVariant[action.variant || 'primary']
+                        } ${actionClassName}`.trim()}
                     >
                       {action.label}
                     </Link>
@@ -118,18 +111,20 @@ const PublicPageHero = ({
           </AnimatedSection>
 
           <AnimatedSection delay={0.12}>
-            {aside ? (
-              aside
-            ) : media ? (
-              <div className="relative mx-auto w-full max-w-[34rem] lg:max-w-none">
-                <div className="absolute -inset-2 rounded-[2rem] bg-gradient-to-br from-gold/20 via-brand-500/10 to-transparent blur-xl" />
-                <img
-                  src={media.src}
-                  alt={media.alt}
-                  className="relative z-10 w-full rounded-[2rem] border border-white/60 object-cover shadow-2xl"
-                />
-              </div>
-            ) : null}
+            <div className={visualClassName}>
+              {aside ? (
+                aside
+              ) : media ? (
+                <div className="relative mx-auto w-full max-w-[34rem] lg:max-w-none">
+                  <div className="absolute -inset-2 rounded-[2rem] bg-gradient-to-br from-gold/20 via-brand-500/10 to-transparent blur-xl" />
+                  <img
+                    src={media.src}
+                    alt={media.alt}
+                    className="relative z-10 w-full rounded-[2rem] border border-white/60 object-cover shadow-2xl"
+                  />
+                </div>
+              ) : null}
+            </div>
           </AnimatedSection>
         </div>
 
@@ -139,9 +134,8 @@ const PublicPageHero = ({
               {metrics.map((metric) => (
                 <article
                   key={metric.label}
-                  className={`rounded-[1.6rem] border border-slate-200 bg-white/88 shadow-sm backdrop-blur-sm ${
-                    compact ? 'p-3.5 sm:p-4' : 'p-4 sm:p-5'
-                  }`}
+                  className={`rounded-[1.6rem] border border-slate-200 bg-white/88 shadow-sm backdrop-blur-sm ${compact ? 'p-3.5 sm:p-4' : 'p-4 sm:p-5'
+                    }`}
                 >
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
                     {metric.label}

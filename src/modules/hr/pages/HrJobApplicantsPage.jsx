@@ -58,6 +58,8 @@ const HrJobApplicantsPage = () => {
   const [statusDrafts, setStatusDrafts] = useState({});
   const [notesDrafts, setNotesDrafts] = useState({});
   const [interviewDrafts, setInterviewDrafts] = useState({});
+  const [interviewInlineErrors, setInterviewInlineErrors] = useState({});
+  const [statusInlineMessages, setStatusInlineMessages] = useState({});
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
@@ -118,6 +120,7 @@ const HrJobApplicantsPage = () => {
 
   const updateStatus = async (applicationId) => {
     setMessage('');
+    setStatusInlineMessages((current) => ({ ...current, [applicationId]: null }));
     const status = statusDrafts[applicationId] || 'applied';
     const hrNotes = notesDrafts[applicationId] || '';
 
@@ -129,18 +132,28 @@ const HrJobApplicantsPage = () => {
           item.id === applicationId ? { ...item, ...updated, status, hrNotes } : item
         )
       }));
-      showMessage('Application status updated successfully.');
+      setStatusInlineMessages((current) => ({
+        ...current,
+        [applicationId]: { type: 'success', text: 'Application status updated successfully.' }
+      }));
     } catch (error) {
-      showMessage(String(error.message || 'Unable to update status.'));
+      setStatusInlineMessages((current) => ({
+        ...current,
+        [applicationId]: { type: 'error', text: String(error.message || 'Unable to update status.') }
+      }));
     }
   };
 
   const scheduleInterview = async (applicationId) => {
     setMessage('');
+    setInterviewInlineErrors((current) => ({ ...current, [applicationId]: '' }));
     const interview = interviewDrafts[applicationId] || defaultInterviewDraft;
 
     if (!interview.scheduledAt) {
-      showMessage('Please choose interview date and time.');
+      setInterviewInlineErrors((current) => ({
+        ...current,
+        [applicationId]: 'Please choose interview date and time.'
+      }));
       return;
     }
 
@@ -166,6 +179,10 @@ const HrJobApplicantsPage = () => {
       ...current,
       [applicationId]: { ...(current[applicationId] || defaultInterviewDraft), [key]: value }
     }));
+
+    if (key === 'scheduledAt' || key === 'mode') {
+      setInterviewInlineErrors((current) => ({ ...current, [applicationId]: '' }));
+    }
   };
 
   const toggleSelect = useCallback((id) => {
@@ -353,13 +370,11 @@ const HrJobApplicantsPage = () => {
                     </button>
                     <button
                       onClick={() => setActiveApplicantId(app.id)}
-                      className={`flex-1 text-left p-3 rounded-xl transition-all flex items-start gap-3 ${
-                        isActive ? 'bg-brand-50 border border-brand-200 shadow-sm' : 'hover:bg-neutral-50 border border-transparent'
-                      }`}
+                      className={`flex-1 text-left p-3 rounded-xl transition-all flex items-start gap-3 ${isActive ? 'bg-brand-50 border border-brand-200 shadow-sm' : 'hover:bg-neutral-50 border border-transparent'
+                        }`}
                     >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
-                        isActive ? 'bg-brand-600 text-white' : 'bg-neutral-100 text-neutral-500'
-                      }`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${isActive ? 'bg-brand-600 text-white' : 'bg-neutral-100 text-neutral-500'
+                        }`}>
                         {initials}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -426,7 +441,10 @@ const HrJobApplicantsPage = () => {
                           <label className="text-sm font-bold text-neutral-700">Current Stage</label>
                           <select
                             value={statusDrafts[activeApplicant.id] || 'applied'}
-                            onChange={(e) => setStatusDrafts({ ...statusDrafts, [activeApplicant.id]: e.target.value })}
+                            onChange={(e) => {
+                              setStatusDrafts({ ...statusDrafts, [activeApplicant.id]: e.target.value });
+                              setStatusInlineMessages((current) => ({ ...current, [activeApplicant.id]: null }));
+                            }}
                             className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-primary capitalize"
                           >
                             {APPLICATION_STATUS_OPTIONS.map((status) => (
@@ -441,7 +459,10 @@ const HrJobApplicantsPage = () => {
                             rows={4}
                             placeholder="Add evaluation notes, salary expectations, etc. hidden from candidate."
                             value={notesDrafts[activeApplicant.id] || ''}
-                            onChange={(e) => setNotesDrafts({ ...notesDrafts, [activeApplicant.id]: e.target.value })}
+                            onChange={(e) => {
+                              setNotesDrafts({ ...notesDrafts, [activeApplicant.id]: e.target.value });
+                              setStatusInlineMessages((current) => ({ ...current, [activeApplicant.id]: null }));
+                            }}
                             className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium text-sm text-neutral-700 resize-none"
                           />
                         </div>
@@ -453,6 +474,16 @@ const HrJobApplicantsPage = () => {
                         >
                           <FiCheck /> Save Evaluation
                         </button>
+                        {statusInlineMessages[activeApplicant.id]?.text ? (
+                          <div
+                            className={`rounded-xl border px-3 py-2 text-sm font-semibold ${statusInlineMessages[activeApplicant.id]?.type === 'error'
+                              ? 'border-amber-200 bg-amber-50 text-amber-700'
+                              : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                              }`}
+                          >
+                            {statusInlineMessages[activeApplicant.id]?.text}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -466,6 +497,7 @@ const HrJobApplicantsPage = () => {
 
                       {(() => {
                         const interview = interviewDrafts[activeApplicant.id] || defaultInterviewDraft;
+                        const interviewInlineError = interviewInlineErrors[activeApplicant.id] || '';
                         return (
                           <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
@@ -539,10 +571,15 @@ const HrJobApplicantsPage = () => {
                             <button
                               type="button"
                               onClick={() => scheduleInterview(activeApplicant.id)}
-                              className="w-full py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors shadow-sm flex items-center justify-center gap-2"
+                              className="w-full py-3 bg-[#c97c09] text-white font-bold rounded-xl hover:bg-[#b86f07] transition-colors shadow-sm border border-[#c97c09] flex items-center justify-center gap-2"
                             >
                               <FiClock /> Schedule Invite
                             </button>
+                            {interviewInlineError ? (
+                              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">
+                                {interviewInlineError}
+                              </div>
+                            ) : null}
                           </div>
                         );
                       })()}

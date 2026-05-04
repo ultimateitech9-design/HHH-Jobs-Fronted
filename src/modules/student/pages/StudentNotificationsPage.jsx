@@ -8,7 +8,6 @@ import {
   FiCheck,
   FiCheckCircle,
   FiClock,
-  FiExternalLink,
   FiFileText,
   FiTrendingUp,
   FiUser
@@ -59,6 +58,29 @@ const formatRelativeTime = (value) => {
 
   const diffDays = Math.round(diffHours / 24);
   return diffDays <= 1 ? '1d ago' : `${diffDays}d ago`;
+};
+
+const getInlineNotificationDetails = (notification) => {
+  const detailedMessage =
+    notification?.details ||
+    notification?.detail ||
+    notification?.body ||
+    notification?.long_message ||
+    notification?.longMessage ||
+    notification?.meta?.details ||
+    notification?.meta?.summary;
+
+  if (detailedMessage) {
+    return String(detailedMessage);
+  }
+
+  return String(
+    notification?.message ||
+    notification?.description ||
+    notification?.subject ||
+    notification?.title ||
+    'No additional details available for this update.'
+  );
 };
 
 const isTodayNotification = (notification) => {
@@ -137,6 +159,7 @@ const StudentNotificationsPage = () => {
   const [filter, setFilter] = useState('all');
   const [message, setMessage] = useState('');
   const [pageError, setPageError] = useState('');
+  const [expandedNotifications, setExpandedNotifications] = useState([]);
 
   useEffect(() => {
     if (hydrated || loading) return undefined;
@@ -192,15 +215,6 @@ const StudentNotificationsPage = () => {
     [notifications]
   );
   const latestNotification = notifications[0] || null;
-  const spotlightNotifications = useMemo(
-    () => notifications.filter((notification) => !notification.is_read).slice(0, 3),
-    [notifications]
-  );
-  const categoryCounts = useMemo(() => notifications.reduce((accumulator, notification) => {
-    const category = getNotificationMeta(notification).label;
-    accumulator[category] = (accumulator[category] || 0) + 1;
-    return accumulator;
-  }, {}), [notifications]);
 
   const activeError = storeError || pageError;
   const isLoading = loading && !hydrated;
@@ -245,7 +259,7 @@ const StudentNotificationsPage = () => {
       {activeError ? <StudentNotice type="error" text={activeError} /> : null}
       {message && !activeError ? <StudentNotice type="success" text={message} /> : null}
 
-      <section className="grid gap-6 xl:grid-cols-[250px_minmax(0,1fr)_250px]">
+      <section className="grid gap-6 xl:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="space-y-5">
           <div className="rounded-[2rem] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_45px_-38px_rgba(15,23,42,0.45)]">
             <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[conic-gradient(#2d5bff_0_72%,#e2e8f0_72%_100%)]">
@@ -298,9 +312,8 @@ const StudentNotificationsPage = () => {
                 <Link
                   key={item.label}
                   to={item.to}
-                  className={`flex items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold ${
-                    item.label === 'My home' ? 'bg-slate-100 text-navy' : 'text-slate-700 hover:bg-slate-50'
-                  }`}
+                  className={`flex items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold ${item.label === 'My home' ? 'bg-slate-100 text-navy' : 'text-slate-700 hover:bg-slate-50'
+                    }`}
                 >
                   <item.icon />
                   <span>{item.label}</span>
@@ -310,10 +323,10 @@ const StudentNotificationsPage = () => {
           </div>
         </aside>
 
-        <div className="space-y-5">
-          <div className="rounded-[1.9rem] border border-slate-200 bg-white p-6 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.35)]">
+        <div className="space-y-4 min-w-0">
+          <div className="rounded-[1.9rem] border border-slate-200 bg-white p-5 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.35)]">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div>
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-brand-700">
                     Student notifications
@@ -322,7 +335,7 @@ const StudentNotificationsPage = () => {
                     {notifications.length} total updates
                   </span>
                 </div>
-                <h2 className="mt-4 text-3xl font-extrabold text-navy">Keep every recruiter update in one clean feed</h2>
+                <h2 className="mt-4 text-[2rem] font-extrabold leading-tight text-navy">Keep every recruiter update in one clean feed</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
                   Interview calls, application changes, and platform reminders now stay inside a dedicated inbox built in the same style as your student dashboard.
                 </p>
@@ -336,16 +349,16 @@ const StudentNotificationsPage = () => {
               ) : null}
             </div>
 
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
+            <div className="mt-5 grid gap-2.5 md:grid-cols-3">
               {[
                 { label: 'Unread', value: unreadCount, helper: 'Needs your attention now' },
                 { label: 'With action', value: actionableCount, helper: 'Contain direct links or next steps' },
                 { label: 'Today', value: todayCount, helper: 'Fresh updates added since morning' }
               ].map((stat) => (
-                <article key={stat.label} className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
+                <article key={stat.label} className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-3.5 py-3">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{stat.label}</p>
-                  <p className="mt-3 text-3xl font-extrabold text-navy">{stat.value}</p>
-                  <p className="mt-2 text-sm text-slate-500">{stat.helper}</p>
+                  <p className="mt-2 text-[1.8rem] leading-none font-extrabold text-navy">{stat.value}</p>
+                  <p className="mt-1.5 text-[13px] leading-5 text-slate-500">{stat.helper}</p>
                 </article>
               ))}
             </div>
@@ -357,9 +370,8 @@ const StudentNotificationsPage = () => {
                     key={item.key}
                     type="button"
                     onClick={() => setFilter(item.key)}
-                    className={`flex-1 rounded-full px-5 py-2 text-sm font-bold transition sm:flex-none ${
-                      filter === item.key ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:text-navy'
-                    }`}
+                    className={`flex-1 rounded-full px-5 py-2 text-sm font-bold transition sm:flex-none ${filter === item.key ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:text-navy'
+                      }`}
                   >
                     {item.label}
                   </button>
@@ -377,6 +389,8 @@ const StudentNotificationsPage = () => {
             eyebrow="Live feed"
             title={filter === 'unread' ? 'Unread updates' : filter === 'actionable' ? 'Action-ready updates' : 'All updates'}
             subtitle="Every item stays readable, timestamped, and ready for action without leaving the student workspace feel."
+            className="xl:p-5"
+            bodyClassName="space-y-3"
           >
             {isLoading ? (
               <div className="space-y-4">
@@ -390,18 +404,19 @@ const StudentNotificationsPage = () => {
                   const meta = getNotificationMeta(notification);
                   const title = notification.title || notification.subject || notification.type || 'Notification';
                   const description = notification.message || notification.description || 'No extra details available yet.';
+                  const isExpanded = expandedNotifications.includes(notification.id);
+                  const detailsText = getInlineNotificationDetails(notification);
 
                   return (
                     <article
                       key={notification.id}
-                      className={`rounded-[1.8rem] border p-5 transition ${
-                        notification.is_read ? 'border-slate-200 bg-white' : 'border-[#d9e7ff] bg-[#eef4ff]'
-                      }`}
+                      className={`rounded-[1.5rem] border p-4 transition ${notification.is_read ? 'border-slate-200 bg-white' : 'border-[#d9e7ff] bg-[#eef4ff]'
+                        }`}
                     >
-                      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex gap-4">
-                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border ${meta.iconClassName}`}>
-                            <meta.Icon size={18} />
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex gap-3.5">
+                          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${meta.iconClassName}`}>
+                            <meta.Icon size={17} />
                           </div>
 
                           <div className="min-w-0">
@@ -418,7 +433,7 @@ const StudentNotificationsPage = () => {
 
                             <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                               <div className="min-w-0">
-                                <h3 className={`text-lg ${notification.is_read ? 'font-bold text-slate-700' : 'font-extrabold text-navy'}`}>
+                                <h3 className={`text-[1.35rem] leading-tight ${notification.is_read ? 'font-bold text-slate-700' : 'font-extrabold text-navy'}`}>
                                   {title}
                                 </h3>
                                 <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
@@ -434,17 +449,30 @@ const StudentNotificationsPage = () => {
                                 <FiClock size={12} />
                                 {formatDateTime(notification.created_at || notification.createdAt)}
                               </span>
-                              {notification.link ? (
-                                <Link to={notification.link} className="inline-flex items-center gap-2 text-brand-700 hover:text-brand-800">
-                                  <FiExternalLink size={12} />
-                                  View details
-                                </Link>
-                              ) : null}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExpandedNotifications((current) =>
+                                    current.includes(notification.id)
+                                      ? current.filter((id) => id !== notification.id)
+                                      : [...current, notification.id]
+                                  );
+                                }}
+                                className="inline-flex items-center gap-2 text-brand-700 hover:text-brand-800"
+                              >
+                                {isExpanded ? 'Hide details' : 'View details'}
+                              </button>
                             </div>
+
+                            {isExpanded ? (
+                              <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-sm leading-6 text-slate-700">
+                                {detailsText}
+                              </div>
+                            ) : null}
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-3 lg:w-[230px] lg:justify-end">
+                        <div className="flex flex-wrap gap-2.5 lg:w-[210px] lg:justify-end">
                           {!notification.is_read ? (
                             <button
                               type="button"
@@ -490,65 +518,6 @@ const StudentNotificationsPage = () => {
           </StudentSurfaceCard>
         </div>
 
-        <aside className="space-y-5">
-          <div className="rounded-[1.6rem] border border-slate-200 bg-white p-5">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Need attention</p>
-            <h2 className="mt-3 text-2xl font-extrabold text-navy">
-              {spotlightNotifications.length > 0 ? `${spotlightNotifications.length} fresh updates waiting` : 'Everything looks handled'}
-            </h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Focus on the newest recruiter and interview items before they cool down.
-            </p>
-
-            <div className="mt-5 space-y-3">
-              {spotlightNotifications.length > 0 ? spotlightNotifications.map((notification) => {
-                const meta = getNotificationMeta(notification);
-
-                return (
-                  <div key={notification.id} className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-                      <meta.Icon size={12} />
-                      <span>{meta.label}</span>
-                    </div>
-                    <p className="mt-2 text-sm font-semibold leading-5 text-navy">
-                      {notification.title || notification.subject || 'Notification'}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {formatRelativeTime(notification.created_at || notification.createdAt)}
-                    </p>
-                  </div>
-                );
-              }) : (
-                <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
-                  No unread items are waiting right now.
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-[1.6rem] border border-slate-200 bg-white p-5">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Activity mix</p>
-            <h2 className="mt-3 text-2xl font-extrabold text-navy">Where your updates are coming from</h2>
-            <div className="mt-5 space-y-3">
-              {[
-                { label: 'Jobs', value: categoryCounts.Jobs || 0 },
-                { label: 'Applications', value: categoryCounts.Application || 0 },
-                { label: 'Interviews', value: categoryCounts.Interview || 0 },
-                { label: 'Platform', value: categoryCounts.Platform || 0 }
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                  <span className="text-sm font-semibold text-slate-600">{item.label}</span>
-                  <span className="text-lg font-extrabold text-navy">{item.value}</span>
-                </div>
-              ))}
-            </div>
-
-            <Link to="/portal/student/interviews" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-brand-700">
-              Check interview pipeline
-              <FiArrowRight size={14} />
-            </Link>
-          </div>
-        </aside>
       </section>
     </div>
   );

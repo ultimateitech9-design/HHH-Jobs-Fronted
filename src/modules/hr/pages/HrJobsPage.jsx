@@ -1,17 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
-import { 
-  FiBriefcase, 
-  FiPlus, 
-  FiCreditCard, 
-  FiCheckCircle, 
-  FiXCircle, 
-  FiEdit2, 
-  FiTrash2, 
-  FiUsers, 
-  FiEye, 
-  FiClock, 
-  FiMapPin 
+import {
+  FiBriefcase,
+  FiPlus,
+  FiCreditCard,
+  FiCheckCircle,
+  FiXCircle,
+  FiEdit2,
+  FiTrash2,
+  FiUsers,
+  FiEye,
+  FiClock,
+  FiMapPin
 } from 'react-icons/fi';
 import {
   checkoutRolePlan,
@@ -28,6 +28,7 @@ import {
   getJobDraftFromJob,
   getPricingPlanQuote,
   getPricingPlans,
+  reopenHrJob,
   getRolePlanPurchases,
   getRolePlanSubscriptions,
   getRolePricingPlanQuote,
@@ -78,7 +79,7 @@ const getStatusColor = (status) => {
 const HrJobsPage = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('jobs'); // 'jobs', 'post', 'billing'
-  
+
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -217,6 +218,19 @@ const HrJobsPage = () => {
         ...current,
         planSlug: nextPlans.some((plan) => plan.slug === current.planSlug) ? current.planSlug : freePlan.slug
       }));
+    }
+  };
+
+  const handleReopenJob = async (jobId) => {
+    setMessage('');
+    setError('');
+
+    try {
+      const updated = await reopenHrJob(jobId);
+      setJobs((current) => current.map((job) => ((job.id || job._id) === jobId ? { ...job, ...updated } : job)));
+      setMessage('Job re-opened successfully.');
+    } catch (reopenError) {
+      setError(String(reopenError.message || 'Unable to re-open job.'));
     }
   };
 
@@ -443,8 +457,8 @@ const HrJobsPage = () => {
   };
 
   const handleDeleteJob = async (jobId) => {
-    if(!window.confirm('Are you sure you want to delete this job posting? This action cannot be undone.')) return;
-    
+    if (!window.confirm('Are you sure you want to delete this job posting? This action cannot be undone.')) return;
+
     setMessage('');
     setError('');
 
@@ -559,25 +573,22 @@ const HrJobsPage = () => {
         <div className="flex bg-neutral-100 rounded-xl p-1 w-full md:w-auto overflow-x-auto hide-scrollbar">
           <button
             onClick={() => { setActiveTab('jobs'); setEditingJobId(''); }}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === 'jobs' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-primary'
-            }`}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'jobs' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-primary'
+              }`}
           >
             <FiBriefcase size={16} /> My Jobs
           </button>
           <button
             onClick={() => setActiveTab('post')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === 'post' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-primary'
-            }`}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'post' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-primary'
+              }`}
           >
             <FiPlus size={16} /> Post a Job
           </button>
           <button
             onClick={() => { setActiveTab('billing'); setEditingJobId(''); }}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === 'billing' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-primary'
-            }`}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'billing' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-primary'
+              }`}
           >
             <FiCreditCard size={16} /> Billing & Credits
           </button>
@@ -606,9 +617,8 @@ const HrJobsPage = () => {
                   <button
                     key={filter}
                     onClick={() => setStatusFilter(filter)}
-                    className={`px-4 py-1.5 rounded-md text-xs font-bold capitalize transition-colors ${
-                      statusFilter === filter ? 'bg-white text-brand-600 shadow-sm border border-neutral-200' : 'text-neutral-500 hover:text-neutral-700'
-                    }`}
+                    className={`px-4 py-1.5 rounded-md text-xs font-bold capitalize transition-colors ${statusFilter === filter ? 'bg-white text-brand-600 shadow-sm border border-neutral-200' : 'text-neutral-500 hover:text-neutral-700'
+                      }`}
                   >
                     {filter}
                   </button>
@@ -622,14 +632,14 @@ const HrJobsPage = () => {
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               {[1, 2, 3, 4].map(i => <div key={i} className="h-64 bg-white rounded-3xl animate-pulse border border-neutral-100"></div>)}
+              {[1, 2, 3, 4].map(i => <div key={i} className="h-64 bg-white rounded-3xl animate-pulse border border-neutral-100"></div>)}
             </div>
           ) : filteredJobs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredJobs.map(job => (
                 <div key={job.id || job._id} className="bg-white rounded-3xl p-6 shadow-sm border border-neutral-100 hover:shadow-md transition-all flex flex-col group relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-brand-50 rounded-bl-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  
+
                   <div className="flex justify-between items-start mb-4 relative z-10">
                     <div>
                       <h3 className="text-lg font-bold text-primary leading-tight mb-1 group-hover:text-brand-600 transition-colors">{job.jobTitle}</h3>
@@ -662,18 +672,20 @@ const HrJobsPage = () => {
                       View Applicants
                     </Link>
                     <div className="flex gap-1 border border-neutral-200 rounded-xl p-1 shrink-0 bg-neutral-50">
-                      <button onClick={() => startEdit(job)} title="Edit Job" className="p-1.5 text-neutral-500 hover:text-brand-600 rounded-lg hover:bg-white transition-colors"><FiEdit2 size={14}/></button>
-                      {String(job.status).toLowerCase() !== 'closed' && (
-                        <button onClick={() => handleCloseJob(job.id || job._id)} title="Close Job" className="p-1.5 text-neutral-500 hover:text-amber-600 rounded-lg hover:bg-white transition-colors"><FiXCircle size={14}/></button>
+                      <button onClick={() => startEdit(job)} title="Edit Job" className="p-1.5 text-neutral-500 hover:text-brand-600 rounded-lg hover:bg-white transition-colors"><FiEdit2 size={14} /></button>
+                      {String(job.status).toLowerCase() !== 'closed' ? (
+                        <button onClick={() => handleCloseJob(job.id || job._id)} title="Close Job" className="p-1.5 text-neutral-500 hover:text-amber-600 rounded-lg hover:bg-white transition-colors"><FiXCircle size={14} /></button>
+                      ) : (
+                        <button onClick={() => handleReopenJob(job.id || job._id)} title="Re-open Job" className="p-1.5 text-neutral-500 hover:text-emerald-600 rounded-lg hover:bg-white transition-colors"><FiCheckCircle size={14} /></button>
                       )}
-                      <button onClick={() => handleDeleteJob(job.id || job._id)} title="Delete Job" className="p-1.5 text-neutral-500 hover:text-red-600 rounded-lg hover:bg-white transition-colors"><FiTrash2 size={14}/></button>
+                      <button onClick={() => handleDeleteJob(job.id || job._id)} title="Delete Job" className="p-1.5 text-neutral-500 hover:text-red-600 rounded-lg hover:bg-white transition-colors"><FiTrash2 size={14} /></button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-             <div className="bg-white rounded-3xl p-16 text-center border border-neutral-100 shadow-sm max-w-2xl mx-auto">
+            <div className="bg-white rounded-3xl p-16 text-center border border-neutral-100 shadow-sm max-w-2xl mx-auto">
               <div className="w-24 h-24 bg-brand-50 text-brand-300 rounded-full flex items-center justify-center mx-auto mb-6">
                 <FiBriefcase size={40} />
               </div>
@@ -691,7 +703,7 @@ const HrJobsPage = () => {
       {activeTab === 'post' && (
         <div className="bg-white rounded-[2rem] p-6 md:p-10 shadow-sm border border-neutral-100 animate-fade-in relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-50 rounded-bl-full pointer-events-none opacity-50"></div>
-          
+
           <div className="mb-8 relative z-10">
             <h2 className="text-2xl font-extrabold text-primary mb-2 flex items-center gap-2">
               <span className="bg-brand-100 text-brand-600 w-10 h-10 flex items-center justify-center rounded-xl"><FiPlus /></span>
@@ -701,33 +713,33 @@ const HrJobsPage = () => {
           </div>
 
           <form onSubmit={handleSubmitJob} className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-            
+
             <div className="space-y-1.5 md:col-span-2 p-6 bg-neutral-50 rounded-2xl border border-neutral-200">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div>
-                    <label className="text-sm font-bold text-neutral-700 block mb-1">Pricing Plan to Use</label>
-                    <select value={draft.planSlug} disabled={Boolean(editingJobId)} onChange={(e) => updateDraftField('planSlug', e.target.value)} className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 disabled:opacity-50 font-medium">
-                      {plans.map((plan) => (
-                        <option key={plan.slug} value={plan.slug}>{plan.name} ({plan.currency || 'INR'} {plan.price})</option>
-                      ))}
-                    </select>
-                 </div>
-                 <div>
-                    <label className="text-sm font-bold text-neutral-700 block mb-1">Target Audience</label>
-                    <select value={draft.targetAudience} onChange={(e) => updateDraftField('targetAudience', e.target.value)} className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium">
-                      <option value="all">All Candidates</option>
-                      <option value="student">Only Students / Freshers</option>
-                      <option value="retired_employee">Only Retired Professionals</option>
-                    </select>
-                 </div>
-                 {selectedPlan && (
-                    <div className="md:col-span-2 text-xs font-bold text-brand-700 bg-brand-50 p-3 rounded-lg flex gap-4">
-                      <span>Max Locations: {selectedPlan.maxLocations}</span>
-                      <span>Contact Visible: {selectedPlan.contactDetailsVisible ? 'Yes' : 'No'}</span>
-                      <span>Credits Remaining: {selectedPlan.isFreeNormalized ? 'Unlimited' : selectedPlanCredits}</span>
-                    </div>
-                  )}
-               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="text-sm font-bold text-neutral-700 block mb-1">Pricing Plan to Use</label>
+                  <select value={draft.planSlug} disabled={Boolean(editingJobId)} onChange={(e) => updateDraftField('planSlug', e.target.value)} className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 disabled:opacity-50 font-medium">
+                    {plans.map((plan) => (
+                      <option key={plan.slug} value={plan.slug}>{plan.name} ({plan.currency || 'INR'} {plan.price})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-neutral-700 block mb-1">Target Audience</label>
+                  <select value={draft.targetAudience} onChange={(e) => updateDraftField('targetAudience', e.target.value)} className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium">
+                    <option value="all">All Candidates</option>
+                    <option value="student">Only Students / Freshers</option>
+                    <option value="retired_employee">Only Retired Professionals</option>
+                  </select>
+                </div>
+                {selectedPlan && (
+                  <div className="md:col-span-2 text-xs font-bold text-brand-700 bg-brand-50 p-3 rounded-lg flex gap-4">
+                    <span>Max Locations: {selectedPlan.maxLocations}</span>
+                    <span>Contact Visible: {selectedPlan.contactDetailsVisible ? 'Yes' : 'No'}</span>
+                    <span>Credits Remaining: {selectedPlan.isFreeNormalized ? 'Unlimited' : selectedPlanCredits}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -771,7 +783,7 @@ const HrJobsPage = () => {
               <input type="number" value={draft.minPrice} onChange={(e) => updateDraftField('minPrice', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. 500000" />
             </div>
 
-             <div className="space-y-1.5">
+            <div className="space-y-1.5">
               <label className="text-sm font-bold text-neutral-700">Max Salary (Annual)</label>
               <input type="number" required value={draft.maxPrice} onChange={(e) => updateDraftField('maxPrice', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. 800000" />
             </div>
@@ -793,7 +805,7 @@ const HrJobsPage = () => {
                 </button>
               )}
               <button type="submit" disabled={saving} className="px-8 py-3 rounded-xl font-bold bg-brand-600 text-white hover:bg-brand-500 transition-colors shadow-sm disabled:opacity-70 flex items-center justify-center gap-2">
-                 {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : (editingJobId ? 'Update Job Posting' : 'Publish Job')}
+                {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : (editingJobId ? 'Update Job Posting' : 'Publish Job')}
               </button>
             </div>
           </form>
@@ -948,7 +960,7 @@ const HrJobsPage = () => {
               </div>
             )}
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {plans.map(plan => {
               const planCredits = creditsSummary?.byPlan?.[plan.slug] || { total: 0, used: 0, remaining: 0 };
@@ -964,7 +976,7 @@ const HrJobsPage = () => {
                     <span className="text-3xl font-bold text-primary">{plan.currency} {plan.price}</span>
                     <span className="text-sm font-bold text-neutral-400"> / {plan.jobValidityDays} days</span>
                   </div>
-                  
+
                   <div className="bg-neutral-50 rounded-xl p-4 mb-4">
                     <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">Available Credits</p>
                     <p className="text-2xl font-black text-brand-600">{isFree ? 'Unlimited' : planCredits.remaining}</p>
@@ -978,19 +990,19 @@ const HrJobsPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
               <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-neutral-100">
-                <h3 className="text-xl font-extrabold text-primary mb-6 flex items-center gap-2"><FiCreditCard className="text-brand-500"/> Buy Credits</h3>
+                <h3 className="text-xl font-extrabold text-primary mb-6 flex items-center gap-2"><FiCreditCard className="text-brand-500" /> Buy Credits</h3>
                 <form onSubmit={handleCheckout} className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-neutral-500">Select Plan</label>
-                    <select value={checkoutForm.planSlug} onChange={e => setCheckoutForm({...checkoutForm, planSlug: e.target.value})} className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold text-primary focus:ring-2 focus:ring-brand-500" disabled={paidPlans.length === 0}>
+                    <select value={checkoutForm.planSlug} onChange={e => setCheckoutForm({ ...checkoutForm, planSlug: e.target.value })} className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold text-primary focus:ring-2 focus:ring-brand-500" disabled={paidPlans.length === 0}>
                       {paidPlans.map(plan => <option key={plan.slug} value={plan.slug}>{plan.name}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-neutral-500">Credit Quantity</label>
-                    <input type="number" min="1" value={checkoutForm.quantity} onChange={e => setCheckoutForm({...checkoutForm, quantity: e.target.value})} className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold text-primary focus:ring-2 focus:ring-brand-500" />
+                    <input type="number" min="1" value={checkoutForm.quantity} onChange={e => setCheckoutForm({ ...checkoutForm, quantity: e.target.value })} className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold text-primary focus:ring-2 focus:ring-brand-500" />
                   </div>
-                  
+
                   {quote && (
                     <div className="bg-brand-50 p-4 rounded-xl border border-brand-100 space-y-2 text-sm mt-4">
                       <div className="flex justify-between font-medium text-neutral-600"><span>Subtotal:</span> <span>{quote.currency} {Number(quote.subtotal).toFixed(2)}</span></div>
@@ -1006,41 +1018,41 @@ const HrJobsPage = () => {
                 </form>
               </div>
             </div>
-            
+
             <div className="lg:col-span-2">
-               <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-neutral-100 h-full">
-                  <h3 className="text-xl font-extrabold text-primary mb-6">Recent Purchases</h3>
-                  {purchases.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left">
-                        <thead>
-                          <tr className="border-b border-neutral-100 text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                            <th className="pb-4 pr-4">Plan</th>
-                            <th className="pb-4 px-4">Qty</th>
-                            <th className="pb-4 px-4">Amount</th>
-                            <th className="pb-4 px-4">Status</th>
-                            <th className="pb-4 pl-4 text-right">Date</th>
+              <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-neutral-100 h-full">
+                <h3 className="text-xl font-extrabold text-primary mb-6">Recent Purchases</h3>
+                {purchases.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-neutral-100 text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                          <th className="pb-4 pr-4">Plan</th>
+                          <th className="pb-4 px-4">Qty</th>
+                          <th className="pb-4 px-4">Amount</th>
+                          <th className="pb-4 px-4">Status</th>
+                          <th className="pb-4 pl-4 text-right">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-sm">
+                        {purchases.slice(0, 10).map((purchase, i) => (
+                          <tr key={purchase.id || i} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors">
+                            <td className="py-4 pr-4 font-bold text-primary">{planNameBySlug[purchase.plan_slug] || purchase.plan_slug}</td>
+                            <td className="py-4 px-4 font-medium text-neutral-600">{purchase.quantity}</td>
+                            <td className="py-4 px-4 font-bold text-neutral-700">{purchase.currency || 'INR'} {purchase.total_amount}</td>
+                            <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded text-[10px] uppercase font-bold border ${getStatusColor(purchase.status)}`}>{purchase.status}</span></td>
+                            <td className="py-4 pl-4 text-right text-neutral-500">{formatDateTime(purchase.created_at || purchase.createdAt).split(' ')[0]}</td>
                           </tr>
-                        </thead>
-                        <tbody className="text-sm">
-                          {purchases.slice(0, 10).map((purchase, i) => (
-                            <tr key={purchase.id || i} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors">
-                              <td className="py-4 pr-4 font-bold text-primary">{planNameBySlug[purchase.plan_slug] || purchase.plan_slug}</td>
-                              <td className="py-4 px-4 font-medium text-neutral-600">{purchase.quantity}</td>
-                              <td className="py-4 px-4 font-bold text-neutral-700">{purchase.currency || 'INR'} {purchase.total_amount}</td>
-                              <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded text-[10px] uppercase font-bold border ${getStatusColor(purchase.status)}`}>{purchase.status}</span></td>
-                              <td className="py-4 pl-4 text-right text-neutral-500">{formatDateTime(purchase.created_at || purchase.createdAt).split(' ')[0]}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-neutral-500 font-medium bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
-                      You haven&apos;t made any purchases yet.
-                    </div>
-                  )}
-               </div>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-neutral-500 font-medium bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+                    You haven&apos;t made any purchases yet.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

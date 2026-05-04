@@ -44,6 +44,15 @@ const isRoleAllowedOnVerificationPage = (role, allowedLoginRoles = []) => {
 };
 
 const buildPortalRoleErrorMessage = (allowedLoginRoles = []) => {
+  const includesStudentHrCampus =
+    allowedLoginRoles.includes('student')
+    && allowedLoginRoles.includes('hr')
+    && allowedLoginRoles.includes('campus_connect');
+
+  if (includesStudentHrCampus && allowedLoginRoles.length === 3) {
+    return 'This login page only allows Student, HR, and Campus Connect accounts. Use the dedicated management login page for management dashboards.';
+  }
+
   if (allowedLoginRoles.includes('student') && allowedLoginRoles.includes('hr') && allowedLoginRoles.length === 2) {
     return 'This login page only allows Student and HR accounts. Use the dedicated management login page for management dashboards.';
   }
@@ -113,7 +122,11 @@ const OtpVerificationPage = () => {
       return;
     }
 
-    beginPendingVerificationSession({ email, emailWarning, allowedLoginRoles });
+    beginPendingVerificationSession({
+      email,
+      emailWarning,
+      allowedLoginRoles: allowedLoginRolesKey ? allowedLoginRolesKey.split('|') : []
+    });
     focusOtpInput(0);
   }, [allowedLoginRolesKey, email, emailWarning, navigate]);
 

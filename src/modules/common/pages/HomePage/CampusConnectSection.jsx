@@ -115,7 +115,7 @@ export function CampusConnectSection() {
   const marqueeItems = [...campusPartners, ...campusPartners];
 
   return (
-    <section className="relative left-1/2 right-1/2 w-screen max-w-none -translate-x-1/2 overflow-hidden px-0 py-16 md:py-18">
+    <section className="relative left-1/2 right-1/2 w-screen max-w-none -translate-x-1/2 overflow-hidden px-0 py-10 md:py-12">
       <div className="mx-auto w-full max-w-none px-4 md:px-6 xl:px-8">
         <AnimatedSection className="text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-white/75 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.24em] text-gold-dark shadow-sm backdrop-blur">
@@ -127,7 +127,7 @@ export function CampusConnectSection() {
           </h2>
         </AnimatedSection>
 
-        <AnimatedSection className="mt-10">
+        <AnimatedSection className="mt-7">
           <div className="relative overflow-hidden">
             <motion.div
               className="flex w-max items-center gap-6"

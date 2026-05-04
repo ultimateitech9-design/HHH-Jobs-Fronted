@@ -12,6 +12,7 @@ const FooterContactTemplate = ({ pageData }) => {
         title={pageData.title}
         description={pageData.summary}
         compact
+        tightTop
       />
 
       <section className="px-4 pb-12 pt-2 md:pb-16 md:pt-4">

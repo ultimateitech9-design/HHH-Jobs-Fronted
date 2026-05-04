@@ -11,6 +11,9 @@ const FooterAboutTemplate = ({ pageData }) => {
         title={pageData.title}
         description={pageData.summary}
         tightTop
+        className="!pt-0"
+        alignVisualTop
+        visualClassName="pt-[2px]"
         actions={[
           { label: 'Explore Services', to: '/services', variant: 'primary' },
           { label: 'Contact Team', to: '/contact-us', variant: 'ghost' }

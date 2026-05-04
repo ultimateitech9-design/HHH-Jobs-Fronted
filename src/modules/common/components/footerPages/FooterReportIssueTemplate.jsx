@@ -11,6 +11,7 @@ const FooterReportIssueTemplate = ({ pageData }) => {
         eyebrow={pageData.eyebrow}
         title={pageData.title}
         description={pageData.summary}
+        tightTop
         chips={['Platform issues', 'Content concerns', 'Policy escalation']}
         metrics={[
           { value: '4 Steps', label: 'Review flow', helper: 'Submit, acknowledge, investigate, follow up.' },

@@ -30,7 +30,30 @@ const CtaBanner = lazy(() =>
   import('./CtaBanner').then((module) => ({ default: module.CtaBanner }))
 );
 
-const JOBS_PER_PAGE = 6;
+const JOBS_PER_PAGE = 8;
+
+const mapExternalJobToFeaturedJob = (job = {}) => ({
+  id: job.id ? `external-${job.id}` : undefined,
+  externalId: job.id,
+  sourceType: 'external',
+  sourceKey: job.source_key || '',
+  companyName: job.company_name || 'Verified company',
+  companyLogo: job.company_logo || '',
+  jobTitle: job.job_title || 'Open Role',
+  jobLocation: job.job_location || 'Remote',
+  employmentType: job.employment_type || 'Full-time',
+  experienceLevel: job.experience_level || '',
+  category: job.category || '',
+  description: Array.isArray(job.tags) && job.tags.length
+    ? job.tags.slice(0, 6).join(', ')
+    : 'Verified live-feed role from HHH Jobs external hiring sources.',
+  postedAt: job.posted_at || job.created_at || ''
+});
+
+const mergeFeaturedJobs = (portalJobs = [], externalJobs = []) => [
+  ...portalJobs.map((job) => ({ ...job, sourceType: job.sourceType || 'portal' })),
+  ...externalJobs.map(mapExternalJobToFeaturedJob)
+];
 
 const includesTerm = (value, keyword) =>
   String(value || '').toLowerCase().includes(String(keyword || '').toLowerCase());
@@ -112,10 +135,15 @@ const HomePage = () => {
       setJobsError('');
 
       try {
-        const response = await apiFetch('/jobs?page=1&limit=120&status=open');
-        const payload = await response.json().catch(() => null);
+        const [portalResult, externalResult] = await Promise.allSettled([
+          apiFetch('/jobs?page=1&limit=120&status=open'),
+          apiFetch(`/external-jobs?page=1&limit=${JOBS_PER_PAGE}`)
+        ]);
 
-        if (!response.ok) {
+        const portalResponse = portalResult.status === 'fulfilled' ? portalResult.value : null;
+        const externalResponse = externalResult.status === 'fulfilled' ? externalResult.value : null;
+
+        if (!portalResponse?.ok) {
           if (!mounted) return;
           setJobs(fallbackFeaturedJobs);
           setJobsError('');
@@ -123,8 +151,13 @@ const HomePage = () => {
           return;
         }
 
+        const portalPayload = await portalResponse.json().catch(() => null);
+        const externalPayload = externalResponse?.ok ? await externalResponse.json().catch(() => null) : null;
+
         if (!mounted) return;
-        setJobs(payload?.jobs?.length ? payload.jobs : fallbackFeaturedJobs);
+        const portalJobs = portalPayload?.jobs?.length ? portalPayload.jobs : fallbackFeaturedJobs;
+        const externalJobs = externalPayload?.data?.jobs || [];
+        setJobs(mergeFeaturedJobs(portalJobs, externalJobs));
         setLoadingJobs(false);
       } catch {
         if (!mounted) return;

@@ -28,7 +28,7 @@ const loginPortals = {
     passwordPlaceholder: 'Enter your password',
     allowSocialLogin: true,
     socialRole: 'student',
-    allowedLoginRoles: ['student', 'hr'],
+    allowedLoginRoles: ['student', 'hr', 'campus_connect'],
     showCreateAccount: true,
     createAccountPath: '/sign-up',
     createAccountLabel: 'Create account',

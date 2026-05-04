@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -15,6 +15,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [loginDrawerOpen, setLoginDrawerOpen] = useState(false);
+  const headerRef = useRef(null);
   const location = useLocation();
 
   const jobsNavPath = getPublicJobsNavPath(Boolean(user));
@@ -30,6 +31,31 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
     setDropdownOpen(null);
     setLoginDrawerOpen(false);
   }, [location.hash, location.pathname]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const updateNavbarHeightVar = () => {
+      const navbarHeight = Math.ceil(headerRef.current?.getBoundingClientRect().height || 0);
+      if (!navbarHeight) return;
+      document.documentElement.style.setProperty('--public-navbar-height', `${navbarHeight}px`);
+    };
+
+    updateNavbarHeightVar();
+
+    window.addEventListener('resize', updateNavbarHeightVar, { passive: true });
+
+    let resizeObserver;
+    if (typeof ResizeObserver !== 'undefined' && headerRef.current) {
+      resizeObserver = new ResizeObserver(updateNavbarHeightVar);
+      resizeObserver.observe(headerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateNavbarHeightVar);
+      resizeObserver?.disconnect();
+    };
+  }, [location.pathname, user]);
 
   const isNavItemActive = (item) => {
     if (item.children) {
@@ -54,44 +80,45 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
   const loginDrawer =
     loginDrawerOpen && !user && typeof document !== 'undefined'
       ? createPortal(
-          <AnimatePresence>
-            <motion.div
-              key="login-drawer-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[120] bg-slate-950/12 backdrop-blur-[3px]"
-              onClick={() => setLoginDrawerOpen(false)}
+        <AnimatePresence>
+          <motion.div
+            key="login-drawer-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] bg-slate-950/12 backdrop-blur-[3px]"
+            onClick={() => setLoginDrawerOpen(false)}
+          />
+          <motion.aside
+            key="login-drawer-panel"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', stiffness: 110, damping: 26, mass: 1.05 }}
+            className="fixed inset-y-0 right-0 z-[121] flex h-full w-full max-w-[460px] flex-col overflow-y-auto bg-white px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_24px_72px_rgba(15,23,42,0.18)] sm:max-w-[500px] sm:px-5 sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pt-5"
+          >
+            <LoginPanelContent
+              portalLabel="Login"
+              allowSocialLogin={defaultLoginPortal.allowSocialLogin}
+              socialRole={defaultLoginPortal.socialRole}
+              showCreateAccount={defaultLoginPortal.showCreateAccount}
+              createAccountPath={defaultLoginPortal.createAccountPath}
+              createAccountLabel={defaultLoginPortal.createAccountLabel}
+              showOtpLogin={defaultLoginPortal.showOtpLogin}
+              allowedLoginRoles={defaultLoginPortal.allowedLoginRoles}
+              showHeader
+              onRequestClose={() => setLoginDrawerOpen(false)}
             />
-            <motion.aside
-              key="login-drawer-panel"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', stiffness: 110, damping: 26, mass: 1.05 }}
-              className="fixed inset-y-0 right-0 z-[121] flex h-full w-full max-w-[460px] flex-col overflow-y-auto bg-white px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_24px_72px_rgba(15,23,42,0.18)] sm:max-w-[500px] sm:px-5 sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pt-5"
-            >
-              <LoginPanelContent
-                portalLabel="Login"
-                allowSocialLogin={defaultLoginPortal.allowSocialLogin}
-                socialRole={defaultLoginPortal.socialRole}
-                showCreateAccount={defaultLoginPortal.showCreateAccount}
-                createAccountPath={defaultLoginPortal.createAccountPath}
-                createAccountLabel={defaultLoginPortal.createAccountLabel}
-                showOtpLogin={defaultLoginPortal.showOtpLogin}
-                allowedLoginRoles={defaultLoginPortal.allowedLoginRoles}
-                showHeader
-                onRequestClose={() => setLoginDrawerOpen(false)}
-              />
-            </motion.aside>
-          </AnimatePresence>,
-          document.body
-        )
+          </motion.aside>
+        </AnimatePresence>,
+        document.body
+      )
       : null;
 
   return (
     <>
       <motion.header
+        ref={headerRef}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 100, damping: 20 }}
@@ -131,22 +158,19 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                     <button
                       type="button"
                       aria-expanded={dropdownOpen === link.key}
-                      className={`group relative flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                        isActive ? 'text-navy' : 'text-slate-500 hover:text-navy'
-                      }`}
+                      className={`group relative flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-navy' : 'text-slate-500 hover:text-navy'
+                        }`}
                     >
                       {link.label}
                       <ChevronDown
-                        className={`h-3.5 w-3.5 transition-transform ${
-                          dropdownOpen === link.key ? 'rotate-180 text-gold-dark' : ''
-                        }`}
+                        className={`h-3.5 w-3.5 transition-transform ${dropdownOpen === link.key ? 'rotate-180 text-gold-dark' : ''
+                          }`}
                       />
                       <span
-                        className={`absolute bottom-0 left-1/2 h-0.5 -translate-x-1/2 rounded-full bg-gold transition-all duration-300 ${
-                          isActive || dropdownOpen === link.key
+                        className={`absolute bottom-0 left-1/2 h-0.5 -translate-x-1/2 rounded-full bg-gold transition-all duration-300 ${isActive || dropdownOpen === link.key
                             ? 'w-4/5'
                             : 'w-0 group-hover:w-4/5'
-                        }`}
+                          }`}
                       />
                     </button>
 
@@ -162,11 +186,10 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                           {link.children.map((child, index) => {
                             const isChildActive = isNavItemActive(child);
                             const isExternal = isExternalHref(child.to);
-                            const className = `block rounded-2xl px-3 py-2 text-sm transition-all ${
-                              isChildActive
+                            const className = `block rounded-2xl px-3 py-2 text-sm transition-all ${isChildActive
                                 ? 'bg-brand-50 text-navy'
                                 : 'text-slate-500 hover:bg-gold/5 hover:text-navy'
-                            }`;
+                              }`;
 
                             return (
                               <motion.div
@@ -203,9 +226,8 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
               }
 
               const isExternal = isExternalHref(link.to);
-              const className = `group relative rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive ? 'text-navy' : 'text-slate-500 hover:text-navy'
-              }`;
+              const className = `group relative rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-navy' : 'text-slate-500 hover:text-navy'
+                }`;
 
               return isExternal ? (
                 <a
@@ -215,9 +237,8 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                 >
                   {link.label}
                   <span
-                    className={`absolute bottom-0 left-1/2 h-0.5 -translate-x-1/2 rounded-full bg-gold transition-all duration-300 ${
-                      isActive ? 'w-4/5' : 'w-0 group-hover:w-4/5'
-                    }`}
+                    className={`absolute bottom-0 left-1/2 h-0.5 -translate-x-1/2 rounded-full bg-gold transition-all duration-300 ${isActive ? 'w-4/5' : 'w-0 group-hover:w-4/5'
+                      }`}
                   />
                 </a>
               ) : (
@@ -228,9 +249,8 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                 >
                   {link.label}
                   <span
-                    className={`absolute bottom-0 left-1/2 h-0.5 -translate-x-1/2 rounded-full bg-gold transition-all duration-300 ${
-                      isActive ? 'w-4/5' : 'w-0 group-hover:w-4/5'
-                    }`}
+                    className={`absolute bottom-0 left-1/2 h-0.5 -translate-x-1/2 rounded-full bg-gold transition-all duration-300 ${isActive ? 'w-4/5' : 'w-0 group-hover:w-4/5'
+                      }`}
                   />
                 </Link>
               );
@@ -314,11 +334,10 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                         {link.children.map((child) => {
                           const isChildActive = isNavItemActive(child);
                           const isExternal = isExternalHref(child.to);
-                          const className = `block rounded-2xl px-6 py-2 text-sm transition-colors ${
-                            isChildActive
+                          const className = `block rounded-2xl px-6 py-2 text-sm transition-colors ${isChildActive
                               ? 'bg-brand-50 text-navy'
                               : 'text-slate-500 hover:bg-slate-50 hover:text-navy'
-                          }`;
+                            }`;
 
                           return isExternal ? (
                             <a
@@ -345,11 +364,10 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                   }
 
                   const isExternal = isExternalHref(link.to);
-                  const className = `block rounded-2xl px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive
+                  const className = `block rounded-2xl px-3 py-2 text-sm font-medium transition-colors ${isActive
                       ? 'bg-brand-50 text-navy'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-navy'
-                  }`;
+                    }`;
 
                   return (
                     <motion.div

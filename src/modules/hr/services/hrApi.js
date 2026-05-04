@@ -346,6 +346,13 @@ export const closeHrJob = async (jobId) =>
     extract: (responsePayload) => responsePayload?.job || responsePayload
   });
 
+export const reopenHrJob = async (jobId) =>
+  strictRequest({
+    path: `/hr/jobs/${jobId}`,
+    options: { method: 'PATCH', body: JSON.stringify({ status: 'open' }) },
+    extract: (responsePayload) => responsePayload?.job || responsePayload
+  });
+
 export const payForHrJob = async (jobId, paymentPayload) =>
   strictRequest({
     path: `/hr/jobs/${jobId}/payment`,

@@ -1,12 +1,14 @@
 import { FiCheckCircle } from 'react-icons/fi';
 import AnimatedSection from '../../../../shared/components/AnimatedSection';
 
+const formatHeading = (heading) => String(heading || '').replace(/^\s*\d+\.\s*/, '');
+
 const FooterInfoSectionCard = ({ section, delay = 0 }) => {
   return (
     <AnimatedSection delay={delay}>
-      <article className="rounded-[2rem] border border-slate-200 bg-white p-7 shadow-sm">
+      <article className="border-b border-slate-200 pb-7">
         {section.image ? (
-          <div className="mb-6 overflow-hidden rounded-[1.5rem] border border-slate-100">
+          <div className="mb-5 overflow-hidden rounded-2xl border border-slate-200">
             <img
               src={section.image}
               alt={section.imageAlt || section.heading || 'Section cover'}
@@ -16,7 +18,7 @@ const FooterInfoSectionCard = ({ section, delay = 0 }) => {
           </div>
         ) : null}
         {section.tag || section.readTime ? (
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-3 flex flex-wrap gap-2">
             {section.tag ? (
               <span className="rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-700">
                 {section.tag}
@@ -29,14 +31,14 @@ const FooterInfoSectionCard = ({ section, delay = 0 }) => {
             ) : null}
           </div>
         ) : null}
-        <h3 className="font-heading text-2xl font-bold text-navy">{section.heading}</h3>
-        {section.body ? <p className="mt-4 text-sm leading-7 text-slate-600">{section.body}</p> : null}
+        <h3 className="font-heading text-[1.85rem] font-bold leading-tight text-navy">{formatHeading(section.heading)}</h3>
+        {section.body ? <p className="mt-3 text-[15px] leading-8 text-slate-600">{section.body}</p> : null}
         {Array.isArray(section.items) && section.items.length > 0 ? (
-          <div className="mt-6 grid gap-3">
+          <div className="mt-5 grid gap-2.5">
             {section.items.map((item) => (
-              <div key={item} className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+              <div key={item} className="flex items-start gap-3 px-0.5 py-1.5">
                 <FiCheckCircle className="mt-1 shrink-0 text-brand-600" size={16} />
-                <p className="text-sm leading-6 text-slate-600">{item}</p>
+                <p className="text-[15px] leading-7 text-slate-600">{item}</p>
               </div>
             ))}
           </div>

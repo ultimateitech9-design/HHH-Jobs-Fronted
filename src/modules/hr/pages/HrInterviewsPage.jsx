@@ -196,7 +196,7 @@ const HrInterviewsPage = () => {
             <span className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-brand-700">
               Video interview
             </span>
-            <h1 className="text-3xl font-extrabold text-navy">Schedule inside HHH Jobs</h1>
+            <h1 className="text-2xl font-extrabold leading-tight text-navy">Schedule inside HHH Jobs</h1>
             <p className="text-sm leading-6 text-slate-500">
               Launch the full in-app room with consent, transcript, whiteboard, code editor, live notes, and stored recruiter ratings.
             </p>
@@ -293,20 +293,20 @@ const HrInterviewsPage = () => {
         </article>
 
         <article className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.42)]">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-[34rem]">
               <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
                 Interview directory
               </span>
-              <h2 className="mt-3 text-3xl font-extrabold text-navy">Upcoming rooms and completed rounds</h2>
+              <h2 className="mt-3 text-2xl font-extrabold leading-tight text-navy">Upcoming rooms and completed rounds</h2>
             </div>
-            <div className="flex rounded-full border border-slate-200 bg-slate-50 p-1">
+            <div className="flex w-full max-w-full shrink-0 overflow-x-auto rounded-full border border-slate-200 bg-slate-50 p-1 sm:w-auto">
               {['upcoming', 'completed', 'attention'].map((tab) => (
                 <button
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`rounded-full px-4 py-2 text-sm font-bold capitalize ${activeTab === tab ? 'bg-white text-navy shadow-sm' : 'text-slate-500'}`}
+                  className={`min-w-[88px] whitespace-nowrap rounded-full px-3 py-2 text-xs font-bold capitalize ${activeTab === tab ? 'bg-white text-navy shadow-sm' : 'text-slate-500'}`}
                 >
                   {tab}
                 </button>

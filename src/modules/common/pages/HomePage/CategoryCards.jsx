@@ -11,7 +11,7 @@ const formatCategoryHint = (keywords = []) =>
 
 export function CategoryCards({ selectedCategory, onCategorySelect, onBrowseAll }) {
   return (
-    <section id="about" className="px-4 py-20">
+    <section id="about" className="px-4 pb-5 pt-20 md:pb-6">
       <div className="container mx-auto max-w-7xl">
         <AnimatedSection className="mb-12 text-center">
           <h2 className="font-heading text-3xl font-extrabold text-navy md:text-4xl">
