@@ -14,9 +14,7 @@ test('footer quick links avoid placeholder targets', () => {
 
 test('public navigation wires the expected core destinations', () => {
   const navItems = getPublicNavItems({
-    jobSeekerPath: '/login',
-    jobsNavPath: '/portal/student/jobs',
-    recruiterPath: '/employer-home'
+    jobsNavPath: '/jobs'
   });
 
   const jobsItem = navItems.find((item) => item.key === 'jobs');
@@ -24,8 +22,23 @@ test('public navigation wires the expected core destinations', () => {
   const companyItem = navItems.find((item) => item.key === 'companies');
   const forYouItem = navItems.find((item) => item.key === 'for-you');
 
-  assert.equal(jobsItem?.to, '/portal/student/jobs');
+  assert.equal(jobsItem?.to, '/jobs');
   assert.equal(blogItem?.to, BLOG_BASE_URL);
   assert.equal(companyItem?.to, '/companies');
-  assert.equal(forYouItem?.children?.find((item) => item.key === 'for-freshers')?.to, '/freshers');
+  assert.equal(forYouItem?.children?.find((item) => item.key === 'for-job-seekers')?.to, '/job-seekers');
+  assert.equal(forYouItem?.children?.find((item) => item.key === 'for-recruiters')?.to, '/recruiters');
+  assert.equal(forYouItem?.children?.find((item) => item.key === 'for-campus-connect')?.to, '/campus-connect');
+});
+
+test('logged-in public navigation sends For You links to the active dashboard', () => {
+  const dashboardPath = '/portal/hr/dashboard';
+  const navItems = getPublicNavItems({
+    jobsNavPath: '/jobs',
+    dashboardPath
+  });
+
+  const forYouItem = navItems.find((item) => item.key === 'for-you');
+  const forYouPaths = forYouItem?.children?.map((item) => item.to);
+
+  assert.deepEqual(forYouPaths, [dashboardPath, dashboardPath, dashboardPath]);
 });

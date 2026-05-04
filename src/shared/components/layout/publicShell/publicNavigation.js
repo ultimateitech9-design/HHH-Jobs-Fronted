@@ -1,6 +1,6 @@
 import { BLOG_BASE_URL } from '../../../utils/externalLinks.js';
 
-export const getPublicNavItems = ({ jobsNavPath }) => [
+export const getPublicNavItems = ({ jobsNavPath, dashboardPath }) => [
   {
     key: 'home',
     to: '/',
@@ -14,19 +14,19 @@ export const getPublicNavItems = ({ jobsNavPath }) => [
       {
         key: 'for-job-seekers',
         label: 'Student/Professional',
-        to: '/job-seekers',
+        to: dashboardPath || '/job-seekers',
         matchers: [/^\/job-seekers(?:\/.*)?$/]
       },
       {
         key: 'for-recruiters',
         label: 'HR',
-        to: '/recruiters',
+        to: dashboardPath || '/recruiters',
         matchers: [/^\/recruiters(?:\/.*)?$/]
       },
       {
         key: 'for-campus-connect',
         label: 'Campus Connect',
-        to: '/campus-connect',
+        to: dashboardPath || '/campus-connect',
         matchers: [/^\/campus-connect(?:\/.*)?$/]
       }
     ]

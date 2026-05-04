@@ -22,8 +22,8 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
   const defaultLoginPortal = getLoginPortalConfig('default');
 
   const publicNavItems = useMemo(
-    () => getPublicNavItems({ jobsNavPath }),
-    [jobsNavPath]
+    () => getPublicNavItems({ jobsNavPath, dashboardPath }),
+    [dashboardPath, jobsNavPath]
   );
 
   useEffect(() => {
