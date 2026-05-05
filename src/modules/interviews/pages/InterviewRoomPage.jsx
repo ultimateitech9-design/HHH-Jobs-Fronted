@@ -5,6 +5,7 @@ import Editor from '@monaco-editor/react';
 import {
   FiArrowLeft,
   FiCalendar,
+  FiCast,
   FiCheckCircle,
   FiClock,
   FiCode,
@@ -19,6 +20,7 @@ import {
   FiPhoneOff,
   FiPlay,
   FiRefreshCw,
+  FiRepeat,
   FiSave,
   FiStar,
   FiUsers,
@@ -45,6 +47,12 @@ const SPEECH_RECOGNITION =
     : null;
 
 const defaultWhiteboard = { lines: [], updatedAt: null };
+const defaultRtcConfig = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ]
+};
 
 const formatDateTime = (value) => {
   if (!value) return '-';
@@ -112,6 +120,10 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const [isStartingMedia, setIsStartingMedia] = useState(false);
   const [remoteStreamReady, setRemoteStreamReady] = useState(false);
   const [recordingState, setRecordingState] = useState({ active: false, uploading: false, message: '', url: '' });
+  const [videoSource, setVideoSource] = useState('camera');
+  const [remoteVideoSource, setRemoteVideoSource] = useState('camera');
+  const [isScreenShareActive, setIsScreenShareActive] = useState(false);
+  const [isStageSwapped, setIsStageSwapped] = useState(false);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -131,6 +143,10 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const recordingAnimationRef = useRef(null);
   const audioContextRef = useRef(null);
   const audioDestinationRef = useRef(null);
+  const cameraVideoTrackRef = useRef(null);
+  const screenShareStreamRef = useRef(null);
+  const pendingIceCandidatesRef = useRef([]);
+  const remoteDescriptionReadyRef = useRef(false);
 
   const payload = roomState.payload;
   const interview = payload?.interview || null;
@@ -138,6 +154,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const job = payload?.job || {};
   const candidate = payload?.candidate || {};
   const hr = payload?.hr || {};
+  const rtcConfig = payload?.rtcConfig || defaultRtcConfig;
 
   const returnPath = portalRole === 'student' ? '/portal/student/interviews' : '/portal/hr/interviews';
   const transcriptText = useMemo(
@@ -150,16 +167,18 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const aiAllowed = Boolean(interview?.candidate_ai_consent);
   const isManager = Boolean(permissions?.canManage);
   const isCandidateViewer = Boolean(permissions?.isCandidateViewer);
+  const participantLabel = isManager ? 'Recruiter' : 'Candidate';
+  const remoteParticipantLabel = isManager ? 'Candidate' : 'Recruiter';
 
   const syncLocalVideo = (stream) => {
     if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
+      localVideoRef.current.srcObject = stream || null;
     }
   };
 
   const syncRemoteVideo = (stream) => {
     if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = stream;
+      remoteVideoRef.current.srcObject = stream || null;
     }
   };
 
@@ -204,6 +223,8 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   };
 
   const destroyPeerConnection = () => {
+    remoteDescriptionReadyRef.current = false;
+    pendingIceCandidatesRef.current = [];
     if (peerConnectionRef.current) {
       try {
         peerConnectionRef.current.ontrack = null;
@@ -215,14 +236,69 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       }
       peerConnectionRef.current = null;
     }
+    remoteStreamRef.current = null;
+    setRemoteStreamReady(false);
+    syncRemoteVideo(null);
+  };
+
+  const flushPendingIceCandidates = async (peerConnection) => {
+    if (!peerConnection || !remoteDescriptionReadyRef.current || pendingIceCandidatesRef.current.length === 0) return;
+
+    const queuedCandidates = [...pendingIceCandidatesRef.current];
+    pendingIceCandidatesRef.current = [];
+
+    for (const candidate of queuedCandidates) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (error) {
+        pendingIceCandidatesRef.current.push(candidate);
+      }
+    }
+  };
+
+  const broadcastMediaState = (nextVideoSource, sharingScreen) =>
+    sendInterviewSignal(interviewId, {
+      signalType: 'workspace-sync',
+      payload: {
+        kind: 'media-state',
+        videoSource: nextVideoSource,
+        sharingScreen,
+        actor: isManager ? 'hr' : 'candidate'
+      }
+    }).catch(() => {});
+
+  const replaceOutgoingVideoTrack = async (nextTrack, nextSource) => {
+    if (!localStreamRef.current || !nextTrack) return;
+
+    const peerConnection = ensurePeerConnection();
+    const existingTracks = localStreamRef.current.getVideoTracks();
+    existingTracks.forEach((track) => {
+      if (track !== nextTrack) {
+        localStreamRef.current.removeTrack(track);
+      }
+    });
+
+    if (!localStreamRef.current.getVideoTracks().includes(nextTrack)) {
+      localStreamRef.current.addTrack(nextTrack);
+    }
+
+    const sender = peerConnection.getSenders().find((candidateSender) => candidateSender.track?.kind === 'video');
+    if (sender) {
+      await sender.replaceTrack(nextTrack);
+    } else {
+      peerConnection.addTrack(nextTrack, localStreamRef.current);
+    }
+
+    nextTrack.enabled = isCameraOn;
+    syncLocalVideo(localStreamRef.current);
+    setVideoSource(nextSource);
   };
 
   const ensurePeerConnection = () => {
     if (peerConnectionRef.current) return peerConnectionRef.current;
 
-    const peerConnection = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    });
+    const peerConnection = new RTCPeerConnection(rtcConfig);
 
     peerConnection.ontrack = (event) => {
       const [stream] = event.streams;
@@ -244,6 +320,12 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     peerConnection.onconnectionstatechange = () => {
       setConnectionState(peerConnection.connectionState || 'new');
+      if (['failed', 'disconnected'].includes(peerConnection.connectionState || '') && isManager && localStreamRef.current) {
+        sendInterviewSignal(interviewId, {
+          signalType: 'reconnect',
+          payload: { requestedBy: 'hr', reason: peerConnection.connectionState }
+        }).catch(() => {});
+      }
     };
 
     if (localStreamRef.current) {
@@ -326,8 +408,10 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       });
 
       localStreamRef.current = stream;
+      cameraVideoTrackRef.current = stream.getVideoTracks()[0] || null;
       setIsCameraOn(true);
       setIsMicOn(true);
+      setVideoSource('camera');
       syncLocalVideo(stream);
       ensurePeerConnection();
 
@@ -339,6 +423,56 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     } finally {
       setIsStartingMedia(false);
     }
+  };
+
+  const stopScreenShare = async ({ notify = true } = {}) => {
+    const screenShareStream = screenShareStreamRef.current;
+    if (!screenShareStream) return;
+
+    screenShareStream.getTracks().forEach((track) => {
+      track.onended = null;
+      track.stop();
+    });
+    screenShareStreamRef.current = null;
+
+    if (cameraVideoTrackRef.current) {
+      await replaceOutgoingVideoTrack(cameraVideoTrackRef.current, 'camera');
+    }
+
+    setIsScreenShareActive(false);
+    if (notify) {
+      broadcastMediaState('camera', false);
+    }
+  };
+
+  const startScreenShare = async () => {
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      setLocalMediaError('Screen sharing is not supported in this browser.');
+      return;
+    }
+
+    if (!localStreamRef.current) {
+      await startLocalMedia({ createOffer: isManager });
+    }
+
+    const screenShareStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { cursor: 'always' },
+      audio: false
+    });
+    const screenTrack = screenShareStream.getVideoTracks()[0];
+    if (!screenTrack) {
+      screenShareStream.getTracks().forEach((track) => track.stop());
+      throw new Error('No screen track was returned.');
+    }
+
+    screenTrack.onended = () => {
+      stopScreenShare().catch(() => {});
+    };
+
+    screenShareStreamRef.current = screenShareStream;
+    await replaceOutgoingVideoTrack(screenTrack, 'screen');
+    setIsScreenShareActive(true);
+    broadcastMediaState('screen', true);
   };
 
   const stopRecordingLoop = () => {
@@ -483,6 +617,8 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       await startLocalMedia({ createOffer: false });
       const peerConnection = ensurePeerConnection();
       await peerConnection.setRemoteDescription(new RTCSessionDescription(payloadBody.sdp));
+      remoteDescriptionReadyRef.current = true;
+      await flushPendingIceCandidates(peerConnection);
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
       await sendInterviewSignal(interviewId, {
@@ -494,15 +630,32 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     if (type === 'answer' && peerConnectionRef.current) {
       await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(payloadBody.sdp));
+      remoteDescriptionReadyRef.current = true;
+      await flushPendingIceCandidates(peerConnectionRef.current);
       return;
     }
 
-    if (type === 'ice-candidate' && payloadBody.candidate && peerConnectionRef.current) {
+    if (type === 'ice-candidate' && payloadBody.candidate) {
+      if (!peerConnectionRef.current || !remoteDescriptionReadyRef.current) {
+        pendingIceCandidatesRef.current.push(payloadBody.candidate);
+        return;
+      }
+
       try {
         await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(payloadBody.candidate));
       } catch (error) {
-        // Ignore transient ICE timing issues.
+        pendingIceCandidatesRef.current.push(payloadBody.candidate);
       }
+      return;
+    }
+
+    if (type === 'workspace-sync' && payloadBody.kind === 'media-state') {
+      setRemoteVideoSource(payloadBody.videoSource === 'screen' ? 'screen' : 'camera');
+      return;
+    }
+
+    if (type === 'reconnect' && isManager && localStreamRef.current) {
+      await maybeCreateOffer();
     }
   };
 
@@ -554,6 +707,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     return () => {
       isMountedRef.current = false;
       stopSpeechRecognition();
+      stopScreenShare({ notify: false }).catch(() => {});
       stopCompositeRecording({ upload: false }).catch(() => {});
       destroyPeerConnection();
       if (localStreamRef.current) {
@@ -562,6 +716,16 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       leaveInterviewRoom(interviewId).catch(() => {});
     };
   }, [interviewId]);
+
+  useEffect(() => {
+    if (!payload?.permissions?.canJoin || localStreamRef.current || isStartingMedia) return undefined;
+
+    const timer = setTimeout(() => {
+      startLocalMedia({ createOffer: isManager }).catch(() => {});
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [payload?.permissions?.canJoin, isStartingMedia, isManager]);
 
   // Signal and room polling are intentionally tied to the current interview id.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -631,7 +795,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   }, [whiteboardData]);
 
   useEffect(() => {
-    if (!payload?.interview) return;
+    if (!payload?.interview || workspaceVersion === 0) return;
 
     const timer = setTimeout(async () => {
       const transcriptAppend = pendingTranscriptSegmentsRef.current.splice(0);
@@ -649,7 +813,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         updatePayload.transcriptAppend = transcriptAppend;
       }
 
-      if (!transcriptAppend.length && !whiteboardData && !codeEditorContent) {
+      if (!transcriptAppend.length && !whiteboardData && !codeEditorContent && !liveNotes) {
         return;
       }
 
@@ -665,7 +829,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }, 900);
 
     return () => clearTimeout(timer);
-  }, [workspaceVersion, whiteboardData, codeEditorLanguage, codeEditorContent, liveNotes, isManager, interviewId, payload?.interview]);
+  }, [workspaceVersion, isManager, interviewId]);
 
   useEffect(() => {
     if (!isManager) return;
@@ -779,14 +943,19 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(360px,0.9fr)]">
         <div className="space-y-6">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <article className="rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
+          <div className={`grid gap-4 ${isStageSwapped ? 'lg:grid-cols-[minmax(260px,0.75fr)_minmax(0,1.45fr)]' : 'lg:grid-cols-[minmax(0,1.45fr)_minmax(260px,0.75fr)]'}`}>
+            <article className={`rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)] ${isStageSwapped ? 'lg:order-2' : 'lg:order-1'}`}>
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-500">Remote feed</span>
+                <span className="text-sm font-bold text-slate-500">{remoteParticipantLabel} feed</span>
                 <FiVideo className="text-brand-600" />
               </div>
               <div className="relative overflow-hidden rounded-[1.5rem] bg-slate-950">
                 <video ref={remoteVideoRef} autoPlay playsInline className="aspect-video w-full object-cover" />
+                {remoteStreamReady ? (
+                  <div className="absolute left-3 top-3 rounded-full border border-white/20 bg-slate-950/70 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-white">
+                    {remoteVideoSource === 'screen' ? 'Screen shared live' : 'Camera live'}
+                  </div>
+                ) : null}
                 {!remoteStreamReady ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center text-slate-300">
                     <FiUsers size={28} />
@@ -796,13 +965,18 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
               </div>
             </article>
 
-            <article className="rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
+            <article className={`rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)] ${isStageSwapped ? 'lg:order-1' : 'lg:order-2'}`}>
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-500">My camera</span>
+                <span className="text-sm font-bold text-slate-500">{participantLabel} preview</span>
                 <FiMonitor className="text-brand-600" />
               </div>
               <div className="relative overflow-hidden rounded-[1.5rem] bg-slate-900">
                 <video ref={localVideoRef} autoPlay muted playsInline className="aspect-video w-full object-cover" />
+                {localStreamRef.current ? (
+                  <div className="absolute left-3 top-3 rounded-full border border-white/20 bg-slate-950/70 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-white">
+                    {isScreenShareActive ? 'You are sharing screen' : 'Camera preview'}
+                  </div>
+                ) : null}
                 {!localStreamRef.current ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center text-slate-300">
                     <FiVideoOff size={28} />
@@ -821,7 +995,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
               className="inline-flex items-center gap-2 rounded-full bg-[#2d5bff] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_22px_rgba(45,91,255,0.28)]"
             >
               {isStartingMedia ? <FiRefreshCw className="animate-spin" /> : <FiPlay />}
-              Start camera
+              {localStreamRef.current ? 'Restart camera check' : 'Start camera'}
             </button>
             <button
               type="button"
@@ -841,6 +1015,15 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
             </button>
             <button
               type="button"
+              onClick={() => (isScreenShareActive ? stopScreenShare() : startScreenShare()).catch((error) => setLocalMediaError(error.message || 'Unable to share screen.'))}
+              disabled={!localStreamRef.current}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FiCast />
+              {isScreenShareActive ? 'Switch to camera' : 'Share screen'}
+            </button>
+            <button
+              type="button"
               onClick={() => (transcriptionActive ? stopSpeechRecognition() : startSpeechRecognition())}
               disabled={!aiAllowed || !localStreamRef.current}
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
@@ -855,6 +1038,14 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
             >
               <FiRefreshCw />
               Reconnect
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsStageSwapped((value) => !value)}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700"
+            >
+              <FiRepeat />
+              {isStageSwapped ? 'Focus remote screen' : 'Focus my screen'}
             </button>
             <button
               type="button"
@@ -876,6 +1067,20 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
           ) : null}
 
           <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
+            <div className="mb-5 grid gap-3 md:grid-cols-3">
+              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Interview surface</p>
+                <p className="mt-2 font-semibold text-slate-800">{isStageSwapped ? 'Your screen is primary' : 'Remote screen is primary'}</p>
+              </div>
+              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Technical tools</p>
+                <p className="mt-2 font-semibold text-slate-800">Live code editor + whiteboard</p>
+              </div>
+              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Video mode</p>
+                <p className="mt-2 font-semibold text-slate-800">{isScreenShareActive ? 'Screen share active' : 'Camera mode active'}</p>
+              </div>
+            </div>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Live transcript</p>
@@ -959,8 +1164,8 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
               ref={whiteboardCanvasRef}
               width={920}
               height={420}
-              className="mt-5 h-[320px] w-full rounded-[1.5rem] border border-slate-200 bg-slate-50"
-              onMouseDown={(event) => {
+              className="mt-5 h-[320px] w-full touch-none rounded-[1.5rem] border border-slate-200 bg-slate-50"
+              onPointerDown={(event) => {
                 const rect = event.currentTarget.getBoundingClientRect();
                 const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
                 drawingRef.current = {
@@ -972,8 +1177,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                     points: [point]
                   }
                 };
+                event.currentTarget.setPointerCapture?.(event.pointerId);
               }}
-              onMouseMove={(event) => {
+              onPointerMove={(event) => {
                 if (!drawingRef.current.active || !drawingRef.current.currentLine) return;
                 const rect = event.currentTarget.getBoundingClientRect();
                 const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
@@ -983,11 +1189,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                   updatedAt: new Date().toISOString()
                 }));
               }}
-              onMouseUp={() => {
+              onPointerUp={() => {
                 drawingRef.current = { active: false, currentLine: null };
                 setWorkspaceVersion((value) => value + 1);
               }}
-              onMouseLeave={() => {
+              onPointerLeave={() => {
                 drawingRef.current = { active: false, currentLine: null };
               }}
             />
