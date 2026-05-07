@@ -225,7 +225,7 @@ const AiChatbot = ({ hideToggleButton = false }) => {
             tone: 'natural_human',
             helpful: true,
             askClarifyingQuestions: true
-          }
+          } 
         })
       });
 
