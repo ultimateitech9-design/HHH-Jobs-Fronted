@@ -1,12 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FiActivity,
+  FiAlertTriangle,
+  FiBarChart2,
+  FiCheck,
   FiCheckCircle,
+  FiChevronDown,
+  FiClock,
   FiFileText,
   FiRefreshCw,
+  FiSearch,
+  FiShield,
   FiTarget,
   FiTrendingUp,
   FiUploadCloud,
+  FiX,
   FiZap
 } from 'react-icons/fi';
 import DataTable from '../../../shared/components/DataTable';
@@ -29,34 +37,128 @@ import {
   runAtsPreview
 } from '../services/studentApi';
 
+const MAX_RESUME_FILE_SIZE = 8 * 1024 * 1024;
+
+const compactFieldClassName = `${studentFieldClassName} rounded-[0.95rem] px-3 py-2.5 text-[13px]`;
+const compactTextareaClassName = `${studentTextareaClassName} min-h-[104px] rounded-[0.95rem] px-3 py-2.5 text-[13px] leading-5`;
+
+const getJobId = (job = {}) => String(job.id || job._id || '');
+
+const mergeJobs = (current = [], incoming = []) => {
+  const map = new Map();
+  [...current, ...incoming].forEach((job) => {
+    const id = getJobId(job);
+    if (id) map.set(id, job);
+  });
+  return [...map.values()];
+};
+
 const getScoreTone = (score) => {
   const value = Number(score || 0);
   if (value >= 80) {
     return {
-      accent: 'from-emerald-400 via-teal-400 to-sky-500',
       badge: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-      surface: 'border-emerald-200 bg-emerald-50/70'
+      bar: 'bg-emerald-500',
+      text: 'text-emerald-700',
+      surface: 'border-emerald-200 bg-emerald-50'
     };
   }
   if (value >= 60) {
     return {
-      accent: 'from-amber-400 via-orange-400 to-pink-500',
       badge: 'border-amber-200 bg-amber-50 text-amber-700',
-      surface: 'border-amber-200 bg-amber-50/70'
+      bar: 'bg-amber-500',
+      text: 'text-amber-700',
+      surface: 'border-amber-200 bg-amber-50'
     };
   }
   return {
-    accent: 'from-rose-400 via-orange-400 to-amber-400',
     badge: 'border-rose-200 bg-rose-50 text-rose-700',
-    surface: 'border-rose-200 bg-rose-50/70'
+    bar: 'bg-rose-500',
+    text: 'text-rose-700',
+    surface: 'border-rose-200 bg-rose-50'
   };
 };
 
-const compactFieldClassName = `${studentFieldClassName} rounded-[0.95rem] px-3 py-2.5 text-[13px]`;
-const compactTextareaClassName = `${studentTextareaClassName} min-h-[96px] rounded-[0.95rem] px-3 py-2.5 text-[13px] leading-5`;
+const getWordCount = (value = '') => String(value || '').trim().split(/\s+/).filter(Boolean).length;
+
+const CASE_COVERAGE = [
+  'Profile resume',
+  'Custom PDF/DOC/DOCX/TXT',
+  'Pasted resume text',
+  'Live platform job',
+  'Manual job description',
+  'Missing resume guard',
+  'Large/invalid file guard',
+  'AI fallback handling'
+];
+
+const scoreCards = [
+  { key: 'keywordScore', label: 'Keywords', icon: FiZap },
+  { key: 'similarityScore', label: 'Role fit', icon: FiTrendingUp },
+  { key: 'formatScore', label: 'Format', icon: FiCheckCircle },
+  { key: 'impactScore', label: 'Impact', icon: FiBarChart2 }
+];
+
+const normalizeResult = (result = {}) => ({
+  ...result,
+  score: Number(result.score || 0),
+  keywordScore: Number(result.keywordScore || 0),
+  similarityScore: Number(result.similarityScore || 0),
+  formatScore: Number(result.formatScore || 0),
+  impactScore: Number(result.impactScore || 0),
+  confidenceScore: Number(result.confidenceScore || 0),
+  resumeWordCount: Number(result.resumeWordCount || 0),
+  matchedKeywords: Array.isArray(result.matchedKeywords) ? result.matchedKeywords : [],
+  missingKeywords: Array.isArray(result.missingKeywords) ? result.missingKeywords : [],
+  warnings: Array.isArray(result.warnings) ? result.warnings : [],
+  suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
+  sectionCoverage: Array.isArray(result.sectionCoverage) ? result.sectionCoverage : [],
+  riskFlags: Array.isArray(result.riskFlags) ? result.riskFlags : [],
+  priorityActions: Array.isArray(result.priorityActions) ? result.priorityActions : [],
+  aiStrengths: Array.isArray(result.aiStrengths) ? result.aiStrengths : [],
+  aiPriorityEdits: Array.isArray(result.aiPriorityEdits) ? result.aiPriorityEdits : []
+});
+
+const ChipList = ({ items = [], tone = 'slate', emptyText }) => {
+  const palette = {
+    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    rose: 'border-rose-200 bg-rose-50 text-rose-700',
+    sky: 'border-sky-200 bg-sky-50 text-sky-700',
+    amber: 'border-amber-200 bg-amber-50 text-amber-700',
+    slate: 'border-slate-200 bg-slate-50 text-slate-600'
+  };
+
+  if (!items.length) {
+    return <p className="text-xs font-medium text-slate-500">{emptyText}</p>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item) => (
+        <span key={item} className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${palette[tone] || palette.slate}`}>
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+const ScoreBar = ({ value = 0, tone }) => {
+  const width = Math.max(0, Math.min(100, Number(value || 0)));
+  return (
+    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+      <div className={`h-full rounded-full ${tone.bar}`} style={{ width: `${width}%` }} />
+    </div>
+  );
+};
 
 const StudentAtsPage = () => {
+  const searchBoxRef = useRef(null);
   const [jobs, setJobs] = useState([]);
+  const [jobResults, setJobResults] = useState([]);
+  const [jobSearch, setJobSearch] = useState('');
+  const [jobSearchOpen, setJobSearchOpen] = useState(false);
+  const [jobSearchLoading, setJobSearchLoading] = useState(false);
   const [history, setHistory] = useState([]);
   const [state, setState] = useState({ loading: true, error: '' });
   const [isRunning, setIsRunning] = useState(false);
@@ -68,7 +170,8 @@ const StudentAtsPage = () => {
     source: 'profile_resume',
     resumeText: '',
     resumeUrl: '',
-    targetText: ''
+    targetText: '',
+    targetTitle: ''
   });
 
   useEffect(() => {
@@ -76,7 +179,7 @@ const StudentAtsPage = () => {
 
     const loadData = async () => {
       const [jobsRes, historyRes] = await Promise.all([
-        getStudentJobs({ page: 1, limit: 100 }),
+        getStudentJobs({ page: 1, limit: 12 }),
         getAtsHistory()
       ]);
 
@@ -84,6 +187,7 @@ const StudentAtsPage = () => {
 
       const jobsList = jobsRes.data.jobs || [];
       setJobs(jobsList);
+      setJobResults(jobsList);
       setHistory(historyRes.data || []);
       setState({
         loading: false,
@@ -91,7 +195,9 @@ const StudentAtsPage = () => {
       });
 
       if (jobsList.length > 0) {
-        setForm((current) => ({ ...current, jobId: current.jobId || jobsList[0].id || jobsList[0]._id }));
+        const firstJobId = getJobId(jobsList[0]);
+        setForm((current) => ({ ...current, jobId: current.jobId || firstJobId }));
+        setJobSearch(`${jobsList[0].jobTitle || 'Untitled role'} at ${jobsList[0].companyName || 'Company'}`);
       }
     };
 
@@ -102,28 +208,254 @@ const StudentAtsPage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (state.loading) return undefined;
+
+    let mounted = true;
+    const timer = window.setTimeout(async () => {
+      const query = jobSearch.trim();
+      setJobSearchLoading(true);
+      const response = await getStudentJobs({ page: 1, limit: 12, search: query });
+      if (!mounted) return;
+
+      const nextJobs = response.data.jobs || [];
+      setJobResults(nextJobs);
+      setJobs((current) => mergeJobs(current, nextJobs));
+      setJobSearchLoading(false);
+      if (response.error) {
+        setNotice({ type: 'error', text: response.error });
+      }
+    }, 280);
+
+    return () => {
+      mounted = false;
+      window.clearTimeout(timer);
+    };
+  }, [jobSearch, state.loading]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!searchBoxRef.current?.contains(event.target)) {
+        setJobSearchOpen(false);
+      }
+    };
+
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const selectedJob = useMemo(
-    () => jobs.find((job) => String(job.id || job._id) === String(form.jobId)) || null,
+    () => jobs.find((job) => getJobId(job) === String(form.jobId)) || null,
     [jobs, form.jobId]
   );
 
-  const selectedJobTitle = selectedJob?.jobTitle || 'ATS preview';
-  const selectedJobCompany = selectedJob?.companyName || 'Custom target';
+  const selectedJobTitle = selectedJob?.jobTitle || form.targetTitle || 'Custom ATS preview';
+  const selectedJobCompany = selectedJob?.companyName || 'Manual target';
+  const hasCustomResume = form.source === 'new_resume_upload';
+  const isManualTarget = !form.jobId;
+  const resumeTextWordCount = getWordCount(form.resumeText);
 
   const historyStats = useMemo(() => {
-    if (history.length === 0) {
-      return { checks: 0, avgScore: 0, latestScore: result?.score || 0 };
-    }
+    const scores = history.map((item) => Number(item.score || 0)).filter((score) => Number.isFinite(score));
+    const latestScore = result?.score || Number(history[0]?.score || 0);
+    const bestScore = scores.length ? Math.max(...scores) : 0;
+    const avgScore = scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : 0;
 
-    const totalScore = history.reduce((sum, item) => sum + Number(item.score || 0), 0);
     return {
       checks: history.length,
-      avgScore: Math.round(totalScore / history.length),
-      latestScore: result?.score || Number(history[0]?.score || 0)
+      latestScore,
+      bestScore,
+      avgScore
     };
   }, [history, result]);
 
+  const stats = [
+    { label: 'Latest score', value: `${historyStats.latestScore || 0}%`, helper: 'Most recent ATS result', icon: FiTarget, tone: 'accent' },
+    { label: 'Average', value: `${historyStats.avgScore || 0}%`, helper: `${historyStats.checks} saved checks`, icon: FiActivity, tone: 'info' },
+    { label: 'Best', value: `${historyStats.bestScore || 0}%`, helper: 'Highest result in history', icon: FiTrendingUp, tone: 'success' }
+  ];
+
   const scoreTone = useMemo(() => getScoreTone(result?.score), [result?.score]);
+
+  const preflight = useMemo(() => {
+    const errors = [];
+    const warnings = [];
+
+    if (isManualTarget) {
+      if (!form.targetText.trim()) {
+        errors.push('Select a platform job or paste a target job description.');
+      } else if (getWordCount(form.targetText) < 12) {
+        warnings.push('Manual target is short. A full job description gives stronger AI analysis.');
+      }
+    }
+
+    if (hasCustomResume) {
+      if (!form.resumeText.trim() && !form.resumeUrl.trim()) {
+        errors.push('Attach a resume file, paste resume text, or add a resume URL.');
+      } else if (form.resumeText.trim() && resumeTextWordCount < 45) {
+        warnings.push('Resume text is very short. The score may be less reliable.');
+      }
+    } else {
+      warnings.push('Using profile resume. If your profile resume is missing, the backend will ask you to upload one.');
+    }
+
+    return { errors, warnings };
+  }, [form.resumeText, form.resumeUrl, form.targetText, hasCustomResume, isManualTarget, resumeTextWordCount]);
+
+  const selectJob = (job) => {
+    const jobId = getJobId(job);
+    if (!jobId) return;
+
+    setJobs((current) => mergeJobs(current, [job]));
+    setForm((current) => ({
+      ...current,
+      jobId,
+      targetText: '',
+      targetTitle: ''
+    }));
+    setJobSearch(`${job.jobTitle || 'Untitled role'} at ${job.companyName || 'Company'}`);
+    setJobSearchOpen(false);
+  };
+
+  const useManualTarget = () => {
+    setForm((current) => ({ ...current, jobId: '' }));
+    setJobSearch('');
+    setJobSearchOpen(false);
+  };
+
+  const runCheck = async (event) => {
+    event.preventDefault();
+    setNotice({ type: '', text: '' });
+
+    if (preflight.errors.length > 0) {
+      setNotice({ type: 'error', text: preflight.errors[0] });
+      return;
+    }
+
+    try {
+      setIsRunning(true);
+      const payload = form.jobId
+        ? await runAtsCheck({
+          jobId: form.jobId,
+          source: form.source,
+          resumeText: form.resumeText,
+          resumeUrl: form.resumeUrl
+        })
+        : await runAtsPreview({
+          source: form.source,
+          resumeText: form.resumeText,
+          resumeUrl: form.resumeUrl,
+          targetText: form.targetText,
+          jobTitle: form.targetTitle
+        });
+      const check = normalizeResult(payload?.result);
+
+      if (!payload?.result) {
+        throw new Error('ATS response is invalid. Please try again.');
+      }
+
+      setResult(check);
+
+      const historyItem = {
+        id: payload?.atsCheckId || `temp-${Date.now()}`,
+        job_id: form.jobId || 'preview',
+        score: check.score,
+        keyword_score: check.keywordScore,
+        similarity_score: check.similarityScore,
+        format_score: check.formatScore,
+        created_at: new Date().toISOString()
+      };
+
+      if (form.jobId && payload?.saved) {
+        const historyRes = await getAtsHistory();
+        setHistory(historyRes.error ? (current) => [historyItem, ...current] : historyRes.data || []);
+      } else {
+        setHistory((current) => [historyItem, ...current]);
+      }
+
+      setNotice({
+        type: payload?.persistenceWarning ? 'info' : 'success',
+        text: payload?.persistenceWarning || 'ATS check completed with job-specific AI analysis.'
+      });
+    } catch (error) {
+      setNotice({ type: 'error', text: error.message || 'Unable to run ATS check.' });
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const handleResumeFileUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const fileName = String(file.name || '').toLowerCase();
+    const fileType = String(file.type || '').toLowerCase();
+    const isTextFile = fileType.includes('text/plain') || fileName.endsWith('.txt');
+    const isAllowed = (
+      fileName.endsWith('.pdf')
+      || fileName.endsWith('.doc')
+      || fileName.endsWith('.docx')
+      || isTextFile
+      || fileType.includes('pdf')
+      || fileType.includes('msword')
+      || fileType.includes('officedocument.wordprocessingml')
+    );
+
+    if (!isAllowed) {
+      setNotice({ type: 'error', text: 'Upload PDF, DOC, DOCX, or TXT only.' });
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size <= 0) {
+      setNotice({ type: 'error', text: 'Selected resume file is empty.' });
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > MAX_RESUME_FILE_SIZE) {
+      setNotice({ type: 'error', text: 'Resume file must be 8 MB or less.' });
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const resultValue = reader.result;
+      if (typeof resultValue !== 'string') {
+        setNotice({ type: 'error', text: 'Unable to read selected file.' });
+        return;
+      }
+
+      setSelectedFileName(file.name);
+      setForm((current) => ({
+        ...current,
+        source: 'new_resume_upload',
+        resumeText: isTextFile ? resultValue : '',
+        resumeUrl: isTextFile ? current.resumeUrl : resultValue
+      }));
+      setNotice({ type: 'success', text: 'Resume attached. Run ATS check when ready.' });
+    };
+    reader.onerror = () => {
+      setNotice({ type: 'error', text: 'Unable to read selected file.' });
+    };
+
+    if (isTextFile) reader.readAsText(file);
+    else reader.readAsDataURL(file);
+  };
+
+  const resetForm = () => {
+    setForm((current) => ({
+      ...current,
+      source: 'profile_resume',
+      resumeText: '',
+      resumeUrl: '',
+      targetText: '',
+      targetTitle: ''
+    }));
+    setSelectedFileName('');
+    setNotice({ type: '', text: '' });
+  };
 
   const columns = [
     {
@@ -131,10 +463,10 @@ const StudentAtsPage = () => {
       label: 'Role',
       render: (_, row) => {
         const targetJobId = row.job_id || row.jobId;
-        const match = jobs.find((job) => String(job.id || job._id) === String(targetJobId));
+        const match = jobs.find((job) => getJobId(job) === String(targetJobId));
         return (
           <div>
-            <p className="font-semibold text-slate-800">{match?.jobTitle || 'Custom preview'}</p>
+            <p className="font-semibold text-slate-800">{match?.jobTitle || (targetJobId === 'preview' ? 'Manual preview' : 'Custom preview')}</p>
             <p className="mt-1 text-xs text-slate-500">{match?.companyName || targetJobId || 'Manual target'}</p>
           </div>
         );
@@ -145,15 +477,11 @@ const StudentAtsPage = () => {
       label: 'Score',
       render: (value) => {
         const tone = getScoreTone(value);
-        return (
-          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${tone.badge}`}>
-            {value}%
-          </span>
-        );
+        return <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${tone.badge}`}>{value}%</span>;
       }
     },
     { key: 'keyword_score', label: 'Keyword' },
-    { key: 'similarity_score', label: 'Similarity' },
+    { key: 'similarity_score', label: 'Fit' },
     { key: 'format_score', label: 'Format' },
     {
       key: 'created_at',
@@ -189,217 +517,156 @@ const StudentAtsPage = () => {
     }
   ];
 
-  const runCheck = async (event) => {
-    event.preventDefault();
-    setNotice({ type: '', text: '' });
-
-    if (form.source === 'new_resume_upload' && !String(form.resumeText || '').trim() && !String(form.resumeUrl || '').trim()) {
-      setNotice({ type: 'error', text: 'Upload a resume file or provide resume text/URL before running ATS.' });
-      return;
-    }
-
-    try {
-      setIsRunning(true);
-      const payload = form.jobId
-        ? await runAtsCheck({
-          jobId: form.jobId,
-          source: form.source,
-          resumeText: form.resumeText,
-          resumeUrl: form.resumeUrl
-        })
-        : await runAtsPreview({
-          source: form.source,
-          resumeText: form.resumeText,
-          resumeUrl: form.resumeUrl,
-          targetText: form.targetText
-        });
-      const check = payload?.result;
-
-      if (!check) {
-        throw new Error('ATS response is invalid. Please try again.');
-      }
-
-      setResult(check);
-      if (form.jobId && payload?.saved) {
-        const historyRes = await getAtsHistory(form.jobId);
-        if (!historyRes.error) {
-          setHistory(historyRes.data || []);
-        } else {
-          setHistory((current) => [
-            {
-              id: payload?.atsCheckId || `temp-${Date.now()}`,
-              job_id: form.jobId,
-              score: check.score,
-              keyword_score: check.keywordScore,
-              similarity_score: check.similarityScore,
-              format_score: check.formatScore,
-              created_at: new Date().toISOString()
-            },
-            ...current
-          ]);
-        }
-      } else {
-        setHistory((current) => [
-          {
-            id: payload?.atsCheckId || `temp-${Date.now()}`,
-            job_id: form.jobId || 'preview',
-            score: check.score,
-            keyword_score: check.keywordScore,
-            similarity_score: check.similarityScore,
-            format_score: check.formatScore,
-            created_at: new Date().toISOString()
-          },
-          ...current
-        ]);
-      }
-      setNotice({
-        type: payload?.persistenceWarning ? 'info' : 'success',
-        text: payload?.persistenceWarning || 'ATS check completed successfully.'
-      });
-    } catch (error) {
-      setNotice({ type: 'error', text: error.message || 'Unable to run ATS check.' });
-    } finally {
-      setIsRunning(false);
-    }
-  };
-
-  const handleResumeFileUpload = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const fileName = String(file.name || '').toLowerCase();
-    const fileType = String(file.type || '').toLowerCase();
-    const isAllowed = (
-      fileName.endsWith('.pdf')
-      || fileName.endsWith('.doc')
-      || fileName.endsWith('.docx')
-      || fileName.endsWith('.txt')
-      || fileType.includes('pdf')
-      || fileType.includes('msword')
-      || fileType.includes('officedocument.wordprocessingml')
-      || fileType.includes('text/plain')
-    );
-
-    if (!isAllowed) {
-      setNotice({ type: 'error', text: 'Please upload a PDF, DOC, DOCX, or TXT file.' });
-      event.target.value = '';
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setNotice({ type: 'error', text: 'Resume file size must be 5 MB or less.' });
-      event.target.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const resultValue = reader.result;
-      if (typeof resultValue !== 'string') {
-        setNotice({ type: 'error', text: 'Unable to read selected file.' });
-        return;
-      }
-
-      setSelectedFileName(file.name);
-      setForm((current) => ({
-        ...current,
-        source: 'new_resume_upload',
-        resumeText: fileType.includes('text/plain') || fileName.endsWith('.txt') ? resultValue : current.resumeText,
-        resumeUrl: fileType.includes('text/plain') || fileName.endsWith('.txt') ? current.resumeUrl : resultValue
-      }));
-      setNotice({ type: 'success', text: 'Resume file attached. Run ATS check now.' });
-    };
-    reader.onerror = () => {
-      setNotice({ type: 'error', text: 'Unable to read selected file.' });
-    };
-
-    if (fileType.includes('text/plain') || fileName.endsWith('.txt')) {
-      reader.readAsText(file);
-    } else {
-      reader.readAsDataURL(file);
-    }
-  };
+  const displayJobResults = jobResults.length > 0 ? jobResults : jobs.slice(0, 12);
 
   return (
-    <StudentPageShell showHero={false} bodyClassName="mx-auto max-w-[1180px] space-y-4 pb-6">
+    <StudentPageShell
+      eyebrow="ATS Lab"
+      badge="AI assisted"
+      title="Resume ATS analyzer"
+      subtitle="Search real platform jobs, compare your resume against the selected job profile, and get normal plus edge-case feedback before you apply."
+      stats={stats}
+      heroSize="compact"
+      bodyClassName="mx-auto max-w-[1240px] pb-6"
+    >
       {state.error ? <StudentNotice type="error" text={state.error} /> : null}
       {notice.text ? <StudentNotice type={notice.type || 'info'} text={notice.text} /> : null}
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.84fr)]">
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.9fr)]">
         <StudentSurfaceCard
-          eyebrow="Scan Setup"
-          title="Build your ATS test"
-          subtitle="Pick a live role, switch resume mode, and run a sharper comparison."
-          className="w-full border-[#ffe2b6] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(255,255,255,0.96))] p-4 xl:p-4.5 [&>div:first-child]:mb-4 [&_h2]:text-[1.6rem] [&_h2]:leading-tight [&_p]:max-w-none"
+          eyebrow="Scan setup"
+          title="Choose job and resume"
+          subtitle="Use the searchable dropdown for jobs already available on the platform."
+          className="w-full p-4 xl:p-5 [&>div:first-child]:mb-4 [&_h2]:text-[1.55rem] [&_p]:max-w-none"
         >
           {state.loading ? (
-            <div className="h-40 animate-pulse rounded-[1rem] bg-slate-100" />
+            <div className="h-72 animate-pulse rounded-[1rem] bg-slate-100" />
           ) : (
-            <form className="space-y-3" onSubmit={runCheck}>
+            <form className="space-y-4" onSubmit={runCheck}>
               <div className="grid gap-2 sm:grid-cols-3">
-                <div className="rounded-[0.8rem] border border-brand-100 bg-white/90 px-2.5 py-1.5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Mode</p>
-                  <p className="mt-0.5 text-[13px] font-bold text-navy">{form.jobId ? 'Live role' : 'Custom preview'}</p>
-                </div>
-                <div className="rounded-[0.8rem] border border-brand-100 bg-white/90 px-2.5 py-1.5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Resume</p>
-                  <p className="mt-0.5 text-[13px] font-bold text-navy">{form.source === 'profile_resume' ? 'Profile resume' : 'Custom upload'}</p>
-                </div>
-                <div className="rounded-[0.8rem] border border-brand-100 bg-white/90 px-2.5 py-1.5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Attached</p>
-                  <p className="mt-0.5 truncate text-[13px] font-bold text-navy">{selectedFileName || 'No file yet'}</p>
-                </div>
+                {[
+                  { label: 'Target', value: form.jobId ? 'Platform job' : 'Manual JD' },
+                  { label: 'Resume', value: hasCustomResume ? 'Custom resume' : 'Profile resume' },
+                  { label: 'AI', value: 'OpenAI ready' }
+                ].map((item) => (
+                  <div key={item.label} className="rounded-[0.9rem] border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="text-[11px] font-bold uppercase text-slate-400">{item.label}</p>
+                    <p className="mt-0.5 truncate text-sm font-extrabold text-navy">{item.value}</p>
+                  </div>
+                ))}
               </div>
 
-              <label className="block">
-                <span className="mb-1 block text-[13px] font-bold text-slate-700">Target role</span>
-                <select
-                  value={form.jobId}
-                  onChange={(event) => setForm((current) => ({ ...current, jobId: event.target.value }))}
-                  className={compactFieldClassName}
-                >
-                  <option value="">
-                    {jobs.length === 0 ? 'No jobs available (Run preview)' : 'Run ATS Preview (No job selected)'}
-                  </option>
-                  {jobs.map((job) => {
-                    const value = job.id || job._id;
-                    return (
-                      <option key={value} value={value}>
-                        {job.jobTitle} - {job.companyName}
-                      </option>
-                    );
-                  })}
-                </select>
-              </label>
+              <div ref={searchBoxRef} className="relative">
+                <label className="mb-1.5 block text-[13px] font-bold text-slate-700" htmlFor="ats-job-search">Search platform job</label>
+                <div className="relative">
+                  <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <input
+                    id="ats-job-search"
+                    value={jobSearch}
+                    onFocus={() => setJobSearchOpen(true)}
+                    onChange={(event) => {
+                      setJobSearch(event.target.value);
+                      setJobSearchOpen(true);
+                    }}
+                    placeholder="Search by title, company, skill, or description"
+                    className={`${compactFieldClassName} pl-9 pr-20`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setJobSearchOpen((current) => !current)}
+                    className="absolute right-2 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                  >
+                    {jobSearchLoading ? <FiRefreshCw className="animate-spin" size={13} /> : <FiChevronDown size={13} />}
+                    Jobs
+                  </button>
+                </div>
 
-              <div className="rounded-[0.9rem] border border-slate-200 bg-white px-2.5 py-2 shadow-sm">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-brand-700">Selected Role</p>
-                    <h3 className="mt-0.5 text-[15px] font-extrabold text-navy">{selectedJobTitle}</h3>
-                    <p className="mt-0.5 text-[13px] text-slate-500">{selectedJobCompany}</p>
+                {jobSearchOpen ? (
+                  <div className="absolute z-30 mt-2 max-h-[320px] w-full overflow-y-auto rounded-[1.05rem] border border-slate-200 bg-white p-2 shadow-[0_22px_55px_rgba(15,23,42,0.16)]">
+                    <button
+                      type="button"
+                      onClick={useManualTarget}
+                      className={`mb-1 flex w-full items-center justify-between rounded-[0.85rem] px-3 py-2 text-left transition hover:bg-brand-50 ${isManualTarget ? 'bg-brand-50 text-brand-700' : 'text-slate-700'}`}
+                    >
+                      <span>
+                        <span className="block text-sm font-extrabold">Use manual job description</span>
+                        <span className="text-xs text-slate-500">Paste any JD when the exact role is not listed</span>
+                      </span>
+                      {isManualTarget ? <FiCheck size={16} /> : null}
+                    </button>
+
+                    {displayJobResults.length === 0 ? (
+                      <div className="rounded-[0.85rem] bg-slate-50 px-3 py-4 text-sm font-semibold text-slate-500">
+                        No matching jobs found. Try another keyword or use manual JD.
+                      </div>
+                    ) : null}
+
+                    {displayJobResults.map((job) => {
+                      const id = getJobId(job);
+                      const isSelected = id === String(form.jobId);
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => selectJob(job)}
+                          className={`flex w-full items-start justify-between gap-3 rounded-[0.85rem] px-3 py-2 text-left transition hover:bg-slate-50 ${isSelected ? 'bg-slate-50' : ''}`}
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-extrabold text-navy">{job.jobTitle || 'Untitled role'}</span>
+                            <span className="mt-0.5 block truncate text-xs text-slate-500">
+                              {job.companyName || 'Company'} · {job.jobLocation || 'Location not specified'}
+                            </span>
+                            {Array.isArray(job.skills) && job.skills.length > 0 ? (
+                              <span className="mt-1 block truncate text-[11px] font-semibold text-slate-400">{job.skills.slice(0, 5).join(', ')}</span>
+                            ) : null}
+                          </span>
+                          {isSelected ? <FiCheck className="mt-1 shrink-0 text-emerald-600" size={16} /> : null}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-600">
-                    <FiTarget size={11} />
-                    {form.jobId ? 'Job-linked check' : 'Manual target'}
+                ) : null}
+              </div>
+
+              <div className="rounded-[1rem] border border-slate-200 bg-white p-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase text-slate-400">Selected target</p>
+                    <h3 className="mt-1 text-lg font-black text-navy">{selectedJobTitle}</h3>
+                    <p className="mt-1 text-sm text-slate-500">{selectedJobCompany}</p>
+                  </div>
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold ${form.jobId ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+                    <FiTarget size={13} />
+                    {form.jobId ? 'History saved' : 'Preview only'}
                   </span>
                 </div>
               </div>
 
-              {!form.jobId ? (
-                <label className="block">
-                  <span className="mb-1 block text-[13px] font-bold text-slate-700">Target description</span>
-                  <textarea
-                    rows={2}
-                    value={form.targetText}
-                    onChange={(event) => setForm((current) => ({ ...current, targetText: event.target.value }))}
-                    placeholder="Example: Frontend role requiring React, APIs, accessibility, and strong communication."
-                    className={compactTextareaClassName}
-                  />
-                </label>
+              {isManualTarget ? (
+                <div className="grid gap-3">
+                  <label>
+                    <span className="mb-1 block text-[13px] font-bold text-slate-700">Manual role title</span>
+                    <input
+                      value={form.targetTitle}
+                      onChange={(event) => setForm((current) => ({ ...current, targetTitle: event.target.value }))}
+                      placeholder="Example: MERN Full Stack Developer"
+                      className={compactFieldClassName}
+                    />
+                  </label>
+                  <label>
+                    <span className="mb-1 block text-[13px] font-bold text-slate-700">Manual job description</span>
+                    <textarea
+                      rows={4}
+                      value={form.targetText}
+                      onChange={(event) => setForm((current) => ({ ...current, targetText: event.target.value }))}
+                      placeholder="Paste job responsibilities, required skills, experience, and tools."
+                      className={compactTextareaClassName}
+                    />
+                  </label>
+                </div>
               ) : null}
 
-              <div className="grid gap-2.5 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2">
                 <label>
                   <span className="mb-1 block text-[13px] font-bold text-slate-700">Resume source</span>
                   <select
@@ -412,16 +679,17 @@ const StudentAtsPage = () => {
                     className={compactFieldClassName}
                   >
                     <option value="profile_resume">Use profile resume</option>
-                    <option value="new_resume_upload">Use custom text or file</option>
+                    <option value="new_resume_upload">Use custom file/text/URL</option>
                   </select>
                 </label>
 
                 <label>
                   <span className="mb-1 block text-[13px] font-bold text-slate-700">Resume URL</span>
                   <input
-                    value={form.resumeUrl}
-                    onChange={(event) => setForm((current) => ({ ...current, resumeUrl: event.target.value }))}
-                    placeholder="Optional remote file URL"
+                    value={form.resumeUrl.startsWith('data:') ? selectedFileName : form.resumeUrl}
+                    onChange={(event) => setForm((current) => ({ ...current, source: 'new_resume_upload', resumeUrl: event.target.value }))}
+                    disabled={form.resumeUrl.startsWith('data:')}
+                    placeholder="Optional https resume URL"
                     className={compactFieldClassName}
                   />
                 </label>
@@ -429,17 +697,17 @@ const StudentAtsPage = () => {
 
               <label className="block">
                 <span className="mb-1 block text-[13px] font-bold text-slate-700">Resume file</span>
-                <label className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-[0.9rem] border border-dashed border-slate-300 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-3 py-2.5 transition hover:border-brand-300 hover:bg-brand-50/40">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-[0.8rem] bg-[linear-gradient(135deg,#fff1d6,#ffffff)] text-brand-700 shadow-sm transition group-hover:scale-105">
-                      <FiUploadCloud size={16} />
-                    </div>
-                    <div>
-                      <p className="text-[13px] font-bold text-navy">Drop resume here</p>
-                      <p className="mt-0.5 text-[10px] text-slate-500">PDF, DOC, DOCX, or TXT up to 5 MB</p>
-                    </div>
-                  </div>
-                  <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[1rem] border border-dashed border-slate-300 bg-slate-50 px-4 py-3 transition hover:border-brand-300 hover:bg-brand-50">
+                  <span className="flex items-center gap-3">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-[0.9rem] bg-white text-brand-700 shadow-sm">
+                      <FiUploadCloud size={18} />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-extrabold text-navy">Attach resume</span>
+                      <span className="text-xs text-slate-500">PDF, DOC, DOCX, TXT up to 8 MB</span>
+                    </span>
+                  </span>
+                  <span className="max-w-[160px] truncate rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-600">
                     {selectedFileName || 'Choose file'}
                   </span>
                   <input
@@ -456,34 +724,36 @@ const StudentAtsPage = () => {
                 <textarea
                   rows={4}
                   value={form.resumeText}
-                  onChange={(event) => setForm((current) => ({ ...current, resumeText: event.target.value }))}
-                  placeholder="Paste resume content here if you want to test a custom version."
+                  onChange={(event) => setForm((current) => ({ ...current, source: 'new_resume_upload', resumeText: event.target.value }))}
+                  placeholder="Paste resume content to test a custom version."
                   className={`${compactTextareaClassName} bg-white font-mono`}
                 />
+                <span className="mt-1 block text-right text-xs font-semibold text-slate-400">{resumeTextWordCount} words</span>
               </label>
 
-              <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-                <button
-                  type="button"
-                  className={`${studentSecondaryButtonClassName} px-3.5 py-1.5 text-xs`}
-                  onClick={() => {
-                    setForm((current) => ({
-                      ...current,
-                      source: 'profile_resume',
-                      resumeText: '',
-                      resumeUrl: '',
-                      targetText: ''
-                    }));
-                    setSelectedFileName('');
-                    setNotice({ type: '', text: '' });
-                  }}
-                >
+              <div className="grid gap-2 rounded-[1rem] border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
+                {CASE_COVERAGE.map((item) => (
+                  <span key={item} className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
+                    <FiCheckCircle className="text-emerald-500" size={14} />
+                    {item}
+                  </span>
+                ))}
+              </div>
+
+              {preflight.warnings.length > 0 ? (
+                <div className="rounded-[1rem] border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                  {preflight.warnings[0]}
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                <button type="button" className={`${studentSecondaryButtonClassName} px-4 py-2 text-xs`} onClick={resetForm}>
                   <FiRefreshCw size={15} />
                   Reset
                 </button>
-                <button type="submit" className={`${studentPrimaryButtonClassName} px-4 py-1.5 text-xs`} disabled={isRunning}>
+                <button type="submit" className={`${studentPrimaryButtonClassName} px-5 py-2 text-xs`} disabled={isRunning || preflight.errors.length > 0}>
                   <FiActivity size={14} />
-                  {isRunning ? 'Scanning...' : 'Run ATS Check'}
+                  {isRunning ? 'Analyzing...' : 'Analyze ATS Fit'}
                 </button>
               </div>
             </form>
@@ -492,148 +762,117 @@ const StudentAtsPage = () => {
 
         {result ? (
           <StudentSurfaceCard
-            eyebrow="Live Result"
-            title={`${selectedJobTitle} fit scan`}
-            subtitle="Fast visual feedback so you know exactly what to improve next."
-            className="w-full overflow-visible border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,250,255,0.96))] p-4 xl:p-4.5 [&>div:first-child]:mb-4 [&_h2]:text-[1.55rem] [&_h2]:leading-tight [&_p]:max-w-none"
+            eyebrow="Result"
+            title={result.fitLevel || `${selectedJobTitle} fit scan`}
+            subtitle="AI and heuristic checks combined into practical resume actions."
+            className="w-full p-4 xl:p-5 [&>div:first-child]:mb-4 [&_h2]:text-[1.55rem] [&_p]:max-w-none"
           >
-            <div className="space-y-3">
-              <div className={`relative overflow-hidden rounded-[1rem] border ${scoreTone.surface} p-3`}>
-                <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${scoreTone.accent}`} />
-                <div className="absolute -right-10 -top-10 h-16 w-16 rounded-full bg-white/50 blur-2xl" />
-                <div className="relative flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-4">
+              <div className={`rounded-[1.1rem] border p-4 ${scoreTone.surface}`}>
+                <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Overall Match</p>
+                    <p className="text-xs font-bold uppercase text-slate-500">Overall match</p>
                     <div className="mt-1 flex items-end gap-2">
-                      <p className="font-heading text-[1.6rem] font-black text-navy">{result.score}%</p>
-                      <span className={`mb-0.5 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold ${scoreTone.badge}`}>
-                        {result.score >= 80 ? 'Strong fit' : result.score >= 60 ? 'Needs polish' : 'Needs work'}
+                      <p className="font-heading text-4xl font-black text-navy">{result.score}%</p>
+                      <span className={`mb-1 rounded-full border px-3 py-1 text-xs font-bold ${scoreTone.badge}`}>
+                        {result.aiPowered ? 'AI on' : 'AI fallback'}
                       </span>
                     </div>
-                    <p className="mt-1 max-w-md text-[13px] leading-5 text-slate-600">
-                      This score blends keyword coverage, role similarity, and formatting quality into one quick signal.
+                    <p className="mt-1 text-sm font-medium text-slate-600">
+                      Confidence {result.confidenceScore || 0}% · {result.resumeWordCount || 0} resume words analyzed
                     </p>
                   </div>
+                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-[1rem] bg-white text-navy shadow-sm">
+                    <FiShield size={24} />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <ScoreBar value={result.score} tone={scoreTone} />
+                </div>
+              </div>
 
-                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.9rem] bg-gradient-to-br ${scoreTone.accent} text-white shadow-[0_18px_40px_rgba(15,23,42,0.16)]`}>
-                    <FiTarget size={16} />
+              <div className="grid gap-2 sm:grid-cols-2">
+                {scoreCards.map((item) => {
+                  const Icon = item.icon;
+                  const value = Number(result[item.key] || 0);
+                  const tone = getScoreTone(value);
+                  return (
+                    <div key={item.key} className="rounded-[1rem] border border-slate-200 bg-white p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-bold uppercase text-slate-400">{item.label}</p>
+                        <Icon className="text-slate-400" size={15} />
+                      </div>
+                      <p className="mt-2 font-heading text-2xl font-black text-navy">{Math.round(value)}%</p>
+                      <div className="mt-2"><ScoreBar value={value} tone={tone} /></div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="rounded-[1rem] border border-sky-200 bg-sky-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-black text-navy">AI ATS coach</p>
+                  <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${result.aiPowered ? 'border-sky-200 bg-white text-sky-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                    {result.aiPowered ? 'OpenAI enhanced' : 'Heuristic fallback'}
+                  </span>
+                </div>
+                {result.aiSummary ? <p className="mt-2 text-sm leading-6 text-slate-700">{result.aiSummary}</p> : null}
+                {result.aiSuggestedSummary ? (
+                  <div className="mt-3 rounded-[0.85rem] border border-sky-100 bg-white p-3">
+                    <p className="text-xs font-bold uppercase text-sky-700">Suggested summary</p>
+                    <p className="mt-1.5 text-sm leading-6 text-slate-700">{result.aiSuggestedSummary}</p>
+                  </div>
+                ) : null}
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <div>
+                    <p className="mb-2 text-xs font-bold uppercase text-emerald-700">Strengths</p>
+                    <ChipList items={result.aiStrengths} tone="emerald" emptyText="No AI strengths returned." />
+                  </div>
+                  <div>
+                    <p className="mb-2 text-xs font-bold uppercase text-sky-700">Priority edits</p>
+                    <ChipList items={result.aiPriorityEdits.length ? result.aiPriorityEdits : result.priorityActions} tone="sky" emptyText="No priority edits returned." />
                   </div>
                 </div>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-3">
-                {[
-                  { label: 'Keyword', value: result.keywordScore, icon: FiZap },
-                  { label: 'Similarity', value: result.similarityScore, icon: FiTrendingUp },
-                  { label: 'Format', value: result.formatScore, icon: FiCheckCircle }
-                ].map((item) => (
-                  <div key={item.label} className="rounded-[0.9rem] border border-slate-200 bg-white p-2.5 shadow-sm">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
-                      <item.icon className="text-slate-400" size={14} />
-                    </div>
-                    <p className="mt-1.5 font-heading text-[1.2rem] font-black text-navy">{item.value}%</p>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                      <div className={`h-full rounded-full bg-gradient-to-r ${scoreTone.accent}`} style={{ width: `${item.value}%` }} />
-                    </div>
-                  </div>
-                ))}
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 p-3">
+                  <p className="mb-2 text-xs font-bold uppercase text-emerald-700">Matched keywords</p>
+                  <ChipList items={result.matchedKeywords} tone="emerald" emptyText="No strong keyword matches returned." />
+                </div>
+                <div className="rounded-[1rem] border border-rose-200 bg-rose-50 p-3">
+                  <p className="mb-2 text-xs font-bold uppercase text-rose-700">Missing keywords</p>
+                  <ChipList items={result.missingKeywords} tone="rose" emptyText="No missing keywords detected." />
+                </div>
               </div>
 
-              {result.aiSummary || (result.aiPriorityEdits || []).length > 0 || result.aiSuggestedSummary ? (
-                <div className="rounded-[0.95rem] border border-sky-200 bg-[linear-gradient(180deg,rgba(240,249,255,0.92),rgba(255,255,255,0.96))] p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-sky-700">AI ATS Coach</p>
-                      <p className="mt-1 text-[13px] font-semibold text-navy">
-                        {result.aiPowered ? 'Smarter resume fit guidance based on your target role.' : 'Fallback ATS guidance is active.'}
-                      </p>
-                    </div>
-                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold ${result.aiPowered ? 'border-sky-200 bg-white text-sky-700' : 'border-slate-200 bg-white text-slate-500'}`}>
-                      {result.aiPowered ? 'AI on' : 'AI off'}
-                    </span>
+              {result.sectionCoverage.length > 0 ? (
+                <div className="rounded-[1rem] border border-slate-200 bg-white p-3">
+                  <p className="mb-2 text-xs font-bold uppercase text-slate-400">Section coverage</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {result.sectionCoverage.map((item) => (
+                      <span key={item.key} className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
+                        {item.present ? <FiCheckCircle className="text-emerald-500" size={14} /> : <FiX className="text-rose-500" size={14} />}
+                        {item.label}
+                      </span>
+                    ))}
                   </div>
-
-                  {result.aiSummary ? (
-                    <p className="mt-2 text-xs leading-5 text-slate-600">{result.aiSummary}</p>
-                  ) : null}
-
-                  {(result.aiStrengths || []).length > 0 ? (
-                    <div className="mt-2">
-                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Strengths spotted</p>
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {result.aiStrengths.map((item) => (
-                          <span key={item} className="rounded-full border border-emerald-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                            {item}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {(result.aiPriorityEdits || []).length > 0 ? (
-                    <div className="mt-2">
-                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-sky-700">Priority edits</p>
-                      <ul className="mt-1.5 space-y-1 text-xs leading-5 text-slate-600">
-                        {result.aiPriorityEdits.map((item) => <li key={item}>• {item}</li>)}
-                      </ul>
-                    </div>
-                  ) : null}
-
-                  {result.aiSuggestedSummary ? (
-                    <div className="mt-2 rounded-[0.8rem] border border-sky-100 bg-white/90 p-2.5">
-                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-sky-700">Suggested summary</p>
-                      <p className="mt-1.5 text-xs leading-5 text-slate-700">{result.aiSuggestedSummary}</p>
-                    </div>
-                  ) : null}
                 </div>
               ) : null}
 
-              <div className="grid gap-2.5 md:grid-cols-2">
-                <div className="rounded-[0.9rem] border border-emerald-200 bg-emerald-50/70 p-2.5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">You matched</p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {(result.matchedKeywords || []).length > 0 ? (
-                      result.matchedKeywords.map((item) => (
-                        <span key={item} className="rounded-full border border-emerald-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                          {item}
-                        </span>
-                      ))
-                    ) : (
-                      <p className="text-xs text-emerald-800">No strong keyword matches were returned yet.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="rounded-[0.9rem] border border-rose-200 bg-rose-50/70 p-2.5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-rose-700">Missing next</p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {(result.missingKeywords || []).length > 0 ? (
-                      result.missingKeywords.map((item) => (
-                        <span key={item} className="rounded-full border border-rose-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-rose-700">
-                          {item}
-                        </span>
-                      ))
-                    ) : (
-                      <p className="text-xs text-rose-800">No missing keywords detected.</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-2.5 md:grid-cols-2">
-                <div className="rounded-[0.9rem] border border-slate-200 bg-white p-2.5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Glow-up suggestions</p>
-                  <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-[1rem] border border-slate-200 bg-white p-3">
+                  <p className="mb-2 text-xs font-bold uppercase text-slate-400">Suggestions</p>
+                  <ul className="space-y-1.5 text-sm leading-6 text-slate-600">
                     {(result.suggestions || []).length === 0 ? <li>No suggestions returned.</li> : null}
                     {(result.suggestions || []).map((item) => <li key={item}>• {item}</li>)}
                   </ul>
                 </div>
-                <div className="rounded-[0.9rem] border border-slate-200 bg-white p-2.5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Watch-outs</p>
-                  <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
-                    {(result.warnings || []).length === 0 ? <li>No warnings returned.</li> : null}
-                    {(result.warnings || []).map((item) => <li key={item}>• {item}</li>)}
+                <div className="rounded-[1rem] border border-slate-200 bg-white p-3">
+                  <p className="mb-2 text-xs font-bold uppercase text-slate-400">Edge-case warnings</p>
+                  <ul className="space-y-1.5 text-sm leading-6 text-slate-600">
+                    {([...result.riskFlags, ...result.warnings].filter(Boolean)).length === 0 ? <li>No warnings returned.</li> : null}
+                    {[...new Set([...result.riskFlags, ...result.warnings])].map((item) => <li key={item}>• {item}</li>)}
                   </ul>
                 </div>
               </div>
@@ -641,18 +880,32 @@ const StudentAtsPage = () => {
           </StudentSurfaceCard>
         ) : (
           <StudentSurfaceCard
-            eyebrow="Live Result"
-            title="No ATS result yet"
-            subtitle="Your score, missing keywords, and next edits will appear here."
-            className="w-full border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,250,255,0.96))] p-4 xl:p-4.5 [&>div:first-child]:mb-4 [&_h2]:text-[1.55rem] [&_h2]:leading-tight [&_p]:max-w-none"
+            eyebrow="Result"
+            title="Ready for analysis"
+            subtitle="Your ATS score, AI coach, missing keywords, and edge-case warnings will appear here."
+            className="w-full p-4 xl:p-5 [&>div:first-child]:mb-4 [&_h2]:text-[1.55rem] [&_p]:max-w-none"
           >
-            <div className="rounded-[1rem] border border-slate-200 bg-[radial-gradient(circle_at_top_right,rgba(255,214,102,0.28),transparent_26%),linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] p-4">
-              <StudentEmptyState
-                icon={FiFileText}
-                title="Ready when you are"
-                description="Choose a role, drop your resume, and run one check to see how recruiter systems may read your profile."
-                className="border-none bg-transparent px-0 py-5 [&_h3]:mt-4 [&_h3]:text-[1.45rem] [&_p]:mt-2 [&_p]:text-[13px] [&>div:first-child]:h-12 [&>div:first-child]:w-12"
-              />
+            <StudentEmptyState
+              icon={FiFileText}
+              title="Select a job and run ATS"
+              description="The analyzer will compare resume text against the chosen job profile, not a generic role only."
+              className="border-none bg-slate-50 py-8"
+            />
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {[
+                { icon: FiSearch, text: 'Search live platform jobs' },
+                { icon: FiUploadCloud, text: 'Upload or paste resume' },
+                { icon: FiAlertTriangle, text: 'Catch edge cases early' },
+                { icon: FiClock, text: 'Save history for job checks' }
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.text} className="flex items-center gap-2 rounded-[0.9rem] border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600">
+                    <Icon className="text-brand-600" size={15} />
+                    {item.text}
+                  </div>
+                );
+              })}
             </div>
           </StudentSurfaceCard>
         )}
@@ -661,35 +914,15 @@ const StudentAtsPage = () => {
       <StudentSurfaceCard
         eyebrow="History"
         title="Past ATS checks"
-        subtitle="Track whether your edits are actually pushing the score up."
-        className="w-full p-4 xl:p-4.5 [&>div:first-child]:mb-4 [&_h2]:text-[1.5rem] [&_h2]:leading-tight [&_p]:max-w-none"
+        subtitle="Track whether your resume edits are moving the score in the right direction."
+        className="w-full p-4 xl:p-5 [&>div:first-child]:mb-4 [&_h2]:text-[1.45rem] [&_p]:max-w-none"
       >
-        {history.length > 0 ? (
-          <div className="mb-3 grid gap-2 md:grid-cols-3">
-            {history.slice(0, 3).map((item, index) => {
-              const tone = getScoreTone(item.score);
-              const jobMatch = jobs.find((job) => String(job.id || job._id) === String(item.job_id || item.jobId));
-              return (
-                <div key={item.id || item.created_at || index} className="rounded-[0.85rem] border border-slate-200 bg-slate-50/80 p-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-xs font-bold text-navy">{jobMatch?.jobTitle || 'Custom preview'}</p>
-                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${tone.badge}`}>
-                      {item.score}%
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[10px] text-slate-500">{formatDateTime(item.created_at || item.createdAt)}</p>
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
-
         {history.length === 0 ? (
           <StudentEmptyState
             icon={FiActivity}
             title="No ATS history yet"
-            description="Your first completed ATS scan will appear here with score, fit breakdown, and timestamp."
-            className="border-none bg-slate-50/80 py-5 [&_h3]:mt-4 [&_h3]:text-[1.35rem] [&_p]:mt-2 [&_p]:text-xs [&>div:first-child]:h-12 [&>div:first-child]:w-12"
+            description="Completed job-linked checks will be saved here. Manual previews stay temporary."
+            className="border-none bg-slate-50 py-6"
           />
         ) : (
           <DataTable columns={columns} rows={history.map((item) => ({ ...item, id: item.id || item.created_at }))} />

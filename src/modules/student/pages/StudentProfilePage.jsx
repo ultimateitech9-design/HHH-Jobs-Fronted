@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import {
   FiAward,
@@ -17,7 +18,6 @@ import {
   FiRefreshCw,
   FiTrash2,
   FiTrendingUp,
-  FiUploadCloud,
   FiUser,
   FiX
 } from 'react-icons/fi';
@@ -86,6 +86,73 @@ const EDUCATION_LEVEL_OPTIONS = [
   'Below 10th'
 ];
 
+const KEY_SKILL_SUGGESTIONS = [
+  'Full Stack Development',
+  'Java',
+  'Spring Boot',
+  'Node.js',
+  'RESTful APIs',
+  'MySQL',
+  'PostgreSQL',
+  'Technical SEO',
+  'API Design',
+  'Database Management',
+  'JavaScript',
+  'Secure Authentication',
+  'Performance Optimization',
+  'Responsive Web Design',
+  'Problem Solving',
+  'Agile Methodologies',
+  'User Experience (UX)'
+];
+
+const MAX_HEADLINE_CHARS = 250;
+const CURRENT_YEAR = new Date().getFullYear();
+
+const GENDER_OPTIONS = ['Male', 'Female', 'Transgender'];
+const MARITAL_STATUS_OPTIONS = ['Single/unmarried', 'Married', 'Widowed', 'Divorced', 'Separated', 'Other'];
+const CATEGORY_OPTIONS = [
+  'General',
+  'Scheduled Caste (SC)',
+  'Scheduled Tribe (ST)',
+  'OBC - Creamy',
+  'OBC - Non creamy',
+  'Other'
+];
+const MONTH_OPTIONS = [
+  { value: '01', label: 'Jan' },
+  { value: '02', label: 'Feb' },
+  { value: '03', label: 'Mar' },
+  { value: '04', label: 'Apr' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'Jun' },
+  { value: '07', label: 'Jul' },
+  { value: '08', label: 'Aug' },
+  { value: '09', label: 'Sep' },
+  { value: '10', label: 'Oct' },
+  { value: '11', label: 'Nov' },
+  { value: '12', label: 'Dec' }
+];
+const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 1979 }, (_, index) => String(CURRENT_YEAR - index));
+const COURSE_TYPE_OPTIONS = ['Full time', 'Part time', 'Correspondence/Distance learning'];
+const WORK_LOCATION_SUGGESTIONS = [
+  'Delhi / NCR',
+  'Gurgaon/Gurugram',
+  'Hyderabad/Secunderabad',
+  'Mumbai',
+  'Pune',
+  'Bangalore/Bengaluru',
+  'Noida',
+  'Remote'
+];
+const DEFAULT_LANGUAGE_ROW = {
+  language: '',
+  proficiency: 'Proficient',
+  read: true,
+  write: true,
+  speak: true
+};
+
 const normalizeExperienceItems = (items = []) =>
   (Array.isArray(items) ? items : []).map((item) =>
     typeof item === 'string'
@@ -146,7 +213,7 @@ const EMPTY_FORM = {
 };
 
 const SECTION_META = [
-  { id: 'resume', label: 'Resume', weight: 12, icon: FiFileText },
+  { id: 'resume', label: 'Resume', weight: 10, icon: FiFileText },
   { id: 'resume-headline', label: 'Resume headline', weight: 8, icon: FiEdit2 },
   { id: 'key-skills', label: 'Key skills', weight: 8, icon: FiAward },
   { id: 'employment', label: 'Employment', weight: 18, icon: FiBriefcase },
@@ -194,6 +261,34 @@ const parseLineList = (value = '') =>
 const joinCommaList = (items = []) => (Array.isArray(items) ? items.join(', ') : '');
 const joinLineList = (items = []) => (Array.isArray(items) ? items.join('\n') : '');
 
+const normalizeSkillList = (items = []) => {
+  const seen = new Set();
+
+  return (Array.isArray(items) ? items : parseCommaList(items))
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .filter((item) => {
+      const key = item.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+};
+
+const buildSuggestedHeadline = (form = EMPTY_FORM) => {
+  const role = String(form.targetRole || form.headline || 'Full Stack Engineer').trim();
+  const skills = normalizeSkillList([
+    ...(Array.isArray(form.technicalSkills) ? form.technicalSkills : []),
+    ...(Array.isArray(form.toolsTechnologies) ? form.toolsTechnologies : [])
+  ]).slice(0, 4);
+  const education = form.educationEntries?.find(hasEducationContent);
+  const educationText = education?.courseName ? ` with ${education.courseName}` : '';
+  const skillText = skills.length ? ` skilled in ${skills.join(', ')}` : ' focused on scalable product development';
+  const summary = `${role}${educationText},${skillText}, building reliable user experiences and business-ready web solutions.`;
+
+  return summary.length > MAX_HEADLINE_CHARS ? `${summary.slice(0, MAX_HEADLINE_CHARS - 1).trim()}.` : summary;
+};
+
 const completionOf = (form = EMPTY_FORM) => {
   const checks = [
     Boolean(form.name),
@@ -211,47 +306,6 @@ const completionOf = (form = EMPTY_FORM) => {
 
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 };
-
-const generatedResume = (form = EMPTY_FORM) =>
-  [
-    form.name || 'Student Name',
-    form.headline || form.targetRole || 'Professional Headline',
-    [form.email, form.mobile, form.location].filter(Boolean).join(' | '),
-    [form.linkedinUrl, form.githubUrl, form.portfolioUrl].filter(Boolean).join(' | '),
-    '',
-    'SUMMARY',
-    form.profileSummary || 'Add your professional summary.',
-    '',
-    'TECHNICAL SKILLS',
-    joinCommaList(form.technicalSkills) || 'Add technical skills',
-    '',
-    'EXPERIENCE',
-    ...(form.experience.length
-      ? form.experience.map((item) =>
-          typeof item === 'string'
-            ? `- ${item}`
-            : `- ${[item.designation, item.companyName].filter(Boolean).join(' at ')}${item.employmentType ? ` (${item.employmentType})` : ''}${item.startYear ? ` | ${item.startYear}–${item.isCurrentlyWorking ? 'Present' : item.endYear || ''}` : ''}${item.keyAchievement ? ` | ${item.keyAchievement}` : ''}`
-        )
-      : ['- Add experience']),
-    '',
-    'PROJECTS',
-    ...(form.projects.length
-      ? form.projects.map((item) =>
-          typeof item === 'string'
-            ? `- ${item}`
-            : `- ${item.title || 'Untitled'}${item.role ? ` (${item.role})` : ''}${item.techStack?.length ? ` | ${item.techStack.join(', ')}` : ''}${item.githubUrl ? ` | ${item.githubUrl}` : ''}`
-        )
-      : ['- Add projects']),
-    '',
-    'EDUCATION',
-    ...(form.educationEntries.some(hasEducationContent)
-      ? form.educationEntries
-          .filter(hasEducationContent)
-          .map((item) => `- ${[item.courseName, item.instituteName, item.endYear || item.expectedCompletionYear].filter(Boolean).join(' | ')}`)
-      : ['- Add education'])
-  ]
-    .filter((line) => line !== '')
-    .join('\n');
 
 const getResumeFileName = (form = EMPTY_FORM) => {
   if (form.resumeUrl) {
@@ -276,8 +330,24 @@ const scrollToNode = (node) => {
 const cardClassName =
   'rounded-[1.75rem] border border-[#e6ecf5] bg-white p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.22)] sm:p-6';
 
+const modalInputClassName =
+  'h-11 w-full rounded-[0.9rem] border border-[#dfe5f2] bg-white px-4 text-[0.88rem] text-slate-950 outline-none transition placeholder:text-[#9aa5c6] focus:border-[#2d5bff] focus:ring-2 focus:ring-[#2d5bff]/10';
+
+const modalSelectClassName =
+  'h-11 w-full rounded-[0.9rem] border border-[#dfe5f2] bg-white px-4 text-[0.88rem] text-slate-950 outline-none transition focus:border-[#2d5bff] focus:ring-2 focus:ring-[#2d5bff]/10';
+
+const modalLabelClassName = 'mb-2 block text-[0.8rem] font-extrabold text-slate-950';
+
+const profileModalBackdropClassName =
+  'fixed inset-0 z-[140] flex items-center justify-center overflow-y-auto overscroll-contain bg-slate-950/65 p-4 backdrop-blur-[2px]';
+
 const profileMetaItemClassName =
   'inline-flex items-center gap-2 text-left text-[0.8rem] text-slate-600';
+
+const renderProfileModal = (content) => {
+  if (typeof document === 'undefined') return content;
+  return createPortal(content, document.body);
+};
 
 const formatAvailabilityToJoin = (value = '') => {
   const trimmed = String(value || '').trim();
@@ -286,8 +356,115 @@ const formatAvailabilityToJoin = (value = '') => {
   return trimmed;
 };
 
-const getEducationCardTitle = (entry = {}, index = 0) =>
-  entry.courseName || entry.educationLevel || `Qualification ${index + 1}`;
+const getDateParts = (value = '') => {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return { year: match[1], month: match[2], day: String(Number(match[3])) };
+
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return { year: '', month: '', day: '' };
+
+  return {
+    year: String(date.getFullYear()),
+    month: String(date.getMonth() + 1).padStart(2, '0'),
+    day: String(date.getDate())
+  };
+};
+
+const buildDateValue = ({ day = '', month = '', year = '' } = {}) => {
+  if (!day || !month || !year) return '';
+  return `${year}-${month}-${String(day).padStart(2, '0')}`;
+};
+
+const formatDateOfBirth = (value = '') => {
+  const { day, month, year } = getDateParts(value);
+  if (!day || !month || !year) return 'Add date of birth';
+  const monthLabel = MONTH_OPTIONS.find((item) => item.value === month)?.label || month;
+  return `${String(day).padStart(2, '0')} ${monthLabel} ${year}`;
+};
+
+const formatSalary = (value = '') => {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return 'Add expected salary';
+  const rangeParts = trimmed.split(/\s+-\s+/).filter(Boolean);
+  if (rangeParts.length === 2) return `${formatSalary(rangeParts[0])} - ${formatSalary(rangeParts[1])}`;
+  const numeric = Number(trimmed.replace(/[^\d]/g, ''));
+  if (!Number.isFinite(numeric) || numeric <= 0) return trimmed;
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0
+  }).format(numeric);
+};
+
+const getEducationDisplayTitle = (entry = {}, index = 0) => {
+  const title = [entry.courseName, entry.specialization].filter(Boolean).join(' ');
+  return title || entry.educationLevel || `Qualification ${index + 1}`;
+};
+
+const getEducationDisplayMeta = (entry = {}) => {
+  const years = [entry.startYear, entry.endYear || entry.expectedCompletionYear].filter(Boolean).join('-');
+  const type = entry.courseType || (entry.educationStatus === 'pursuing' ? 'Full Time' : '');
+  return [years, type].filter(Boolean).join(' | ') || 'Add course duration';
+};
+
+const getProjectDisplayMeta = (entry = {}) => {
+  const years = [entry.startYear, entry.isOngoing ? 'Present' : entry.endYear].filter(Boolean).join(' to ');
+  return [entry.role || 'Other (Offsite)', years].filter(Boolean).join('\n');
+};
+
+const previewText = (value = '', limit = 220) => {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!text) return 'Add a concise description recruiters can scan quickly.';
+  return text.length > limit ? `${text.slice(0, limit).trim()}...` : text;
+};
+
+const toLanguageRows = (items = []) => {
+  const rows = (Array.isArray(items) ? items : parseCommaList(items))
+    .map((item) => (typeof item === 'string' ? { ...DEFAULT_LANGUAGE_ROW, language: item } : { ...DEFAULT_LANGUAGE_ROW, ...item }))
+    .filter((item) => String(item.language || '').trim());
+
+  return rows;
+};
+
+const toPersonalEditorDraft = (source = {}) => {
+  const dateParts = getDateParts(source.dateOfBirth);
+
+  return {
+    gender: source.gender || '',
+    maritalStatus: source.maritalStatus || '',
+    birthDay: dateParts.day,
+    birthMonth: dateParts.month,
+    birthYear: dateParts.year,
+    category: source.caste || '',
+    workPermit: 'India',
+    currentAddress: source.currentAddress || '',
+    hometown: source.location || '',
+    pincode: source.currentPincode || source.permanentPincode || '',
+    languages: toLanguageRows(source.languagesKnown).length > 0
+      ? toLanguageRows(source.languagesKnown)
+      : [{ ...DEFAULT_LANGUAGE_ROW, language: 'Hindi' }, { ...DEFAULT_LANGUAGE_ROW, language: 'English' }]
+  };
+};
+
+const toCareerEditorDraft = (source = {}) => ({
+  currentIndustry: source.careerObjective || '',
+  department: 'Engineering - Software & QA',
+  roleCategory: 'Software Development',
+  jobRole: source.targetRole || '',
+  desiredJobType: source.preferredJobType || '',
+  employmentType: 'Full Time',
+  preferredShift: 'Flexible',
+  preferredWorkLocation: source.preferredWorkLocation || '',
+  expectedSalary: source.expectedSalary || ''
+});
+
+const toItSkillRows = (source = {}) =>
+  normalizeSkillList([...(source.toolsTechnologies || []), ...(source.softSkills || [])]).map((skill, index) => ({
+    name: skill,
+    version: /java/i.test(skill) ? '8' : '-',
+    lastUsed: String(CURRENT_YEAR),
+    experience: index === 0 ? '1 Year 0 Month' : '2 Years 0 Month'
+  }));
 
 const toProfileEditorDraft = (source = {}) => ({
   name: source.name || '',
@@ -317,6 +494,26 @@ const StudentProfilePage = () => {
   const [profileEditorOpen, setProfileEditorOpen] = useState(false);
   const [profileEditorDraft, setProfileEditorDraft] = useState(() => toProfileEditorDraft(EMPTY_FORM));
   const [profileEditorFocusField, setProfileEditorFocusField] = useState('');
+  const [headlineEditorOpen, setHeadlineEditorOpen] = useState(false);
+  const [headlineDraft, setHeadlineDraft] = useState('');
+  const [skillsEditorOpen, setSkillsEditorOpen] = useState(false);
+  const [skillsDraft, setSkillsDraft] = useState([]);
+  const [skillInput, setSkillInput] = useState('');
+  const [personalEditorOpen, setPersonalEditorOpen] = useState(false);
+  const [personalDraft, setPersonalDraft] = useState(() => toPersonalEditorDraft(EMPTY_FORM));
+  const [educationEditorOpen, setEducationEditorOpen] = useState(false);
+  const [educationEditorIndex, setEducationEditorIndex] = useState(-1);
+  const [educationDraft, setEducationDraft] = useState(() => createEmptyEducation('Graduation / Diploma'));
+  const [itSkillEditorOpen, setItSkillEditorOpen] = useState(false);
+  const [itSkillEditorIndex, setItSkillEditorIndex] = useState(-1);
+  const [itSkillDraft, setItSkillDraft] = useState({ name: '', version: '', lastUsed: String(CURRENT_YEAR), years: '2', months: '0' });
+  const [projectEditorOpen, setProjectEditorOpen] = useState(false);
+  const [projectEditorIndex, setProjectEditorIndex] = useState(-1);
+  const [projectDraft, setProjectDraft] = useState(() => ({ ...EMPTY_PROJECT }));
+  const [careerEditorOpen, setCareerEditorOpen] = useState(false);
+  const [careerDraft, setCareerDraft] = useState(() => toCareerEditorDraft(EMPTY_FORM));
+  const [diversityEditorOpen, setDiversityEditorOpen] = useState(false);
+  const [diversityDraft, setDiversityDraft] = useState({ caste: '', religion: '', willingToRelocate: '' });
 
   const setFlash = (type, text) => {
     if (timerRef.current) window.clearTimeout(timerRef.current);
@@ -341,6 +538,32 @@ const StudentProfilePage = () => {
     refreshUser(nextUser);
     const token = getToken();
     if (token) setAuthSession(token, nextUser);
+  };
+
+  const commitProfileUpdate = async (nextForm, successText, failureText, onSuccess = () => {}) => {
+    setSaving(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const updated = await updateStudentProfile(nextForm);
+      setForm((current) => ({
+        ...current,
+        ...nextForm,
+        ...updated,
+        email: updated.email || nextForm.email || current.email,
+        educationEntries: ensureEducationEntries(updated.educationEntries || nextForm.educationEntries || current.educationEntries),
+        experience: normalizeExperienceItems(updated.experience || nextForm.experience || current.experience),
+        projects: normalizeProjectItems(updated.projects || nextForm.projects || current.projects),
+        languagesKnown: updated.languagesKnown || nextForm.languagesKnown || current.languagesKnown
+      }));
+      syncUser({ ...nextForm, ...updated });
+      onSuccess(updated);
+      setFlash('success', successText);
+    } catch (error) {
+      setFlash('error', error.message || failureText);
+    } finally {
+      setSaving(false);
+    }
   };
 
   useEffect(() => () => timerRef.current && window.clearTimeout(timerRef.current), []);
@@ -411,32 +634,6 @@ const StudentProfilePage = () => {
       [name]: value
     }));
 
-  const addEducation = (educationLevel = 'Graduation') =>
-    setForm((current) => ({
-      ...current,
-      educationEntries: [...current.educationEntries, createEmptyEducation(educationLevel)]
-    }));
-
-  const removeEducation = (index) =>
-    setForm((current) => {
-      if (current.educationEntries.length <= 1) {
-        return { ...current, educationEntries: [createEmptyEducation()] };
-      }
-
-      return {
-        ...current,
-        educationEntries: current.educationEntries.filter((_, entryIndex) => entryIndex !== index)
-      };
-    });
-
-  const updateEducation = (index, field, value) =>
-    setForm((current) => ({
-      ...current,
-      educationEntries: current.educationEntries.map((item, entryIndex) =>
-        entryIndex === index ? { ...item, [field]: value } : item
-      )
-    }));
-
   const addExperience = () =>
     setForm((current) => ({
       ...current,
@@ -453,26 +650,6 @@ const StudentProfilePage = () => {
     setForm((current) => ({
       ...current,
       experience: current.experience.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
-      )
-    }));
-
-  const addProject = () =>
-    setForm((current) => ({
-      ...current,
-      projects: [...current.projects, { ...EMPTY_PROJECT }]
-    }));
-
-  const removeProject = (index) =>
-    setForm((current) => ({
-      ...current,
-      projects: current.projects.filter((_, i) => i !== index)
-    }));
-
-  const updateProject = (index, field, value) =>
-    setForm((current) => ({
-      ...current,
-      projects: current.projects.map((item, i) =>
         i === index ? { ...item, [field]: value } : item
       )
     }));
@@ -523,6 +700,407 @@ const StudentProfilePage = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const openHeadlineEditor = () => {
+    setHeadlineDraft(String(form.headline || '').slice(0, MAX_HEADLINE_CHARS));
+    setHeadlineEditorOpen(true);
+  };
+
+  const closeHeadlineEditor = () => {
+    if (saving) return;
+    setHeadlineEditorOpen(false);
+  };
+
+  const handleHeadlineEditorSave = async () => {
+    const cleanHeadline = String(headlineDraft || '').trim();
+    const wordCount = cleanHeadline.split(/\s+/).filter(Boolean).length;
+
+    if (wordCount > 0 && wordCount < 5) {
+      setFlash('error', 'Resume headline must be at least 5 words.');
+      return;
+    }
+
+    const nextForm = {
+      ...form,
+      headline: cleanHeadline
+    };
+
+    setSaving(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const updated = await updateStudentProfile(nextForm);
+      setForm((current) => ({
+        ...current,
+        ...updated,
+        email: updated.email || current.email,
+        educationEntries: ensureEducationEntries(updated.educationEntries || current.educationEntries)
+      }));
+      syncUser(updated);
+      setHeadlineEditorOpen(false);
+      setFlash('success', 'Resume headline updated.');
+    } catch (error) {
+      setFlash('error', error.message || 'Failed to update resume headline.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openSkillsEditor = () => {
+    setSkillsDraft(normalizeSkillList(form.technicalSkills));
+    setSkillInput('');
+    setSkillsEditorOpen(true);
+  };
+
+  const closeSkillsEditor = () => {
+    if (saving) return;
+    setSkillsEditorOpen(false);
+    setSkillInput('');
+  };
+
+  const addSkillsToDraft = (value = '') => {
+    const nextItems = parseCommaList(value);
+    if (nextItems.length === 0) return;
+
+    setSkillsDraft((current) => normalizeSkillList([...current, ...nextItems]));
+    setSkillInput('');
+  };
+
+  const removeSkillFromDraft = (skill) => {
+    const target = String(skill || '').trim().toLowerCase();
+    setSkillsDraft((current) => current.filter((item) => String(item || '').trim().toLowerCase() !== target));
+  };
+
+  const handleSkillInputKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      addSkillsToDraft(skillInput);
+    }
+
+    if (event.key === 'Backspace' && !skillInput && skillsDraft.length > 0) {
+      setSkillsDraft((current) => current.slice(0, -1));
+    }
+  };
+
+  const handleSkillsEditorSave = async () => {
+    const cleanSkills = normalizeSkillList([...skillsDraft, ...parseCommaList(skillInput)]);
+
+    if (cleanSkills.length === 0) {
+      setFlash('error', 'Add at least one key skill.');
+      return;
+    }
+
+    const nextForm = {
+      ...form,
+      technicalSkills: cleanSkills
+    };
+
+    setSaving(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const updated = await updateStudentProfile(nextForm);
+      setForm((current) => ({
+        ...current,
+        ...updated,
+        email: updated.email || current.email,
+        educationEntries: ensureEducationEntries(updated.educationEntries || current.educationEntries)
+      }));
+      syncUser(updated);
+      setSkillsEditorOpen(false);
+      setSkillInput('');
+      setFlash('success', 'Key skills updated.');
+    } catch (error) {
+      setFlash('error', error.message || 'Failed to update key skills.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openPersonalEditor = () => {
+    setPersonalDraft(toPersonalEditorDraft(form));
+    setPersonalEditorOpen(true);
+  };
+
+  const closePersonalEditor = () => {
+    if (saving) return;
+    setPersonalEditorOpen(false);
+  };
+
+  const updatePersonalDraftField = (name, value) =>
+    setPersonalDraft((current) => ({
+      ...current,
+      [name]: value
+    }));
+
+  const updatePersonalLanguage = (index, field, value) =>
+    setPersonalDraft((current) => ({
+      ...current,
+      languages: current.languages.map((item, entryIndex) =>
+        entryIndex === index ? { ...item, [field]: value } : item
+      )
+    }));
+
+  const addPersonalLanguage = () =>
+    setPersonalDraft((current) => ({
+      ...current,
+      languages: [...current.languages, { ...DEFAULT_LANGUAGE_ROW }]
+    }));
+
+  const removePersonalLanguage = (index) =>
+    setPersonalDraft((current) => ({
+      ...current,
+      languages: current.languages.length > 1
+        ? current.languages.filter((_, entryIndex) => entryIndex !== index)
+        : [{ ...DEFAULT_LANGUAGE_ROW }]
+    }));
+
+  const handlePersonalEditorSave = () => {
+    const languagesKnown = normalizeSkillList(
+      personalDraft.languages.map((item) => item.language)
+    );
+    const nextForm = {
+      ...form,
+      gender: personalDraft.gender,
+      maritalStatus: personalDraft.maritalStatus,
+      dateOfBirth: buildDateValue({
+        day: personalDraft.birthDay,
+        month: personalDraft.birthMonth,
+        year: personalDraft.birthYear
+      }),
+      caste: personalDraft.category,
+      currentAddress: personalDraft.currentAddress,
+      location: personalDraft.hometown,
+      currentPincode: personalDraft.pincode,
+      permanentPincode: personalDraft.pincode,
+      languagesKnown
+    };
+
+    commitProfileUpdate(nextForm, 'Personal details updated.', 'Failed to update personal details.', () => {
+      setPersonalEditorOpen(false);
+    });
+  };
+
+  const openEducationEditor = (index = -1, educationLevel = 'Graduation / Diploma') => {
+    const source = index >= 0 ? form.educationEntries[index] : createEmptyEducation(educationLevel);
+    setEducationEditorIndex(index);
+    setEducationDraft({
+      ...EMPTY_EDUCATION,
+      courseType: 'Full time',
+      gradingSystem: '',
+      ...source,
+      educationLevel: source?.educationLevel || educationLevel
+    });
+    setEducationEditorOpen(true);
+  };
+
+  const closeEducationEditor = () => {
+    if (saving) return;
+    setEducationEditorOpen(false);
+  };
+
+  const updateEducationDraftField = (name, value) =>
+    setEducationDraft((current) => ({
+      ...current,
+      [name]: value
+    }));
+
+  const handleEducationEditorSave = () => {
+    if (!hasEducationContent(educationDraft)) {
+      setFlash('error', 'Add course, institute, or duration before saving education.');
+      return;
+    }
+
+    const existingEntries = form.educationEntries.some(hasEducationContent) ? form.educationEntries : [];
+    const educationEntries = educationEditorIndex >= 0
+      ? form.educationEntries.map((item, index) => (index === educationEditorIndex ? educationDraft : item))
+      : [...existingEntries, educationDraft];
+
+    commitProfileUpdate(
+      { ...form, educationEntries: ensureEducationEntries(educationEntries) },
+      'Education updated.',
+      'Failed to update education.',
+      () => setEducationEditorOpen(false)
+    );
+  };
+
+  const openItSkillEditor = (index = -1, skillName = '') => {
+    setItSkillEditorIndex(index);
+    setItSkillDraft({
+      name: skillName,
+      version: /java/i.test(skillName) ? '8' : '',
+      lastUsed: String(CURRENT_YEAR),
+      years: index === 0 ? '1' : '2',
+      months: '0'
+    });
+    setItSkillEditorOpen(true);
+  };
+
+  const closeItSkillEditor = () => {
+    if (saving) return;
+    setItSkillEditorOpen(false);
+  };
+
+  const updateItSkillDraftField = (name, value) =>
+    setItSkillDraft((current) => ({
+      ...current,
+      [name]: value
+    }));
+
+  const handleItSkillEditorSave = () => {
+    const skillName = String(itSkillDraft.name || '').trim();
+    if (!skillName) {
+      setFlash('error', 'Add skill/software name before saving.');
+      return;
+    }
+
+    const toolsTechnologies = normalizeSkillList(form.toolsTechnologies);
+    const nextTools = itSkillEditorIndex >= 0 && itSkillEditorIndex < toolsTechnologies.length
+      ? toolsTechnologies.map((item, index) => (index === itSkillEditorIndex ? skillName : item))
+      : [...toolsTechnologies, skillName];
+
+    commitProfileUpdate(
+      { ...form, toolsTechnologies: normalizeSkillList(nextTools) },
+      'IT skills updated.',
+      'Failed to update IT skills.',
+      () => setItSkillEditorOpen(false)
+    );
+  };
+
+  const openProjectEditor = (index = -1) => {
+    const source = index >= 0 ? form.projects[index] : { ...EMPTY_PROJECT };
+    setProjectEditorIndex(index);
+    setProjectDraft({ ...EMPTY_PROJECT, ...source });
+    setProjectEditorOpen(true);
+  };
+
+  const closeProjectEditor = () => {
+    if (saving) return;
+    setProjectEditorOpen(false);
+  };
+
+  const updateProjectDraftField = (name, value) =>
+    setProjectDraft((current) => ({
+      ...current,
+      [name]: value
+    }));
+
+  const handleProjectEditorSave = () => {
+    if (!projectDraft.title && !projectDraft.description) {
+      setFlash('error', 'Add project title or details before saving.');
+      return;
+    }
+
+    const projects = projectEditorIndex >= 0
+      ? form.projects.map((item, index) => (index === projectEditorIndex ? projectDraft : item))
+      : [...form.projects, projectDraft];
+
+    commitProfileUpdate(
+      { ...form, projects: normalizeProjectItems(projects) },
+      'Project details updated.',
+      'Failed to update project details.',
+      () => setProjectEditorOpen(false)
+    );
+  };
+
+  const handleProjectDelete = () => {
+    if (projectEditorIndex < 0) {
+      setProjectEditorOpen(false);
+      return;
+    }
+
+    commitProfileUpdate(
+      { ...form, projects: form.projects.filter((_, index) => index !== projectEditorIndex) },
+      'Project removed.',
+      'Failed to remove project.',
+      () => setProjectEditorOpen(false)
+    );
+  };
+
+  const openCareerEditor = () => {
+    setCareerDraft(toCareerEditorDraft(form));
+    setCareerEditorOpen(true);
+  };
+
+  const closeCareerEditor = () => {
+    if (saving) return;
+    setCareerEditorOpen(false);
+  };
+
+  const updateCareerDraftField = (name, value) =>
+    setCareerDraft((current) => ({
+      ...current,
+      [name]: value
+    }));
+
+  const addCareerLocation = (value = '') => {
+    const currentLocations = parseCommaList(careerDraft.preferredWorkLocation);
+    const nextLocations = normalizeSkillList([...currentLocations, ...parseCommaList(value)]).slice(0, 10);
+    setCareerDraft((current) => ({
+      ...current,
+      preferredWorkLocation: nextLocations.join(', ')
+    }));
+  };
+
+  const removeCareerLocation = (locationName) => {
+    const target = String(locationName || '').toLowerCase();
+    const nextLocations = parseCommaList(careerDraft.preferredWorkLocation).filter(
+      (item) => item.toLowerCase() !== target
+    );
+    setCareerDraft((current) => ({
+      ...current,
+      preferredWorkLocation: nextLocations.join(', ')
+    }));
+  };
+
+  const handleCareerEditorSave = () => {
+    const nextForm = {
+      ...form,
+      careerObjective: careerDraft.currentIndustry,
+      targetRole: careerDraft.jobRole,
+      preferredJobType: careerDraft.desiredJobType,
+      preferredWorkLocation: normalizeSkillList(parseCommaList(careerDraft.preferredWorkLocation)).join(', '),
+      expectedSalary: careerDraft.expectedSalary
+    };
+
+    commitProfileUpdate(nextForm, 'Career profile updated.', 'Failed to update career profile.', () => {
+      setCareerEditorOpen(false);
+    });
+  };
+
+  const openDiversityEditor = () => {
+    setDiversityDraft({
+      caste: form.caste || '',
+      religion: form.religion || '',
+      willingToRelocate: String(form.willingToRelocate ?? '')
+    });
+    setDiversityEditorOpen(true);
+  };
+
+  const closeDiversityEditor = () => {
+    if (saving) return;
+    setDiversityEditorOpen(false);
+  };
+
+  const updateDiversityDraftField = (name, value) =>
+    setDiversityDraft((current) => ({
+      ...current,
+      [name]: value
+    }));
+
+  const handleDiversityEditorSave = () => {
+    commitProfileUpdate(
+      {
+        ...form,
+        caste: diversityDraft.caste,
+        religion: diversityDraft.religion,
+        willingToRelocate: diversityDraft.willingToRelocate
+      },
+      'Diversity details updated.',
+      'Failed to update diversity details.',
+      () => setDiversityEditorOpen(false)
+    );
   };
 
   const handleAvatar = async (event) => {
@@ -630,18 +1208,55 @@ const StudentProfilePage = () => {
     setFlash('success', 'Resume cleared from the draft. Save profile to keep this change.');
   };
 
+  const profileDialogOpen =
+    profileEditorOpen
+    || headlineEditorOpen
+    || skillsEditorOpen
+    || personalEditorOpen
+    || educationEditorOpen
+    || itSkillEditorOpen
+    || projectEditorOpen
+    || careerEditorOpen
+    || diversityEditorOpen;
+
   useEffect(() => {
-    if (!profileEditorOpen) return undefined;
+    if (!profileDialogOpen || typeof document === 'undefined') return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
+    };
+  }, [profileDialogOpen]);
+
+  useEffect(() => {
+    if (!profileDialogOpen) return undefined;
 
     const handleEscape = (event) => {
-      if (event.key === 'Escape' && !saving) {
-        setProfileEditorOpen(false);
-      }
+      if (event.key !== 'Escape' || saving) return;
+      setProfileEditorOpen(false);
+      setHeadlineEditorOpen(false);
+      setSkillsEditorOpen(false);
+      setSkillInput('');
+      setPersonalEditorOpen(false);
+      setEducationEditorOpen(false);
+      setItSkillEditorOpen(false);
+      setProjectEditorOpen(false);
+      setCareerEditorOpen(false);
+      setDiversityEditorOpen(false);
     };
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [profileEditorOpen, saving]);
+  }, [profileDialogOpen, saving]);
 
   const completion = completionOf(form);
   const hasResume = Boolean(form.resumeUrl || form.resumeText);
@@ -672,6 +1287,20 @@ const StudentProfilePage = () => {
   const employmentLabel = hasEmployment ? 'Experienced' : 'Fresher';
   const availabilityLabel = formatAvailabilityToJoin(form.availabilityToJoin);
   const resumeFileName = getResumeFileName(form);
+  const headlineWordCount = String(headlineDraft || '').trim().split(/\s+/).filter(Boolean).length;
+  const headlineCharacterCount = String(headlineDraft || '').length;
+  const skillSuggestions = KEY_SKILL_SUGGESTIONS.filter(
+    (suggestion) => !skillsDraft.some((skill) => skill.toLowerCase() === suggestion.toLowerCase())
+  );
+  const languageRows = toLanguageRows(form.languagesKnown);
+  const itSkillRows = toItSkillRows(form);
+  const educationDisplayEntries = form.educationEntries.filter(hasEducationContent);
+  const careerLocations = parseCommaList(careerDraft.preferredWorkLocation);
+  const displayCareerLocations = parseCommaList(form.preferredWorkLocation);
+  const personalSummary = [form.gender, form.maritalStatus].filter(Boolean).join(', ') || 'Add personal information';
+  const addressSummary = [form.currentAddress, form.location, form.currentPincode || form.permanentPincode]
+    .filter(Boolean)
+    .join(', ');
 
   const sectionStates = useMemo(
     () => ({
@@ -754,9 +1383,9 @@ const StudentProfilePage = () => {
         </div>
       ) : null}
 
-      {profileEditorOpen ? (
+      {profileEditorOpen ? renderProfileModal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
+          className={profileModalBackdropClassName}
           onClick={(event) => {
             if (event.target === event.currentTarget) closeProfileEditor();
           }}
@@ -873,6 +1502,805 @@ const StudentProfilePage = () => {
                 className="inline-flex items-center justify-center rounded-full bg-[#ff6b3d] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#ef5c30] disabled:opacity-60"
               >
                 {saving ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {headlineEditorOpen ? renderProfileModal(
+        <div
+          className={profileModalBackdropClassName}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeHeadlineEditor();
+          }}
+        >
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-[830px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <h2 className="text-[1.45rem] font-extrabold tracking-tight text-slate-950">Resume headline</h2>
+                <p className="mt-1 max-w-2xl text-[0.95rem] leading-6 text-[#68749a]">
+                  It is the first thing recruiters notice in your profile. Write a concise headline introducing yourself to employers. (Minimum 5 words)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeHeadlineEditor}
+                disabled={saving}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#68749a] transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-60"
+                aria-label="Close resume headline editor"
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+
+            <div className="mt-8">
+              <label className="text-[0.95rem] font-extrabold text-slate-950" htmlFor="resume-headline-editor">
+                Resume headline<span className="text-red-500">*</span>
+                <FiAward className="ml-1 inline text-[#f5a623]" size={15} />
+              </label>
+              <div className="mt-3 overflow-hidden rounded-[1.1rem] border border-[#e2e7f3] bg-white">
+                <div className="flex items-center justify-between gap-3 border-b border-[#edf0f7] px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setHeadlineDraft(buildSuggestedHeadline(form))}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#d08a20] px-3 py-1.5 text-[0.8rem] font-bold text-[#a36300] transition hover:bg-[#fff7e8]"
+                  >
+                    <FiAward size={13} />
+                    Improve with AI
+                  </button>
+                  <span className="text-[0.88rem] font-bold text-slate-900">
+                    {headlineWordCount > 0 ? '1/4' : '0/4'}
+                  </span>
+                </div>
+                <textarea
+                  id="resume-headline-editor"
+                  rows="7"
+                  value={headlineDraft}
+                  onChange={(event) => setHeadlineDraft(event.target.value.slice(0, MAX_HEADLINE_CHARS))}
+                  className="min-h-[180px] w-full resize-none px-4 py-4 text-[0.96rem] leading-6 text-slate-950 outline-none"
+                  placeholder="Example: Full Stack Engineer skilled in Java, Spring Boot, Node.js and MERN Stack."
+                />
+              </div>
+              <div className={`mt-1 text-right text-xs font-semibold ${headlineCharacterCount >= MAX_HEADLINE_CHARS ? 'text-red-500' : 'text-[#8a94b7]'}`}>
+                {headlineCharacterCount}/{MAX_HEADLINE_CHARS}
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-end gap-5">
+              <button
+                type="button"
+                onClick={closeHeadlineEditor}
+                disabled={saving}
+                className="text-[0.95rem] font-bold text-[#2d5bff] transition hover:text-[#2449d8] disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleHeadlineEditorSave}
+                disabled={saving || (Boolean(headlineDraft.trim()) && headlineWordCount < 5)}
+                className="inline-flex min-w-[92px] items-center justify-center rounded-full bg-[#2d5bff] px-6 py-3 text-[0.95rem] font-bold text-white shadow-[0_14px_24px_-18px_rgba(45,91,255,0.7)] transition hover:bg-[#2449d8] disabled:opacity-60"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {skillsEditorOpen ? renderProfileModal(
+        <div
+          className={profileModalBackdropClassName}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeSkillsEditor();
+          }}
+        >
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-[830px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <h2 className="text-[1.35rem] font-extrabold tracking-tight text-slate-950">Key skills</h2>
+                <p className="mt-1 max-w-2xl text-[0.95rem] leading-6 text-[#68749a]">
+                  Add skills that best define your expertise, for e.g. Direct Marketing, Oracle, Java, etc. (Minimum 1)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeSkillsEditor}
+                disabled={saving}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#68749a] transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-60"
+                aria-label="Close key skills editor"
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+
+            <div className="mt-8">
+              <p className="text-[0.95rem] font-extrabold text-slate-950">Skills</p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {skillsDraft.map((skill) => (
+                  <span
+                    key={skill}
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#1f2638] bg-[#f4f6fb] px-3.5 py-1 text-[0.9rem] font-bold text-slate-950"
+                  >
+                    {skill}
+                    <button
+                      type="button"
+                      onClick={() => removeSkillFromDraft(skill)}
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-200 hover:text-slate-950"
+                      aria-label={`Remove ${skill}`}
+                    >
+                      <FiX size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              <input
+                value={skillInput}
+                onChange={(event) => setSkillInput(event.target.value)}
+                onKeyDown={handleSkillInputKeyDown}
+                onBlur={() => addSkillsToDraft(skillInput)}
+                className="mt-8 h-13 w-full rounded-[1.05rem] border border-[#e2e7f3] px-4 text-[0.95rem] text-slate-950 outline-none transition placeholder:text-[#a3abc7] focus:border-[#2d5bff] focus:ring-2 focus:ring-[#2d5bff]/10"
+                placeholder="Add skills"
+              />
+            </div>
+
+            <div className="mt-8">
+              <p className="flex items-center gap-1.5 text-[0.95rem] font-extrabold text-slate-950">
+                AI suggestions
+                <FiAward className="text-[#f5a623]" size={15} />
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2.5">
+                {skillSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => addSkillsToDraft(suggestion)}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-full border border-[#aeb8da] bg-white px-3.5 py-1 text-[0.82rem] font-medium text-[#425072] transition hover:border-[#2d5bff] hover:text-[#2d5bff]"
+                  >
+                    {suggestion}
+                    <FiPlus size={12} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-10 flex items-center justify-end gap-5">
+              <button
+                type="button"
+                onClick={closeSkillsEditor}
+                disabled={saving}
+                className="text-[0.95rem] font-bold text-[#2d5bff] transition hover:text-[#2449d8] disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSkillsEditorSave}
+                disabled={saving || (skillsDraft.length === 0 && !String(skillInput || '').trim())}
+                className="inline-flex min-w-[92px] items-center justify-center rounded-full bg-[#2d5bff] px-6 py-3 text-[0.95rem] font-bold text-white shadow-[0_14px_24px_-18px_rgba(45,91,255,0.7)] transition hover:bg-[#2449d8] disabled:opacity-60"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {personalEditorOpen ? renderProfileModal(
+        <div
+          className={profileModalBackdropClassName}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closePersonalEditor();
+          }}
+        >
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-[700px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <h2 className="text-[1.35rem] font-extrabold tracking-tight text-slate-950">Personal details</h2>
+                <p className="mt-1 text-[0.9rem] leading-5 text-[#68749a]">This information is important for employers to know you better</p>
+              </div>
+              <button
+                type="button"
+                onClick={closePersonalEditor}
+                disabled={saving}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#68749a] transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-60"
+                aria-label="Close personal details editor"
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-6">
+              <div>
+                <span className={modalLabelClassName}>Gender</span>
+                <div className="flex flex-wrap gap-2">
+                  {GENDER_OPTIONS.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => updatePersonalDraftField('gender', option)}
+                      className={`rounded-full border px-4 py-2 text-[0.84rem] font-medium transition ${
+                        personalDraft.gender === option
+                          ? 'border-[#1f2638] bg-[#f4f6fb] text-slate-950'
+                          : 'border-[#aeb8da] bg-white text-[#425072] hover:border-[#2d5bff]'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <span className={modalLabelClassName}>Marital status</span>
+                <div className="flex flex-wrap gap-2">
+                  {MARITAL_STATUS_OPTIONS.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => updatePersonalDraftField('maritalStatus', option)}
+                      className={`rounded-full border px-4 py-2 text-[0.84rem] font-medium transition ${
+                        personalDraft.maritalStatus === option
+                          ? 'border-[#1f2638] bg-[#f4f6fb] text-slate-950'
+                          : 'border-[#aeb8da] bg-white text-[#425072] hover:border-[#2d5bff]'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <span className={modalLabelClassName}>Date of birth</span>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <select value={personalDraft.birthDay} onChange={(event) => updatePersonalDraftField('birthDay', event.target.value)} className={modalSelectClassName}>
+                    <option value="">Day</option>
+                    {Array.from({ length: 31 }, (_, index) => String(index + 1)).map((day) => (
+                      <option key={day} value={day}>{day}</option>
+                    ))}
+                  </select>
+                  <select value={personalDraft.birthMonth} onChange={(event) => updatePersonalDraftField('birthMonth', event.target.value)} className={modalSelectClassName}>
+                    <option value="">Month</option>
+                    {MONTH_OPTIONS.map((month) => (
+                      <option key={month.value} value={month.value}>{month.label}</option>
+                    ))}
+                  </select>
+                  <select value={personalDraft.birthYear} onChange={(event) => updatePersonalDraftField('birthYear', event.target.value)} className={modalSelectClassName}>
+                    <option value="">Year</option>
+                    {YEAR_OPTIONS.map((year) => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <span className={modalLabelClassName}>Category</span>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORY_OPTIONS.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => updatePersonalDraftField('category', option)}
+                      className={`rounded-full border px-4 py-2 text-[0.84rem] font-medium transition ${
+                        personalDraft.category === option
+                          ? 'border-[#1f2638] bg-[#f4f6fb] text-slate-950'
+                          : 'border-[#aeb8da] bg-white text-[#425072] hover:border-[#2d5bff]'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-5">
+                <div>
+                  <label className={modalLabelClassName} htmlFor="personal-work-permit">Work permit for other countries</label>
+                  <input
+                    id="personal-work-permit"
+                    value={personalDraft.workPermit}
+                    onChange={(event) => updatePersonalDraftField('workPermit', event.target.value)}
+                    className={modalInputClassName}
+                    placeholder="India"
+                  />
+                </div>
+                <div>
+                  <label className={modalLabelClassName} htmlFor="personal-address">Permanent address</label>
+                  <input
+                    id="personal-address"
+                    value={personalDraft.currentAddress}
+                    onChange={(event) => updatePersonalDraftField('currentAddress', event.target.value)}
+                    className={modalInputClassName}
+                    placeholder="House, area, city"
+                  />
+                </div>
+                <div>
+                  <label className={modalLabelClassName} htmlFor="personal-hometown">Hometown</label>
+                  <input
+                    id="personal-hometown"
+                    value={personalDraft.hometown}
+                    onChange={(event) => updatePersonalDraftField('hometown', event.target.value)}
+                    className={modalInputClassName}
+                    placeholder="Add hometown"
+                  />
+                </div>
+                <div>
+                  <label className={modalLabelClassName} htmlFor="personal-pincode">Pincode</label>
+                  <input
+                    id="personal-pincode"
+                    value={personalDraft.pincode}
+                    onChange={(event) => updatePersonalDraftField('pincode', event.target.value)}
+                    className={modalInputClassName}
+                    placeholder="Add pincode"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-[1.15rem] font-extrabold text-slate-950">Language proficiency</h3>
+                <p className="mt-1 text-[0.86rem] text-[#68749a]">Strengthen your resume by letting recruiters know you can communicate in multiple languages</p>
+                <div className="mt-5 space-y-5">
+                  {personalDraft.languages.map((language, index) => (
+                    <div key={`language-${index}`} className="grid gap-3 rounded-[1rem] border border-[#edf0f7] p-4 sm:grid-cols-2">
+                      <div>
+                        <label className={modalLabelClassName} htmlFor={`language-name-${index}`}>Language<span className="text-red-500">*</span></label>
+                        <input
+                          id={`language-name-${index}`}
+                          value={language.language}
+                          onChange={(event) => updatePersonalLanguage(index, 'language', event.target.value)}
+                          className={modalInputClassName}
+                          placeholder="Hindi"
+                        />
+                      </div>
+                      <div>
+                        <label className={modalLabelClassName} htmlFor={`language-proficiency-${index}`}>Proficiency<span className="text-red-500">*</span></label>
+                        <select
+                          id={`language-proficiency-${index}`}
+                          value={language.proficiency}
+                          onChange={(event) => updatePersonalLanguage(index, 'proficiency', event.target.value)}
+                          className={modalSelectClassName}
+                        >
+                          <option value="Proficient">Proficient</option>
+                          <option value="Intermediate">Intermediate</option>
+                          <option value="Beginner">Beginner</option>
+                        </select>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
+                        {['read', 'write', 'speak'].map((field) => (
+                          <label key={field} className="inline-flex items-center gap-2 text-[0.85rem] font-medium capitalize text-slate-950">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(language[field])}
+                              onChange={(event) => updatePersonalLanguage(index, field, event.target.checked)}
+                              className="h-4 w-4 rounded border-[#aeb8da] accent-slate-950"
+                            />
+                            {field}
+                          </label>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => removePersonalLanguage(index)}
+                          className="ml-auto text-[0.85rem] font-bold text-[#2d5bff]"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={addPersonalLanguage} className="mt-4 text-[0.9rem] font-bold text-[#2d5bff]">
+                  Add another language
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-end gap-5">
+              <button type="button" onClick={closePersonalEditor} disabled={saving} className="text-[0.95rem] font-bold text-[#2d5bff] disabled:opacity-60">
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handlePersonalEditorSave}
+                disabled={saving}
+                className="inline-flex min-w-[92px] items-center justify-center rounded-full bg-[#2d5bff] px-6 py-3 text-[0.95rem] font-bold text-white transition hover:bg-[#2449d8] disabled:opacity-60"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {educationEditorOpen ? renderProfileModal(
+        <div
+          className={profileModalBackdropClassName}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeEducationEditor();
+          }}
+        >
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-[700px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <h2 className="text-[1.25rem] font-extrabold text-slate-950">Education</h2>
+                <p className="mt-1 text-[0.82rem] leading-5 text-[#68749a]">Details like course, university, and more, help recruiters identify your educational background</p>
+              </div>
+              <button type="button" onClick={closeEducationEditor} disabled={saving} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#68749a] hover:bg-slate-50 disabled:opacity-60" aria-label="Close education editor">
+                <FiX size={22} />
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-5">
+              <div>
+                <label className={modalLabelClassName} htmlFor="education-level">Education<span className="text-red-500">*</span></label>
+                <select id="education-level" value={educationDraft.educationLevel} onChange={(event) => updateEducationDraftField('educationLevel', event.target.value)} className={modalSelectClassName}>
+                  {EDUCATION_LEVEL_OPTIONS.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="education-institute">University/Institute<span className="text-red-500">*</span></label>
+                <input id="education-institute" value={educationDraft.instituteName} onChange={(event) => updateEducationDraftField('instituteName', event.target.value)} className={modalInputClassName} placeholder="Select university/institute" />
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="education-course">Course<span className="text-red-500">*</span></label>
+                <input id="education-course" value={educationDraft.courseName} onChange={(event) => updateEducationDraftField('courseName', event.target.value)} className={modalInputClassName} placeholder="Select course" />
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="education-specialization">Specialization<span className="text-red-500">*</span></label>
+                <input id="education-specialization" value={educationDraft.specialization} onChange={(event) => updateEducationDraftField('specialization', event.target.value)} className={modalInputClassName} placeholder="Select specialization" />
+              </div>
+              <div>
+                <span className={modalLabelClassName}>Course type<span className="text-red-500">*</span></span>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {COURSE_TYPE_OPTIONS.map((option) => (
+                    <label key={option} className="inline-flex items-center gap-2 text-[0.82rem] font-medium text-[#425072]">
+                      <input
+                        type="radio"
+                        name="education-course-type"
+                        checked={(educationDraft.courseType || 'Full time') === option}
+                        onChange={() => updateEducationDraftField('courseType', option)}
+                        className="h-4 w-4 accent-slate-950"
+                      />
+                      {option}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <span className={modalLabelClassName}>Course duration<span className="text-red-500">*</span></span>
+                <div className="grid items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+                  <input value={educationDraft.startYear} onChange={(event) => updateEducationDraftField('startYear', event.target.value)} className={modalInputClassName} placeholder="Starting year" />
+                  <span className="text-[0.85rem] font-bold text-slate-950">To</span>
+                  <input value={educationDraft.endYear || educationDraft.expectedCompletionYear} onChange={(event) => updateEducationDraftField('endYear', event.target.value)} className={modalInputClassName} placeholder="Ending year" />
+                </div>
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="education-grading">Grading system</label>
+                <input id="education-grading" value={educationDraft.gradingSystem || ''} onChange={(event) => updateEducationDraftField('gradingSystem', event.target.value)} className={modalInputClassName} placeholder="Select grading system" />
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-end gap-5">
+              <button type="button" onClick={closeEducationEditor} disabled={saving} className="text-[0.9rem] font-bold text-[#2d5bff] disabled:opacity-60">Cancel</button>
+              <button type="button" onClick={handleEducationEditorSave} disabled={saving} className="inline-flex min-w-[82px] items-center justify-center rounded-full bg-[#2d5bff] px-6 py-3 text-[0.9rem] font-bold text-white hover:bg-[#2449d8] disabled:opacity-60">
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {itSkillEditorOpen ? renderProfileModal(
+        <div
+          className={profileModalBackdropClassName}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeItSkillEditor();
+          }}
+        >
+          <div className="w-full max-w-[520px] rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <h2 className="text-[1.05rem] font-extrabold text-slate-950">IT skills <span className="text-[0.78rem] text-emerald-600">Add %</span></h2>
+                <p className="mt-1 text-[0.78rem] leading-5 text-[#68749a]">Mention skills like programming languages, softwares and more, to show your technical expertise.</p>
+              </div>
+              <button type="button" onClick={closeItSkillEditor} disabled={saving} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#68749a] hover:bg-slate-50 disabled:opacity-60" aria-label="Close IT skills editor">
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-5">
+              <div>
+                <label className={modalLabelClassName} htmlFor="it-skill-name">Skill / software name<span className="text-red-500">*</span></label>
+                <input id="it-skill-name" value={itSkillDraft.name} onChange={(event) => updateItSkillDraftField('name', event.target.value)} className={modalInputClassName} placeholder="Skill / Software name" />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className={modalLabelClassName} htmlFor="it-skill-version">Software version</label>
+                  <input id="it-skill-version" value={itSkillDraft.version} onChange={(event) => updateItSkillDraftField('version', event.target.value)} className={modalInputClassName} placeholder="Software version" />
+                </div>
+                <div>
+                  <label className={modalLabelClassName} htmlFor="it-skill-last-used">Last used</label>
+                  <input id="it-skill-last-used" value={itSkillDraft.lastUsed} onChange={(event) => updateItSkillDraftField('lastUsed', event.target.value)} className={modalInputClassName} placeholder="Last used" />
+                </div>
+              </div>
+              <div>
+                <span className={modalLabelClassName}>Experience</span>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input value={itSkillDraft.years} onChange={(event) => updateItSkillDraftField('years', event.target.value)} className={modalInputClassName} placeholder="Years" />
+                  <input value={itSkillDraft.months} onChange={(event) => updateItSkillDraftField('months', event.target.value)} className={modalInputClassName} placeholder="Months" />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-end gap-5">
+              <button type="button" onClick={closeItSkillEditor} disabled={saving} className="text-[0.85rem] font-bold text-[#2d5bff] disabled:opacity-60">Cancel</button>
+              <button type="button" onClick={handleItSkillEditorSave} disabled={saving} className="inline-flex min-w-[82px] items-center justify-center rounded-full bg-[#2d5bff] px-6 py-3 text-[0.85rem] font-bold text-white hover:bg-[#2449d8] disabled:opacity-60">
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {projectEditorOpen ? renderProfileModal(
+        <div
+          className={profileModalBackdropClassName}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeProjectEditor();
+          }}
+        >
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-[560px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Project</h2>
+                <p className="mt-1 text-[0.78rem] leading-5 text-[#68749a]">Stand out for employers by adding details about projects you have done in college, internships, or at work</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {projectEditorIndex >= 0 ? (
+                  <button type="button" onClick={handleProjectDelete} disabled={saving} className="text-[0.8rem] font-bold text-[#2d5bff] disabled:opacity-60">Delete</button>
+                ) : null}
+                <button type="button" onClick={closeProjectEditor} disabled={saving} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#68749a] hover:bg-slate-50 disabled:opacity-60" aria-label="Close project editor">
+                  <FiX size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-5">
+              <div>
+                <label className={modalLabelClassName} htmlFor="project-title">Project title<span className="text-red-500">*</span></label>
+                <input id="project-title" value={projectDraft.title} onChange={(event) => updateProjectDraftField('title', event.target.value)} className={modalInputClassName} placeholder="Project title" />
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="project-role">Tag this project with your employment/education</label>
+                <input id="project-role" value={projectDraft.role} onChange={(event) => updateProjectDraftField('role', event.target.value)} className={modalInputClassName} placeholder="Select employment/education" />
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="project-client">Client</label>
+                <input id="project-client" value={projectDraft.liveUrl} onChange={(event) => updateProjectDraftField('liveUrl', event.target.value)} className={modalInputClassName} placeholder="Client or live URL" />
+              </div>
+              <div>
+                <span className={modalLabelClassName}>Project status</span>
+                <div className="flex gap-10">
+                  <label className="inline-flex items-center gap-2 text-[0.82rem] font-medium text-slate-950">
+                    <input type="radio" checked={Boolean(projectDraft.isOngoing)} onChange={() => updateProjectDraftField('isOngoing', true)} className="h-4 w-4 accent-slate-950" />
+                    In progress
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-[0.82rem] font-medium text-[#8a94b7]">
+                    <input type="radio" checked={!projectDraft.isOngoing} onChange={() => updateProjectDraftField('isOngoing', false)} className="h-4 w-4 accent-slate-950" />
+                    Finished
+                  </label>
+                </div>
+              </div>
+              <div>
+                <span className={modalLabelClassName}>Worked from<span className="text-red-500">*</span></span>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input value={projectDraft.startYear} onChange={(event) => updateProjectDraftField('startYear', event.target.value)} className={modalInputClassName} placeholder="2025" />
+                  <input value={projectDraft.endYear} onChange={(event) => updateProjectDraftField('endYear', event.target.value)} disabled={projectDraft.isOngoing} className={modalInputClassName} placeholder="Jul" />
+                </div>
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="project-details">Details of project</label>
+                <div className="overflow-hidden rounded-[1rem] border border-[#dfe5f2]">
+                  <div className="border-b border-[#edf0f7] px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateProjectDraftField(
+                          'description',
+                          `- Developed ${projectDraft.title || 'a production-ready application'} with clean user flows and reliable backend integrations.\n- Designed and implemented scalable modules with secure authentication and role-based access.\n- Improved performance, maintainability, and recruiter-facing presentation through polished UI and clear architecture.`
+                        )
+                      }
+                      className="inline-flex items-center gap-1 rounded-full border border-[#d08a20] px-2.5 py-1 text-[0.72rem] font-bold text-[#a36300]"
+                    >
+                      <FiAward size={12} />
+                      Improve with AI
+                    </button>
+                  </div>
+                  <textarea
+                    id="project-details"
+                    rows="6"
+                    value={projectDraft.description}
+                    onChange={(event) => updateProjectDraftField('description', event.target.value.slice(0, 1000))}
+                    className="w-full resize-none px-3 py-3 text-[0.82rem] leading-5 text-slate-950 outline-none"
+                    placeholder="Add key project details"
+                  />
+                </div>
+                <p className="mt-1 text-right text-[0.72rem] text-[#8a94b7]">{String(projectDraft.description || '').length}/1000</p>
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="project-location">Project location</label>
+                <input id="project-location" value={projectDraft.githubUrl} onChange={(event) => updateProjectDraftField('githubUrl', event.target.value)} className={modalInputClassName} placeholder="New Delhi or source URL" />
+              </div>
+              <div>
+                <span className={modalLabelClassName}>Project site</span>
+                <div className="flex gap-10">
+                  <label className="inline-flex items-center gap-2 text-[0.82rem] font-medium text-slate-950"><input type="radio" defaultChecked className="h-4 w-4 accent-slate-950" />Offsite</label>
+                  <label className="inline-flex items-center gap-2 text-[0.82rem] font-medium text-[#8a94b7]"><input type="radio" className="h-4 w-4 accent-slate-950" />Onsite</label>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-end gap-5">
+              <button type="button" onClick={closeProjectEditor} disabled={saving} className="text-[0.85rem] font-bold text-[#2d5bff] disabled:opacity-60">Cancel</button>
+              <button type="button" onClick={handleProjectEditorSave} disabled={saving} className="inline-flex min-w-[82px] items-center justify-center rounded-full bg-[#2d5bff] px-6 py-3 text-[0.85rem] font-bold text-white hover:bg-[#2449d8] disabled:opacity-60">
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {careerEditorOpen ? renderProfileModal(
+        <div
+          className={profileModalBackdropClassName}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeCareerEditor();
+          }}
+        >
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-[520px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Career profile</h2>
+                <p className="mt-1 text-[0.78rem] leading-5 text-[#68749a]">Add details about your current and preferred job profile. This helps us personalise your job recommendations.</p>
+              </div>
+              <button type="button" onClick={closeCareerEditor} disabled={saving} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#68749a] hover:bg-slate-50 disabled:opacity-60" aria-label="Close career profile editor">
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-5">
+              <div>
+                <label className={modalLabelClassName} htmlFor="career-industry">Current industry<span className="text-red-500">*</span></label>
+                <input id="career-industry" value={careerDraft.currentIndustry} onChange={(event) => updateCareerDraftField('currentIndustry', event.target.value)} className={modalInputClassName} placeholder="AI/ML" />
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="career-department">Department<span className="text-red-500">*</span></label>
+                <input id="career-department" value={careerDraft.department} onChange={(event) => updateCareerDraftField('department', event.target.value)} className={modalInputClassName} />
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="career-role-category">Role category<span className="text-red-500">*</span></label>
+                <input id="career-role-category" value={careerDraft.roleCategory} onChange={(event) => updateCareerDraftField('roleCategory', event.target.value)} className={modalInputClassName} />
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="career-job-role">Job role<span className="text-red-500">*</span></label>
+                <input id="career-job-role" value={careerDraft.jobRole} onChange={(event) => updateCareerDraftField('jobRole', event.target.value)} className={modalInputClassName} placeholder="Full Stack Developer" />
+              </div>
+              <div>
+                <span className={modalLabelClassName}>Desired job type</span>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {['Permanent', 'Contractual'].map((option) => (
+                    <label key={option} className="inline-flex items-center gap-2 text-[0.82rem] font-medium text-[#425072]">
+                      <input
+                        type="checkbox"
+                        checked={careerDraft.desiredJobType.toLowerCase() === option.toLowerCase()}
+                        onChange={() => updateCareerDraftField('desiredJobType', option)}
+                        className="h-4 w-4 rounded accent-slate-950"
+                      />
+                      {option}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <span className={modalLabelClassName}>Preferred shift</span>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {['Day', 'Night', 'Flexible'].map((option) => (
+                    <label key={option} className="inline-flex items-center gap-2 text-[0.82rem] font-medium text-[#425072]">
+                      <input type="radio" checked={careerDraft.preferredShift === option} onChange={() => updateCareerDraftField('preferredShift', option)} className="h-4 w-4 accent-slate-950" />
+                      {option}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="career-location">Preferred work location (Max 10)</label>
+                <input
+                  id="career-location"
+                  value={careerDraft.preferredWorkLocation}
+                  onChange={(event) => updateCareerDraftField('preferredWorkLocation', event.target.value)}
+                  onBlur={(event) => addCareerLocation(event.target.value)}
+                  className={modalInputClassName}
+                  placeholder="Tell us your location preferences to work"
+                />
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {careerLocations.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => removeCareerLocation(item)}
+                      className="inline-flex items-center gap-1 rounded-full border border-[#1f2638] bg-[#f4f6fb] px-2.5 py-1 text-[0.72rem] font-bold text-slate-950"
+                    >
+                      {item}
+                      <FiX size={11} />
+                    </button>
+                  ))}
+                  {careerLocations.length === 0 ? WORK_LOCATION_SUGGESTIONS.slice(0, 5).map((item) => (
+                    <button key={item} type="button" onClick={() => addCareerLocation(item)} className="rounded-full border border-[#aeb8da] px-2.5 py-1 text-[0.72rem] font-medium text-[#425072]">
+                      {item} +
+                    </button>
+                  )) : null}
+                </div>
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="career-salary">Expected salary</label>
+                <input id="career-salary" value={careerDraft.expectedSalary} onChange={(event) => updateCareerDraftField('expectedSalary', event.target.value)} className={modalInputClassName} placeholder="6,50,000" />
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-end gap-5">
+              <button type="button" onClick={closeCareerEditor} disabled={saving} className="text-[0.85rem] font-bold text-[#2d5bff] disabled:opacity-60">Cancel</button>
+              <button type="button" onClick={handleCareerEditorSave} disabled={saving} className="inline-flex min-w-[82px] items-center justify-center rounded-full bg-[#2d5bff] px-6 py-3 text-[0.85rem] font-bold text-white hover:bg-[#2449d8] disabled:opacity-60">
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {diversityEditorOpen ? renderProfileModal(
+        <div
+          className={profileModalBackdropClassName}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeDiversityEditor();
+          }}
+        >
+          <div className="w-full max-w-[520px] rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <h2 className="text-[1.1rem] font-extrabold text-slate-950">Diversity &amp; inclusion</h2>
+                <p className="mt-1 text-[0.82rem] leading-5 text-[#68749a]">Share details to attract recruiters who value people from different backgrounds.</p>
+              </div>
+              <button type="button" onClick={closeDiversityEditor} disabled={saving} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#68749a] hover:bg-slate-50 disabled:opacity-60" aria-label="Close diversity editor">
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className="mt-6 grid gap-5">
+              <div>
+                <label className={modalLabelClassName} htmlFor="diversity-category">Category</label>
+                <input id="diversity-category" value={diversityDraft.caste} onChange={(event) => updateDiversityDraftField('caste', event.target.value)} className={modalInputClassName} placeholder="General" />
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="diversity-religion">Religion</label>
+                <input id="diversity-religion" value={diversityDraft.religion} onChange={(event) => updateDiversityDraftField('religion', event.target.value)} className={modalInputClassName} placeholder="Add religion" />
+              </div>
+              <div>
+                <label className={modalLabelClassName} htmlFor="diversity-relocate">Willing to relocate</label>
+                <select id="diversity-relocate" value={diversityDraft.willingToRelocate} onChange={(event) => updateDiversityDraftField('willingToRelocate', event.target.value)} className={modalSelectClassName}>
+                  <option value="">Select preference</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-8 flex items-center justify-end gap-5">
+              <button type="button" onClick={closeDiversityEditor} disabled={saving} className="text-[0.85rem] font-bold text-[#2d5bff] disabled:opacity-60">Cancel</button>
+              <button type="button" onClick={handleDiversityEditorSave} disabled={saving} className="inline-flex min-w-[82px] items-center justify-center rounded-full bg-[#2d5bff] px-6 py-3 text-[0.85rem] font-bold text-white hover:bg-[#2449d8] disabled:opacity-60">
+                {saving ? 'Saving...' : 'Save'}
               </button>
             </div>
           </div>
@@ -1089,101 +2517,73 @@ const StudentProfilePage = () => {
             }}
             className={cardClassName}
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-navy">Resume</h2>
-                  <span className="text-base font-bold text-emerald-600">{hasResume ? 'Updated' : 'Add 12%'}</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-500">
-                  {hasResume ? 'Your stored resume is ready for one-click apply.' : 'Upload your latest resume to unlock recruiter-ready apply.'}
-                </p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Resume</h2>
+                <span className="text-[0.95rem] font-bold text-emerald-600">{hasResume ? 'Updated' : 'Add 10%'}</span>
               </div>
-              <button
-                type="button"
-                onClick={() => resumeInputRef.current?.click()}
-                disabled={resumeImporting}
-                className="text-lg font-bold text-[#2d5bff] transition hover:text-[#2449d8] disabled:opacity-70"
-              >
-                {hasResume ? 'Update resume' : 'Upload resume'}
-              </button>
-            </div>
-
-            <div className="mt-6 flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
-              <div>
-                <p className="text-lg font-bold text-slate-900">{resumeFileName}</p>
-                <p className="mt-1 text-sm text-slate-400">Uploaded on Apr 09, 2026</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleResumeDownload}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#2d5bff] shadow-sm transition hover:bg-slate-100"
-                  aria-label="Download resume text"
-                >
-                  <FiDownload />
-                </button>
-                <button
-                  type="button"
-                  onClick={clearResumeDraft}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#2d5bff] shadow-sm transition hover:bg-slate-100"
-                  aria-label="Clear resume draft"
-                >
-                  <FiTrash2 />
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-[1.5rem] border border-dashed border-[#b7c4f7] px-5 py-8 text-center">
-              <div className="flex flex-wrap items-center justify-center gap-3">
+              {hasResume ? (
                 <button
                   type="button"
                   onClick={() => resumeInputRef.current?.click()}
                   disabled={resumeImporting}
-                  className="inline-flex items-center justify-center rounded-full border border-[#2d5bff] px-5 py-2.5 text-sm font-bold text-[#2d5bff] transition hover:bg-[#eef2ff] disabled:opacity-70"
+                  className="text-[0.95rem] font-bold text-[#2d5bff] transition hover:text-[#2449d8] disabled:opacity-70"
                 >
-                  {resumeImporting ? 'Importing...' : 'Update resume'}
+                  Update resume
                 </button>
-                <button
-                  type="button"
-                  onClick={() => updateField('resumeText', generatedResume(form))}
-                  className="inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                >
-                  Generate draft
-                </button>
-              </div>
-              <p className="mt-4 text-sm text-slate-400">Supported formats: doc, docx, rtf, pdf, upto 2 MB</p>
+              ) : null}
             </div>
 
-            <div className="mt-5">
-              <label className="mb-2 block text-sm font-bold text-slate-700" htmlFor="student-resume-text">
-                Resume text
-              </label>
-              <textarea
-                id="student-resume-text"
-                rows="8"
-                value={form.resumeText}
-                onChange={(event) => updateField('resumeText', event.target.value)}
-                className="w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                placeholder="Paste resume text here or upload a file to auto-fill profile sections."
-              />
-              <div className="mt-3 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleResumeImport({
-                      resumeText: form.resumeText,
-                      successMessage: 'Resume text parsed into profile draft.'
-                    })
-                  }
-                  disabled={resumeImporting || !String(form.resumeText || '').trim()}
-                  className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 transition hover:bg-brand-100 disabled:opacity-70"
-                >
-                  <FiUploadCloud />
-                  Import from text
-                </button>
+            <p className="mt-5 text-[0.98rem] font-medium text-[#23305f]">
+              70% of recruiters discover candidates through their resume
+            </p>
+
+            {hasResume ? (
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-[1.1rem] border border-[#edf0f7] bg-[#f8faff] px-4 py-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#2d5bff] shadow-sm">
+                    <FiFileText size={18} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-[1rem] font-extrabold text-slate-950">{resumeFileName}</p>
+                    <p className="mt-0.5 text-[0.82rem] text-[#8a94b7]">Stored resume is ready for one-click apply.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResumeDownload}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#2d5bff] shadow-sm transition hover:bg-slate-100"
+                    aria-label="Download resume text"
+                  >
+                    <FiDownload size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearResumeDraft}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#2d5bff] shadow-sm transition hover:bg-slate-100"
+                    aria-label="Clear resume draft"
+                  >
+                    <FiTrash2 size={17} />
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => resumeInputRef.current?.click()}
+              disabled={resumeImporting}
+              className="mt-5 flex min-h-[116px] w-full flex-col items-center justify-center rounded-[1rem] border border-dashed border-[#9facdf] px-5 py-7 text-center transition hover:border-[#2d5bff] hover:bg-[#f8faff] disabled:opacity-70"
+            >
+              <span className="text-[1rem] font-extrabold text-slate-950">
+                Already have a resume?{' '}
+                <span className="text-[#2d5bff]">{resumeImporting ? 'Uploading...' : hasResume ? 'Upload newer resume' : 'Upload resume'}</span>
+              </span>
+              <span className="mt-1 text-[0.92rem] font-medium text-[#68749a]">
+                Supported Formats: doc, docx, rtf, pdf, upto 2 MB
+              </span>
+            </button>
           </article>
 
           <article
@@ -1193,24 +2593,31 @@ const StudentProfilePage = () => {
             }}
             className={cardClassName}
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-navy">Resume headline</h2>
-                  <span className="text-base font-bold text-emerald-600">{hasResumeHeadline ? 'Updated' : 'Add 8%'}</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-500">Add a summary headline so recruiters quickly understand your intent.</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Resume headline</h2>
+                <FiAward className="text-[#f5a623]" size={18} />
+                <button
+                  type="button"
+                  onClick={openHeadlineEditor}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#6070a6] transition hover:bg-[#f3f6ff] hover:text-[#2d5bff]"
+                  aria-label="Edit resume headline"
+                >
+                  <FiEdit2 size={17} />
+                </button>
               </div>
-              <button type="button" onClick={() => scrollToNode(sectionRefs.current['resume-headline'])} className="text-lg font-bold text-[#2d5bff]">
-                {hasResumeHeadline ? 'Update headline' : 'Add resume headline'}
-              </button>
             </div>
-            <input
-              value={form.headline}
-              onChange={(event) => updateField('headline', event.target.value)}
-              className="mt-5 w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-base text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-              placeholder="Add a recruiter-friendly profile headline"
-            />
+            {hasResumeHeadline ? (
+              <p className="mt-6 text-[0.98rem] leading-6 text-[#23305f]">{form.headline}</p>
+            ) : (
+              <button
+                type="button"
+                onClick={openHeadlineEditor}
+                className="mt-6 text-[0.98rem] font-bold text-[#2d5bff] transition hover:text-[#2449d8]"
+              >
+                Add a professional resume headline
+              </button>
+            )}
           </article>
 
           <article
@@ -1220,34 +2627,40 @@ const StudentProfilePage = () => {
             }}
             className={cardClassName}
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-navy">Key skills</h2>
-                  <span className="text-base font-bold text-emerald-600">{hasKeySkills ? 'Updated' : 'Add 8%'}</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-500">Recruiters look for candidates with specific key skills.</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Key skills</h2>
+                <FiAward className="text-[#f5a623]" size={18} />
+                <button
+                  type="button"
+                  onClick={openSkillsEditor}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#6070a6] transition hover:bg-[#f3f6ff] hover:text-[#2d5bff]"
+                  aria-label="Edit key skills"
+                >
+                  <FiEdit2 size={17} />
+                </button>
               </div>
-              <button type="button" onClick={() => scrollToNode(sectionRefs.current['key-skills'])} className="text-lg font-bold text-[#2d5bff]">
-                {hasKeySkills ? 'Update key skills' : 'Add key skills'}
-              </button>
             </div>
             {form.technicalSkills.length > 0 ? (
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="mt-8 flex flex-wrap gap-2.5">
                 {form.technicalSkills.map((skill) => (
-                  <span key={skill} className="rounded-full bg-[#eef2ff] px-3 py-1 text-sm font-semibold text-[#2d5bff]">
+                  <span
+                    key={skill}
+                    className="inline-flex min-h-8 items-center rounded-full border border-[#e0e5f2] bg-white px-3.5 py-1 text-[0.9rem] font-medium text-[#23305f] shadow-[0_8px_18px_-18px_rgba(15,23,42,0.5)]"
+                  >
                     {skill}
                   </span>
                 ))}
               </div>
-            ) : null}
-            <textarea
-              rows="3"
-              value={joinCommaList(form.technicalSkills)}
-              onChange={(event) => updateField('technicalSkills', parseCommaList(event.target.value))}
-              className="mt-5 w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-              placeholder="React, Node.js, SQL, UI Design"
-            />
+            ) : (
+              <button
+                type="button"
+                onClick={openSkillsEditor}
+                className="mt-6 text-[0.98rem] font-bold text-[#2d5bff] transition hover:text-[#2449d8]"
+              >
+                Add key skills
+              </button>
+            )}
           </article>
 
           <article
@@ -1479,69 +2892,52 @@ const StudentProfilePage = () => {
             }}
             className={cardClassName}
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-navy">Education</h2>
-                  <span className="text-base font-bold text-emerald-600">{hasEducation ? 'Updated' : 'Add 10%'}</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-500">Add your highest and most relevant qualifications so recruiters can understand your academic background clearly.</p>
-              </div>
-              <button type="button" onClick={() => addEducation()} className="text-lg font-bold text-[#2d5bff]">
-                Add another qualification
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-[1.05rem] font-extrabold text-slate-950">Education</h2>
+              <button type="button" onClick={() => openEducationEditor()} className="text-[0.9rem] font-bold text-[#2d5bff]">
+                Add education
               </button>
             </div>
 
-            <div className="mt-6 space-y-4">
-              {form.educationEntries.map((entry, index) => (
-                <div key={`education-entry-${index}`} className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-900">{getEducationCardTitle(entry, index)}</h3>
-                      <p className="text-xs text-slate-500">Qualification {index + 1}</p>
+            <div className="mt-5 space-y-5">
+              {educationDisplayEntries.length > 0 ? (
+                educationDisplayEntries.map((entry, index) => (
+                  <div key={`education-display-${index}`} className="max-w-[620px]">
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-[0.88rem] font-extrabold text-slate-950">
+                          {getEducationDisplayTitle(entry, index)}
+                        </p>
+                        <p className="mt-1 text-[0.82rem] font-semibold text-slate-950">
+                          {entry.instituteName || entry.universityBoard || 'Add institute name'}
+                        </p>
+                        <p className="mt-1 text-[0.8rem] text-[#68749a]">{getEducationDisplayMeta(entry)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openEducationEditor(index)}
+                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#6070a6] transition hover:bg-[#f3f6ff] hover:text-[#2d5bff]"
+                        aria-label="Edit education"
+                      >
+                        <FiEdit2 size={15} />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeEducation(index)}
-                      disabled={form.educationEntries.length <= 1}
-                      className="inline-flex items-center gap-2 rounded-full border border-red-100 bg-white px-3 py-1.5 text-sm font-bold text-red-500 transition hover:bg-red-50 disabled:opacity-50"
-                    >
-                      <FiTrash2 />
-                      Remove
-                    </button>
                   </div>
+                ))
+              ) : (
+                <button type="button" onClick={() => openEducationEditor()} className="text-[0.9rem] font-bold text-[#2d5bff]">
+                  Add your education details
+                </button>
+              )}
+            </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <select
-                      value={entry.educationLevel}
-                      onChange={(event) => updateEducation(index, 'educationLevel', event.target.value)}
-                      className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                    >
-                      {EDUCATION_LEVEL_OPTIONS.map((option) => (
-                        <option key={option} value={option}>{option}</option>
-                      ))}
-                    </select>
-                    <input value={entry.courseName} onChange={(event) => updateEducation(index, 'courseName', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Degree, course, or stream" />
-                    <input value={entry.instituteName} onChange={(event) => updateEducation(index, 'instituteName', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="College or school name" />
-                    <input value={entry.universityBoard} onChange={(event) => updateEducation(index, 'universityBoard', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="University or board name" />
-                    <input value={entry.specialization} onChange={(event) => updateEducation(index, 'specialization', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Specialization or major" />
-                    <select
-                      value={entry.educationStatus}
-                      onChange={(event) => updateEducation(index, 'educationStatus', event.target.value)}
-                      className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                    >
-                      <option value="completed">Completed</option>
-                      <option value="pursuing">Pursuing</option>
-                    </select>
-                    <input value={entry.startYear} onChange={(event) => updateEducation(index, 'startYear', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Start year" />
-                    {entry.educationStatus === 'pursuing' ? (
-                      <input value={entry.expectedCompletionYear} onChange={(event) => updateEducation(index, 'expectedCompletionYear', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Expected completion year" />
-                    ) : (
-                      <input value={entry.endYear} onChange={(event) => updateEducation(index, 'endYear', event.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Completion year" />
-                    )}
-                  </div>
-                </div>
-              ))}
+            <div className="mt-7 space-y-5">
+              <button type="button" onClick={() => openEducationEditor(-1, 'Doctorate / PhD')} className="block text-[0.9rem] font-bold text-[#2d5bff]">
+                Add doctorate/PhD
+              </button>
+              <button type="button" onClick={() => openEducationEditor(-1, 'Masters / Post Graduation')} className="block text-[0.9rem] font-bold text-[#2d5bff]">
+                Add masters/post-graduation
+              </button>
             </div>
           </article>
 
@@ -1552,22 +2948,51 @@ const StudentProfilePage = () => {
             }}
             className={cardClassName}
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-navy">IT skills</h2>
-                  <span className="text-base font-bold text-emerald-600">{hasItSkills ? 'Updated' : 'Add 10%'}</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-500">Show your technical expertise by mentioning softwares and skills you know.</p>
-              </div>
-              <button type="button" onClick={() => scrollToNode(sectionRefs.current['it-skills'])} className="text-lg font-bold text-[#2d5bff]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-[1.05rem] font-extrabold text-slate-950">IT skills</h2>
+              <button type="button" onClick={() => openItSkillEditor()} className="text-[0.9rem] font-bold text-[#2d5bff]">
                 Add details
               </button>
             </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <textarea rows="4" value={joinCommaList(form.toolsTechnologies)} onChange={(event) => updateField('toolsTechnologies', parseCommaList(event.target.value))} className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Git, Docker, Postman, Jira" />
-              <textarea rows="4" value={joinCommaList(form.softSkills)} onChange={(event) => updateField('softSkills', parseCommaList(event.target.value))} className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Communication, teamwork, ownership" />
-            </div>
+            {itSkillRows.length > 0 ? (
+              <div className="mt-5 overflow-x-auto">
+                <table className="w-full min-w-[560px] text-left text-[0.82rem]">
+                  <thead className="border-b border-[#e2e7f3] text-[#68749a]">
+                    <tr>
+                      <th className="pb-3 font-medium">Skills</th>
+                      <th className="pb-3 font-medium">Version</th>
+                      <th className="pb-3 font-medium">Last used</th>
+                      <th className="pb-3 font-medium">Experience</th>
+                      <th className="pb-3" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-transparent text-[#23305f]">
+                    {itSkillRows.map((row, index) => (
+                      <tr key={`${row.name}-${index}`}>
+                        <td className="py-3 font-bold">{row.name}</td>
+                        <td className="py-3">{row.version}</td>
+                        <td className="py-3">{row.lastUsed}</td>
+                        <td className="py-3">{row.experience}</td>
+                        <td className="py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => openItSkillEditor(index, row.name)}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[#6070a6] transition hover:bg-[#f3f6ff] hover:text-[#2d5bff]"
+                            aria-label={`Edit ${row.name}`}
+                          >
+                            <FiEdit2 size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <button type="button" onClick={() => openItSkillEditor()} className="mt-5 text-[0.9rem] font-bold text-[#2d5bff]">
+                Add IT skill
+              </button>
+            )}
           </article>
 
           <article
@@ -1575,206 +3000,60 @@ const StudentProfilePage = () => {
             ref={(node) => { sectionRefs.current.projects = node; }}
             className={cardClassName}
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-navy">Projects</h2>
-                  <span className="text-base font-bold text-emerald-600">{hasProjects ? 'Updated' : 'Add 6%'}</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-500">
-                  Projects show recruiters what you can build. Add tech stack, links, and your role so companies understand your actual contribution.
-                </p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Projects</h2>
+                <FiAward className="text-[#f5a623]" size={16} />
               </div>
-              <button
-                type="button"
-                onClick={addProject}
-                className="inline-flex items-center gap-2 rounded-full border border-[#2d5bff] px-4 py-2 text-sm font-bold text-[#2d5bff] transition hover:bg-[#eef2ff]"
-              >
-                <FiPlus size={15} />
+              <button type="button" onClick={() => openProjectEditor()} className="text-[0.9rem] font-bold text-[#2d5bff]">
                 Add project
               </button>
             </div>
 
             {form.projects.length === 0 ? (
-              <div className="mt-6 rounded-2xl border-2 border-dashed border-slate-200 px-6 py-10 text-center">
-                <FiTrendingUp size={28} className="mx-auto mb-3 text-slate-300" />
-                <p className="text-sm font-semibold text-slate-400">No projects added yet.</p>
-                <p className="mt-1 text-xs text-slate-400">
-                  Projects are the #1 thing freshers can show. Add college projects, personal builds, or open-source work.
-                </p>
-                <button
-                  type="button"
-                  onClick={addProject}
-                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
-                >
-                  <FiPlus size={14} />
+              <div className="mt-5 rounded-[1rem] border border-dashed border-[#c7d0ee] px-5 py-7 text-center">
+                <p className="text-[0.9rem] font-semibold text-[#68749a]">Add college projects, personal builds, or internship work.</p>
+                <button type="button" onClick={() => openProjectEditor()} className="mt-3 text-[0.9rem] font-bold text-[#2d5bff]">
                   Add first project
                 </button>
               </div>
             ) : (
-              <div className="mt-6 space-y-5">
+              <div className="mt-5 space-y-4">
                 {form.projects.map((entry, index) => (
-                  <div
-                    key={`proj-${index}`}
-                    className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-5"
-                  >
-                    {/* Card header */}
-                    <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-lg font-extrabold text-navy">
-                          {entry.title || `Project #${index + 1}`}
+                  <div key={`project-display-${index}`} className="border-b border-transparent pb-2 last:border-b-0">
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[0.88rem] font-extrabold text-slate-950">{entry.title || `Project #${index + 1}`}</p>
+                        <p className="mt-1 whitespace-pre-line text-[0.78rem] font-medium text-slate-950">{getProjectDisplayMeta(entry)}</p>
+                        <p className="mt-1 text-[0.78rem] leading-5 text-[#23305f]">
+                          - {previewText(entry.description)}
+                          {String(entry.description || '').length > 220 ? (
+                            <button type="button" onClick={() => openProjectEditor(index)} className="ml-1 font-bold text-[#2d5bff]">
+                              Read More
+                            </button>
+                          ) : null}
                         </p>
-                        {entry.role && (
-                          <p className="mt-0.5 text-sm text-slate-500">Your role: {entry.role}</p>
-                        )}
-                        {entry.techStack?.length > 0 && (
-                          <div className="mt-1.5 flex flex-wrap gap-1">
+                        {entry.techStack?.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
                             {entry.techStack.map((tech) => (
-                              <span
-                                key={tech}
-                                className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[11px] font-semibold text-[#2d5bff]"
-                              >
+                              <span key={tech} className="rounded-full border border-[#e0e5f2] px-2 py-0.5 text-[0.7rem] font-medium text-[#425072]">
                                 {tech}
                               </span>
                             ))}
                           </div>
-                        )}
+                        ) : null}
                       </div>
                       <button
                         type="button"
-                        onClick={() => removeProject(index)}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition hover:bg-red-50"
+                        onClick={() => openProjectEditor(index)}
+                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#6070a6] transition hover:bg-[#f3f6ff] hover:text-[#2d5bff]"
+                        aria-label="Edit project"
                       >
-                        <FiTrash2 size={13} />
-                        Remove
+                        <FiEdit2 size={15} />
                       </button>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {/* Project title */}
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Project title <span className="text-red-400">*</span></p>
-                        <input
-                          value={entry.title}
-                          onChange={(e) => updateProject(index, 'title', e.target.value)}
-                          placeholder="e.g. Job Portal App, Expense Tracker, Chat Bot"
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                        />
-                      </div>
-
-                      {/* Your role */}
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Your role in this project</p>
-                        <input
-                          value={entry.role}
-                          onChange={(e) => updateProject(index, 'role', e.target.value)}
-                          placeholder="e.g. Solo developer, Frontend lead, Backend dev"
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                        />
-                      </div>
-
-                      {/* Description */}
-                      <div className="md:col-span-2">
-                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Project description</p>
-                        <textarea
-                          rows="3"
-                          value={entry.description}
-                          onChange={(e) => updateProject(index, 'description', e.target.value)}
-                          placeholder="What does this project do? What problem does it solve? What was your approach? e.g. Built a full-stack job portal with resume parsing and ATS scoring for 500+ users."
-                          className="w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                        />
-                      </div>
-
-                      {/* Tech stack */}
-                      <div className="md:col-span-2">
-                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Technologies used <span className="font-normal text-slate-400">(comma-separated)</span></p>
-                        <input
-                          value={joinCommaList(entry.techStack)}
-                          onChange={(e) => updateProject(index, 'techStack', parseCommaList(e.target.value))}
-                          placeholder="e.g. React, Node.js, MongoDB, Tailwind CSS, OpenAI API"
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                        />
-                        {entry.techStack?.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {entry.techStack.map((tech) => (
-                              <span
-                                key={tech}
-                                className="rounded-full bg-[#eef2ff] px-2.5 py-0.5 text-xs font-semibold text-[#2d5bff]"
-                              >
-                                {tech}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* GitHub URL */}
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold text-slate-500">GitHub / Source code URL</p>
-                        <input
-                          value={entry.githubUrl}
-                          onChange={(e) => updateProject(index, 'githubUrl', e.target.value)}
-                          placeholder="https://github.com/yourname/project"
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                        />
-                      </div>
-
-                      {/* Live URL */}
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Live / Demo URL</p>
-                        <input
-                          value={entry.liveUrl}
-                          onChange={(e) => updateProject(index, 'liveUrl', e.target.value)}
-                          placeholder="https://myproject.vercel.app"
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                        />
-                      </div>
-
-                      {/* Year */}
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold text-slate-500">Start year</p>
-                        <input
-                          value={entry.startYear}
-                          onChange={(e) => updateProject(index, 'startYear', e.target.value)}
-                          placeholder="e.g. 2023"
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
-                        />
-                      </div>
-
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold text-slate-500">End year</p>
-                        <input
-                          value={entry.endYear}
-                          onChange={(e) => updateProject(index, 'endYear', e.target.value)}
-                          placeholder="e.g. 2024"
-                          disabled={entry.isOngoing}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100 disabled:bg-slate-100 disabled:text-slate-400"
-                        />
-                        <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-slate-600">
-                          <input
-                            type="checkbox"
-                            checked={entry.isOngoing}
-                            onChange={(e) => {
-                              updateProject(index, 'isOngoing', e.target.checked);
-                              if (e.target.checked) updateProject(index, 'endYear', '');
-                            }}
-                            className="h-4 w-4 rounded accent-[#2d5bff]"
-                          />
-                          Ongoing / In progress
-                        </label>
-                      </div>
                     </div>
                   </div>
                 ))}
-
-                <button
-                  type="button"
-                  onClick={addProject}
-                  className="inline-flex items-center gap-2 rounded-full border border-dashed border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-500 transition hover:border-[#2d5bff] hover:text-[#2d5bff]"
-                >
-                  <FiPlus size={15} />
-                  Add another project
-                </button>
               </div>
             )}
           </article>
@@ -1878,42 +3157,56 @@ const StudentProfilePage = () => {
             }}
             className={cardClassName}
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-navy">Career profile</h2>
-                  <button type="button" onClick={() => scrollToNode(sectionRefs.current['career-profile'])} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-brand-200 hover:text-brand-700">
-                    <FiEdit2 size={15} />
-                  </button>
-                </div>
-                <p className="mt-2 text-sm text-slate-500">Add details about your current and preferred career profile. This helps us personalise your job recommendations.</p>
-              </div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-[1.05rem] font-extrabold text-slate-950">Career profile</h2>
+              <button
+                type="button"
+                onClick={openCareerEditor}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#6070a6] transition hover:bg-[#f3f6ff] hover:text-[#2d5bff]"
+                aria-label="Edit career profile"
+              >
+                <FiEdit2 size={16} />
+              </button>
             </div>
 
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <div className="mt-6 grid gap-x-10 gap-y-7 md:grid-cols-2">
               <div>
-                <p className="text-sm text-slate-400">Current role / industry</p>
-                <input value={form.targetRole} onChange={(event) => updateField('targetRole', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add current industry" />
+                <p className="text-[0.84rem] text-[#68749a]">Current industry</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">{form.careerObjective || 'Add current industry'}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Preferred work location</p>
-                <input value={form.preferredWorkLocation} onChange={(event) => updateField('preferredWorkLocation', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add preferred work location" />
+                <p className="text-[0.84rem] text-[#68749a]">Department</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">Engineering - Software &amp; QA</p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Desired job type</p>
-                <input value={form.preferredJobType} onChange={(event) => updateField('preferredJobType', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add desired job type" />
+                <p className="text-[0.84rem] text-[#68749a]">Role category</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">Software Development</p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Availability to join</p>
-                <input value={form.availabilityToJoin} onChange={(event) => updateField('availabilityToJoin', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="e.g. 3 months" />
+                <p className="text-[0.84rem] text-[#68749a]">Job role</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">{form.targetRole || 'Add job role'}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Expected salary</p>
-                <input value={preferredSalary} onChange={(event) => updateField('expectedSalary', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add expected salary" />
+                <p className="text-[0.84rem] text-[#68749a]">Desired job type</p>
+                <p className="mt-1 text-[0.9rem] font-bold capitalize text-[#23305f]">{form.preferredJobType || 'permanent'}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Notice period (days)</p>
-                <input value={form.noticePeriodDays} onChange={(event) => updateField('noticePeriodDays', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add notice period" />
+                <p className="text-[0.84rem] text-[#68749a]">Desired employment type</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">Full Time</p>
+              </div>
+              <div>
+                <p className="text-[0.84rem] text-[#68749a]">Preferred shift</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">Flexible</p>
+              </div>
+              <div>
+                <p className="text-[0.84rem] text-[#68749a]">Preferred work location</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">
+                  {displayCareerLocations.length > 0 ? displayCareerLocations.join(', ') : 'Add preferred work location'}
+                </p>
+              </div>
+              <div>
+                <p className="text-[0.84rem] text-[#68749a]">Expected salary</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">{formatSalary(preferredSalary)}</p>
               </div>
             </div>
           </article>
@@ -1925,27 +3218,85 @@ const StudentProfilePage = () => {
             }}
             className={cardClassName}
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[1.05rem] font-extrabold text-slate-950">Personal details</h2>
+              <button
+                type="button"
+                onClick={openPersonalEditor}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#6070a6] transition hover:bg-[#f3f6ff] hover:text-[#2d5bff]"
+                aria-label="Edit personal details"
+              >
+                <FiEdit2 size={16} />
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-x-10 gap-y-7 md:grid-cols-2">
               <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-navy">Personal details</h2>
-                  <button type="button" onClick={() => scrollToNode(sectionRefs.current['personal-details'])} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-brand-200 hover:text-brand-700">
-                    <FiEdit2 size={15} />
-                  </button>
-                </div>
-                <p className="mt-2 text-sm text-slate-500">This information is important for employers to know you better.</p>
+                <p className="text-[0.84rem] text-[#68749a]">Personal</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">
+                  {personalSummary}
+                  {form.gender || form.maritalStatus ? (
+                    <button type="button" onClick={openPersonalEditor} className="ml-1 font-bold text-[#2d5bff]">Add more info</button>
+                  ) : null}
+                </p>
+              </div>
+              <div>
+                <p className="text-[0.84rem] text-[#68749a]">Work permit</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">India</p>
+              </div>
+              <div>
+                <p className="text-[0.84rem] text-[#68749a]">Date of birth</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">{formatDateOfBirth(form.dateOfBirth)}</p>
+              </div>
+              <div>
+                <p className="text-[0.84rem] text-[#68749a]">Address</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">{addressSummary || 'Add address'}</p>
+              </div>
+              <div>
+                <p className="text-[0.84rem] text-[#68749a]">Category</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">{form.caste || 'Add category'}</p>
               </div>
             </div>
 
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
-              <div><p className="text-sm text-slate-400">Full name</p><input value={form.name} onChange={(event) => updateField('name', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add full name" /></div>
-              <div><p className="text-sm text-slate-400">Email</p><input value={form.email} disabled className="mt-2 w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-500" /></div>
-              <div><p className="text-sm text-slate-400">Mobile number</p><input value={form.mobile} onChange={(event) => updateField('mobile', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add mobile number" /></div>
-              <div><p className="text-sm text-slate-400">Location</p><input value={form.location} onChange={(event) => updateField('location', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add location" /></div>
-              <div><p className="text-sm text-slate-400">Gender</p><input value={form.gender} onChange={(event) => updateField('gender', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add gender" /></div>
-              <div><p className="text-sm text-slate-400">Date of birth</p><input type="date" value={form.dateOfBirth} max={new Date().toISOString().split('T')[0]} onChange={(event) => updateField('dateOfBirth', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" /></div>
-              <div><p className="text-sm text-slate-400">Marital status</p><input value={form.maritalStatus} onChange={(event) => updateField('maritalStatus', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add marital status" /></div>
-              <div><p className="text-sm text-slate-400">Address</p><input value={form.currentAddress} onChange={(event) => updateField('currentAddress', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add address" /></div>
+            <div className="mt-6 border-t border-[#e2e7f3] pt-6">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-[1rem] font-extrabold text-slate-950">Languages</h3>
+                <button type="button" onClick={openPersonalEditor} className="text-[0.9rem] font-bold text-[#2d5bff]">
+                  Add languages
+                </button>
+              </div>
+              {languageRows.length > 0 ? (
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full min-w-[560px] text-left text-[0.84rem]">
+                    <thead className="border-b border-[#e2e7f3] text-[#68749a]">
+                      <tr>
+                        <th className="pb-3 font-medium">Languages</th>
+                        <th className="pb-3 font-medium">Proficiency</th>
+                        <th className="pb-3 text-center font-medium">Read</th>
+                        <th className="pb-3 text-center font-medium">Write</th>
+                        <th className="pb-3 text-center font-medium">Speak</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {languageRows.map((language) => (
+                        <tr key={language.language}>
+                          <td className="py-3 font-bold text-[#23305f]">{language.language}</td>
+                          <td className="py-3 font-bold text-[#23305f]">{language.proficiency}</td>
+                          {['read', 'write', 'speak'].map((field) => (
+                            <td key={field} className="py-3 text-center text-[#173a79]">
+                              {language[field] ? <FiCheckCircle className="mx-auto" size={15} /> : '-'}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <button type="button" onClick={openPersonalEditor} className="mt-4 text-[0.9rem] font-bold text-[#2d5bff]">
+                  Add language proficiency
+                </button>
+              )}
             </div>
           </article>
 
@@ -1954,26 +3305,32 @@ const StudentProfilePage = () => {
             ref={(node) => {
               sectionRefs.current['diversity-inclusion'] = node;
             }}
-            className={cardClassName}
+            className={`${cardClassName} relative`}
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-navy">Diversity &amp; inclusion</h2>
-                  <button type="button" onClick={() => scrollToNode(sectionRefs.current['diversity-inclusion'])} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-brand-200 hover:text-brand-700">
-                    <FiEdit2 size={15} />
-                  </button>
-                </div>
-                <p className="mt-2 text-sm text-slate-500">Share details to attract recruiters who value people from different backgrounds.</p>
-              </div>
-              <span className="inline-flex rounded-full bg-[#f0ebff] px-3 py-1 text-xs font-bold text-[#8c6cf6]">New</span>
+            <span className="absolute right-4 top-0 inline-flex rounded-b-xl bg-[#f0ebff] px-3 py-1 text-[0.72rem] font-bold text-[#8c6cf6]">New</span>
+            <div className="flex items-center gap-2">
+              <h2 className="text-[1.05rem] font-extrabold text-slate-950">Diversity &amp; inclusion</h2>
+              <button
+                type="button"
+                onClick={openDiversityEditor}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#6070a6] transition hover:bg-[#f3f6ff] hover:text-[#2d5bff]"
+                aria-label="Edit diversity and inclusion"
+              >
+                <FiEdit2 size={16} />
+              </button>
             </div>
-
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
-              <div><p className="text-sm text-slate-400">Category</p><input value={form.caste} onChange={(event) => updateField('caste', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add category" /></div>
-              <div><p className="text-sm text-slate-400">Religion</p><input value={form.religion} onChange={(event) => updateField('religion', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add religion" /></div>
-              <div><p className="text-sm text-slate-400">Willing to relocate</p><select value={String(form.willingToRelocate)} onChange={(event) => updateField('willingToRelocate', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"><option value="">Select preference</option><option value="true">Yes</option><option value="false">No</option></select></div>
-              <div><p className="text-sm text-slate-400">Languages</p><input value={joinCommaList(form.languagesKnown)} onChange={(event) => updateField('languagesKnown', parseCommaList(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100" placeholder="Add languages" /></div>
+            <p className="mt-2 text-[0.85rem] text-[#23305f]">Share details to attract recruiters who value people from different backgrounds</p>
+            <div className="mt-6 space-y-6">
+              <div>
+                <p className="text-[0.78rem] text-[#68749a]">Disability status</p>
+                <p className="mt-1 text-[0.9rem] font-bold text-[#23305f]">Do not have disability</p>
+              </div>
+              <button type="button" onClick={openDiversityEditor} className="block text-[0.9rem] font-bold text-[#2d5bff]">
+                Add military experience
+              </button>
+              <button type="button" onClick={openDiversityEditor} className="block text-[0.9rem] font-bold text-[#2d5bff]">
+                Add career break
+              </button>
             </div>
           </article>
         </section>

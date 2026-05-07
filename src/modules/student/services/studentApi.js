@@ -73,13 +73,124 @@ const emptyCampusConnectData = {
   }
 };
 
+const toCleanString = (value) => String(value ?? '').trim();
+
+const toStringList = (items) => {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((item) => {
+      if (typeof item === 'string' || typeof item === 'number') return toCleanString(item);
+      if (!item || typeof item !== 'object') return '';
+      return toCleanString(item.value ?? item.title ?? item.text ?? item.name ?? item.label ?? '');
+    })
+    .filter(Boolean);
+};
+
+const isNonEmptyValue = (value) => {
+  if (Array.isArray(value)) return value.some(isNonEmptyValue);
+  if (typeof value === 'boolean') return false;
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (value && typeof value === 'object') return Object.values(value).some(isNonEmptyValue);
+  return toCleanString(value) !== '';
+};
+
+const cleanJsonValue = (value) => {
+  if (Array.isArray(value)) return value.map(cleanJsonValue).filter(isNonEmptyValue);
+  if (typeof value === 'string' || typeof value === 'number') return toCleanString(value);
+  if (typeof value === 'boolean') return value;
+  if (!value || typeof value !== 'object') return value;
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, entryValue]) => [key, cleanJsonValue(entryValue)])
+      .filter(([, entryValue]) => isNonEmptyValue(entryValue) || typeof entryValue === 'boolean')
+  );
+};
+
+const hasUsefulRecordValue = (record, ignoredKeys = []) =>
+  Object.entries(record || {}).some(([key, value]) => !ignoredKeys.includes(key) && isNonEmptyValue(value));
+
+const normalizeStructuredRecords = (items, normalizeItem, ignoredKeys = []) => {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((item) => normalizeItem(item))
+    .map((item) => cleanJsonValue(item))
+    .filter((item) => hasUsefulRecordValue(item, ignoredKeys));
+};
+
+const toExperienceEntries = (items) =>
+  normalizeStructuredRecords(
+    items,
+    (item) => {
+      if (typeof item === 'string' || typeof item === 'number') {
+        return {
+          companyName: '',
+          designation: '',
+          employmentType: 'Full-time',
+          startYear: '',
+          endYear: '',
+          isCurrentlyWorking: false,
+          location: '',
+          responsibilities: item,
+          keyAchievement: '',
+          techStack: []
+        };
+      }
+
+      const source = item && typeof item === 'object' ? item : {};
+      return {
+        companyName: source.companyName ?? source.company_name ?? '',
+        designation: source.designation ?? source.role ?? source.title ?? '',
+        employmentType: source.employmentType ?? source.employment_type ?? 'Full-time',
+        startYear: source.startYear ?? source.start_year ?? '',
+        endYear: source.endYear ?? source.end_year ?? '',
+        isCurrentlyWorking: Boolean(source.isCurrentlyWorking ?? source.is_currently_working ?? false),
+        location: source.location ?? '',
+        responsibilities: source.responsibilities ?? source.description ?? source.value ?? source.text ?? '',
+        keyAchievement: source.keyAchievement ?? source.key_achievement ?? '',
+        techStack: toStringList(source.techStack ?? source.tech_stack ?? [])
+      };
+    },
+    ['employmentType', 'isCurrentlyWorking']
+  );
+
+const toProjectEntries = (items) =>
+  normalizeStructuredRecords(
+    items,
+    (item) => {
+      if (typeof item === 'string' || typeof item === 'number') {
+        return {
+          title: item,
+          description: '',
+          techStack: [],
+          role: '',
+          githubUrl: '',
+          liveUrl: '',
+          startYear: '',
+          endYear: '',
+          isOngoing: false
+        };
+      }
+
+      const source = item && typeof item === 'object' ? item : {};
+      return {
+        title: source.title ?? source.name ?? source.value ?? source.text ?? '',
+        description: source.description ?? source.summary ?? '',
+        techStack: toStringList(source.techStack ?? source.tech_stack ?? source.technologies ?? []),
+        role: source.role ?? '',
+        githubUrl: source.githubUrl ?? source.github_url ?? '',
+        liveUrl: source.liveUrl ?? source.live_url ?? source.demoUrl ?? source.demo_url ?? '',
+        startYear: source.startYear ?? source.start_year ?? '',
+        endYear: source.endYear ?? source.end_year ?? '',
+        isOngoing: Boolean(source.isOngoing ?? source.is_ongoing ?? false)
+      };
+    },
+    ['isOngoing']
+  );
+
 export const mapProfileToForm = (profile = {}) => {
-  const toLineArray = (items) => {
-    if (!Array.isArray(items)) return [];
-    return items
-      .map((item) => (typeof item === 'string' ? item : item?.value || item?.title || item?.text || ''))
-      .filter(Boolean);
-  };
   const toEducationEntries = (items) => {
     if (!Array.isArray(items)) return [];
 
@@ -158,18 +269,18 @@ export const mapProfileToForm = (profile = {}) => {
     technicalSkills: Array.isArray(profile.technical_skills) ? profile.technical_skills : (Array.isArray(profile.technicalSkills) ? profile.technicalSkills : []),
     softSkills: Array.isArray(profile.soft_skills) ? profile.soft_skills : (Array.isArray(profile.softSkills) ? profile.softSkills : []),
     toolsTechnologies: Array.isArray(profile.tools_technologies) ? profile.tools_technologies : (Array.isArray(profile.toolsTechnologies) ? profile.toolsTechnologies : []),
-    education: toLineArray(profile.education || profile.educationEntries),
+    education: toStringList(profile.education || profile.educationEntries),
     educationEntries: toEducationEntries(profile.education || profile.educationEntries),
     class10Details: profile.class_10_details || profile.class10Details || '',
     class12Details: profile.class_12_details || profile.class12Details || '',
     graduationDetails: profile.graduation_details || profile.graduationDetails || '',
     postGraduationDetails: profile.post_graduation_details || profile.postGraduationDetails || '',
     educationScore: profile.education_score || profile.educationScore || '',
-    projects: toLineArray(profile.projects),
-    internships: toLineArray(profile.internships),
-    experience: toLineArray(profile.experience),
-    certifications: toLineArray(profile.certifications),
-    achievements: toLineArray(profile.achievements),
+    projects: toProjectEntries(profile.projects),
+    internships: toStringList(profile.internships),
+    experience: toExperienceEntries(profile.experience),
+    certifications: toStringList(profile.certifications),
+    achievements: toStringList(profile.achievements),
     languagesKnown: Array.isArray(profile.languages_known) ? profile.languages_known : (Array.isArray(profile.languagesKnown) ? profile.languagesKnown : []),
     resumeUrl: profile.resume_url || profile.resumeUrl || '',
     resumeText: profile.resume_text || profile.resumeText || '',
@@ -193,10 +304,26 @@ export const mapProfileToForm = (profile = {}) => {
 
 const buildProfilePayload = (form = {}) => {
   const toArrayObjects = (items) =>
-    items
-      .filter(Boolean)
-      .map((item) => ({ value: item.trim() }))
-      .filter((item) => item.value);
+    (Array.isArray(items) ? items : [])
+      .map((item) => {
+        if (item && typeof item === 'object') {
+          return cleanJsonValue(item);
+        }
+
+        return { value: toCleanString(item) };
+      })
+      .filter((item) => hasUsefulRecordValue(item));
+  const toTextArray = (items) =>
+    toStringList(items)
+      .map((item) => toCleanString(item))
+      .filter(Boolean);
+  const toNumberOrNull = (value) => {
+    if (value === '' || value === undefined || value === null) return null;
+    const normalized = typeof value === 'string' ? value.replace(/[^\d.-]/g, '') : value;
+    if (normalized === '') return null;
+    const number = Number(normalized);
+    return Number.isFinite(number) ? number : null;
+  };
   const toNullableBoolean = (value) => {
     if (value === '' || value === undefined || value === null) return null;
     if (typeof value === 'boolean') return value;
@@ -260,13 +387,13 @@ const buildProfilePayload = (form = {}) => {
     currentPincode: form.currentPincode,
     permanentPincode: form.permanentPincode,
     skills: [
-      ...(Array.isArray(form.technicalSkills) ? form.technicalSkills : []),
-      ...(Array.isArray(form.softSkills) ? form.softSkills : []),
-      ...(Array.isArray(form.toolsTechnologies) ? form.toolsTechnologies : [])
+      ...toTextArray(form.technicalSkills),
+      ...toTextArray(form.softSkills),
+      ...toTextArray(form.toolsTechnologies)
     ].filter(Boolean),
-    technicalSkills: Array.isArray(form.technicalSkills) ? form.technicalSkills : [],
-    softSkills: Array.isArray(form.softSkills) ? form.softSkills : [],
-    toolsTechnologies: Array.isArray(form.toolsTechnologies) ? form.toolsTechnologies : [],
+    technicalSkills: toTextArray(form.technicalSkills),
+    softSkills: toTextArray(form.softSkills),
+    toolsTechnologies: toTextArray(form.toolsTechnologies),
     education: educationFromEntries.length > 0
       ? educationFromEntries
       : toArrayObjects(form.education || []),
@@ -275,14 +402,12 @@ const buildProfilePayload = (form = {}) => {
     graduationDetails: form.graduationDetails,
     postGraduationDetails: form.postGraduationDetails,
     educationScore: form.educationScore,
-    projects: toArrayObjects(form.projects || []),
+    projects: toProjectEntries(form.projects || []),
     internships: toArrayObjects(form.internships || []),
-    experience: toArrayObjects(form.experience || []),
+    experience: toExperienceEntries(form.experience || []),
     certifications: toArrayObjects(form.certifications || []),
     achievements: toArrayObjects(form.achievements || []),
-    // Temporary compatibility: some DBs still don't have `languages_known`.
-    // Keep UI field local, but don't send it in update payload.
-    // languagesKnown: Array.isArray(form.languagesKnown) ? form.languagesKnown : [],
+    languagesKnown: toTextArray(form.languagesKnown),
     resumeUrl: form.resumeUrl,
     resumeText: form.resumeText,
     portfolioUrl: form.portfolioUrl,
@@ -291,9 +416,9 @@ const buildProfilePayload = (form = {}) => {
     facebookUrl: form.facebookUrl,
     instagramUrl: form.instagramUrl,
     eimagerId: form.eimagerId,
-    preferredSalaryMin: form.preferredSalaryMin === '' ? null : Number(form.preferredSalaryMin),
-    preferredSalaryMax: form.preferredSalaryMax === '' ? null : Number(form.preferredSalaryMax),
-    expectedSalary: form.expectedSalary === '' ? null : Number(form.expectedSalary),
+    preferredSalaryMin: toNumberOrNull(form.preferredSalaryMin),
+    preferredSalaryMax: toNumberOrNull(form.preferredSalaryMax),
+    expectedSalary: toNumberOrNull(form.expectedSalary),
     preferredJobType: form.preferredJobType,
     availabilityToJoin: form.availabilityToJoin,
     willingToRelocate: toNullableBoolean(form.willingToRelocate),
@@ -758,12 +883,12 @@ export const runAtsCheck = async ({ jobId, source = 'profile_resume', resumeText
     })
   });
 
-export const runAtsPreview = async ({ source = 'profile_resume', resumeText = '', resumeUrl = '', targetText = '' }) =>
+export const runAtsPreview = async ({ source = 'profile_resume', resumeText = '', resumeUrl = '', targetText = '', jobTitle = '' }) =>
   strictRequest({
     path: '/ats/check-preview',
     options: {
       method: 'POST',
-      body: JSON.stringify({ source, resumeText, resumeUrl, targetText })
+      body: JSON.stringify({ source, resumeText, resumeUrl, targetText, jobTitle })
     },
     extract: (payload) => ({
       atsCheckId: payload?.atsCheckId || null,
