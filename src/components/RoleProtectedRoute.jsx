@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { apiFetch, hasApiAccessToken } from '../utils/api';
-import { getCurrentUser, getToken, hasRole, isAuthenticated, setAuthSession } from '../utils/auth';
+import { syncSessionUser } from '../core/auth/sessionSync';
+import { hasApiAccessToken } from '../utils/api';
+import { getCurrentUser, hasRole, isAuthenticated } from '../utils/auth';
 
 const resolvePortalLoginPath = (pathname = '') => {
   const normalizedPath = String(pathname || '').trim().toLowerCase();
@@ -26,7 +27,6 @@ const RoleProtectedRoute = ({ roles, children }) => {
   const [resolvedRole, setResolvedRole] = useState(() => getCurrentUser()?.role || null);
   const [isSyncingRole, setIsSyncingRole] = useState(false);
   const authenticated = isAuthenticated();
-  const token = getToken();
   const currentUser = getCurrentUser();
   const currentRole = currentUser?.role || null;
 
@@ -43,19 +43,15 @@ const RoleProtectedRoute = ({ roles, children }) => {
     let cancelled = false;
 
     const syncLatestRole = async () => {
-      if (!authenticated || roleAllowed || !token || !hasApiAccessToken()) return;
+      if (!authenticated || roleAllowed || !hasApiAccessToken()) return;
 
       setIsSyncingRole(true);
       try {
-        const response = await apiFetch('/auth/me');
-        if (!response.ok) return;
-
-        const payload = await response.json();
-        const latestUser = payload?.user;
+        const result = await syncSessionUser({ minIntervalMs: 30 * 1000 });
+        const latestUser = result?.user;
         if (!latestUser || cancelled) return;
 
         setResolvedRole(latestUser.role || null);
-        setAuthSession(token, { ...currentUser, ...latestUser });
       } catch {
         // If sync fails, we fall back to the locally stored role.
       } finally {
@@ -68,7 +64,7 @@ const RoleProtectedRoute = ({ roles, children }) => {
     return () => {
       cancelled = true;
     };
-  }, [authenticated, currentUser, roleAllowed, token]);
+  }, [authenticated, currentUser, roleAllowed]);
 
   if (!authenticated) {
     return (

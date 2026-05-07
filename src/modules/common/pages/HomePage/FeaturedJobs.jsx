@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Bookmark, Briefcase, Clock3, MapPin, Sparkles } from 'lucide-react';
 import AnimatedSection from '../../../../shared/components/AnimatedSection';
+import { buildCompanyLogoUrl } from '../../services/companyLogoUrl';
 
 const getCompanyMark = (name = '') =>
   String(name)
@@ -13,13 +14,14 @@ const getCompanyMark = (name = '') =>
     .join('')
     .toUpperCase() || 'CO';
 
-const FeaturedCompanyMark = ({ companyLogo, companyName }) => {
+const FeaturedCompanyMark = ({ companyLogo, companyName, websiteUrl = '' }) => {
   const [logoError, setLogoError] = useState(false);
+  const resolvedLogoUrl = buildCompanyLogoUrl(companyLogo, '', websiteUrl);
 
-  if (companyLogo && !logoError) {
+  if (resolvedLogoUrl && !logoError) {
     return (
       <img
-        src={companyLogo}
+        src={resolvedLogoUrl}
         alt={companyName}
         loading="lazy"
         referrerPolicy="no-referrer"
@@ -135,7 +137,11 @@ export function FeaturedJobs({
 
                   <div className="relative z-10 flex flex-col">
                     <div className="mb-2 flex items-start justify-between">
-                      <FeaturedCompanyMark companyLogo={job.companyLogo} companyName={job.companyName} />
+                      <FeaturedCompanyMark
+                        companyLogo={job.companyLogo}
+                        companyName={job.companyName}
+                        websiteUrl={job.companyWebsite || ''}
+                      />
                       <div className="flex items-center gap-2">
                         {index % 2 === 0 ? (
                           <span className="inline-flex items-center gap-1 rounded-full border border-brand-100 bg-brand-50/80 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] text-brand-700">

@@ -30,6 +30,19 @@ const parseJson = async (response) => {
   }
 };
 
+const buildApiError = async (response, fallbackMessage) => {
+  const payload = await parseJson(response);
+  const error = new Error(payload?.message || fallbackMessage || `Request failed with status ${response.status}`);
+  error.status = response.status;
+
+  const retryAfterSeconds = Number(response.headers.get('Retry-After') || 0);
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+    error.retryAfterMs = retryAfterSeconds * 1000;
+  }
+
+  return error;
+};
+
 const parseSseBlock = (block = '') => {
   const lines = String(block || '').split(/\r?\n/);
   let event = 'message';
@@ -69,12 +82,12 @@ const parseSseBlock = (block = '') => {
 
 export const fetchNotifications = async () => {
   const response = await apiFetch('/notifications');
-  const payload = await parseJson(response);
 
   if (!response.ok) {
-    throw new Error(payload?.message || `Request failed with status ${response.status}`);
+    throw await buildApiError(response, 'Unable to load notifications.');
   }
 
+  const payload = await parseJson(response);
   return payload?.notifications || [];
 };
 
@@ -116,8 +129,7 @@ export const openNotificationsStream = async ({ signal, onEvent, onOpen }) => {
   });
 
   if (!response.ok) {
-    const payload = await parseJson(response);
-    throw new Error(payload?.message || `Stream failed with status ${response.status}`);
+    throw await buildApiError(response, 'Notification stream failed to connect.');
   }
 
   if (!response.body) {

@@ -24,3 +24,14 @@ test('buildCompanyLogoUrl falls back to the next available candidate', () => {
     `${API_BASE_URL}/assets/logo?url=${encodeURIComponent('https://cdn.example.com/logo.svg')}`
   );
 });
+
+test('buildCompanyLogoUrl ignores broken favicon-service URLs for reserved test hosts', () => {
+  assert.equal(
+    buildCompanyLogoUrl(
+      'https://www.google.com/s2/favicons?sz=256&domain_url=https%3A%2F%2Flocal-e2e-hiring.example.com',
+      '',
+      'https://local-e2e-hiring.example.com/jobs/1'
+    ),
+    ''
+  );
+});

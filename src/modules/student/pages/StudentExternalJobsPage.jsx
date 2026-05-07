@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fi';
 
 import useAuthStore from '../../../core/auth/authStore';
+import { buildCompanyLogoUrl } from '../../common/services/companyLogoUrl';
 import { getExternalJobCategories, getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
 import { getLoginRedirectState } from '../../common/utils/publicAccess';
 import {
@@ -119,6 +120,7 @@ export const ExternalJobCard = ({
     }
     return `Up to ${currency} ${Number(job.salary_max).toLocaleString()}`;
   }, [job.salary_currency, job.salary_max, job.salary_min]);
+  const companyLogoUrl = buildCompanyLogoUrl(job.company_logo, '', job.apply_url || '');
 
   const locationText = job.job_location || 'Remote';
   const typeText = job.employment_type || 'Full-time';
@@ -134,9 +136,9 @@ export const ExternalJobCard = ({
 
       <div className="relative z-10 flex items-start gap-4">
         <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] border border-slate-100 bg-white p-2 shadow-[0_4px_12px_rgba(15,23,42,0.04)] transition-transform duration-300 group-hover:scale-[1.04]">
-          {job.company_logo && !logoError ? (
+          {companyLogoUrl && !logoError ? (
             <img
-              src={job.company_logo}
+              src={companyLogoUrl}
               alt={job.company_name}
               loading="lazy"
               referrerPolicy="no-referrer"

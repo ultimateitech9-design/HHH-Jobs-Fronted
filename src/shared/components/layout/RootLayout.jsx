@@ -1,9 +1,10 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../../core/auth/authStore';
+import { syncSessionUser } from '../../../core/auth/sessionSync';
 import NotificationRuntime from '../../../core/notifications/NotificationRuntime';
-import { apiFetch, hasApiAccessToken } from '../../../utils/api';
-import { getDashboardPathByRole, getToken, setAuthSession } from '../../../utils/auth';
+import { hasApiAccessToken } from '../../../utils/api';
+import { getDashboardPathByRole } from '../../../utils/auth';
 import PublicFooter from './publicShell/PublicFooter';
 import PublicNavbar from './publicShell/PublicNavbar';
 import ScrollToTopButton from './publicShell/ScrollToTopButton';
@@ -20,49 +21,30 @@ const publicShellStyle = {
 };
 
 const RootLayout = () => {
-  const { user, clearAuth, refreshUser } = useAuthStore();
+  const { user, clearAuth } = useAuthStore();
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    let mounted = true;
-
     const refreshHeaderUser = async () => {
       if (!user || !hasApiAccessToken()) return;
 
       try {
-        const response = await apiFetch('/auth/me');
-        if (!response.ok) return;
-
-        const payload = await response.json();
-        const latestUser = payload?.user;
-        if (!latestUser || !mounted) return;
-
-        const currentAvatar = user.avatarUrl || user.avatar_url || '';
-        const latestAvatar = latestUser.avatarUrl || latestUser.avatar_url || '';
-        const currentName = String(user.name || '');
-        const latestName = String(latestUser.name || '');
-
-        if (currentAvatar === latestAvatar && currentName === latestName) return;
-
-        const mergedUser = { ...user, ...latestUser };
-        refreshUser(mergedUser);
-
-        const token = getToken();
-        if (token) setAuthSession(token, mergedUser);
+        await syncSessionUser({ minIntervalMs: 3 * 60 * 1000 });
       } catch {
-        // Ignore shell refresh failures.
+        // Ignore passive header refresh failures.
       }
     };
 
     refreshHeaderUser();
+    window.addEventListener('focus', refreshHeaderUser);
 
     return () => {
-      mounted = false;
+      window.removeEventListener('focus', refreshHeaderUser);
     };
-  }, [location.pathname, refreshUser, user]);
+  }, [user?.id]);
 
   const dashboardPath = user ? getDashboardPathByRole(user.role) : null;
   const isPortalWorkbench = portalRoutePattern.test(location.pathname);

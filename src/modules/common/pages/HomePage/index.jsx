@@ -39,6 +39,7 @@ const mapExternalJobToFeaturedJob = (job = {}) => ({
   sourceKey: job.source_key || '',
   companyName: job.company_name || 'Verified company',
   companyLogo: job.company_logo || '',
+  companyWebsite: job.apply_url || '',
   jobTitle: job.job_title || 'Open Role',
   jobLocation: job.job_location || 'Remote',
   employmentType: job.employment_type || 'Full-time',
