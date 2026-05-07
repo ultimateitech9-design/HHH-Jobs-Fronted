@@ -1,11 +1,5 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  FiBriefcase,
-  FiCheckCircle,
-  FiClipboard,
-  FiUsers
-} from 'react-icons/fi';
 import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
 import StatusPill from '../../../shared/components/StatusPill';
 import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
@@ -91,38 +85,6 @@ const HrDashboardPage = () => {
   };
 
   const totalInterviews = state.interviews.length || 0;
-  const totalHires = Number(analytics.pipeline?.hired || 0);
-
-  const compactStats = [
-    {
-      label: 'Open roles',
-      value: Number(analytics.openJobs || analytics.totalJobs || 0),
-      helper: 'Live on portal',
-      icon: FiBriefcase,
-      to: '/portal/hr/jobs'
-    },
-    {
-      label: 'Applicants',
-      value: Number(analytics.totalApplications || 0),
-      helper: `${analytics.pipeline?.shortlisted || 0} shortlisted`,
-      icon: FiUsers,
-      to: '/portal/hr/candidates'
-    },
-    {
-      label: 'Interviews',
-      value: totalInterviews,
-      helper: 'Upcoming rounds',
-      icon: FiClipboard,
-      to: '/portal/hr/interviews'
-    },
-    {
-      label: 'Hired',
-      value: totalHires,
-      helper: 'Closed successfully',
-      icon: FiCheckCircle,
-      to: '/portal/hr/notifications'
-    }
-  ];
 
   const candidatePool = useMemo(() => {
     const interviewCandidates = state.interviews.map((item, index) => ({
@@ -202,32 +164,6 @@ const HrDashboardPage = () => {
           { label: 'Interviews', value: state.loading ? '—' : String(totalInterviews), helper: 'Scheduled', to: '/portal/hr/interviews' }
         ]}
       />
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {state.loading ? [1, 2, 3, 4].map((item) => (
-          <div key={item} className="h-32 animate-pulse rounded-[1.35rem] border border-slate-200 bg-white" />
-        )) : compactStats.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.label}
-              to={item.to}
-              className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{item.label}</p>
-                  <p className="mt-2 font-heading text-3xl font-extrabold text-slate-900">{item.value}</p>
-                  <p className="mt-1 text-sm text-slate-500">{item.helper}</p>
-                </div>
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-                  <Icon size={18} />
-                </span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
 
       <div className="grid items-start gap-4 2xl:grid-cols-[1.05fr_0.95fr]">
         <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">

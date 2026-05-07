@@ -17,9 +17,6 @@ export function CategoryCards({ selectedCategory, onCategorySelect, onBrowseAll 
           <h2 className="font-heading text-3xl font-extrabold text-navy md:text-4xl">
             Explore by <span className="gradient-text">Category</span>
           </h2>
-          <p className="mx-auto mt-3 max-w-md text-slate-500">
-            Browse opportunities across industries that match your skills and current search intent.
-          </p>
         </AnimatedSection>
 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">

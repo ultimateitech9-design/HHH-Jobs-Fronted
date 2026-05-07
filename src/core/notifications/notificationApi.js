@@ -142,9 +142,13 @@ export const openNotificationsStream = async ({ signal, onEvent, onOpen }) => {
   const decoder = new TextDecoder();
   let buffer = '';
 
-  while (true) {
+  let isReading = true;
+  while (isReading) {
     const { value, done } = await reader.read();
-    if (done) break;
+    if (done) {
+      isReading = false;
+      break;
+    }
 
     buffer += decoder.decode(value, { stream: true });
     const blocks = buffer.split(/\r?\n\r?\n/);

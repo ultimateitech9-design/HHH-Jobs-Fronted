@@ -22,6 +22,7 @@ const publicShellStyle = {
 
 const RootLayout = () => {
   const { user, clearAuth } = useAuthStore();
+  const userId = user?.id;
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ const RootLayout = () => {
 
   useEffect(() => {
     const refreshHeaderUser = async () => {
-      if (!user || !hasApiAccessToken()) return;
+      if (!userId || !hasApiAccessToken()) return;
 
       try {
         await syncSessionUser({ minIntervalMs: 3 * 60 * 1000 });
@@ -44,7 +45,7 @@ const RootLayout = () => {
     return () => {
       window.removeEventListener('focus', refreshHeaderUser);
     };
-  }, [user?.id]);
+  }, [userId]);
 
   const dashboardPath = user ? getDashboardPathByRole(user.role) : null;
   const isPortalWorkbench = portalRoutePattern.test(location.pathname);

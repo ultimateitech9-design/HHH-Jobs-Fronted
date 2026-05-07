@@ -76,12 +76,7 @@ const SignupPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const roleParam = new URLSearchParams(location.search).get('role');
-
-  if (roleParam === 'campus_connect') {
-    const redirectParam = new URLSearchParams(location.search).get('redirect');
-    const nextSearch = redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : '';
-    return <Navigate to={`/campus-connect/register${nextSearch}`} replace />;
-  }
+  const isCampusConnectSignup = roleParam === 'campus_connect';
 
   const [form, setForm] = useState(() => ({ ...initialFormState, role: getRoleFromSearch(location.search) }));
   const [error, setError] = useState('');
@@ -98,6 +93,8 @@ const SignupPage = () => {
     : null;
 
   useEffect(() => {
+    if (isCampusConnectSignup) return;
+
     const params = new URLSearchParams(location.search);
     const roleParam = params.get('role');
     if (!roleParam) return;
@@ -106,9 +103,15 @@ const SignupPage = () => {
     if (!allowedRoles.has(roleParam)) return;
 
     setForm((current) => ({ ...current, role: roleParam }));
-  }, [location.search]);
+  }, [isCampusConnectSignup, location.search]);
 
   useEffect(() => {
+    if (isCampusConnectSignup) {
+      setAvailableProviders([]);
+      setProvidersLoading(false);
+      return undefined;
+    }
+
     let cancelled = false;
     setProvidersLoading(true);
     apiFetch('/auth/providers')
@@ -123,7 +126,13 @@ const SignupPage = () => {
         if (!cancelled) setProvidersLoading(false);
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [isCampusConnectSignup]);
+
+  if (isCampusConnectSignup) {
+    const redirectParam = new URLSearchParams(location.search).get('redirect');
+    const nextSearch = redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : '';
+    return <Navigate to={`/campus-connect/register${nextSearch}`} replace />;
+  }
 
   const handleChange = (key, value) => {
     let nextValue = value;

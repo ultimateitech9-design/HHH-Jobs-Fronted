@@ -12,7 +12,6 @@ import {
   FiLayers,
   FiLock,
   FiMapPin,
-  FiMessageSquare,
   FiRefreshCw,
   FiSearch,
   FiSend,
@@ -23,8 +22,6 @@ import {
 } from 'react-icons/fi';
 import {
   addToShortlist,
-  createHrCandidateMessageTemplate,
-  deleteHrCandidateMessageTemplate,
   getHrCandidateMessageTemplates,
   removeFromShortlist,
   searchHrCandidatesV2,
@@ -45,11 +42,7 @@ const EMPTY_FILTERS = {
   availableOnly: false
 };
 
-const EMPTY_TEMPLATE_FORM = {
-  name: '',
-  message: ''
-};
-const DEFAULT_PAGE_SIZE = 24;
+const DEFAULT_PAGE_SIZE = 6;
 
 const statusStyles = {
   pending: 'border-amber-200 bg-amber-50 text-amber-700',
@@ -57,8 +50,10 @@ const statusStyles = {
   declined: 'border-red-200 bg-red-50 text-red-600'
 };
 
-const summaryCard = 'rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-[0_8px_30px_-22px_rgba(15,23,42,0.18)]';
-const inputClass = 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100';
+const panelClass = 'rounded-xl border border-slate-200/80 bg-white p-5 shadow-[0_18px_42px_-30px_rgba(15,23,42,0.32)]';
+const inputClass = 'w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-secondary-300 focus:bg-white focus:ring-4 focus:ring-secondary-100/80';
+const primaryButtonClass = 'inline-flex items-center justify-center gap-2 rounded-lg bg-secondary-700 px-4 py-3 text-sm font-bold text-white shadow-[0_12px_24px_-16px_rgba(47,83,143,0.9)] transition hover:bg-secondary-600 disabled:cursor-not-allowed disabled:opacity-60';
+const softButtonClass = 'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-secondary-200 hover:bg-secondary-50 disabled:cursor-not-allowed disabled:opacity-60';
 
 const renderTemplateMessage = (template, candidate) => {
   if (!template?.message) return '';
@@ -79,8 +74,6 @@ export default function HrCandidatesPage() {
   const [candidates, setCandidates] = useState([]);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [templates, setTemplates] = useState([]);
-  const [templateForm, setTemplateForm] = useState(EMPTY_TEMPLATE_FORM);
-  const [templateSaving, setTemplateSaving] = useState(false);
   const [actionState, setActionState] = useState({});
   const [interestModal, setInterestModal] = useState(null);
   const [interestMessage, setInterestMessage] = useState('');
@@ -95,7 +88,7 @@ export default function HrCandidatesPage() {
     const response = await searchHrCandidatesV2({
       ...activeFilters,
       page: requestedPage,
-      limit: pagination.limit || DEFAULT_PAGE_SIZE
+      limit: DEFAULT_PAGE_SIZE
     });
     const payload = response.data || {};
     setAccess(payload.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanName: 'Free' });
@@ -228,35 +221,6 @@ export default function HrCandidatesPage() {
     }
   };
 
-  const saveTemplate = async () => {
-    if (!templateForm.name.trim() || !templateForm.message.trim()) return;
-    setTemplateSaving(true);
-
-    try {
-      const template = await createHrCandidateMessageTemplate(templateForm);
-      setTemplates((current) => [template, ...current]);
-      setTemplateForm(EMPTY_TEMPLATE_FORM);
-    } catch (templateError) {
-      setError(templateError.message || 'Unable to save template.');
-    } finally {
-      setTemplateSaving(false);
-    }
-  };
-
-  const removeTemplate = async (template) => {
-    if (!template?.id || template.isSystemTemplate) return;
-    setActionState((current) => ({ ...current, [`template_${template.id}`]: 'deleting' }));
-
-    try {
-      await deleteHrCandidateMessageTemplate(template.id);
-      setTemplates((current) => current.filter((item) => item.id !== template.id));
-    } catch (templateError) {
-      setError(templateError.message || 'Unable to delete template.');
-    } finally {
-      setActionState((current) => ({ ...current, [`template_${template.id}`]: '' }));
-    }
-  };
-
   const applyTemplateToSingle = (templateId) => {
     setInterestTemplateId(templateId);
     const template = templates.find((item) => item.id === templateId);
@@ -270,103 +234,18 @@ export default function HrCandidatesPage() {
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="rounded-[1.75rem] border border-slate-100 bg-[linear-gradient(135deg,#0f172a_0%,#1e3a8a_60%,#f97316_140%)] p-6 text-white shadow-[0_25px_60px_-35px_rgba(15,23,42,0.55)]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-sky-100">Proactive sourcing</p>
-              <h1 className="mt-1 text-3xl font-black tracking-tight">Candidate Database</h1>
-              <p className="mt-3 max-w-2xl text-sm text-slate-200">
-                Search all student profiles by skills, CGPA, location, college, and batch year. Paid plans unlock full profile visibility and direct outreach.
-              </p>
-            </div>
-            <div className="rounded-[1.5rem] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-100">Current access</p>
-              <p className="mt-1 text-xl font-black">{access.activePlanName || 'Free'}</p>
-              <p className="mt-1 text-xs text-slate-200">
-                {access.hasPaidAccess ? 'Full candidate profiles unlocked' : 'Blurred preview mode'}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard icon={FiUsers} label="Profiles" value={summary.total} helper="Matching search filters" />
-            <StatCard icon={FiLock} label="Blurred" value={summary.blurred} helper="Upgrade to unlock" />
-            <StatCard icon={FiCheckCircle} label="Connected" value={summary.connected} helper="Accepted interests" />
-            <StatCard icon={FiBriefcase} label="Available now" value={summary.availableNow} helper="Ready-to-hire candidates" />
-          </div>
-        </div>
-
-        <aside className={`${summaryCard} space-y-4`}>
-          <div>
-            <h2 className="text-lg font-extrabold text-navy">Message templates</h2>
-            <p className="mt-1 text-sm text-slate-500">Save reusable outreach copy for single or bulk sourcing.</p>
-          </div>
-
-          <div className="space-y-3">
-            <input
-              value={templateForm.name}
-              onChange={(event) => setTemplateForm((current) => ({ ...current, name: event.target.value }))}
-              placeholder="Template name"
-              className={inputClass}
-            />
-            <textarea
-              rows={4}
-              value={templateForm.message}
-              onChange={(event) => setTemplateForm((current) => ({ ...current, message: event.target.value }))}
-              placeholder="Hi {{candidateName}}, your profile stood out..."
-              className={`${inputClass} resize-none`}
-            />
-            <button
-              type="button"
-              disabled={templateSaving}
-              onClick={saveTemplate}
-              className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#ef5c30] disabled:opacity-60"
-            >
-              {templateSaving ? <FiRefreshCw size={14} className="animate-spin" /> : <FiMessageSquare size={14} />}
-              Save template
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            {templates.slice(0, 6).map((template) => (
-              <div key={template.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-navy">{template.name}</p>
-                    <p className="mt-1 text-xs text-slate-500 line-clamp-3">{template.message}</p>
-                  </div>
-                  {!template.isSystemTemplate ? (
-                    <button
-                      type="button"
-                      disabled={actionState[`template_${template.id}`] === 'deleting'}
-                      onClick={() => removeTemplate(template)}
-                      className="text-xs font-bold text-red-500 hover:text-red-600 disabled:opacity-60"
-                    >
-                      Delete
-                    </button>
-                  ) : (
-                    <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500">System</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </aside>
-      </section>
-
+    <div className="space-y-5 pb-12 text-slate-700">
       {!access.hasPaidAccess ? (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-          <div className="flex items-start gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50/90 px-5 py-4 text-sm leading-6 text-amber-900 shadow-[0_14px_34px_-30px_rgba(180,83,9,0.45)]">
+          <div className="flex min-w-0 items-start gap-3">
             <FiAlertCircle size={18} className="mt-0.5 shrink-0" />
-            <p>
+            <p className="max-w-4xl">
               You are seeing blurred candidate previews. Upgrade to a paid hiring plan to unlock full profiles, send direct interest requests, and access resumes after candidate acceptance.
             </p>
           </div>
           <Link
             to="/portal/hr/jobs"
-            className="inline-flex items-center gap-2 rounded-full bg-amber-600 px-4 py-2 font-bold text-white transition hover:bg-amber-700"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-amber-700 px-4 py-2 font-bold text-white transition hover:bg-amber-800"
           >
             <FiLayers size={14} />
             Upgrade plan
@@ -377,7 +256,7 @@ export default function HrCandidatesPage() {
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{error}</div> : null}
 
       <section className="grid gap-6 lg:grid-cols-[290px_minmax(0,1fr)]">
-        <aside className={`${summaryCard} space-y-4 lg:sticky lg:top-24 lg:self-start`}>
+        <aside className={`${panelClass} space-y-4 lg:sticky lg:top-24 lg:self-start`}>
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-extrabold text-navy">
               <FiFilter size={16} />
@@ -390,7 +269,7 @@ export default function HrCandidatesPage() {
                   setFilters(EMPTY_FILTERS);
                   runSearch(EMPTY_FILTERS, 1);
                 }}
-                className="text-xs font-bold text-slate-500 hover:text-brand-600"
+                className="text-xs font-bold text-slate-500 transition hover:text-secondary-700"
               >
                 Clear all
               </button>
@@ -408,12 +287,12 @@ export default function HrCandidatesPage() {
             <Field label="Batch year" value={filters.batchYear} onChange={(value) => updateFilter('batchYear', value)} placeholder="2026" />
             <Field label="Min CGPA" type="number" value={filters.minCgpa} onChange={(value) => updateFilter('minCgpa', value)} placeholder="7.5" />
 
-            <label className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+            <label className="flex min-h-12 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-secondary-100 hover:bg-white">
               <input
                 type="checkbox"
                 checked={filters.availableOnly}
                 onChange={(event) => updateFilter('availableOnly', event.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 accent-brand-600"
+                className="h-4 w-4 rounded border-slate-300 accent-secondary-700"
               />
               <span className="text-sm font-semibold text-slate-700">Available to hire only</span>
             </label>
@@ -421,7 +300,7 @@ export default function HrCandidatesPage() {
             <button
               type="button"
               onClick={() => runSearch(filters, 1)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-500"
+              className={`${primaryButtonClass} w-full`}
             >
               {loading ? <FiRefreshCw size={14} className="animate-spin" /> : <FiSearch size={14} />}
               Search candidates
@@ -430,12 +309,12 @@ export default function HrCandidatesPage() {
         </aside>
 
         <div className="space-y-4">
-          <div className={`${summaryCard} flex flex-wrap items-center gap-3`}>
+          <div className={`${panelClass} flex flex-wrap items-center gap-3 py-4`}>
             <button
               type="button"
               onClick={toggleSelectAll}
               disabled={!access.hasPaidAccess || selectableCandidates.length === 0}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className={softButtonClass}
             >
               <FiCheckSquare size={14} />
               {selectedCount === selectableCandidates.length && selectableCandidates.length > 0
@@ -447,7 +326,7 @@ export default function HrCandidatesPage() {
               type="button"
               onClick={() => setBulkOpen(true)}
               disabled={!access.hasPaidAccess || selectedCount === 0}
-              className="inline-flex items-center gap-2 rounded-full bg-[#2d5bff] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#2449d8] disabled:cursor-not-allowed disabled:opacity-60"
+              className={primaryButtonClass}
             >
               <FiSend size={14} />
               Send bulk interest
@@ -459,20 +338,20 @@ export default function HrCandidatesPage() {
           </div>
 
           {loading ? (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2">
               {[1, 2, 3, 4].map((item) => (
-                <div key={item} className="h-72 animate-pulse rounded-[1.75rem] border border-slate-100 bg-white" />
+                <div key={item} className="h-60 animate-pulse rounded-xl border border-slate-200 bg-white" />
               ))}
             </div>
           ) : candidates.length === 0 ? (
-            <div className={`${summaryCard} flex min-h-[320px] flex-col items-center justify-center text-center`}>
+            <div className={`${panelClass} flex min-h-[320px] flex-col items-center justify-center text-center`}>
               <FiUsers size={36} className="text-slate-300" />
               <p className="mt-4 text-base font-bold text-slate-500">No candidates match these filters.</p>
               <p className="mt-2 max-w-md text-sm text-slate-400">Try broadening your search or removing a few constraints.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.25rem] border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
                 <span>
                   Showing <strong className="text-navy">{candidates.length}</strong> of <strong className="text-navy">{pagination.total || summary.total}</strong> candidates
                 </span>
@@ -481,7 +360,7 @@ export default function HrCandidatesPage() {
                 </span>
               </div>
 
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2">
                 {candidates.map((candidate) => (
                   <CandidateCard
                     key={candidate.id}
@@ -500,12 +379,12 @@ export default function HrCandidatesPage() {
                 ))}
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.25rem] border border-slate-100 bg-white px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
                 <button
                   type="button"
                   disabled={loading || pagination.page <= 1}
                   onClick={() => runSearch(filters, Math.max(1, pagination.page - 1))}
-                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-h-11 rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Previous
                 </button>
@@ -518,7 +397,7 @@ export default function HrCandidatesPage() {
                   type="button"
                   disabled={loading || pagination.page >= pagination.totalPages}
                   onClick={() => runSearch(filters, pagination.page + 1)}
-                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-h-11 rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Next
                 </button>
@@ -622,49 +501,32 @@ function Field({ label, value, onChange, placeholder, type = 'text' }) {
   );
 }
 
-function StatCard({ icon: Icon, label, value, helper }) {
-  return (
-    <div className="rounded-[1.25rem] border border-white/10 bg-white/10 px-4 py-4 backdrop-blur">
-      <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white">
-          <Icon size={18} />
-        </span>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-100">{label}</p>
-          <p className="text-2xl font-black">{value}</p>
-        </div>
-      </div>
-      <p className="mt-3 text-xs text-slate-200">{helper}</p>
-    </div>
-  );
-}
-
 function CandidateCard({ candidate, selected, selectingEnabled, actionState, onSelect, onShortlist, onInterest }) {
   const interestStatus = candidate.crm?.interestStatus;
   const shortlistLoading = actionState[`shortlist_${candidate.id}`] === 'saving';
   const interestLoading = actionState[candidate.id] === 'sending';
 
   return (
-    <article className={`rounded-[1.75rem] border bg-white p-5 shadow-[0_14px_34px_-24px_rgba(15,23,42,0.22)] transition ${selected ? 'border-brand-300 shadow-[0_0_0_2px_rgba(37,99,235,0.16)]' : 'border-slate-100'}`}>
-      <div className="flex items-start gap-4">
+    <article className={`rounded-xl border bg-white p-3.5 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.26)] transition ${selected ? 'border-brand-300 shadow-[0_0_0_2px_rgba(37,99,235,0.16)]' : 'border-slate-100'}`}>
+      <div className="flex items-start gap-3">
         <button
           type="button"
           disabled={!selectingEnabled}
           onClick={onSelect}
-          className="mt-1 flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-slate-300 bg-white disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {selected ? <FiCheckSquare size={16} className="text-brand-600" /> : null}
+          {selected ? <FiCheckSquare size={14} className="text-brand-600" /> : null}
         </button>
 
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.25rem] border border-brand-100 bg-brand-50 text-lg font-black text-brand-700">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-base font-black text-brand-700">
           {(candidate.user?.name || 'C').charAt(0).toUpperCase()}
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-lg font-extrabold text-navy">{candidate.user?.name || 'Candidate'}</h3>
+                <h3 className="max-w-[14rem] truncate text-base font-extrabold text-navy">{candidate.user?.name || 'Candidate'}</h3>
                 {candidate.profile?.availableToHire ? (
                   <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
                     Available
@@ -676,70 +538,70 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
                   </span>
                 ) : null}
               </div>
-              <p className="mt-1 text-sm font-semibold text-slate-600">{candidate.profile?.headline || 'Student profile'}</p>
+              <p className="mt-1 max-w-[16rem] truncate text-xs font-semibold text-slate-600">{candidate.profile?.headline || 'Student profile'}</p>
             </div>
 
             <button
               type="button"
               onClick={onShortlist}
               disabled={shortlistLoading}
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-bold transition ${candidate.crm?.isShortlisted ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'} disabled:opacity-60`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-bold transition ${candidate.crm?.isShortlisted ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'} disabled:opacity-60`}
             >
-              {shortlistLoading ? <FiRefreshCw size={13} className="animate-spin" /> : <FiStar size={13} />}
+              {shortlistLoading ? <FiRefreshCw size={12} className="animate-spin" /> : <FiStar size={12} />}
               {candidate.crm?.isShortlisted ? 'Shortlisted' : 'Shortlist'}
             </button>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <InfoLine icon={FiMapPin} label={candidate.profile?.location || 'Location hidden'} />
             <InfoLine icon={FiAward} label={candidate.education?.degree || 'Degree hidden'} />
             <InfoLine icon={FiBriefcase} label={candidate.education?.branch || 'Branch hidden'} />
             <InfoLine icon={FiLayers} label={candidate.education?.college || 'College hidden'} />
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {(candidate.profile?.skills || []).slice(0, 6).map((skill) => (
-              <span key={skill} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {(candidate.profile?.skills || []).slice(0, 4).map((skill) => (
+              <span key={skill} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">
                 {skill}
               </span>
             ))}
           </div>
 
-          <div className="mt-4 grid gap-3 rounded-[1.25rem] border border-slate-100 bg-slate-50 px-4 py-3 sm:grid-cols-3">
+          <div className="mt-3 grid gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5 sm:grid-cols-3">
             <Metric label="Batch year" value={candidate.education?.batchYear || '-'} />
             <Metric label="CGPA" value={candidate.education?.cgpa ?? '-'} />
             <Metric label="Resume" value={candidate.profile?.hasResume ? (candidate.access?.canViewResume ? 'Unlocked' : 'Locked') : 'Not uploaded'} />
           </div>
 
-          <div className="mt-4 rounded-[1.25rem] border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-500">
+          <div className="mt-3 rounded-lg border border-dashed border-slate-200 px-3 py-2.5 text-xs leading-5 text-slate-500">
             {candidate.access?.requiresUpgrade ? (
               <div className="flex items-start gap-2">
-                <FiLock size={16} className="mt-0.5 shrink-0 text-amber-600" />
+                <FiLock size={14} className="mt-0.5 shrink-0 text-amber-600" />
                 <p>{candidate.access.blurReason}</p>
               </div>
             ) : candidate.access?.canViewContact ? (
-              <div className="flex flex-wrap items-center gap-4">
-                <span className="inline-flex items-center gap-2 text-slate-700"><FiUser size={14} /> {candidate.user?.email || 'Email unavailable'}</span>
-                <span className="inline-flex items-center gap-2 text-slate-700"><FiSend size={14} /> {candidate.user?.mobile || 'Mobile unavailable'}</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="inline-flex items-center gap-1.5 text-slate-700"><FiUser size={13} /> {candidate.user?.email || 'Email unavailable'}</span>
+                <span className="inline-flex items-center gap-1.5 text-slate-700"><FiSend size={13} /> {candidate.user?.mobile || 'Mobile unavailable'}</span>
                 {candidate.profile?.resumeUrl ? (
-                  <a href={candidate.profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-bold text-brand-700 hover:underline">
-                    <FiFileText size={14} />
+                  <a href={candidate.profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline">
+                    <FiFileText size={13} />
                     View resume
                   </a>
                 ) : null}
               </div>
             ) : (
               <div className="flex items-start gap-2">
-                <FiEye size={16} className="mt-0.5 shrink-0 text-brand-600" />
+                <FiEye size={14} className="mt-0.5 shrink-0 text-brand-600" />
                 <p>{candidate.access?.blurReason || 'Contact details unlock after candidate acceptance.'}</p>
               </div>
             )}
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-3">
+          <div className="mt-3 flex flex-wrap gap-2">
             {interestStatus ? (
-              <span className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold ${statusStyles[interestStatus] || 'border-slate-200 bg-slate-50 text-slate-600'}`}>
-                <FiCheckCircle size={14} />
+              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${statusStyles[interestStatus] || 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+                <FiCheckCircle size={13} />
                 Interest {interestStatus}
               </span>
             ) : (
@@ -747,9 +609,9 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
                 type="button"
                 onClick={onInterest}
                 disabled={!candidate.access?.canSendInterest || interestLoading}
-                className="inline-flex items-center gap-2 rounded-full bg-[#2d5bff] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#2449d8] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#2d5bff] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#2449d8] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {interestLoading ? <FiRefreshCw size={14} className="animate-spin" /> : <FiSend size={14} />}
+                {interestLoading ? <FiRefreshCw size={13} className="animate-spin" /> : <FiSend size={13} />}
                 Send interest
               </button>
             )}
@@ -762,9 +624,9 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
 
 function InfoLine({ icon: Icon, label }) {
   return (
-    <div className="inline-flex items-center gap-2 text-sm text-slate-600">
-      <Icon size={14} className="text-brand-600" />
-      <span>{label}</span>
+    <div className="inline-flex min-w-0 items-center gap-1.5 text-xs text-slate-600">
+      <Icon size={13} className="shrink-0 text-brand-600" />
+      <span className="truncate">{label}</span>
     </div>
   );
 }
@@ -772,8 +634,8 @@ function InfoLine({ icon: Icon, label }) {
 function Metric({ label, value }) {
   return (
     <div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-bold text-navy">{value}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
+      <p className="mt-1 truncate text-xs font-bold text-navy">{value}</p>
     </div>
   );
 }

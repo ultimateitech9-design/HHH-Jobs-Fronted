@@ -83,10 +83,6 @@ export function FeaturedJobs({
   jobs,
   loading,
   error,
-  currentPage,
-  totalPages,
-  pagination,
-  onPageChange,
   onRefresh
 }) {
   return (
@@ -98,9 +94,6 @@ export function FeaturedJobs({
             <h2 className="mt-1.5 font-heading text-[1.65rem] font-semibold tracking-[-0.04em] text-navy md:text-[2.15rem]">
               Featured <span className="gradient-text">Opportunities</span>
             </h2>
-            <p className="mt-2 text-[14px] leading-7 text-slate-500">
-              Hand-picked roles from verified companies, presented in a cleaner and more approachable HHH Jobs style.
-            </p>
           </div>
           <Link to="/portal/student/jobs" className="inline-flex">
             <span className="inline-flex items-center gap-2 text-sm font-medium text-brand-700 transition-transform hover:translate-x-1">
@@ -196,39 +189,6 @@ export function FeaturedJobs({
           <article className="rounded-[24px] border border-slate-200 bg-white p-6 text-center text-slate-500">
             <h3 className="text-lg font-medium text-slate-900">No featured jobs available right now.</h3>
           </article>
-        ) : null}
-
-        {!loading && !error && totalPages > 1 ? (
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <button
-              type="button"
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={currentPage === 1}
-              onClick={() => onPageChange(currentPage - 1)}
-            >
-              Prev
-            </button>
-            {pagination.map((page) => (
-              <button
-                key={page}
-                type="button"
-                className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold transition-colors ${
-                  currentPage === page ? 'gradient-primary text-white shadow-lg shadow-navy/20' : 'bg-white text-slate-600 hover:bg-brand-50'
-                }`}
-                onClick={() => onPageChange(page)}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              type="button"
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={currentPage === totalPages}
-              onClick={() => onPageChange(currentPage + 1)}
-            >
-              Next
-            </button>
-          </div>
         ) : null}
 
         <div className="mt-7 flex items-center justify-center gap-4 border-t border-slate-200 pt-6">

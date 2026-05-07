@@ -23,6 +23,7 @@ module.exports = {
   overrides: [
     {
       files: [
+        'src/i18n/index.jsx',
         'src/routes/**/*Routes.jsx',
         'src/routes/index.jsx',
         'src/modules/super-admin/components/AdminSidebar.jsx',
@@ -31,6 +32,10 @@ module.exports = {
       rules: {
         'react-refresh/only-export-components': 'off'
       }
+    },
+    {
+      files: ['tests/**/*.{js,jsx}', 'test/**/*.{js,jsx}'],
+      env: { node: true, es2020: true }
     }
   ]
 }

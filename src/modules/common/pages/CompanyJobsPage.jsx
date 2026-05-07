@@ -258,7 +258,7 @@ const CompanyJobsPage = () => {
   const navigate = useNavigate();
   const currentPath = useMemo(
     () => buildCurrentPath(location),
-    [location.hash, location.pathname, location.search]
+    [location]
   );
   const loginRedirectState = useMemo(
     () => getLoginRedirectState(currentPath),

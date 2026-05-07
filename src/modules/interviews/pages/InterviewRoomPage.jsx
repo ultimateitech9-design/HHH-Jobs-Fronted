@@ -249,7 +249,6 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     for (const candidate of queuedCandidates) {
       try {
-        // eslint-disable-next-line no-await-in-loop
         await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
       } catch (error) {
         pendingIceCandidatesRef.current.push(candidate);
@@ -697,7 +696,6 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
   // The room boot sequence intentionally runs once per interview id so media,
   // peer connection, and leave-room cleanup stay coordinated.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     isMountedRef.current = true;
     loadRoom({ hydrateDrafts: true })
@@ -728,7 +726,6 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   }, [payload?.permissions?.canJoin, isStartingMedia, isManager]);
 
   // Signal and room polling are intentionally tied to the current interview id.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!payload?.permissions?.canJoin) return undefined;
 
@@ -736,7 +733,6 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       try {
         const signals = await getInterviewSignals(interviewId, signalCursorRef.current);
         for (const signal of signals) {
-          // eslint-disable-next-line no-await-in-loop
           await handleSignal(signal);
         }
       } catch (error) {
@@ -756,7 +752,6 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
   // Auto-recording starts from room consent + stream readiness and should not
   // restart just because helper identities change between renders.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!localStreamRef.current) return;
     localStreamRef.current.getVideoTracks().forEach((track) => {

@@ -125,7 +125,6 @@ const HomePage = () => {
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [jobsError, setJobsError] = useState('');
   const [reloadSeed, setReloadSeed] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
@@ -226,37 +225,12 @@ const HomePage = () => {
     });
   }, [filters, jobs, selectedCategory]);
 
-  const pageCount = Math.max(1, Math.ceil(filteredJobs.length / JOBS_PER_PAGE));
-
   const pagedJobs = useMemo(() => {
-    const start = (currentPage - 1) * JOBS_PER_PAGE;
-    return filteredJobs.slice(start, start + JOBS_PER_PAGE);
-  }, [filteredJobs, currentPage]);
-
-  const pagination = useMemo(() => {
-    const pages = [];
-    const maxSlots = 5;
-    const start = Math.max(1, currentPage - 2);
-    const end = Math.min(pageCount, start + maxSlots - 1);
-    for (let page = start; page <= end; page += 1) {
-      pages.push(page);
-    }
-    return pages;
-  }, [currentPage, pageCount]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters.keyword, filters.location, filters.experience]);
-
-  useEffect(() => {
-    if (currentPage > pageCount) {
-      setCurrentPage(pageCount);
-    }
-  }, [currentPage, pageCount]);
+    return filteredJobs.slice(0, JOBS_PER_PAGE);
+  }, [filteredJobs]);
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    setCurrentPage(1);
     const jobsSection = document.getElementById('jobs');
     if (jobsSection) {
       jobsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -266,7 +240,6 @@ const HomePage = () => {
   const handleCategorySelect = (searchTerm, category) => {
     setSelectedCategory(category);
     setFilters((current) => ({ ...current, keyword: searchTerm }));
-    setCurrentPage(1);
     const jobsSection = document.getElementById('jobs');
     if (jobsSection) {
       jobsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -307,10 +280,6 @@ const HomePage = () => {
           jobs={pagedJobs}
           loading={loadingJobs}
           error={jobsError}
-          currentPage={currentPage}
-          totalPages={pageCount}
-          pagination={pagination}
-          onPageChange={setCurrentPage}
           onRefresh={() => setReloadSeed((current) => current + 1)}
         />
       </div>

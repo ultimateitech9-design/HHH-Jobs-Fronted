@@ -43,9 +43,6 @@ export function WhyHHHJobs() {
           <h2 className="font-heading text-3xl font-extrabold text-navy md:text-4xl">
             Why Choose <span className="gradient-text">HHH Jobs</span>
           </h2>
-          <p className="mx-auto mt-3 max-w-md text-slate-500">
-            The same modules and workflows, rebuilt with a much stronger dashboard-first UX.
-          </p>
         </AnimatedSection>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (

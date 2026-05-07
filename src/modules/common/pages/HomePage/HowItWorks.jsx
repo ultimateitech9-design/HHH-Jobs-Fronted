@@ -63,9 +63,6 @@ export function HowItWorks() {
           <h2 className="font-heading text-3xl font-extrabold text-navy md:text-4xl">
             How <span className="gradient-text">It Works</span>
           </h2>
-          <p className="mx-auto mt-3 max-w-md text-slate-500">
-            Keep the same platform modules, but make the end-to-end experience feel guided and modern.
-          </p>
         </AnimatedSection>
 
         <AnimatedSection className="mt-8 flex justify-center">

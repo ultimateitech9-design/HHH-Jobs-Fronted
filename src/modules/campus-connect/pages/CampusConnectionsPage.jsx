@@ -113,7 +113,7 @@ export default function CampusConnectionsPage() {
                       Connected on {conn.responded_at ? new Date(conn.responded_at).toDateString() : '—'}
                     </p>
                     {conn.message && (
-                      <p className="mt-2 text-xs text-slate-500 italic">"{conn.message}"</p>
+                      <p className="mt-2 text-xs text-slate-500 italic">&ldquo;{conn.message}&rdquo;</p>
                     )}
                     <div className="mt-3">
                       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-0.5 text-xs font-bold text-emerald-700">
@@ -167,7 +167,7 @@ function ConnectionCard({ conn, onAccept, onReject, isLoading }) {
 
       {conn.message && (
         <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2.5 text-xs text-slate-600 italic">
-          "{conn.message}"
+          &ldquo;{conn.message}&rdquo;
         </div>
       )}
 
