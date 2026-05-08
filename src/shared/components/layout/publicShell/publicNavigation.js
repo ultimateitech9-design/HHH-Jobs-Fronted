@@ -7,30 +7,34 @@ export const getPublicNavItems = ({ jobsNavPath, dashboardPath }) => [
     label: 'Home',
     matchers: [/^\/$/]
   },
-  {
-    key: 'for-you',
-    label: 'For You',
-    children: [
-      {
-        key: 'for-job-seekers',
-        label: 'Student/Professional',
-        to: dashboardPath || '/job-seekers',
-        matchers: [/^\/job-seekers(?:\/.*)?$/]
-      },
-      {
-        key: 'for-recruiters',
-        label: 'HR',
-        to: dashboardPath || '/recruiters',
-        matchers: [/^\/recruiters(?:\/.*)?$/]
-      },
-      {
-        key: 'for-campus-connect',
-        label: 'Campus Connect',
-        to: dashboardPath || '/campus-connect',
-        matchers: [/^\/campus-connect(?:\/.*)?$/]
-      }
-    ]
-  },
+  ...(!dashboardPath
+    ? [
+        {
+          key: 'for-you',
+          label: 'For You',
+          children: [
+            {
+              key: 'for-job-seekers',
+              label: 'Student/Professional',
+              to: '/job-seekers',
+              matchers: [/^\/job-seekers(?:\/.*)?$/]
+            },
+            {
+              key: 'for-recruiters',
+              label: 'HR',
+              to: '/recruiters',
+              matchers: [/^\/recruiters(?:\/.*)?$/]
+            },
+            {
+              key: 'for-campus-connect',
+              label: 'Campus Connect',
+              to: '/campus-connect',
+              matchers: [/^\/campus-connect(?:\/.*)?$/]
+            }
+          ]
+        }
+      ]
+    : []),
   {
     key: 'jobs',
     to: jobsNavPath,
