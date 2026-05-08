@@ -23,11 +23,11 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
 
   return (
     <section className="relative flex min-h-[60vh] items-center overflow-hidden bg-gradient-to-br from-white via-[#fbf8f2] to-[#eef3fb] px-4 pb-6 pt-0">
-      <div className="absolute left-8 top-20 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
-      <div className="absolute bottom-12 right-8 h-96 w-96 rounded-full bg-navy/10 blur-3xl" />
-      <div className="absolute top-1/3 right-1/4 h-64 w-64 rounded-full bg-gold-light/10 blur-3xl" />
+      <div className="pointer-events-none absolute left-8 top-20 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-12 right-8 h-96 w-96 rounded-full bg-navy/10 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 right-1/4 h-64 w-64 rounded-full bg-gold-light/10 blur-3xl" />
 
-      <div className="container mx-auto max-w-7xl pb-4 pt-3">
+      <div className="container relative z-10 mx-auto max-w-7xl pb-4 pt-3">
         <div className="grid items-center gap-6 lg:grid-cols-2 lg:gap-10">
           <div>
             <motion.div
@@ -79,7 +79,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.32 }}
               onSubmit={onSearch}
-              className="mt-6 flex flex-col gap-2 rounded-[24px] border border-slate-200 bg-white p-1.5 shadow-strong shadow-navy/5 sm:flex-row"
+              className="relative z-20 mt-6 flex flex-col gap-2 rounded-[24px] border border-slate-200 bg-white p-1.5 shadow-strong shadow-navy/5 sm:flex-row"
             >
               <div className="flex flex-1 items-center gap-2 px-3">
                 <Search className="h-4 w-4 text-slate-400" />
