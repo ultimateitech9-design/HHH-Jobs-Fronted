@@ -124,7 +124,7 @@ export function TestimonialsSection() {
                   key={`${item.name}-${index}`}
                   data-testimonial-slide
                   whileHover={{ y: -5, scale: 1.01 }}
-                  className="glass-card group relative min-w-0 shrink-0 basis-[calc((100%-0.625rem)/2)] overflow-hidden rounded-[28px] px-3 py-4 sm:basis-[calc((100%-0.75rem)/2)] lg:basis-[calc((100%-2.5rem)/2.18)]"
+                  className="glass-card group relative min-w-0 shrink-0 basis-[min(82vw,20rem)] overflow-hidden rounded-[24px] px-3 py-4 sm:basis-[21rem] md:basis-[24rem] lg:basis-[28rem] xl:basis-[30rem]"
                 >
                   <motion.div
                     animate={{ rotate: [0, 5, -5, 0] }}
