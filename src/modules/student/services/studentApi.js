@@ -290,6 +290,12 @@ export const mapProfileToForm = (profile = {}) => {
     facebookUrl: profile.facebook_url || profile.facebookUrl || '',
     instagramUrl: profile.instagram_url || profile.instagramUrl || '',
     eimagerId: profile.eimager_id || profile.eimagerId || '',
+    verificationStatus: profile.verification_status || profile.verificationStatus || 'unverified',
+    verificationBadge: profile.verification_badge || profile.verificationBadge || '',
+    identityVerified: Boolean(profile.identity_verified ?? profile.identityVerified ?? false),
+    addressVerified: Boolean(profile.address_verified ?? profile.addressVerified ?? false),
+    experienceVerified: Boolean(profile.experience_verified ?? profile.experienceVerified ?? false),
+    verifiedExperienceCount: Number(profile.verified_experience_count ?? profile.verifiedExperienceCount ?? 0),
     preferredSalaryMin: profile.preferred_salary_min ?? profile.preferredSalaryMin ?? '',
     preferredSalaryMax: profile.preferred_salary_max ?? profile.preferredSalaryMax ?? '',
     expectedSalary: profile.expected_salary ?? profile.expectedSalary ?? '',
@@ -551,6 +557,12 @@ export const updateStudentAvatar = async (avatarUrl) => {
 
   return mapProfileToForm(updated);
 };
+
+export const getEimagerHandoffUrl = async (target = 'kyc') =>
+  strictRequest({
+    path: `/student/eimager/handoff?target=${encodeURIComponent(target)}`,
+    extract: (payload) => payload?.url || ''
+  });
 
 export const importStudentResume = async ({ resumeText = '', resumeUrl = '' } = {}) =>
   strictRequest({

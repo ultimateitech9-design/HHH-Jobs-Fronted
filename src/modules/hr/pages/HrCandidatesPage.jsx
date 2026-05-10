@@ -15,6 +15,7 @@ import {
   FiRefreshCw,
   FiSearch,
   FiSend,
+  FiShield,
   FiStar,
   FiUser,
   FiUsers,
@@ -39,7 +40,8 @@ const EMPTY_FILTERS = {
   branch: '',
   college: '',
   batchYear: '',
-  availableOnly: false
+  availableOnly: false,
+  verifiedOnly: false
 };
 
 const DEFAULT_PAGE_SIZE = 6;
@@ -69,7 +71,7 @@ export default function HrCandidatesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [access, setAccess] = useState({ hasPaidAccess: false, requiresUpgrade: true, activePlanName: 'Free' });
-  const [summary, setSummary] = useState({ total: 0, blurred: 0, connected: 0, availableNow: 0 });
+  const [summary, setSummary] = useState({ total: 0, blurred: 0, connected: 0, availableNow: 0, verified: 0 });
   const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0, totalPages: 1, count: 0 });
   const [candidates, setCandidates] = useState([]);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -92,7 +94,7 @@ export default function HrCandidatesPage() {
     });
     const payload = response.data || {};
     setAccess(payload.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanName: 'Free' });
-    setSummary(payload.summary || { total: 0, blurred: 0, connected: 0, availableNow: 0 });
+    setSummary(payload.summary || { total: 0, blurred: 0, connected: 0, availableNow: 0, verified: 0 });
     setPagination(payload.pagination || { page: 1, limit: DEFAULT_PAGE_SIZE, total: 0, totalPages: 1, count: 0 });
     setCandidates(payload.candidates || []);
     setError(response.error || '');
@@ -297,6 +299,16 @@ export default function HrCandidatesPage() {
               <span className="text-sm font-semibold text-slate-700">Available to hire only</span>
             </label>
 
+            <label className="flex min-h-12 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-secondary-100 hover:bg-white">
+              <input
+                type="checkbox"
+                checked={filters.verifiedOnly}
+                onChange={(event) => updateFilter('verifiedOnly', event.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 accent-secondary-700"
+              />
+              <span className="text-sm font-semibold text-slate-700">Verified candidates only</span>
+            </label>
+
             <button
               type="button"
               onClick={() => runSearch(filters, 1)}
@@ -354,6 +366,9 @@ export default function HrCandidatesPage() {
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
                 <span>
                   Showing <strong className="text-navy">{candidates.length}</strong> of <strong className="text-navy">{pagination.total || summary.total}</strong> candidates
+                </span>
+                <span>
+                  Verified <strong className="text-navy">{summary.verified || 0}</strong>
                 </span>
                 <span>
                   Page <strong className="text-navy">{pagination.page}</strong> of <strong className="text-navy">{pagination.totalPages}</strong>
@@ -505,6 +520,7 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
   const interestStatus = candidate.crm?.interestStatus;
   const shortlistLoading = actionState[`shortlist_${candidate.id}`] === 'saving';
   const interestLoading = actionState[candidate.id] === 'sending';
+  const verification = candidate.verification || {};
 
   return (
     <article className={`rounded-xl border bg-white p-3.5 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.26)] transition ${selected ? 'border-brand-300 shadow-[0_0_0_2px_rgba(37,99,235,0.16)]' : 'border-slate-100'}`}>
@@ -530,6 +546,12 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
                 {candidate.profile?.availableToHire ? (
                   <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
                     Available
+                  </span>
+                ) : null}
+                {verification.isVerified ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700">
+                    <FiShield size={11} />
+                    Verified
                   </span>
                 ) : null}
                 {interestStatus ? (
@@ -572,6 +594,14 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
             <Metric label="CGPA" value={candidate.education?.cgpa ?? '-'} />
             <Metric label="Resume" value={candidate.profile?.hasResume ? (candidate.access?.canViewResume ? 'Unlocked' : 'Locked') : 'Not uploaded'} />
           </div>
+
+          {verification.isVerified ? (
+            <div className="mt-3 grid gap-2 rounded-lg border border-blue-100 bg-blue-50/70 px-3 py-2.5 sm:grid-cols-3">
+              <Metric label="Identity" value={verification.identityVerified ? 'Verified' : 'Pending'} />
+              <Metric label="Address" value={verification.addressVerified ? 'Verified' : 'Pending'} />
+              <Metric label="Experience" value={verification.verifiedExperienceCount ? `${verification.verifiedExperienceCount} verified` : (verification.experienceVerified ? 'Verified' : 'Pending')} />
+            </div>
+          ) : null}
 
           <div className="mt-3 rounded-lg border border-dashed border-slate-200 px-3 py-2.5 text-xs leading-5 text-slate-500">
             {candidate.access?.requiresUpgrade ? (

@@ -10,12 +10,14 @@ import {
   FiClock,
   FiDownload,
   FiEdit2,
+  FiExternalLink,
   FiFileText,
   FiMail,
   FiMapPin,
   FiPhone,
   FiPlus,
   FiRefreshCw,
+  FiShield,
   FiTrash2,
   FiTrendingUp,
   FiUser,
@@ -24,6 +26,7 @@ import {
 import useAuthStore from '../../../core/auth/authStore';
 import { getToken, setAuthSession } from '../../../utils/auth';
 import {
+  getEimagerHandoffUrl,
   getStudentProfile,
   importStudentResume,
   updateStudentAvatar,
@@ -201,6 +204,13 @@ const EMPTY_FORM = {
   portfolioUrl: '',
   githubUrl: '',
   linkedinUrl: '',
+  eimagerId: '',
+  verificationStatus: 'unverified',
+  verificationBadge: '',
+  identityVerified: false,
+  addressVerified: false,
+  experienceVerified: false,
+  verifiedExperienceCount: 0,
   preferredSalaryMin: '',
   preferredSalaryMax: '',
   expectedSalary: '',
@@ -488,6 +498,7 @@ const StudentProfilePage = () => {
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [handoffLoading, setHandoffLoading] = useState('');
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [resumeImporting, setResumeImporting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -672,6 +683,30 @@ const StudentProfilePage = () => {
       setFlash('error', error.message || 'Failed to save profile.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleOpenEimager = async (target = 'kyc') => {
+    const popup = window.open('', '_blank');
+    if (popup) popup.opener = null;
+
+    setHandoffLoading(target);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const handoffUrl = await getEimagerHandoffUrl(target);
+      if (!handoffUrl) throw new Error('Eimager link is not available right now.');
+
+      if (popup) {
+        popup.location.href = handoffUrl;
+      } else {
+        window.location.assign(handoffUrl);
+      }
+    } catch (error) {
+      if (popup) popup.close();
+      setFlash('error', error.message || 'Unable to open Eimager verification.');
+    } finally {
+      setHandoffLoading('');
     }
   };
 
@@ -1301,6 +1336,13 @@ const StudentProfilePage = () => {
   const addressSummary = [form.currentAddress, form.location, form.currentPincode || form.permanentPincode]
     .filter(Boolean)
     .join(', ');
+  const verificationParts = [
+    form.identityVerified ? 'Identity' : '',
+    form.addressVerified ? 'Address' : '',
+    form.experienceVerified ? `${Math.max(Number(form.verifiedExperienceCount || 0), 1)} experience` : ''
+  ].filter(Boolean);
+  const verificationLabel = form.verificationBadge
+    || (verificationParts.length > 0 ? 'Verified' : 'Needs verification');
 
   const sectionStates = useMemo(
     () => ({
@@ -1382,6 +1424,49 @@ const StudentProfilePage = () => {
           {message.text}
         </div>
       ) : null}
+
+      <section className="rounded-[1.25rem] border border-[#cbd8ff] bg-[#f5f7ff] px-4 py-4 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.22)] sm:px-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#2d5bff] shadow-sm">
+              <FiShield size={19} />
+            </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-[1rem] font-extrabold text-slate-950">Eimager verification</h2>
+                <span className="rounded-full border border-[#cbd8ff] bg-white px-2.5 py-1 text-[0.72rem] font-bold text-[#2d5bff]">
+                  {verificationLabel}
+                </span>
+              </div>
+              <p className="mt-1 text-[0.84rem] font-medium text-[#4d5b83]">
+                {verificationParts.length > 0
+                  ? `${verificationParts.join(', ')} verified in Eimager.`
+                  : 'KYC aur experience verification ke liye Eimager dashboard open karein.'}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => handleOpenEimager('kyc')}
+              disabled={Boolean(handoffLoading)}
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-[#173a79] px-4 text-[0.82rem] font-bold text-white shadow-sm transition hover:bg-[#102a5a] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FiExternalLink size={15} />
+              {handoffLoading === 'kyc' ? 'Opening...' : 'Open KYC'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOpenEimager('experience')}
+              disabled={Boolean(handoffLoading)}
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-[#cbd8ff] bg-white px-4 text-[0.82rem] font-bold text-[#173a79] transition hover:border-[#9fb5ff] hover:text-[#2d5bff] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FiBriefcase size={15} />
+              {handoffLoading === 'experience' ? 'Opening...' : 'Verify experience'}
+            </button>
+          </div>
+        </div>
+      </section>
 
       {profileEditorOpen ? renderProfileModal(
         <div

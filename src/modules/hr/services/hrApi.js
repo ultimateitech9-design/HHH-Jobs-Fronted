@@ -581,6 +581,7 @@ export const searchHrCandidatesV2 = async (filters = {}) => {
     college: filters.college,
     batchYear: filters.batchYear,
     available: filters.availableOnly ? 'true' : undefined,
+    verified: filters.verifiedOnly ? 'true' : undefined,
     page: filters.page,
     limit: filters.limit
   }).forEach(([key, value]) => {
@@ -591,13 +592,13 @@ export const searchHrCandidatesV2 = async (filters = {}) => {
     path: `/hr/candidates/search${params.toString() ? `?${params.toString()}` : ''}`,
     emptyData: {
       access: { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
-      summary: { total: 0, blurred: 0, connected: 0, availableNow: 0 },
+      summary: { total: 0, blurred: 0, connected: 0, availableNow: 0, verified: 0 },
       pagination: { page: 1, limit: 6, total: 0, totalPages: 1, count: 0 },
       candidates: []
     },
     extract: (payload) => ({
       access: payload?.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
-      summary: payload?.summary || { total: 0, blurred: 0, connected: 0, availableNow: 0 },
+      summary: payload?.summary || { total: 0, blurred: 0, connected: 0, availableNow: 0, verified: 0 },
       pagination: payload?.pagination || { page: 1, limit: 6, total: 0, totalPages: 1, count: 0 },
       candidates: payload?.candidates || []
     })
