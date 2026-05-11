@@ -64,7 +64,7 @@ const PortalWorkbenchHeader = ({
               <button
                 type="button"
                 onClick={onOpenMobileNav}
-                className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 md:hidden"
+                className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 lg:hidden"
               >
                 <Menu className="h-5 w-5" />
               </button>
@@ -247,7 +247,7 @@ const PortalWorkbenchHeader = ({
           <button
             type="button"
             onClick={onOpenMobileNav}
-            className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 md:hidden"
+            className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 lg:hidden"
           >
             <Menu className="h-5 w-5" />
           </button>

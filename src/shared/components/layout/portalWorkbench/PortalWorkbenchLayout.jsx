@@ -100,10 +100,10 @@ const PortalWorkbenchLayout = ({
     navigate('/login', { replace: true });
   };
 
-  const sidebarMarginClass = hideSidebar ? 'md:ml-0' : sidebarOpen ? 'md:ml-[260px]' : 'md:ml-[72px]';
+  const sidebarMarginClass = hideSidebar ? 'lg:ml-0' : sidebarOpen ? 'lg:ml-[260px]' : 'lg:ml-[72px]';
   const sidebarClassName = sidebarBelowHeader
-    ? 'fixed bottom-0 left-0 top-16 z-20 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl md:flex md:flex-col'
-    : 'fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl md:flex md:flex-col';
+    ? 'fixed bottom-0 left-0 top-16 z-20 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl lg:flex lg:flex-col'
+    : 'fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl lg:flex lg:flex-col';
 
   return (
     <div

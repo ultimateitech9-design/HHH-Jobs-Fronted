@@ -97,14 +97,14 @@ const UsersManagement = () => {
   };
 
   return (
-    <div className="module-page module-page--admin">
+    <div className="module-page module-page--admin min-w-0">
       <AdminHeader title="Users Management" subtitle="Control account lifecycle, role visibility, verification state, and risk response across the portal." />
       {isDemo ? <p className="module-note">Demo user data is shown because super admin user endpoints are not connected yet.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {formMessage ? <p className="module-note">{formMessage}</p> : null}
       <p className="module-note">Super admin can review and remove Admin, HR, Student, and Super Admin IDs from this panel.</p>
       <DashboardStatsCards cards={cards} />
-      <section className="panel-card">
+      <section className="panel-card min-w-0">
         <div className="panel-card__header">
           <div>
             <h3>Create User ID</h3>
@@ -160,13 +160,13 @@ const UsersManagement = () => {
           </label>
           {formError ? <p className="form-error">{formError}</p> : null}
           <div className="student-job-actions">
-            <button type="submit" className="btn-primary" disabled={savingAdmin}>
+            <button type="submit" className="btn-primary w-full sm:w-auto" disabled={savingAdmin}>
               {savingAdmin ? 'Creating User...' : `Create ${USER_ROLE_LABELS[adminForm.role] || 'User'} ID`}
             </button>
           </div>
         </form>
       </section>
-      <section className="panel-card">
+      <section className="panel-card min-w-0">
         <FilterBar
           filters={filters}
           onChange={(key, value) => { setPage(1); setFilters((current) => ({ ...current, [key]: value })); }}
