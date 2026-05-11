@@ -929,7 +929,7 @@ const HrJobsPage = () => {
             </div>
             {rolePurchases.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="w-full min-w-[760px] text-left">
                   <thead>
                     <tr className="border-b border-neutral-100 text-xs font-bold text-neutral-400 uppercase tracking-wider">
                       <th className="pb-4 pr-4">Plan</th>
@@ -1024,7 +1024,7 @@ const HrJobsPage = () => {
                 <h3 className="text-xl font-extrabold text-primary mb-6">Recent Purchases</h3>
                 {purchases.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full min-w-[720px] text-left">
                       <thead>
                         <tr className="border-b border-neutral-100 text-xs font-bold text-neutral-400 uppercase tracking-wider">
                           <th className="pb-4 pr-4">Plan</th>

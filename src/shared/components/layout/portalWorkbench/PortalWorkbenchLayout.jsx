@@ -100,14 +100,14 @@ const PortalWorkbenchLayout = ({
     navigate('/login', { replace: true });
   };
 
-  const sidebarMarginClass = hideSidebar ? 'lg:ml-0' : sidebarOpen ? 'lg:ml-[260px]' : 'lg:ml-[72px]';
+  const sidebarMarginClass = hideSidebar ? 'xl:ml-0' : sidebarOpen ? 'xl:ml-[260px]' : 'xl:ml-[72px]';
   const sidebarClassName = sidebarBelowHeader
-    ? 'fixed bottom-0 left-0 top-16 z-20 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl lg:flex lg:flex-col'
-    : 'fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl lg:flex lg:flex-col';
+    ? 'fixed bottom-0 left-0 top-16 z-20 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl xl:flex xl:flex-col'
+    : 'fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl xl:flex xl:flex-col';
 
   return (
     <div
-      className={`min-h-screen overflow-x-clip portal-workbench--${portalKey}`}
+      className={`portal-workbench min-h-screen w-full overflow-x-clip portal-workbench--${portalKey}`}
       style={{
         background:
           'radial-gradient(circle at top left, rgba(229,155,23,0.12), transparent 26%), radial-gradient(circle at 100% 0%, rgba(36,95,176,0.1), transparent 24%), linear-gradient(180deg, #f8f6f2 0%, #f3f6fb 100%)'
