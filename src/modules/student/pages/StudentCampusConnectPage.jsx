@@ -15,9 +15,7 @@ import {
   StudentEmptyState,
   StudentNotice,
   StudentPageShell,
-  StudentSurfaceCard,
-  studentPrimaryButtonClassName,
-  studentSecondaryButtonClassName
+  StudentSurfaceCard
 } from '../components/StudentExperience';
 import {
   applyToCampusDrive,
@@ -60,6 +58,18 @@ const formatPackage = (minValue, maxValue) => {
   if (min > 0) return `From Rs ${(min / 100000).toFixed(1)}L`;
   return 'Package not disclosed';
 };
+
+const compactPrimaryButtonClassName =
+  'inline-flex items-center justify-center gap-2 rounded-full bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(37,99,235,0.18)] transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-70';
+
+const compactSecondaryButtonClassName =
+  'inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70';
+
+const compactCardClassName =
+  'p-4 sm:p-5 [&_h2]:font-sans [&_h2]:text-[1.55rem] [&_h2]:font-semibold [&_p]:max-w-none';
+
+const compactEmptyStateClassName =
+  'bg-white py-10 [&_h3]:font-sans [&_h3]:text-[1.35rem] [&_h3]:font-semibold [&_p]:max-w-xl';
 
 const StudentCampusConnectPage = () => {
   const [state, setState] = useState(emptyCampusState);
@@ -163,40 +173,66 @@ const StudentCampusConnectPage = () => {
 
   return (
     <StudentPageShell
-      eyebrow="Campus Connect"
-      badge="Student access"
-      title="See your attached campus and every eligible drive in one place"
-      subtitle="This view makes your campus linkage visible inside the student dashboard, so you can confirm which college profile you belong to and track the drives opened for your batch."
-      heroSize="mini"
-      stats={stats}
-      actions={
-        <>
-          <Link to="/portal/student/companies" className={studentSecondaryButtonClassName}>
-            Explore Companies
-          </Link>
-          <Link to="/portal/student/notifications" className={studentPrimaryButtonClassName}>
-            Open Notifications
-          </Link>
-        </>
-      }
+      showHero={false}
     >
       {state.error ? <StudentNotice type="error" text={state.error} /> : null}
       {actionNotice.text ? <StudentNotice type={actionNotice.type || 'success'} text={actionNotice.text} /> : null}
 
+      <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#1e3558_0%,#27436f_56%,#e6c184_100%)] px-5 py-5 text-white shadow-[0_20px_55px_rgba(15,23,42,0.12)] sm:px-6 sm:py-6">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_360px] xl:items-start">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-white/70">Campus Connect</p>
+              <span className="rounded-full border border-white/20 bg-white/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/82">
+                Student Access
+              </span>
+            </div>
+            <h1 className="mt-3 max-w-3xl text-[1.9rem] font-semibold leading-tight tracking-[-0.02em] text-white sm:text-[2.2rem]">
+              Campus profile and eligible drives in one simple workspace
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78 sm:text-[15px]">
+              Confirm your attached campus, review placement status, and track every campus pool that is open for your profile without switching between multiple screens.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2.5">
+              <Link to="/portal/student/companies" className={compactSecondaryButtonClassName}>
+                Explore Companies
+              </Link>
+              <Link to="/portal/student/notifications" className={compactPrimaryButtonClassName}>
+                View Notifications
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid gap-2.5 sm:grid-cols-3 xl:grid-cols-1">
+            {stats.map((metric) => (
+              <article
+                key={metric.label}
+                className="rounded-[1.45rem] border border-white/14 bg-white/8 px-4 py-3.5 backdrop-blur-sm"
+              >
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/66">{metric.label}</p>
+                <p className="mt-1 text-[1.95rem] font-semibold leading-none text-white">{metric.value}</p>
+                <p className="mt-2 text-[13px] leading-5 text-white/72">{metric.helper}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {state.loading ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {[1, 2, 3].map((item) => (
-            <div key={item} className="h-48 animate-pulse rounded-[1.8rem] bg-slate-100" />
+            <div key={item} className="h-40 animate-pulse rounded-[1.5rem] bg-slate-100" />
           ))}
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {!campusData.connected || !college || !student ? (
             <StudentEmptyState
               icon={FiBookOpen}
               title="No campus is attached to this student yet"
               description="Once a college links this student through Campus Connect, the attached campus name, activation status, and eligible drive list will start appearing here."
-              action={<Link to="/portal/student/companies" className={studentPrimaryButtonClassName}>Browse Jobs Instead</Link>}
+              action={<Link to="/portal/student/companies" className={compactPrimaryButtonClassName}>Browse Jobs Instead</Link>}
+              className={compactEmptyStateClassName}
             />
           ) : (
             <>
@@ -204,38 +240,39 @@ const StudentCampusConnectPage = () => {
                 eyebrow="Attached Campus"
                 title={college.name || 'Campus linked'}
                 subtitle="These details come from the Campus Connect profile that imported or linked this student."
+                className={compactCardClassName}
               >
-                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4">
+                <div className="grid gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 p-3.5">
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Campus</p>
-                      <p className="mt-2 text-lg font-extrabold text-navy">{college.name || 'Not available'}</p>
-                      <p className="mt-2 inline-flex items-center gap-2 text-sm text-slate-500">
+                      <p className="mt-2 text-[1.05rem] font-semibold text-navy">{college.name || 'Not available'}</p>
+                      <p className="mt-1.5 inline-flex items-center gap-2 text-sm text-slate-500">
                         <FiMapPin size={14} />
                         {[college.city, college.state].filter(Boolean).join(', ') || 'Location not added'}
                       </p>
                     </div>
-                    <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4">
+                    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 p-3.5">
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Account Status</p>
-                      <p className="mt-2 text-lg font-extrabold text-emerald-700">
+                      <p className="mt-2 text-[1.05rem] font-semibold text-emerald-700">
                         {accountStatusLabel[student.accountStatus] || 'Linked'}
                       </p>
-                      <p className="mt-2 text-sm text-slate-500">
+                      <p className="mt-1.5 text-sm text-slate-500">
                         {student.isPlaced ? 'Placement recorded by campus' : 'Open for campus placement drives'}
                       </p>
                     </div>
-                    <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4">
+                    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 p-3.5">
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Academic Profile</p>
-                      <p className="mt-2 text-lg font-extrabold text-navy">
+                      <p className="mt-2 text-[1.05rem] font-semibold text-navy">
                         {[student.branch, student.degree].filter(Boolean).join(' · ') || 'Not provided'}
                       </p>
-                      <p className="mt-2 text-sm text-slate-500">
+                      <p className="mt-1.5 text-sm text-slate-500">
                         Batch {student.graduationYear || 'N/A'} · CGPA {student.cgpa ?? 'N/A'}
                       </p>
                     </div>
-                    <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4">
+                    <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 p-3.5">
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Campus Contacts</p>
-                      <div className="mt-2 space-y-2 text-sm text-slate-500">
+                      <div className="mt-2 space-y-1.5 text-sm text-slate-500">
                         <p className="inline-flex items-center gap-2">
                           <FiMail size={14} />
                           {college.contactEmail || 'Contact email not added'}
@@ -248,17 +285,17 @@ const StudentCampusConnectPage = () => {
                     </div>
                   </div>
 
-                  <div className="rounded-[1.5rem] border border-brand-100 bg-[linear-gradient(135deg,#fff7ed_0%,#fffdf7_100%)] p-5">
+                  <div className="rounded-[1.2rem] border border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#fffaf0_100%)] p-4">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-700">Placement Snapshot</p>
-                    <p className="mt-3 text-3xl font-extrabold text-navy">
+                    <p className="mt-2.5 text-[2rem] font-semibold text-navy">
                       {campusData.counts?.eligibleUpcomingDrives || 0}
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-600">Eligible upcoming drives</p>
-                    <div className="mt-5 rounded-[1.25rem] bg-white/90 p-4 text-sm text-slate-600">
-                      <p className="font-semibold text-slate-800">
+                    <p className="mt-1 text-sm font-medium text-slate-600">Eligible upcoming drives</p>
+                    <div className="mt-4 rounded-[1rem] border border-white/80 bg-white/90 p-3.5 text-sm text-slate-600">
+                      <p className="font-medium text-slate-800">
                         {student.isPlaced ? 'Placed through campus record' : 'Currently marked placement-seeking'}
                       </p>
-                      <p className="mt-2">
+                      <p className="mt-1.5">
                         {college.placementOfficerName
                           ? `Placement officer: ${college.placementOfficerName}`
                           : 'Placement officer details have not been added yet.'}
@@ -268,7 +305,7 @@ const StudentCampusConnectPage = () => {
                           href={college.website}
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-3 inline-flex items-center gap-2 font-semibold text-brand-700"
+                          className="mt-3 inline-flex items-center gap-2 font-medium text-brand-700"
                         >
                           <FiGlobe size={14} />
                           Visit campus website
@@ -283,42 +320,43 @@ const StudentCampusConnectPage = () => {
                 eyebrow="Eligible Drives"
                 title="Campus drives opened for your profile"
                 subtitle="Only the drives that match your current branch, CGPA, and placement status are shown here."
+                className={compactCardClassName}
               >
                 {drives.length > 0 ? (
-                  <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="grid gap-3 lg:grid-cols-2">
                     {drives.map((drive) => (
                       <article
                         key={drive.id}
-                        className="rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] p-5 shadow-[0_16px_36px_rgba(15,23,42,0.06)]"
+                        className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <p className="text-xl font-extrabold text-navy">{drive.companyName || 'Campus drive'}</p>
-                            <p className="mt-1 text-sm font-semibold text-slate-500">{drive.jobTitle || 'Role details pending'}</p>
+                            <p className="text-[1.05rem] font-semibold leading-7 text-navy">{drive.companyName || 'Campus drive'}</p>
+                            <p className="mt-0.5 text-sm text-slate-500">{drive.jobTitle || 'Role details pending'}</p>
                           </div>
-                          <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+                          <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
                             Eligible
                           </span>
                         </div>
 
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                          <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-3.5 py-3">
                             <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
                               <FiCalendar size={13} />
                               Drive Date
                             </p>
-                            <p className="mt-2 text-sm font-semibold text-slate-700">{formatDriveDate(drive.driveDate)}</p>
+                            <p className="mt-1.5 text-sm font-medium text-slate-700">{formatDriveDate(drive.driveDate)}</p>
                           </div>
-                          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                          <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-3.5 py-3">
                             <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
                               <FiTrendingUp size={13} />
                               Package
                             </p>
-                            <p className="mt-2 text-sm font-semibold text-slate-700">{formatPackage(drive.packageMin, drive.packageMax)}</p>
+                            <p className="mt-1.5 text-sm font-medium text-slate-700">{formatPackage(drive.packageMin, drive.packageMax)}</p>
                           </div>
                         </div>
 
-                        <div className="mt-4 space-y-2 text-sm text-slate-500">
+                        <div className="mt-3 space-y-1.5 text-sm text-slate-500">
                           <p className="inline-flex items-center gap-2">
                             <FiMapPin size={14} />
                             {drive.location || 'Location will be shared by campus'}
@@ -330,20 +368,20 @@ const StudentCampusConnectPage = () => {
                         </div>
 
                         {drive.description ? (
-                          <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                          <p className="mt-3 rounded-[1rem] bg-slate-50 px-3.5 py-3 text-sm leading-6 text-slate-600">
                             {drive.description}
                           </p>
                         ) : null}
 
-                        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                             {drive.hasApplied
                               ? `Applied ${formatDriveDate(drive.appliedAt)}`
                               : 'Apply before the drive expires'}
                           </p>
 
                           {drive.hasApplied ? (
-                            <span className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+                            <span className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
                               Applied
                             </span>
                           ) : (
@@ -351,7 +389,7 @@ const StudentCampusConnectPage = () => {
                               type="button"
                               onClick={() => handleApply(drive.id)}
                               disabled={applyingDriveId === drive.id}
-                              className={`${studentPrimaryButtonClassName} min-w-[170px] justify-center px-5 py-2.5 disabled:cursor-not-allowed disabled:opacity-70`}
+                              className={`${compactPrimaryButtonClassName} min-w-[160px] justify-center disabled:cursor-not-allowed disabled:opacity-70`}
                             >
                               {applyingDriveId === drive.id ? 'Applying...' : 'Apply for Drive'}
                             </button>
@@ -365,8 +403,8 @@ const StudentCampusConnectPage = () => {
                     icon={FiCalendar}
                     title="No eligible drives are live right now"
                     description="Your campus is attached successfully, but there are no active drives matching your current branch or CGPA at the moment."
-                    action={<Link to="/portal/student/notifications" className={studentSecondaryButtonClassName}>Check Notifications</Link>}
-                    className="bg-white"
+                    action={<Link to="/portal/student/notifications" className={compactSecondaryButtonClassName}>Check Notifications</Link>}
+                    className={compactEmptyStateClassName}
                   />
                 )}
               </StudentSurfaceCard>
@@ -377,49 +415,50 @@ const StudentCampusConnectPage = () => {
             eyebrow="Platform Open Pools"
             title="Campus pools open to all platform students"
             subtitle="These pools were published by campuses in open mode, so any student using the platform can apply directly without waiting for a local campus import."
+            className={compactCardClassName}
           >
             {platformDrives.length > 0 ? (
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-3 lg:grid-cols-2">
                 {platformDrives.map((drive) => (
                   <article
                     key={drive.id}
-                    className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.06)]"
+                    className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-xl font-extrabold text-navy">{drive.companyName || 'Campus pool'}</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-500">{drive.jobTitle || 'Role details pending'}</p>
+                        <p className="text-[1.05rem] font-semibold leading-7 text-navy">{drive.companyName || 'Campus pool'}</p>
+                        <p className="mt-0.5 text-sm text-slate-500">{drive.jobTitle || 'Role details pending'}</p>
                       </div>
-                      <span className="rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-sky-700">
+                      <span className="rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700">
                         Open Pool
                       </span>
                     </div>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                      <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-3.5 py-3">
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Campus</p>
-                        <p className="mt-2 text-sm font-semibold text-slate-700">{drive.collegeName || 'Campus network'}</p>
+                        <p className="mt-1.5 text-sm font-medium text-slate-700">{drive.collegeName || 'Campus network'}</p>
                         <p className="mt-1 text-xs text-slate-500">{drive.collegeLocation || 'Location shared after shortlist'}</p>
                       </div>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-3.5 py-3">
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Deadline</p>
-                        <p className="mt-2 text-sm font-semibold text-slate-700">{formatDriveDate(drive.applicationDeadline || drive.driveDate)}</p>
+                        <p className="mt-1.5 text-sm font-medium text-slate-700">{formatDriveDate(drive.applicationDeadline || drive.driveDate)}</p>
                       </div>
                     </div>
 
                     {drive.description ? (
-                      <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                      <p className="mt-3 rounded-[1rem] bg-slate-50 px-3.5 py-3 text-sm leading-6 text-slate-600">
                         {drive.description}
                       </p>
                     ) : null}
 
-                    <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                         {drive.hasApplied ? `Applied ${formatDriveDate(drive.appliedAt)}` : 'Apply directly from HHH Jobs'}
                       </p>
 
                       {drive.hasApplied ? (
-                        <span className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+                        <span className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
                           Applied
                         </span>
                       ) : (
@@ -427,7 +466,7 @@ const StudentCampusConnectPage = () => {
                           type="button"
                           onClick={() => handleApply(drive.id)}
                           disabled={applyingDriveId === drive.id}
-                          className={`${studentPrimaryButtonClassName} min-w-[170px] justify-center px-5 py-2.5 disabled:cursor-not-allowed disabled:opacity-70`}
+                          className={`${compactPrimaryButtonClassName} min-w-[160px] justify-center disabled:cursor-not-allowed disabled:opacity-70`}
                         >
                           {applyingDriveId === drive.id ? 'Applying...' : 'Apply from Platform'}
                         </button>
@@ -441,7 +480,7 @@ const StudentCampusConnectPage = () => {
                 icon={FiBookOpen}
                 title="No platform-open campus pools live right now"
                 description="When any college publishes a pool in open mode, it will appear here so students can apply directly from the platform."
-                className="bg-white"
+                className={compactEmptyStateClassName}
               />
             )}
           </StudentSurfaceCard>
