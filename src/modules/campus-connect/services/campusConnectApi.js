@@ -127,6 +127,36 @@ export const updateCampusDriveApplication = (driveId, applicationId, payload) =>
 export const getCampusConnections = () =>
   safeRequest({ path: '/campus-connect/connections', emptyData: [], extract: (p) => p.connections || [] });
 
+export const getCampusConnectionDirectory = () =>
+  safeRequest({
+    path: '/campus-connect/connections/directory',
+    emptyData: {
+      companies: [],
+      summary: {
+        totalCompanies: 0,
+        connectedCompanies: 0,
+        pendingInvites: 0,
+        availableCompanies: 0
+      }
+    },
+    extract: (p) => ({
+      companies: p.companies || [],
+      summary: p.summary || {
+        totalCompanies: 0,
+        connectedCompanies: 0,
+        pendingInvites: 0,
+        availableCompanies: 0
+      }
+    })
+  });
+
+export const inviteCampusCompany = ({ companyUserId, message = '' }) =>
+  strictRequest({
+    path: '/campus-connect/connections',
+    options: { method: 'POST', body: JSON.stringify({ companyUserId, message }) },
+    extract: (p) => p.connection || p
+  });
+
 export const respondToConnection = (id, status) =>
   strictRequest({
     path: `/campus-connect/connections/${id}`,

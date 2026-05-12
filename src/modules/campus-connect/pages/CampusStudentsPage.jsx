@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   FiAlertCircle,
   FiCheckCircle,
@@ -59,6 +60,7 @@ const AccountBadge = ({ student }) => {
 };
 
 export default function CampusStudentsPage() {
+  const location = useLocation();
   const fileInputRef = useRef(null);
 
   const [students, setStudents] = useState([]);
@@ -75,6 +77,7 @@ export default function CampusStudentsPage() {
   const [placingStudent, setPlacingStudent] = useState(null);
   const [placementForm, setPlacementForm] = useState({ placedCompany: '', placedRole: '', placedSalary: '' });
   const [placingSaving, setPlacingSaving] = useState(false);
+  const poolPreparation = location.state?.poolPreparation || null;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -198,6 +201,35 @@ export default function CampusStudentsPage() {
           </button>
         </div>
       </div>
+
+      {poolPreparation ? (
+        <div className="rounded-[1.5rem] border border-brand-200 bg-brand-50 px-5 py-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Pool Preparation</p>
+              <h2 className="mt-1 text-lg font-extrabold text-navy">Prepare eligible candidates for {poolPreparation.companyName}</h2>
+              <p className="mt-1 text-sm text-slate-600">{poolPreparation.suggestion}</p>
+            </div>
+
+            <Link
+              to="/portal/campus-connect/drives"
+              state={{
+                autoOpenDriveForm: true,
+                prefillDrive: {
+                  companyName: poolPreparation.companyName,
+                  jobTitle: '',
+                  visibilityScope: 'campus_only',
+                  description: `Prepared from student pool workspace for ${poolPreparation.companyName}.`
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
+            >
+              <FiCheckCircle size={14} />
+              Launch Drive Draft
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       {/* Import result banner */}
       {importResult && (

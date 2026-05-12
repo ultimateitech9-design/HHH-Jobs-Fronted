@@ -743,3 +743,40 @@ export const updateHrCampusDriveApplication = async (driveId, applicationId, { s
     },
     extract: (payload) => payload?.application || payload
   });
+
+export const fetchHrCampusConnections = async () =>
+  safeRequest({
+    path: '/hr/campus-connections',
+    emptyData: [],
+    extract: (payload) => payload?.connections || []
+  });
+
+export const fetchHrCampusConnectionDirectory = async () =>
+  safeRequest({
+    path: '/hr/campus-connections/directory',
+    emptyData: { colleges: [], summary: null },
+    extract: (payload) => ({
+      colleges: payload?.colleges || [],
+      summary: payload?.summary || null
+    })
+  });
+
+export const createHrCampusConnection = async ({ collegeId, message }) =>
+  strictRequest({
+    path: '/hr/campus-connections',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ collegeId, message })
+    },
+    extract: (payload) => payload?.connection || payload
+  });
+
+export const respondHrCampusConnection = async (connectionId, status) =>
+  strictRequest({
+    path: `/hr/campus-connections/${connectionId}`,
+    options: {
+      method: 'PATCH',
+      body: JSON.stringify({ status })
+    },
+    extract: (payload) => payload?.connection || payload
+  });

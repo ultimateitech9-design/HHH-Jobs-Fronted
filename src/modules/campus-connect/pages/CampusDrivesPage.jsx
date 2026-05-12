@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   FiBriefcase,
   FiCalendar,
@@ -676,11 +677,14 @@ const ApplicantsModal = ({ drive, onClose, onSummaryChange }) => {
 };
 
 export default function CampusDrivesPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [drives, setDrives] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingDrive, setEditingDrive] = useState(null);
+  const [draftDrive, setDraftDrive] = useState(null);
   const [selectedDrive, setSelectedDrive] = useState(null);
 
   const load = async () => {
@@ -694,6 +698,16 @@ export default function CampusDrivesPage() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    const nextDraft = location.state?.prefillDrive;
+    if (!location.state?.autoOpenDriveForm || !nextDraft) return;
+
+    setEditingDrive(null);
+    setDraftDrive(nextDraft);
+    setShowForm(true);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   const handleSaved = (drive, isEdit) => {
     setDrives((current) => (
@@ -713,6 +727,7 @@ export default function CampusDrivesPage() {
     ));
     setShowForm(false);
     setEditingDrive(null);
+    setDraftDrive(null);
   };
 
   const handleDelete = async (id) => {
@@ -747,13 +762,25 @@ export default function CampusDrivesPage() {
     () => drives.filter((drive) => !['upcoming', 'ongoing'].includes(getDriveDisplayStatus(drive))),
     [drives]
   );
+  const totalApplicants = useMemo(
+    () => drives.reduce((sum, drive) => sum + Number(drive.applicant_count || 0), 0),
+    [drives]
+  );
+  const platformOpenCount = useMemo(
+    () => drives.filter((drive) => (drive.visibility_scope || 'campus_only') === 'platform_open').length,
+    [drives]
+  );
+  const selectedTotal = useMemo(
+    () => drives.reduce((sum, drive) => sum + Number(drive.selected_count || 0), 0),
+    [drives]
+  );
 
   return (
     <div className="mx-auto w-full max-w-[1180px] space-y-6 pb-12">
       {(showForm || editingDrive) ? (
         <DriveFormModal
-          initial={editingDrive}
-          onClose={() => { setShowForm(false); setEditingDrive(null); }}
+          initial={editingDrive || draftDrive}
+          onClose={() => { setShowForm(false); setEditingDrive(null); setDraftDrive(null); }}
           onSaved={handleSaved}
         />
       ) : null}
@@ -775,20 +802,37 @@ export default function CampusDrivesPage() {
         </div>
         <button
           type="button"
-          onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
+          onClick={() => { setEditingDrive(null); setDraftDrive(null); setShowForm(true); }}
+          className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
         >
           <FiPlus size={15} />
-          Create Pool
+          Create Drive Pool
         </button>
       </div>
 
       {error ? <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">{error}</div> : null}
 
+      {!loading && drives.length > 0 ? (
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: 'Active Pools', value: upcoming.length, helper: 'Currently live or upcoming' },
+            { label: 'Closed Pools', value: past.length, helper: 'Past, completed, or expired' },
+            { label: 'Applicants', value: totalApplicants, helper: 'Total submissions across pools' },
+            { label: 'Selected', value: selectedTotal, helper: `${platformOpenCount} open to platform` }
+          ].map((item) => (
+            <article key={item.label} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.18)]">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
+              <p className="mt-2 text-2xl font-extrabold text-navy">{item.value}</p>
+              <p className="mt-1 text-xs text-slate-500">{item.helper}</p>
+            </article>
+          ))}
+        </section>
+      ) : null}
+
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="h-56 animate-pulse rounded-[1.5rem] border border-slate-100 bg-white shadow-[0_4px_16px_-8px_rgba(15,23,42,0.10)]" />
+            <div key={item} className="h-48 animate-pulse rounded-[1.25rem] border border-slate-100 bg-white shadow-[0_4px_16px_-8px_rgba(15,23,42,0.10)]" />
           ))}
         </div>
       ) : drives.length === 0 ? (
@@ -797,7 +841,7 @@ export default function CampusDrivesPage() {
           <p className="font-semibold text-slate-400">No campus pools published yet.</p>
           <button
             type="button"
-            onClick={() => setShowForm(true)}
+            onClick={() => { setEditingDrive(null); setDraftDrive(null); setShowForm(true); }}
             className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-5 py-2 text-sm font-bold text-white hover:bg-[#ef5c30]"
           >
             <FiPlus size={14} />
@@ -808,13 +852,18 @@ export default function CampusDrivesPage() {
         <div className="space-y-6">
           {upcoming.length > 0 ? (
             <div>
-              <h2 className="mb-3 text-base font-bold text-navy">Active Pools</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-base font-bold text-navy">Active Pools</h2>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                  {upcoming.length} live
+                </span>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {upcoming.map((drive) => (
                   <DriveCard
                     key={drive.id}
                     drive={drive}
-                    onEdit={() => setEditingDrive(drive)}
+                    onEdit={() => { setDraftDrive(null); setEditingDrive(drive); }}
                     onDelete={() => handleDelete(drive.id)}
                     onApplicants={() => setSelectedDrive(drive)}
                   />
@@ -825,13 +874,18 @@ export default function CampusDrivesPage() {
 
           {past.length > 0 ? (
             <div>
-              <h2 className="mb-3 text-base font-bold text-slate-500">Closed / Past Pools</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-base font-bold text-slate-500">Closed / Past Pools</h2>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                  {past.length} archived
+                </span>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {past.map((drive) => (
                   <DriveCard
                     key={drive.id}
                     drive={drive}
-                    onEdit={() => setEditingDrive(drive)}
+                    onEdit={() => { setDraftDrive(null); setEditingDrive(drive); }}
                     onDelete={() => handleDelete(drive.id)}
                     onApplicants={() => setSelectedDrive(drive)}
                   />
@@ -849,27 +903,28 @@ function DriveCard({ drive, onEdit, onDelete, onApplicants }) {
   const visibilityLabel = VISIBILITY_OPTIONS.find((item) => item.value === (drive.visibility_scope || 'campus_only'))?.label || 'Campus Only';
   const displayStatus = getDriveDisplayStatus(drive);
   const isExpired = displayStatus === 'expired';
+  const compactModeLabel = String(drive.drive_mode || 'on-campus').replace(/-/g, ' ');
 
   return (
-    <div className="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.10)]">
+    <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.35)] transition hover:border-slate-300 hover:shadow-[0_16px_30px_-22px_rgba(15,23,42,0.28)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-base font-extrabold text-navy">{drive.company_name}</p>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${STATUS_STYLES[displayStatus] || 'bg-slate-100 text-slate-600'}`}>
+            <p className="truncate text-[1.05rem] font-extrabold text-navy">{drive.company_name}</p>
+            <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${STATUS_STYLES[displayStatus] || 'bg-slate-100 text-slate-600'}`}>
               {displayStatus}
             </span>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-600">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-600">
               {visibilityLabel}
             </span>
           </div>
-          <p className="mt-0.5 text-sm font-medium text-slate-600">{drive.job_title}</p>
+          <p className="mt-1 text-sm font-semibold text-slate-600">{drive.job_title}</p>
         </div>
         <div className="flex shrink-0 gap-1.5">
           <button
             type="button"
             onClick={onEdit}
-            className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-50"
+            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50"
           >
             Edit
           </button>
@@ -883,43 +938,50 @@ function DriveCard({ drive, onEdit, onDelete, onApplicants }) {
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-slate-500">
-        <span className="flex items-center gap-1">
+      <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+        <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2">
           <FiCalendar size={12} />
           Drive {formatDateLabel(drive.drive_date)}
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2">
           <FiMapPin size={12} />
-          {drive.drive_mode} {drive.location ? `· ${drive.location}` : ''}
+          {compactModeLabel} {drive.location ? `· ${drive.location}` : ''}
         </span>
-        <span className="font-medium text-slate-600">Deadline: {formatDateLabel(drive.application_deadline || drive.drive_date)}</span>
+        <span className="rounded-xl bg-slate-50 px-2.5 py-2 font-semibold text-slate-600">
+          Deadline: {formatDateLabel(drive.application_deadline || drive.drive_date)}
+        </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        <div className="rounded-2xl bg-slate-50 px-3 py-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Applicants</p>
-          <p className="mt-2 text-xl font-extrabold text-navy">{drive.applicant_count || 0}</p>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="rounded-[1rem] border border-slate-100 bg-slate-50 px-3 py-2.5">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Applicants</p>
+          <p className="mt-1.5 text-xl font-extrabold text-navy">{drive.applicant_count || 0}</p>
         </div>
-        <div className="rounded-2xl bg-slate-50 px-3 py-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Shortlisted</p>
-          <p className="mt-2 text-xl font-extrabold text-navy">{drive.shortlisted_count || 0}</p>
+        <div className="rounded-[1rem] border border-slate-100 bg-slate-50 px-3 py-2.5">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Shortlisted</p>
+          <p className="mt-1.5 text-xl font-extrabold text-navy">{drive.shortlisted_count || 0}</p>
         </div>
-        <div className="rounded-2xl bg-slate-50 px-3 py-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Selected</p>
-          <p className="mt-2 text-xl font-extrabold text-navy">{drive.selected_count || 0}</p>
+        <div className="rounded-[1rem] border border-slate-100 bg-slate-50 px-3 py-2.5">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Selected</p>
+          <p className="mt-1.5 text-xl font-extrabold text-navy">{drive.selected_count || 0}</p>
         </div>
       </div>
 
       {drive.eligible_branches?.length > 0 ? (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {drive.eligible_branches.map((branch) => (
-            <span key={branch} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{branch}</span>
+          {drive.eligible_branches.slice(0, 5).map((branch) => (
+            <span key={branch} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">{branch}</span>
           ))}
+          {drive.eligible_branches.length > 5 ? (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+              +{drive.eligible_branches.length - 5} more
+            </span>
+          ) : null}
         </div>
       ) : null}
 
       {drive.description ? (
-        <p className="mt-3 text-xs text-slate-400 line-clamp-3">{drive.description}</p>
+        <p className="mt-3 text-xs leading-5 text-slate-400 line-clamp-2">{drive.description}</p>
       ) : null}
 
       {isExpired ? (
@@ -932,7 +994,7 @@ function DriveCard({ drive, onEdit, onDelete, onApplicants }) {
         <button
           type="button"
           onClick={onApplicants}
-          className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-4 py-2 text-xs font-bold text-brand-700 hover:bg-brand-100"
+          className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3.5 py-2 text-xs font-bold text-brand-700 hover:bg-brand-100"
         >
           <FiUsers size={13} />
           Manage Applicants
@@ -940,7 +1002,7 @@ function DriveCard({ drive, onEdit, onDelete, onApplicants }) {
         <button
           type="button"
           onClick={onApplicants}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
         >
           <FiEye size={13} />
           View Pipeline

@@ -17,6 +17,8 @@ const HrNotificationsPage = lazy(() => import('../modules/hr/pages/HrNotificatio
 const HrAtsPage = lazy(() => import('../modules/hr/pages/HrAtsPage'));
 const EmployeeVerificationPage = lazy(() => import('../modules/hr/pages/EmployeeVerificationPage'));
 const HrCampusDrivesPage = lazy(() => import('../modules/hr/pages/HrCampusDrivesPage'));
+const HrCampusConnectionsPage = lazy(() => import('../modules/hr/pages/HrCampusConnectionsPage'));
+const HrCampusConnectionActivityPage = lazy(() => import('../modules/hr/pages/HrCampusConnectionActivityPage'));
 
 const hrRoutes = [
   {
@@ -42,6 +44,9 @@ const hrRoutes = [
       { path: 'ats', element: <HrAtsPage /> },
       { path: 'notifications', element: <HrNotificationsPage /> },
       { path: 'employee-verification', element: <EmployeeVerificationPage /> },
+      { path: 'campus-connections', element: <HrCampusConnectionsPage /> },
+      { path: 'campus-connections/activity', element: <Navigate to="sent" replace /> },
+      { path: 'campus-connections/activity/:view', element: <HrCampusConnectionActivityPage /> },
       { path: 'campus-drives', element: <HrCampusDrivesPage /> }
     ]
   },
