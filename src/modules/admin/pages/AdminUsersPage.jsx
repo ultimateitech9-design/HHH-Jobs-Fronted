@@ -20,15 +20,19 @@ import {
   updateAdminUserStatus
 } from '../services/adminApi';
 import { getDashboardPathByRole } from '../../../utils/auth';
+import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
 import {
   createManagedAccount,
   deleteManagedAccount,
   getManagedAccounts
 } from '../../../utils/managedUsers';
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const initialFilters = {
   role: 'all',
   status: 'all',
+  hrClearance: 'all',
   search: ''
 };
 
@@ -64,6 +68,16 @@ const AdminUsersPage = () => {
     role: 'dataentry',
     department: 'Operations'
   });
+  const normalizedAccountEmail = String(accountForm.email || '').trim().toLowerCase();
+  const emailValidationMessage = !normalizedAccountEmail
+    ? 'Use a valid work email like user@example.com.'
+    : (emailRegex.test(normalizedAccountEmail) ? 'Valid work email format.' : 'Enter a valid email address like user@example.com.');
+  const authKeyPolicyError = accountForm.password
+    ? getPasswordPolicyError(accountForm.password, '')
+    : '';
+  const authKeyValidationMessage = accountForm.password
+    ? (authKeyPolicyError || 'Strong Auth Key ready to use.')
+    : PASSWORD_POLICY_HELPER;
 
   const loadUsers = async (nextFilters = filters) => {
     setLoading(true);
@@ -101,8 +115,21 @@ const AdminUsersPage = () => {
     setError('');
     setMessage('');
 
-    if (!accountForm.name || !accountForm.email) {
+    const email = normalizedAccountEmail;
+    const passwordError = getPasswordPolicyError(accountForm.password, 'Auth Key is required.');
+
+    if (!accountForm.name || !email) {
       setError('Name and Email are required.');
+      return;
+    }
+
+    if (!emailRegex.test(email)) {
+      setError('Enter a valid email address like user@example.com.');
+      return;
+    }
+
+    if (passwordError) {
+      setError(passwordError.replace('Password', 'Auth Key'));
       return;
     }
 
@@ -178,6 +205,15 @@ const AdminUsersPage = () => {
       }
     ];
   }, [users]);
+
+  const filteredSecurityUsers = useMemo(() => {
+    if (filters.hrClearance === 'all') return users;
+    return users.filter((user) => {
+      const isHr = String(user.role || '').toLowerCase() === 'hr';
+      if (!isHr) return false;
+      return filters.hrClearance === 'verified' ? Boolean(user.is_hr_approved) : !user.is_hr_approved;
+    });
+  }, [users, filters.hrClearance]);
 
   const applyLocalPatch = (userId, patch) => {
     setUsers((current) => current.map((user) => (user.id === userId ? { ...user, ...patch } : user)));
@@ -295,21 +331,36 @@ const AdminUsersPage = () => {
                 <div className="space-y-1.5 col-span-2 sm:col-span-1">
                   <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Email</label>
                   <input
+                    type="email"
                     value={accountForm.email}
                     placeholder="name@company.com"
-                    onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
+                    onChange={(e) => {
+                      setAccountForm({ ...accountForm, email: e.target.value });
+                      if (error) setError('');
+                    }}
+                    autoComplete="email"
+                    inputMode="email"
+                    aria-invalid={Boolean(normalizedAccountEmail) && !emailRegex.test(normalizedAccountEmail)}
                     className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-sm font-medium focus:ring-2 focus:ring-brand-500"
                   />
+                  <p className={`text-[11px] font-semibold ${normalizedAccountEmail && !emailRegex.test(normalizedAccountEmail) ? 'text-rose-600' : 'text-neutral-500'}`}>{emailValidationMessage}</p>
                 </div>
                 <div className="space-y-1.5 col-span-2 sm:col-span-1">
                   <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Auth Key</label>
                   <input
-                    type="text"
+                    type="password"
                     value={accountForm.password}
-                    placeholder="Min 6 chars"
-                    onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
+                    placeholder="Strong auth key"
+                    onChange={(e) => {
+                      setAccountForm({ ...accountForm, password: e.target.value });
+                      if (error) setError('');
+                    }}
+                    autoComplete="new-password"
+                    minLength={8}
+                    aria-invalid={Boolean(authKeyPolicyError)}
                     className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-sm font-medium focus:ring-2 focus:ring-brand-500"
                   />
+                  <p className={`text-[11px] font-semibold ${authKeyPolicyError ? 'text-rose-600' : 'text-neutral-500'}`}>{authKeyValidationMessage}</p>
                 </div>
               </div>
 
@@ -449,6 +500,19 @@ const AdminUsersPage = () => {
                 <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
               </div>
 
+              <div className="relative w-full sm:w-auto">
+                <select
+                  value={filters.hrClearance}
+                  onChange={(e) => setFilters({ ...filters, hrClearance: e.target.value })}
+                  className="w-full appearance-none rounded-xl border border-neutral-200 bg-white py-2 pl-3 pr-8 text-sm font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500 sm:min-w-[160px]"
+                >
+                  <option value="all">All HR Clearance</option>
+                  <option value="verified">Verified</option>
+                  <option value="pending">Pending</option>
+                </select>
+                <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
+              </div>
+
               <div className="relative w-full flex-1 sm:min-w-[200px]">
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
@@ -488,14 +552,14 @@ const AdminUsersPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 bg-white">
-              {users.length === 0 ? (
+              {filteredSecurityUsers.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="p-10 text-center text-sm font-medium text-neutral-500">
                     No users matched the current security filters.
                   </td>
                 </tr>
               ) : (
-                users.map((user) => {
+                filteredSecurityUsers.map((user) => {
                   const isHr = String(user.role).toLowerCase() === 'hr';
                   const isStatusBusy = busyAction === `status:${user.id}`;
                   const isApprovalBusy = busyAction === `approval:${user.id}`;

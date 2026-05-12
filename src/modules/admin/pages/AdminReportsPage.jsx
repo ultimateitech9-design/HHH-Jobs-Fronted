@@ -10,7 +10,8 @@ import {
   FiX,
   FiChevronDown,
   FiMessageSquare,
-  FiFileText
+  FiFileText,
+  FiSend
 } from 'react-icons/fi';
 import { formatDateTime, getAdminReports, updateAdminReport } from '../services/adminApi';
 
@@ -119,6 +120,8 @@ const AdminReportsPage = () => {
       [reportId]: {
         status: current[reportId]?.status || '',
         adminNote: current[reportId]?.adminNote || '',
+        escalationAction: current[reportId]?.escalationAction || '',
+        assignedTeam: current[reportId]?.assignedTeam || '',
         [key]: value
       }
     }));
@@ -127,7 +130,9 @@ const AdminReportsPage = () => {
   const getDraft = (report) => (
     reportDrafts[report.id] || {
       status: report.status || '',
-      adminNote: report.adminNote || ''
+      adminNote: report.adminNote || '',
+      escalationAction: report.escalationAction || '',
+      assignedTeam: report.assignedTeam || ''
     }
   );
 
@@ -143,10 +148,16 @@ const AdminReportsPage = () => {
     setError('');
     setMessage('');
 
+    const workflowNote = [
+      draft.adminNote || '',
+      draft.escalationAction ? `Next action: ${draft.escalationAction}` : '',
+      draft.assignedTeam ? `Assigned to: ${draft.assignedTeam}` : ''
+    ].filter(Boolean).join('\n');
+
     try {
       const updated = await updateAdminReport(report.id, {
         status: nextStatus,
-        adminNote: draft.adminNote || ''
+        adminNote: workflowNote
       });
       updateLocalReport(report.id, updated);
       setMessage(`Support ticket ${report.id.slice(-6).toUpperCase()} updated.`);
@@ -320,7 +331,7 @@ const AdminReportsPage = () => {
                              <button 
                                className="bg-brand-600 text-white px-3 py-1.5 rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50 shrink-0 font-bold text-xs flex items-center gap-1.5 shadow-sm border border-brand-700"
                                onClick={() => handleUpdateReport(report)}
-                               disabled={isBusy || (draft.status === report.status && draft.adminNote === report.adminNote)}
+                               disabled={isBusy || (draft.status === report.status && draft.adminNote === report.adminNote && !draft.escalationAction && !draft.assignedTeam)}
                                title="Save Resolution"
                              >
                                {isBusy ? '...' : <><FiCheck size={14} /> Update</>}
@@ -336,6 +347,35 @@ const AdminReportsPage = () => {
                                onChange={(e) => updateDraft(report.id, 'adminNote', e.target.value)}
                              />
                            </div>
+                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                             <select
+                               value={draft.escalationAction}
+                               onChange={(e) => updateDraft(report.id, 'escalationAction', e.target.value)}
+                               className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500"
+                             >
+                               <option value="">Next workflow action</option>
+                               <option value="Escalate to resolver team">Escalate to resolver team</option>
+                               <option value="Assign owner for final review">Assign owner for final review</option>
+                               <option value="Send for resolution">Send for resolution</option>
+                             </select>
+                             <select
+                               value={draft.assignedTeam}
+                               onChange={(e) => updateDraft(report.id, 'assignedTeam', e.target.value)}
+                               className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500"
+                             >
+                               <option value="">Responsible team</option>
+                               <option value="Trust & Safety">Trust & Safety</option>
+                               <option value="Support Desk">Support Desk</option>
+                               <option value="Platform Ops">Platform Ops</option>
+                               <option value="Audit Desk">Audit Desk</option>
+                             </select>
+                           </div>
+                           {(draft.escalationAction || draft.assignedTeam) ? (
+                             <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] font-bold text-blue-700">
+                               <FiSend size={13} />
+                               {draft.escalationAction || 'Workflow selected'}{draft.assignedTeam ? ` - ${draft.assignedTeam}` : ''}
+                             </div>
+                           ) : null}
                            {report.adminNote && report.adminNote !== draft.adminNote && (
                               <div className="text-[10px] text-neutral-500 font-medium">
                                 Last saved note: <span className="italic">&ldquo;{report.adminNote}&rdquo;</span>

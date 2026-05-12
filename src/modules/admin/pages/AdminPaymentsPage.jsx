@@ -262,8 +262,15 @@ const AdminPaymentsPage = () => {
     setError('');
     setMessage('');
 
+    if (status === 'pending' && !window.confirm('Revert this paid commercial purchase to Pending? This should be used only for mistaken approvals.')) {
+      return;
+    }
+
     try {
-      const updated = await updateAdminRolePlanPurchaseStatus(purchaseId, { status });
+      const updated = await updateAdminRolePlanPurchaseStatus(purchaseId, {
+        status,
+        note: status === 'pending' ? 'Approval reverted to pending by admin.' : ''
+      });
       patchLocalCommercialPurchase(purchaseId, updated);
       setMessage(`Commercial purchase ${purchaseId.slice(-6).toUpperCase()} marked as ${status}.`);
       setTimeout(() => setMessage(''), 3000);
@@ -527,6 +534,11 @@ const AdminPaymentsPage = () => {
                     {purchase.status === 'pending' ? (
                       <button onClick={() => handleUpdateCommercialPurchaseStatus(purchase.id, 'paid')} className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-black text-white hover:bg-emerald-400">
                         Approve
+                      </button>
+                    ) : null}
+                    {purchase.status === 'paid' ? (
+                      <button onClick={() => handleUpdateCommercialPurchaseStatus(purchase.id, 'pending')} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-black text-amber-700 hover:bg-amber-100">
+                        Revert to Pending
                       </button>
                     ) : null}
                   </td>

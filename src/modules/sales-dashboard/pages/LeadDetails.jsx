@@ -14,6 +14,7 @@ const LeadDetails = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [followupHistory, setFollowupHistory] = useState([]);
   const [draft, setDraft] = useState({
     stage: 'new',
     onboardingStatus: 'prospect',
@@ -35,6 +36,12 @@ const LeadDetails = () => {
         followupNotes: response.data?.followupNotes || '',
         planInterestSlug: response.data?.planInterestSlug || ''
       });
+      setFollowupHistory(response.data?.followupNotes ? [{
+        id: `${response.data.id || 'lead'}-saved`,
+        note: response.data.followupNotes,
+        nextFollowupAt: response.data.nextFollowupAt,
+        savedAt: response.data.lastFollowupAt || response.data.updatedAt || response.data.createdAt
+      }] : []);
       setError(response.error || '');
       setLoading(false);
     };
@@ -48,16 +55,24 @@ const LeadDetails = () => {
     setSaving(true);
     setError('');
     setMessage('');
+    const savedAt = new Date().toISOString();
     try {
       const updated = await updateLead(lead.id, {
         status: draft.stage,
         onboarding_status: draft.onboardingStatus,
         next_followup_at: draft.nextFollowupAt ? new Date(draft.nextFollowupAt).toISOString() : null,
+        last_followup_at: savedAt,
         followup_notes: draft.followupNotes,
         plan_interest_slug: draft.planInterestSlug
       });
       setLead(updated);
-      setMessage('Lead updated successfully.');
+      setFollowupHistory((current) => [{
+        id: `${lead.id}-${Date.now()}`,
+        note: draft.followupNotes,
+        nextFollowupAt: draft.nextFollowupAt,
+        savedAt
+      }, ...current]);
+      setMessage('Follow-up saved successfully.');
     } catch (updateError) {
       setError(String(updateError.message || 'Unable to update lead.'));
     } finally {
@@ -134,6 +149,23 @@ const LeadDetails = () => {
               </button>
             </div>
           </form>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <h3 className="text-base font-extrabold text-slate-900">Follow-up History</h3>
+            {followupHistory.length ? (
+              <ul className="mt-3 space-y-2">
+                {followupHistory.map((item) => (
+                  <li key={item.id} className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
+                    <div className="font-bold text-slate-800">{item.note || 'Follow-up saved without notes.'}</div>
+                    <div className="mt-1 text-xs font-semibold text-slate-500">
+                      Saved {formatDateTime(item.savedAt)} | Next {formatDateTime(item.nextFollowupAt)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-slate-500">No follow-up updates saved yet.</p>
+            )}
+          </div>
         </section>
       ) : !loading ? (
         <section className="panel-card">

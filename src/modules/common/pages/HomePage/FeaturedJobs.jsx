@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Bookmark, Briefcase, Clock3, MapPin, Sparkles } from 'lucide-react';
 import AnimatedSection from '../../../../shared/components/AnimatedSection';
+import { getCurrentUser } from '../../../../utils/auth';
+import { getStudentSavedJobs, saveJobForStudent } from '../../../student/services/studentApi';
 import { buildCompanyLogoUrl } from '../../services/companyLogoUrl';
 
 const getCompanyMark = (name = '') =>
@@ -85,6 +87,80 @@ export function FeaturedJobs({
   error,
   onRefresh
 }) {
+  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+  const [savedJobIds, setSavedJobIds] = useState(new Set());
+  const [saveMessage, setSaveMessage] = useState('');
+
+  useEffect(() => {
+    const syncUser = () => setCurrentUser(getCurrentUser());
+
+    window.addEventListener('auth-changed', syncUser);
+    window.addEventListener('storage', syncUser);
+
+    return () => {
+      window.removeEventListener('auth-changed', syncUser);
+      window.removeEventListener('storage', syncUser);
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSavedJobs = async () => {
+      if (!currentUser) {
+        setSavedJobIds(new Set());
+        return;
+      }
+
+      const response = await getStudentSavedJobs();
+      if (!mounted) return;
+
+      if (response.error) {
+        return;
+      }
+
+      setSavedJobIds(new Set((response.data || []).map((item) => item.jobId || item.job_id).filter(Boolean)));
+    };
+
+    loadSavedJobs();
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentUser]);
+
+  const handleSaveJob = async (event, job) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const jobId = job?.id || job?._id;
+
+    if (!currentUser) {
+      navigate(`/login?redirect=${encodeURIComponent(getJobHref(job))}`);
+      return;
+    }
+
+    if (!jobId || job.sourceType === 'external' || job.isFallback) {
+      setSaveMessage('Only verified HHH Jobs roles can be saved from this section.');
+      return;
+    }
+
+    try {
+      await saveJobForStudent(jobId);
+      setSavedJobIds((current) => new Set([...current, jobId]));
+      setSaveMessage('Job saved successfully.');
+    } catch (saveError) {
+      if (/already saved/i.test(String(saveError.message || ''))) {
+        setSavedJobIds((current) => new Set([...current, jobId]));
+        setSaveMessage('Job saved successfully.');
+        return;
+      }
+
+      setSaveMessage(saveError.message || 'Unable to save this job right now.');
+    }
+  };
+
   return (
     <section id="jobs" className="bg-[linear-gradient(180deg,rgba(243,247,253,0.4),rgba(255,248,236,0.2))] px-4 pb-12 pt-5 md:pb-14 md:pt-6">
       <div className="container mx-auto max-w-[1420px]">
@@ -106,6 +182,12 @@ export function FeaturedJobs({
           <article className="mb-8 rounded-2xl border border-danger-200 bg-danger-50 p-6 text-danger-700">
             <h3 className="font-bold">{error}</h3>
           </article>
+        ) : null}
+
+        {saveMessage ? (
+          <div className="mb-4 rounded-2xl border border-brand-100 bg-white px-4 py-3 text-sm font-semibold text-brand-700 shadow-sm">
+            {saveMessage}
+          </div>
         ) : null}
 
         {loading ? (
@@ -141,8 +223,13 @@ export function FeaturedJobs({
                             <Sparkles className="h-2.5 w-2.5" /> Hot
                           </span>
                         ) : null}
-                        <button type="button" className="text-slate-400 transition-colors hover:text-brand-600">
-                          <Bookmark className="h-3.5 w-3.5" />
+                        <button
+                          type="button"
+                          className={`text-slate-400 transition-colors hover:text-brand-600 ${savedJobIds.has(job.id || job._id) ? 'text-brand-600' : ''}`}
+                          onClick={(event) => handleSaveJob(event, job)}
+                          aria-label="Save job"
+                        >
+                          <Bookmark className="h-3.5 w-3.5" fill={savedJobIds.has(job.id || job._id) ? 'currentColor' : 'none'} />
                         </button>
                       </div>
                     </div>

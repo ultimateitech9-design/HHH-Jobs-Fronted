@@ -5,7 +5,7 @@ import SupportHeader from '../components/SupportHeader';
 import TicketReplyBox from '../components/TicketReplyBox';
 import TicketStatusBadge from '../components/TicketStatusBadge';
 import { formatDateTime } from '../utils/formatDate';
-import { getTicketDetails, replyToTicket, escalateTicket, addInternalNote } from '../services/ticketApi';
+import { getTicketDetails, replyToTicket, escalateTicket, addInternalNote, updateTicket } from '../services/ticketApi';
 
 const TicketDetails = () => {
   const { ticketId: ticketIdParam } = useParams();
@@ -23,6 +23,7 @@ const TicketDetails = () => {
   const [addingNote, setAddingNote] = useState(false);
   const [noteError, setNoteError] = useState('');
   const [internalNotes, setInternalNotes] = useState([]);
+  const [assignedTo, setAssignedTo] = useState('');
   const ticketId = ticketIdParam || searchParams.get('ticketId') || searchParams.get('id') || '';
 
   const slaDeadline = useMemo(() => {
@@ -39,6 +40,7 @@ const TicketDetails = () => {
       const response = await getTicketDetails(ticketId);
       const data = response.data || null;
       setTicket(data);
+      setAssignedTo(data?.assignedTo || '');
       if (data?.replies) {
         setInternalNotes(data.replies.filter(r => r.isInternal));
       }
@@ -88,6 +90,24 @@ const TicketDetails = () => {
     setInternalNotes((prev) => [...prev, result.data]);
     setInternalNote('');
     setAddingNote(false);
+  };
+
+  const handleTicketUpdate = async (updates) => {
+    if (!ticket?.id) return;
+    setSending(true);
+    setError('');
+    const result = await updateTicket(ticket.id, {
+      status: updates.status,
+      priority: updates.priority,
+      assignee_name: updates.assignedTo
+    });
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setTicket((current) => ({ ...(current || {}), ...result.data }));
+      if (result.data?.assignedTo) setAssignedTo(result.data.assignedTo);
+    }
+    setSending(false);
   };
 
   return (
@@ -167,6 +187,22 @@ const TicketDetails = () => {
                   <FiAlertTriangle size={14} /> Escalate
                 </button>
               )}
+            </div>
+            <div className="mb-4 flex flex-wrap items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <button type="button" className="btn-secondary" onClick={() => handleTicketUpdate({ status: 'open' })}>Open</button>
+              <button type="button" className="btn-secondary" onClick={() => handleTicketUpdate({ status: 'pending' })}>Assign Review</button>
+              <button type="button" className="btn-primary" onClick={() => handleTicketUpdate({ status: 'resolved' })}>Resolve</button>
+              <button type="button" className="btn-secondary" onClick={() => handleTicketUpdate({ status: 'closed' })}>Close Ticket</button>
+              <label className="min-w-[220px] flex-1 text-xs font-bold uppercase tracking-wide text-slate-500">
+                Assigned User
+                <input
+                  value={assignedTo}
+                  onChange={(event) => setAssignedTo(event.target.value)}
+                  placeholder="Support owner"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold normal-case tracking-normal"
+                />
+              </label>
+              <button type="button" className="btn-secondary" onClick={() => handleTicketUpdate({ assignedTo })}>Save Assignee</button>
             </div>
             <div className="dash-list">
               <li><strong>Ticket ID</strong><span>{ticket.id}</span></li>

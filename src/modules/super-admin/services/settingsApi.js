@@ -22,17 +22,12 @@ export const getSystemSettings = async () =>
     extract: (payload) => payload?.settings || payload || {}
   });
 
-export const saveSystemSettings = async (settings) => {
-  try {
-    return await strictRequest({
-      path: `${SUPER_ADMIN_BASE}/settings`,
-      options: { method: 'PUT', body: JSON.stringify(settings) },
-      extract: (payload) => payload?.settings || payload
-    });
-  } catch (error) {
-    return settings;
-  }
-};
+export const saveSystemSettings = async (settings) =>
+  strictRequest({
+    path: `${SUPER_ADMIN_BASE}/settings`,
+    options: { method: 'PUT', body: JSON.stringify(settings) },
+    extract: (payload) => payload?.settings || payload
+  });
 
 export const saveRolesPermissions = async (roles) => {
   try {

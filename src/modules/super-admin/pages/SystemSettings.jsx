@@ -37,9 +37,17 @@ const SystemSettings = () => {
 
   const handleSave = async () => {
     setSaving(true);
-    const saved = await saveSystemSettings(settings);
-    setSettings(saved);
-    setSaving(false);
+    setError('');
+
+    try {
+      const saved = await saveSystemSettings(settings);
+      setSettings(saved);
+      setIsDemo(false);
+    } catch (saveError) {
+      setError(saveError.message || 'Unable to save system settings.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

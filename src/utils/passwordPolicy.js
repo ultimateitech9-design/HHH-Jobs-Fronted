@@ -1,15 +1,16 @@
 export const PASSWORD_POLICY_HELPER =
-  'Minimum 8 characters with at least 1 letter, 1 number, and 1 special symbol.';
+  'Minimum 8 characters with uppercase, lowercase, number, and special symbol.';
 
 export const PASSWORD_POLICY_ERROR =
-  'Password must be at least 8 characters and include a letter, a number, and a special symbol.';
+  'Password must be at least 8 characters and include uppercase, lowercase, number, and special symbol.';
 
 export const isStrongPassword = (value) => {
   const password = String(value || '');
 
   return (
     password.length >= 8
-    && /[A-Za-z]/.test(password)
+    && /[A-Z]/.test(password)
+    && /[a-z]/.test(password)
     && /\d/.test(password)
     && /[^A-Za-z0-9]/.test(password)
   );

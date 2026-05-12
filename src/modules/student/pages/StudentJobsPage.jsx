@@ -25,7 +25,7 @@ import { getStudentJobs } from '../services/studentApi';
 import { getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
 
 const FEED_PAGE_LIMIT = 50;
-const JOBS_PER_PAGE = 9;
+const JOBS_PER_PAGE = 8;
 
 const makeDefaultFilters = (audience = '') => ({
   search: '',
@@ -451,13 +451,13 @@ const StudentJobsPage = ({
 
         <div className="space-y-4">
           {jobsState.loading ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="student-job-grid">
               {[1, 2, 3, 4, 5, 6].map((item) => (
                 <div key={item} className="h-52 animate-pulse rounded-[1.45rem] bg-slate-100" />
               ))}
             </div>
           ) : totalJobs > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="student-job-grid">
               {paginatedJobs.map((job) => {
                 const cardJob = job.__kind === 'external' ? job : mapInternalJobToExternalCard(job);
 

@@ -495,7 +495,7 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
         </div>
       ) : (
         <>
-          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="student-job-grid mt-6">
             {jobsState.jobs.map((job) => (
               <ExternalJobCard
                 key={job.id}

@@ -59,6 +59,11 @@ const writeManagedAccounts = (accounts) => {
 };
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+const isStrongAuthKey = (value) => {
+  const password = String(value || '');
+  return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
+};
 const nowIso = () => new Date().toISOString();
 
 export const getManagedAccounts = () => filterDeletedUsers(readManagedAccounts());
@@ -74,6 +79,14 @@ export const createManagedAccount = ({ name, email, password, role, phone, depar
 
   if (!normalizedEmail || !password || !role) {
     throw new Error('Name, email, password, and role are required.');
+  }
+
+  if (!isValidEmail(normalizedEmail)) {
+    throw new Error('Enter a valid email address like user@example.com.');
+  }
+
+  if (!isStrongAuthKey(password)) {
+    throw new Error('Auth Key must be at least 8 characters and include uppercase, lowercase, number, and special symbol.');
   }
 
   if (current.some((account) => normalizeEmail(account.email) === normalizedEmail)) {
