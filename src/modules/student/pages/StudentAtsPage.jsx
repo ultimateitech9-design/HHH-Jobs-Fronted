@@ -93,30 +93,57 @@ const CASE_COVERAGE = [
 ];
 
 const scoreCards = [
-  { key: 'keywordScore', label: 'Keywords', icon: FiZap },
-  { key: 'similarityScore', label: 'Role fit', icon: FiTrendingUp },
+  { key: 'mustHaveScore', label: 'Core skill fit', icon: FiZap },
+  { key: 'similarityScore', label: 'Role evidence', icon: FiTrendingUp },
+  { key: 'titleScore', label: 'Title alignment', icon: FiTarget },
+  { key: 'seniorityScore', label: 'Seniority fit', icon: FiActivity },
   { key: 'formatScore', label: 'Format', icon: FiCheckCircle },
   { key: 'impactScore', label: 'Impact', icon: FiBarChart2 }
 ];
+
+const BUSINESS_FLAG_LABELS = {
+  insufficient_core_skills: 'Core skill coverage is still below the target role requirements.',
+  role_alignment_low: 'Resume title and positioning are weaker than the underlying project evidence.',
+  evidence_quality_low: 'Impact evidence is light, so recruiter confidence may drop.',
+  seniority_gap: 'Experience depth looks below the role expectation.',
+  possible_overqualification: 'Resume may look overqualified for this role.',
+  low_analysis_confidence: 'ATS confidence is limited because the target or resume evidence is thin.'
+};
+
+const humanizeBusinessFlag = (flag = '') =>
+  BUSINESS_FLAG_LABELS[flag] || String(flag || '').replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
 const normalizeResult = (result = {}) => ({
   ...result,
   score: Number(result.score || 0),
   keywordScore: Number(result.keywordScore || 0),
+  mustHaveScore: Number(result.mustHaveScore || 0),
   similarityScore: Number(result.similarityScore || 0),
+  titleScore: Number(result.titleScore || 0),
+  seniorityScore: Number(result.seniorityScore || 0),
+  benchmarkScore: Number(result.benchmarkScore || 0),
   formatScore: Number(result.formatScore || 0),
   impactScore: Number(result.impactScore || 0),
   confidenceScore: Number(result.confidenceScore || 0),
   resumeWordCount: Number(result.resumeWordCount || 0),
+  resumeYearsExperience: Number.isFinite(Number(result.resumeYearsExperience)) ? Number(result.resumeYearsExperience) : null,
+  aiCalibrationDelta: Number(result.aiCalibrationDelta || 0),
   matchedKeywords: Array.isArray(result.matchedKeywords) ? result.matchedKeywords : [],
   missingKeywords: Array.isArray(result.missingKeywords) ? result.missingKeywords : [],
+  mustHaveKeywords: Array.isArray(result.mustHaveKeywords) ? result.mustHaveKeywords : [],
   warnings: Array.isArray(result.warnings) ? result.warnings : [],
   suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
   sectionCoverage: Array.isArray(result.sectionCoverage) ? result.sectionCoverage : [],
   riskFlags: Array.isArray(result.riskFlags) ? result.riskFlags : [],
+  businessLogicFlags: Array.isArray(result.businessLogicFlags) ? result.businessLogicFlags : [],
   priorityActions: Array.isArray(result.priorityActions) ? result.priorityActions : [],
   aiStrengths: Array.isArray(result.aiStrengths) ? result.aiStrengths : [],
-  aiPriorityEdits: Array.isArray(result.aiPriorityEdits) ? result.aiPriorityEdits : []
+  aiPriorityEdits: Array.isArray(result.aiPriorityEdits) ? result.aiPriorityEdits : [],
+  benchmarkKeywords: Array.isArray(result.benchmarkKeywords) ? result.benchmarkKeywords : [],
+  seniorityInsights: String(result.seniorityInsights || '').trim(),
+  aiCalibrationReason: String(result.aiCalibrationReason || '').trim(),
+  aiSeniorityAssessment: String(result.aiSeniorityAssessment || '').trim(),
+  aiBusinessVerdict: String(result.aiBusinessVerdict || '').trim()
 });
 
 const ChipList = ({ items = [], tone = 'slate', emptyText }) => {
@@ -781,6 +808,21 @@ const StudentAtsPage = () => {
                     <p className="mt-1 text-sm font-medium text-slate-600">
                       Confidence {result.confidenceScore || 0}% · {result.resumeWordCount || 0} resume words analyzed
                     </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="rounded-full border border-white/80 bg-white px-3 py-1 text-xs font-bold text-slate-700">
+                        Target {result.targetRole || selectedJobTitle}
+                      </span>
+                      {result.resumeYearsExperience !== null ? (
+                        <span className="rounded-full border border-white/80 bg-white px-3 py-1 text-xs font-bold text-slate-700">
+                          Resume experience {result.resumeYearsExperience} year{result.resumeYearsExperience === 1 ? '' : 's'}
+                        </span>
+                      ) : null}
+                      {result.aiPowered && result.aiCalibrationDelta !== 0 ? (
+                        <span className={`rounded-full border px-3 py-1 text-xs font-bold ${result.aiCalibrationDelta > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+                          AI calibration {result.aiCalibrationDelta > 0 ? '+' : ''}{result.aiCalibrationDelta}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="inline-flex h-14 w-14 items-center justify-center rounded-[1rem] bg-white text-navy shadow-sm">
                     <FiShield size={24} />
@@ -807,6 +849,57 @@ const StudentAtsPage = () => {
                     </div>
                   );
                 })}
+              </div>
+
+              <div className="grid gap-3 xl:grid-cols-[1.15fr,0.85fr]">
+                <div className="rounded-[1rem] border border-slate-200 bg-white p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-black text-navy">ATS decision logic</p>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                      Business aware
+                    </span>
+                  </div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-[0.95rem] border border-slate-100 bg-slate-50 p-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Must-have role stack</p>
+                      <div className="mt-2">
+                        <ChipList items={result.mustHaveKeywords} tone="amber" emptyText="No must-have skill bundle returned." />
+                      </div>
+                    </div>
+                    <div className="rounded-[0.95rem] border border-slate-100 bg-slate-50 p-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Role benchmark</p>
+                      <div className="mt-2">
+                        <ChipList items={result.benchmarkKeywords} tone="sky" emptyText="No role benchmark keywords were needed." />
+                      </div>
+                    </div>
+                  </div>
+                  {result.businessLogicFlags.length > 0 ? (
+                    <div className="mt-3 rounded-[0.95rem] border border-amber-200 bg-amber-50 p-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-amber-700">Business logic checks</p>
+                      <ul className="mt-2 space-y-1.5 text-sm leading-6 text-amber-900">
+                        {result.businessLogicFlags.map((item) => <li key={item}>• {humanizeBusinessFlag(item)}</li>)}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="rounded-[1rem] border border-slate-200 bg-white p-3">
+                  <p className="text-sm font-black text-navy">Recruiter reading</p>
+                  <div className="mt-3 space-y-3">
+                    <div className="rounded-[0.95rem] border border-slate-100 bg-slate-50 p-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Seniority view</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-700">
+                        {result.aiSeniorityAssessment || result.seniorityInsights || 'Seniority signal is stable for this comparison.'}
+                      </p>
+                    </div>
+                    <div className="rounded-[0.95rem] border border-slate-100 bg-slate-50 p-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Business verdict</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-700">
+                        {result.aiBusinessVerdict || result.aiCalibrationReason || 'No extra business verdict returned.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="rounded-[1rem] border border-sky-200 bg-sky-50 p-3">
@@ -837,11 +930,11 @@ const StudentAtsPage = () => {
 
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 p-3">
-                  <p className="mb-2 text-xs font-bold uppercase text-emerald-700">Matched keywords</p>
+                  <p className="mb-2 text-xs font-bold uppercase text-emerald-700">Matched role signals</p>
                   <ChipList items={result.matchedKeywords} tone="emerald" emptyText="No strong keyword matches returned." />
                 </div>
                 <div className="rounded-[1rem] border border-rose-200 bg-rose-50 p-3">
-                  <p className="mb-2 text-xs font-bold uppercase text-rose-700">Missing keywords</p>
+                  <p className="mb-2 text-xs font-bold uppercase text-rose-700">Add or strengthen</p>
                   <ChipList items={result.missingKeywords} tone="rose" emptyText="No missing keywords detected." />
                 </div>
               </div>
