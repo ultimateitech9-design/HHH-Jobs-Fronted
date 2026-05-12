@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import AdminHeader from '../components/AdminHeader';
 import DashboardStatsCards from '../components/DashboardStatsCards';
 import { getSystemSettings, saveSystemSettings } from '../services/settingsApi';
+import { dispatchMaintenanceModeUpdate } from '../../../shared/utils/maintenanceMode';
 
 const SystemSettings = () => {
   const [settings, setSettings] = useState(null);
@@ -41,7 +42,9 @@ const SystemSettings = () => {
 
     try {
       const saved = await saveSystemSettings(settings);
-      setSettings(saved);
+      const nextSettings = { ...settings, ...saved };
+      setSettings(nextSettings);
+      dispatchMaintenanceModeUpdate(Boolean(nextSettings.maintenanceMode));
       setIsDemo(false);
     } catch (saveError) {
       setError(saveError.message || 'Unable to save system settings.');

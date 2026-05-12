@@ -5,6 +5,11 @@ import { syncSessionUser } from '../../../core/auth/sessionSync';
 import NotificationRuntime from '../../../core/notifications/NotificationRuntime';
 import { apiFetch, hasApiAccessToken } from '../../../utils/api';
 import { getDashboardPathByRole } from '../../../utils/auth';
+import {
+  readMaintenanceModeSnapshot,
+  subscribeToMaintenanceModeUpdates,
+  writeMaintenanceModeSnapshot
+} from '../../utils/maintenanceMode';
 import PublicFooter from './publicShell/PublicFooter';
 import PublicNavbar from './publicShell/PublicNavbar';
 import ScrollToTopButton from './publicShell/ScrollToTopButton';
@@ -21,11 +26,13 @@ const publicShellStyle = {
 };
 
 const RootLayout = () => {
+  const initialMaintenanceSnapshot = readMaintenanceModeSnapshot();
   const { user, clearAuth } = useAuthStore();
   const userId = user?.id;
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(initialMaintenanceSnapshot.enabled);
+  const [isMaintenanceResolved, setIsMaintenanceResolved] = useState(initialMaintenanceSnapshot.known);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -56,22 +63,45 @@ const RootLayout = () => {
   useEffect(() => {
     let mounted = true;
 
+    const applyMaintenanceSnapshot = (snapshot) => {
+      if (!mounted || !snapshot) return;
+      setMaintenanceMode(Boolean(snapshot.enabled));
+      setIsMaintenanceResolved(Boolean(snapshot.known));
+    };
+
     const loadMaintenanceMode = async () => {
       try {
-        const response = await apiFetch('/public/settings', { skipAuth: true, timeoutMs: 6000 });
+        const response = await apiFetch('/public/settings', { skipAuth: true, timeoutMs: 6000, cache: 'no-store' });
         const payload = await response.json().catch(() => null);
-        if (mounted) setMaintenanceMode(Boolean(payload?.settings?.maintenanceMode));
+        applyMaintenanceSnapshot(writeMaintenanceModeSnapshot(Boolean(payload?.settings?.maintenanceMode)));
       } catch {
-        if (mounted) setMaintenanceMode(false);
+        applyMaintenanceSnapshot({
+          ...readMaintenanceModeSnapshot(),
+          known: true
+        });
+      }
+    };
+
+    const unsubscribe = subscribeToMaintenanceModeUpdates((snapshot) => {
+      applyMaintenanceSnapshot(snapshot);
+    });
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadMaintenanceMode();
       }
     };
 
     loadMaintenanceMode();
     const intervalId = window.setInterval(loadMaintenanceMode, 15000);
+    window.addEventListener('focus', loadMaintenanceMode);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       mounted = false;
+      unsubscribe();
       window.clearInterval(intervalId);
+      window.removeEventListener('focus', loadMaintenanceMode);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
@@ -122,17 +152,31 @@ const RootLayout = () => {
     navigate('/login', { replace: true });
   };
 
+  const isPublicMaintenanceGatePending = !isPortalWorkbench && !isAuthorizedMaintenanceUser && !isMaintenanceResolved;
+  const shouldShowMaintenanceScreen = !isPortalWorkbench && !isAuthorizedMaintenanceUser && maintenanceMode;
+  const shouldHidePublicShell = isPublicMaintenanceGatePending || shouldShowMaintenanceScreen;
+
   return (
     <div
       className="min-h-screen overflow-x-clip font-sans text-slate-900"
       style={isPortalWorkbench ? undefined : publicShellStyle}
     >
-      {!isPortalWorkbench && !(maintenanceMode && !isAuthorizedMaintenanceUser) ? (
+      {!isPortalWorkbench && !shouldHidePublicShell ? (
         <PublicNavbar user={user} dashboardPath={dashboardPath} onLogout={handleLogout} />
       ) : null}
 
       <main className={`flex min-h-screen flex-col ${!isPortalWorkbench ? 'pt-[calc(var(--public-navbar-height,74px)+2px)]' : ''}`}>
-        {maintenanceMode && !isAuthorizedMaintenanceUser && !isPortalWorkbench ? (
+        {isPublicMaintenanceGatePending ? (
+          <section className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-center text-white">
+            <div className="max-w-xl">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-300">Checking Platform Status</p>
+              <h1 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">Please wait a moment</h1>
+              <p className="mt-4 text-base leading-7 text-slate-300">
+                We are verifying whether HHH Jobs is available before showing public content.
+              </p>
+            </div>
+          </section>
+        ) : shouldShowMaintenanceScreen ? (
           <section className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-center text-white">
             <div className="max-w-xl">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-300">Maintenance Mode</p>
@@ -147,11 +191,11 @@ const RootLayout = () => {
         )}
       </main>
 
-      {!isPortalWorkbench && !hidePublicFooter && !(maintenanceMode && !isAuthorizedMaintenanceUser) ? <PublicFooter /> : null}
-      {!isPortalWorkbench && showScrollTop && !isChatbotOpen && !(maintenanceMode && !isAuthorizedMaintenanceUser) ? <ScrollToTopButton /> : null}
+      {!isPortalWorkbench && !hidePublicFooter && !shouldHidePublicShell ? <PublicFooter /> : null}
+      {!isPortalWorkbench && showScrollTop && !isChatbotOpen && !shouldHidePublicShell ? <ScrollToTopButton /> : null}
 
       <NotificationRuntime />
-      {!isPortalWorkbench && !(maintenanceMode && !isAuthorizedMaintenanceUser) ? (
+      {!isPortalWorkbench && !shouldHidePublicShell ? (
         <Suspense fallback={null}>
           <AiChatbot />
         </Suspense>
