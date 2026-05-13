@@ -229,7 +229,7 @@ const DriveFormModal = ({ initial, onClose, onSaved }) => {
     >
       <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[1.75rem] bg-white p-6 shadow-2xl">
         <div className="mb-6 flex items-center justify-between">
-          <h3 className="text-xl font-extrabold text-navy">{initial?.id ? 'Edit Drive' : 'Create Campus Pool'}</h3>
+          <h3 className="text-xl font-bold text-navy">{initial?.id ? 'Edit Drive' : 'Create Campus Pool'}</h3>
           <button type="button" onClick={onClose}><FiX size={20} className="text-slate-400" /></button>
         </div>
 
@@ -445,7 +445,7 @@ const ApplicantCard = ({ application, driveId, onSaved }) => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h4 className="text-lg font-extrabold text-navy">{application.candidate?.name || 'Applicant'}</h4>
+            <h4 className="text-lg font-bold text-navy">{application.candidate?.name || 'Applicant'}</h4>
             <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${APPLICATION_STATUS_STYLES[application.status] || APPLICATION_STATUS_STYLES.applied}`}>
               {formatStatusLabel(application.status)}
             </span>
@@ -622,7 +622,7 @@ const ApplicantsModal = ({ drive, onClose, onSummaryChange }) => {
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-700">Applicants</p>
-            <h3 className="mt-2 text-2xl font-extrabold text-navy">{drive.company_name} · {drive.job_title}</h3>
+            <h3 className="mt-2 text-2xl font-bold text-navy">{drive.company_name} · {drive.job_title}</h3>
             <p className="mt-1 text-sm text-slate-500">
               {drive.visibility_scope === 'platform_open' ? 'Open to all platform students' : 'Campus-only pool'} · Deadline {formatDateLabel(drive.application_deadline || drive.drive_date)}
             </p>
@@ -640,7 +640,7 @@ const ApplicantsModal = ({ drive, onClose, onSummaryChange }) => {
           ].map((item) => (
             <div key={item.label} className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
-              <p className="mt-2 text-2xl font-extrabold text-navy">{item.value}</p>
+              <p className="mt-2 text-2xl font-bold text-navy">{item.value}</p>
             </div>
           ))}
         </div>
@@ -795,7 +795,7 @@ export default function CampusDrivesPage() {
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-navy">Campus Pools & Drive Workflow</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-navy">Campus Pools & Drive Workflow</h1>
           <p className="mt-1 text-sm text-slate-500">
             Publish pools, collect applications inside the platform, and manage shortlist or placement status without Excel.
           </p>
@@ -822,7 +822,7 @@ export default function CampusDrivesPage() {
           ].map((item) => (
             <article key={item.label} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.18)]">
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
-              <p className="mt-2 text-2xl font-extrabold text-navy">{item.value}</p>
+              <p className="mt-2 text-2xl font-bold text-navy">{item.value}</p>
               <p className="mt-1 text-xs text-slate-500">{item.helper}</p>
             </article>
           ))}
@@ -910,7 +910,7 @@ function DriveCard({ drive, onEdit, onDelete, onApplicants }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-[1.05rem] font-extrabold text-navy">{drive.company_name}</p>
+            <p className="truncate text-[1.05rem] font-bold text-navy">{drive.company_name}</p>
             <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${STATUS_STYLES[displayStatus] || 'bg-slate-100 text-slate-600'}`}>
               {displayStatus}
             </span>
@@ -955,15 +955,15 @@ function DriveCard({ drive, onEdit, onDelete, onApplicants }) {
       <div className="mt-3 grid grid-cols-3 gap-2">
         <div className="rounded-[1rem] border border-slate-100 bg-slate-50 px-3 py-2.5">
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Applicants</p>
-          <p className="mt-1.5 text-xl font-extrabold text-navy">{drive.applicant_count || 0}</p>
+          <p className="mt-1.5 text-xl font-bold text-navy">{drive.applicant_count || 0}</p>
         </div>
         <div className="rounded-[1rem] border border-slate-100 bg-slate-50 px-3 py-2.5">
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Shortlisted</p>
-          <p className="mt-1.5 text-xl font-extrabold text-navy">{drive.shortlisted_count || 0}</p>
+          <p className="mt-1.5 text-xl font-bold text-navy">{drive.shortlisted_count || 0}</p>
         </div>
         <div className="rounded-[1rem] border border-slate-100 bg-slate-50 px-3 py-2.5">
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Selected</p>
-          <p className="mt-1.5 text-xl font-extrabold text-navy">{drive.selected_count || 0}</p>
+          <p className="mt-1.5 text-xl font-bold text-navy">{drive.selected_count || 0}</p>
         </div>
       </div>
 

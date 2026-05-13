@@ -64,7 +64,7 @@ const DashboardQuickActionCard = ({
         {eyebrow ? (
           <p className={`text-[11px] font-black uppercase tracking-[0.18em] ${palette.eyebrow}`}>{eyebrow}</p>
         ) : null}
-        <h3 className="mt-2 font-heading text-[1.12rem] font-extrabold leading-tight text-navy">{title}</h3>
+        <h3 className="mt-2 font-heading text-[1.12rem] font-bold leading-tight text-navy">{title}</h3>
         <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
 
         <span className={`mt-auto inline-flex items-center gap-2 pt-4 text-sm font-bold transition-colors ${palette.cta}`}>

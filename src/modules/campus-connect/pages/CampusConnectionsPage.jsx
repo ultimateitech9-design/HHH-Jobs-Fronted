@@ -466,7 +466,7 @@ export default function CampusConnectionsPage() {
     <div className="mx-auto w-full max-w-[1220px] space-y-6 pb-12">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-navy">Company Connections</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-navy">Company Connections</h1>
           <p className="mt-1 text-sm text-slate-500">
             Discover portal companies, send structured invites, and track campus hiring relationships from one place.
           </p>
@@ -523,7 +523,7 @@ export default function CampusConnectionsPage() {
           <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.65fr)]">
             <article className="rounded-[1.6rem] border border-slate-200 bg-[linear-gradient(135deg,#fff9ef,#ffffff)] p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Connected activation board</p>
-              <h2 className="mt-2 text-2xl font-extrabold text-navy">
+              <h2 className="mt-2 text-2xl font-bold text-navy">
                 {topActivationCompany
                   ? `${topActivationCompany.companyName} is your next business move`
                   : 'Convert accepted companies into live hiring workflows'}
@@ -595,7 +595,7 @@ export default function CampusConnectionsPage() {
             </article>
 
             <article className="rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-              <h2 className="text-lg font-extrabold text-navy">Activation summary</h2>
+              <h2 className="text-lg font-bold text-navy">Activation summary</h2>
               <div className="mt-4 space-y-3">
                 {[
                   { label: 'Ready to launch', value: activationReadyCount, helper: 'Connected companies with pool support and no live drive yet' },
@@ -605,7 +605,7 @@ export default function CampusConnectionsPage() {
                   <div key={item.label} className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-slate-700">{item.label}</p>
-                      <p className="text-lg font-extrabold text-navy">{item.value}</p>
+                      <p className="text-lg font-bold text-navy">{item.value}</p>
                     </div>
                     <p className="mt-1 text-xs leading-5 text-slate-500">{item.helper}</p>
                   </div>
@@ -617,7 +617,7 @@ export default function CampusConnectionsPage() {
           <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h2 className="text-lg font-extrabold text-navy">Discover Portal Companies</h2>
+                <h2 className="text-lg font-bold text-navy">Discover Portal Companies</h2>
                 <p className="text-sm text-slate-500">
                   {readyToInviteCount} ready to invite out of {directory.summary?.totalCompanies || 0} companies on the portal.
                 </p>
@@ -774,7 +774,7 @@ function CompanyCard({ company, activation, selected, onToggleSelect, onInvite, 
           )}
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <p className="truncate text-[15px] font-extrabold leading-5 text-navy">{company.companyName}</p>
+              <p className="truncate text-[15px] font-bold leading-5 text-navy">{company.companyName}</p>
               {company.isVerified ? <FiShield size={14} className="shrink-0 text-emerald-500" /> : null}
             </div>
             <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-500">
@@ -908,7 +908,7 @@ function InviteModal({
           <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Invite Companies</p>
-              <h2 className="mt-2 text-xl font-extrabold text-navy">
+              <h2 className="mt-2 text-xl font-bold text-navy">
                 {companies.length > 1 ? `Send ${companies.length} company invites` : `Invite ${companies[0]?.companyName || 'company'}`}
               </h2>
               <p className="mt-1 text-sm text-slate-500">

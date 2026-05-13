@@ -330,7 +330,7 @@ const StudentJobsPage = ({
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-brand-700">{eyebrow}</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-extrabold text-navy">{title}</h1>
+            <h1 className="text-3xl font-bold text-navy">{title}</h1>
             <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-semibold text-slate-600">
               {totalJobs} roles
             </span>

@@ -60,7 +60,7 @@ export function HowItWorks() {
     <section className="px-4 py-20">
       <div className="container mx-auto max-w-6xl">
         <AnimatedSection className="text-center">
-          <h2 className="font-heading text-3xl font-extrabold text-navy md:text-4xl">
+          <h2 className="font-heading text-3xl font-bold text-navy md:text-4xl">
             How <span className="gradient-text">It Works</span>
           </h2>
         </AnimatedSection>

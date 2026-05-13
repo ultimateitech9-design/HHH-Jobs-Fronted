@@ -270,7 +270,7 @@ const StudentNotificationsPage = () => {
             <span className="mt-3 inline-flex rounded-full border border-amber-100 bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-700">
               {unreadCount > 0 ? `${unreadCount} unread` : 'Inbox clear'}
             </span>
-            <h1 className="mt-4 text-3xl font-extrabold text-navy">{userName}</h1>
+            <h1 className="mt-4 text-3xl font-bold text-navy">{userName}</h1>
             <p className="mt-1 text-sm text-slate-500">Notification workspace</p>
             <p className="mt-3 text-xs text-slate-400">
               {latestNotification
@@ -287,17 +287,17 @@ const StudentNotificationsPage = () => {
 
           <div className="rounded-[1.6rem] border border-[#d9e7ff] bg-[#edf4ff] p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-extrabold text-navy">Inbox snapshot</h2>
+              <h2 className="text-xl font-bold text-navy">Inbox snapshot</h2>
               <FiTrendingUp className="text-brand-600" />
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3 text-left">
               <div>
                 <p className="text-xs text-slate-500">Today</p>
-                <p className="mt-2 text-2xl font-extrabold text-brand-700">{todayCount}</p>
+                <p className="mt-2 text-2xl font-bold text-brand-700">{todayCount}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-500">Actionable</p>
-                <p className="mt-2 text-2xl font-extrabold text-brand-700">{actionableCount}</p>
+                <p className="mt-2 text-2xl font-bold text-brand-700">{actionableCount}</p>
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700">
@@ -335,7 +335,7 @@ const StudentNotificationsPage = () => {
                     {notifications.length} total updates
                   </span>
                 </div>
-                <h2 className="mt-4 text-[2rem] font-extrabold leading-tight text-navy">Keep every recruiter update in one clean feed</h2>
+                <h2 className="mt-4 text-[2rem] font-bold leading-tight text-navy">Keep every recruiter update in one clean feed</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
                   Interview calls, application changes, and platform reminders now stay inside a dedicated inbox built in the same style as your student dashboard.
                 </p>
@@ -357,7 +357,7 @@ const StudentNotificationsPage = () => {
               ].map((stat) => (
                 <article key={stat.label} className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-3.5 py-3">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{stat.label}</p>
-                  <p className="mt-2 text-[1.8rem] leading-none font-extrabold text-navy">{stat.value}</p>
+                  <p className="mt-2 text-[1.8rem] leading-none font-bold text-navy">{stat.value}</p>
                   <p className="mt-1.5 text-[13px] leading-5 text-slate-500">{stat.helper}</p>
                 </article>
               ))}
@@ -433,7 +433,7 @@ const StudentNotificationsPage = () => {
 
                             <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                               <div className="min-w-0">
-                                <h3 className={`text-[1.35rem] leading-tight ${notification.is_read ? 'font-bold text-slate-700' : 'font-extrabold text-navy'}`}>
+                                <h3 className={`text-[1.35rem] leading-tight ${notification.is_read ? 'font-bold text-slate-700' : 'font-bold text-navy'}`}>
                                   {title}
                                 </h3>
                                 <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>

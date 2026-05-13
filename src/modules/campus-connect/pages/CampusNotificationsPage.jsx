@@ -478,7 +478,7 @@ const CampusNotificationsPage = () => {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{stat.label}</p>
-                <p className="mt-2 text-3xl font-extrabold text-navy">{stat.value}</p>
+                <p className="mt-2 text-3xl font-bold text-navy">{stat.value}</p>
                 <p className="mt-2 text-xs text-slate-400">{stat.helper}</p>
               </div>
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-700">
@@ -493,7 +493,7 @@ const CampusNotificationsPage = () => {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Business signal</p>
-            <h2 className="mt-2 text-2xl font-extrabold text-navy">{nextBusinessMove.title}</h2>
+            <h2 className="mt-2 text-2xl font-bold text-navy">{nextBusinessMove.title}</h2>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">{nextBusinessMove.helper}</p>
           </div>
 
@@ -512,7 +512,7 @@ const CampusNotificationsPage = () => {
         <div className="rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.18)]">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-extrabold text-navy">Activity feed</h2>
+              <h2 className="text-xl font-bold text-navy">Activity feed</h2>
               <p className="mt-1 text-sm text-slate-500">Every campus-side alert stays timestamped, readable, and ready to convert into a next step.</p>
             </div>
             <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
@@ -562,7 +562,7 @@ const CampusNotificationsPage = () => {
                               </span>
                             ) : null}
                           </div>
-                          <h3 className="mt-3 text-lg font-extrabold text-navy">{notification.title || 'Notification'}</h3>
+                          <h3 className="mt-3 text-lg font-bold text-navy">{notification.title || 'Notification'}</h3>
                           <p className="mt-2 text-sm leading-6 text-slate-600">{notification.message || 'No details available yet.'}</p>
 
                           {matchedCompany ? (
@@ -611,7 +611,7 @@ const CampusNotificationsPage = () => {
           ) : (
             <div className="rounded-[1.75rem] border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-16 text-center">
               <FiBell size={34} className="mx-auto text-slate-300" />
-              <h3 className="mt-4 text-2xl font-extrabold text-navy">No campus notifications yet</h3>
+              <h3 className="mt-4 text-2xl font-bold text-navy">No campus notifications yet</h3>
               <p className="mt-2 text-sm text-slate-500">Drive delivery summaries and company connection activity will appear here.</p>
             </div>
           )}
@@ -619,7 +619,7 @@ const CampusNotificationsPage = () => {
 
         <aside className="space-y-5">
           <div className="rounded-[1.6rem] border border-slate-100 bg-white p-5 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.12)]">
-            <h2 className="text-lg font-extrabold text-navy">Activity mix</h2>
+            <h2 className="text-lg font-bold text-navy">Activity mix</h2>
             <div className="mt-4 space-y-3">
               {[
                 { label: 'Drives', value: categoryCounts.Drives || 0 },
@@ -629,14 +629,14 @@ const CampusNotificationsPage = () => {
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3">
                   <span className="text-sm font-semibold text-slate-600">{item.label}</span>
-                  <span className="text-lg font-extrabold text-navy">{item.value}</span>
+                  <span className="text-lg font-bold text-navy">{item.value}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="rounded-[1.6rem] border border-slate-100 bg-white p-5 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.12)]">
-            <h2 className="text-lg font-extrabold text-navy">Connected next steps</h2>
+            <h2 className="text-lg font-bold text-navy">Connected next steps</h2>
             <div className="mt-4 space-y-3">
               {recommendedPartnerships.length > 0 ? recommendedPartnerships.map((company) => (
                 <div key={company.companyUserId} className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-4">

@@ -211,7 +211,7 @@ const DataEntryDashboard = () => {
                       <p className="font-semibold text-slate-900">{item.label}</p>
                       <p className="mt-1 text-sm text-slate-500">Recorded actions in this workflow step</p>
                     </div>
-                    <strong className="font-heading text-2xl font-extrabold text-navy">{item.value}</strong>
+                    <strong className="font-heading text-2xl font-bold text-navy">{item.value}</strong>
                   </li>
                 ))}
               </ul>
@@ -260,7 +260,7 @@ const DataEntryDashboard = () => {
                       <p className="font-semibold text-slate-900">{item.label}</p>
                       <StatusPill value={item.label.toLowerCase()} />
                     </div>
-                    <p className="mt-4 font-heading text-3xl font-extrabold text-navy">{item.value}</p>
+                    <p className="mt-4 font-heading text-3xl font-bold text-navy">{item.value}</p>
                     <p className="mt-2 text-sm text-slate-500">Current stage volume</p>
                   </article>
                 ))}
@@ -285,7 +285,7 @@ const DataEntryDashboard = () => {
                       <p className="mt-1 text-sm text-slate-500">Dashboard monitor</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <strong className="font-heading text-2xl font-extrabold text-navy">{item.value}</strong>
+                      <strong className="font-heading text-2xl font-bold text-navy">{item.value}</strong>
                       <StatusPill value={item.tone} />
                     </div>
                   </li>

@@ -102,6 +102,18 @@ select {
   max-width: 100%;
   min-width: 0;
   overflow-x: clip;
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: -0.006em;
+}
+
+.portal-workbench h1,
+.portal-workbench h2,
+.portal-workbench h3,
+.portal-workbench h4,
+.portal-workbench h5,
+.portal-workbench h6 {
+  font-family: var(--font-body);
 }
 
 .portal-workbench :where(.flex, .grid, div, section, article, main, header, aside, nav, form, label) {

@@ -181,31 +181,42 @@ const HrInterviewsPage = () => {
     }
   };
 
-  return (
-    <div className="space-y-6 pb-8">
-      {state.error ? (
-        <div className="rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{state.error}</div>
-      ) : null}
-      {state.message && !state.error ? (
-        <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{state.message}</div>
-      ) : null}
+  const inputClass = 'mt-1 w-full rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] text-slate-700 shadow-sm transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none';
+  const labelClass = 'block text-[10px] font-semibold uppercase tracking-wide text-slate-500';
 
-      <section className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
-        <article className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.42)]">
-          <div className="space-y-2">
-            <span className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-brand-700">
-              Video interview
-            </span>
-            <h1 className="text-2xl font-extrabold leading-tight text-navy">Schedule inside HHH Jobs</h1>
-            <p className="text-sm leading-6 text-slate-500">
-              Launch the full in-app room with consent, transcript, whiteboard, code editor, live notes, and stored recruiter ratings.
-            </p>
+  const tabCounts = useMemo(() => ({
+    upcoming: interviews.filter((i) => ['scheduled', 'rescheduled'].includes(String(i.status || 'scheduled').toLowerCase())).length,
+    completed: interviews.filter((i) => String(i.status || '').toLowerCase() === 'completed').length,
+    attention: interviews.filter((i) => ['cancelled', 'no_show'].includes(String(i.status || '').toLowerCase())).length
+  }), [interviews]);
+
+  return (
+    <div className="space-y-5 pb-8">
+      {state.error && (
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] font-medium text-red-700">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
+          {state.error}
+        </div>
+      )}
+      {state.message && !state.error && (
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-[13px] font-medium text-emerald-700">
+          <FiCheckCircle size={14} className="shrink-0" />
+          {state.message}
+        </div>
+      )}
+
+      <section className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+        {/* Schedule Form */}
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm self-start">
+          <div className="border-b border-slate-100 px-4 py-2.5">
+            <h2 className="text-[13px] font-bold text-slate-900">Schedule Interview</h2>
+            <p className="text-[10px] text-slate-400">Video room &middot; recording &middot; transcript</p>
           </div>
 
-          <form onSubmit={handleCreateInterview} className="mt-6 space-y-4">
+          <form onSubmit={handleCreateInterview} className="space-y-2.5 px-4 py-3">
             <div>
-              <label className="text-sm font-bold text-slate-700">Job</label>
-              <select value={form.jobId} onChange={(event) => setForm((current) => ({ ...current, jobId: event.target.value, applicationId: '' }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+              <label className={labelClass}>Job role</label>
+              <select value={form.jobId} onChange={(event) => setForm((current) => ({ ...current, jobId: event.target.value, applicationId: '' }))} className={inputClass}>
                 <option value="" disabled>Select a role</option>
                 {jobs.map((job) => (
                   <option key={job.id || job._id} value={job.id || job._id}>{job.jobTitle}</option>
@@ -214,182 +225,179 @@ const HrInterviewsPage = () => {
             </div>
 
             <div>
-              <label className="text-sm font-bold text-slate-700">Candidate</label>
-              <select value={form.applicationId} onChange={(event) => setForm((current) => ({ ...current, applicationId: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+              <label className={labelClass}>Candidate</label>
+              <select value={form.applicationId} onChange={(event) => setForm((current) => ({ ...current, applicationId: event.target.value }))} className={inputClass}>
                 {applicantOptions.length > 0 ? applicantOptions.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
-                )) : <option value="">No applicants available</option>}
+                )) : <option value="">No applicants</option>}
               </select>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-sm font-bold text-slate-700">Interview title</label>
-                <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" placeholder="Optional custom title" />
+                <label className={labelClass}>Title</label>
+                <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className={inputClass} placeholder="Optional" />
               </div>
               <div>
-                <label className="text-sm font-bold text-slate-700">Round label</label>
-                <input value={form.roundLabel} onChange={(event) => setForm((current) => ({ ...current, roundLabel: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" placeholder="Technical / Managerial / Final" />
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="text-sm font-bold text-slate-700">Start time</label>
-                <input type="datetime-local" value={form.scheduledAt} onChange={(event) => setForm((current) => ({ ...current, scheduledAt: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" />
-              </div>
-              <div>
-                <label className="text-sm font-bold text-slate-700">Duration</label>
-                <input type="number" min="15" max="180" value={form.durationMinutes} onChange={(event) => setForm((current) => ({ ...current, durationMinutes: Number(event.target.value || 45) }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" />
+                <label className={labelClass}>Round</label>
+                <input value={form.roundLabel} onChange={(event) => setForm((current) => ({ ...current, roundLabel: event.target.value }))} className={inputClass} placeholder="Technical" />
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-sm font-bold text-slate-700">Mode</label>
-                <select value={form.mode} onChange={(event) => setForm((current) => ({ ...current, mode: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                  <option value="virtual">HHH video room</option>
+                <label className={labelClass}>Date &amp; time</label>
+                <input type="datetime-local" value={form.scheduledAt} onChange={(event) => setForm((current) => ({ ...current, scheduledAt: event.target.value }))} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Duration (min)</label>
+                <input type="number" min="15" max="180" value={form.durationMinutes} onChange={(event) => setForm((current) => ({ ...current, durationMinutes: Number(event.target.value || 45) }))} className={inputClass} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className={labelClass}>Mode</label>
+                <select value={form.mode} onChange={(event) => setForm((current) => ({ ...current, mode: event.target.value }))} className={inputClass}>
+                  <option value="virtual">Video room</option>
                   <option value="onsite">On-site</option>
                   <option value="phone">Phone</option>
                 </select>
               </div>
               <div>
-                <label className="text-sm font-bold text-slate-700">Timezone</label>
-                <input value={form.timezone} onChange={(event) => setForm((current) => ({ ...current, timezone: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" />
+                <label className={labelClass}>Timezone</label>
+                <input value={form.timezone} onChange={(event) => setForm((current) => ({ ...current, timezone: event.target.value }))} className={inputClass} />
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                <input type="checkbox" checked={form.candidateConsentRequired} onChange={(event) => setForm((current) => ({ ...current, candidateConsentRequired: event.target.checked }))} className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600" />
-                <span>
-                  <span className="block font-bold text-slate-700">Record with consent</span>
-                  <span className="mt-1 block text-xs">Require candidate approval for recording and AI transcript.</span>
-                </span>
+            <div className="flex gap-2">
+              <label className="flex flex-1 cursor-pointer items-center gap-1.5 rounded-md border border-slate-200 px-2 py-1.5">
+                <input type="checkbox" checked={form.candidateConsentRequired} onChange={(event) => setForm((current) => ({ ...current, candidateConsentRequired: event.target.checked }))} className="h-3 w-3 rounded border-slate-300 text-indigo-600" />
+                <span className="text-[10px] font-medium text-slate-600">Consent</span>
               </label>
-              <label className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                <input type="checkbox" checked={form.panelMode} onChange={(event) => setForm((current) => ({ ...current, panelMode: event.target.checked }))} className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600" />
-                <span>
-                  <span className="block font-bold text-slate-700">Panel mode</span>
-                  <span className="mt-1 block text-xs">Track multiple interviewers and group-round context.</span>
-                </span>
+              <label className="flex flex-1 cursor-pointer items-center gap-1.5 rounded-md border border-slate-200 px-2 py-1.5">
+                <input type="checkbox" checked={form.panelMode} onChange={(event) => setForm((current) => ({ ...current, panelMode: event.target.checked }))} className="h-3 w-3 rounded border-slate-300 text-indigo-600" />
+                <span className="text-[10px] font-medium text-slate-600">Panel</span>
               </label>
             </div>
 
-            <div>
-              <label className="text-sm font-bold text-slate-700">Panel members</label>
-              <input value={form.panelMembersInput} onChange={(event) => setForm((current) => ({ ...current, panelMembersInput: event.target.value }))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" placeholder="Rahul, Priya <priya@company.com>" />
-            </div>
+            {form.panelMode && (
+              <div>
+                <label className={labelClass}>Panel members</label>
+                <input value={form.panelMembersInput} onChange={(event) => setForm((current) => ({ ...current, panelMembersInput: event.target.value }))} className={inputClass} placeholder="Name, Name <email>" />
+              </div>
+            )}
 
             <div>
-              <label className="text-sm font-bold text-slate-700">Interview notes</label>
-              <textarea value={form.note} onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))} rows={4} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" placeholder="Prep prompts, agenda, or role-specific guidance." />
+              <label className={labelClass}>Notes</label>
+              <textarea value={form.note} onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))} rows={1} className={inputClass} placeholder="Agenda or prep notes" />
             </div>
 
-            <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-[1.2rem] bg-[#2d5bff] px-4 py-3 text-sm font-bold text-white shadow-[0_10px_22px_rgba(45,91,255,0.28)]">
-              {saving ? 'Scheduling…' : 'Schedule interview room'}
+            <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-900 px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-50">
+              <FiVideo size={12} />
+              {saving ? 'Scheduling...' : 'Schedule Interview'}
             </button>
           </form>
-        </article>
+        </div>
 
-        <article className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.42)]">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-[34rem]">
-              <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
-                Interview directory
-              </span>
-              <h2 className="mt-3 text-2xl font-extrabold leading-tight text-navy">Upcoming rooms and completed rounds</h2>
-            </div>
-            <div className="flex w-full max-w-full shrink-0 overflow-x-auto rounded-full border border-slate-200 bg-slate-50 p-1 sm:w-auto">
-              {['upcoming', 'completed', 'attention'].map((tab) => (
+        {/* Interview Directory */}
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+            <h2 className="text-[15px] font-bold text-slate-900">Interviews</h2>
+            <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+              {[
+                { key: 'upcoming', label: 'Upcoming' },
+                { key: 'completed', label: 'Completed' },
+                { key: 'attention', label: 'Attention' }
+              ].map((tab) => (
                 <button
-                  key={tab}
+                  key={tab.key}
                   type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`min-w-[88px] whitespace-nowrap rounded-full px-3 py-2 text-xs font-bold capitalize ${activeTab === tab ? 'bg-white text-navy shadow-sm' : 'text-slate-500'}`}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-[11px] font-semibold transition ${activeTab === tab.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                  {tab}
+                  {tab.label}
+                  {tabCounts[tab.key] > 0 && (
+                    <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${activeTab === tab.key ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                      {tabCounts[tab.key]}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="divide-y divide-slate-100">
             {state.loading ? (
-              [1, 2, 3].map((item) => <div key={item} className="h-40 animate-pulse rounded-[1.8rem] bg-slate-100" />)
+              [1, 2, 3].map((item) => (
+                <div key={item} className="px-5 py-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-slate-100" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-48 animate-pulse rounded bg-slate-100" />
+                      <div className="h-3 w-64 animate-pulse rounded bg-slate-50" />
+                    </div>
+                  </div>
+                </div>
+              ))
             ) : filteredInterviews.length > 0 ? filteredInterviews.map((interview) => (
-              <article key={interview.id} className="rounded-[1.7rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 shadow-[0_16px_30px_rgba(15,23,42,0.06)]">
-                <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className={`rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] ${getStatusBadge(interview.status)}`}>
-                        {interview.status || 'Scheduled'}
-                      </span>
-                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
-                        {interview.room_status || 'scheduled'}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-extrabold text-navy">{interview.title || interview.job_title || 'Interview room'}</h3>
-                      <p className="mt-1 text-sm font-semibold text-slate-500">
-                        {interview.candidate_name || 'Candidate'} • {interview.company_name || 'HHH Jobs'} • {interview.round_label || 'Interview'}
+              <div key={interview.id} className="px-5 py-4 transition hover:bg-slate-50/50">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-50 text-sm font-bold text-violet-600">
+                      {(interview.candidate_name || 'C')[0].toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-[14px] font-semibold text-slate-900">{interview.title || interview.job_title || 'Interview'}</p>
+                        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${getStatusBadge(interview.status)}`}>
+                          {interview.status || 'Scheduled'}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 truncate text-[12px] text-slate-500">
+                        {interview.candidate_name || 'Candidate'} &middot; {interview.round_label || 'Interview'} &middot; {interview.company_name || 'HHH Jobs'}
                       </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-400">
+                        <span className="inline-flex items-center gap-1"><FiClock size={11} /> {formatDateTime(interview.scheduled_at || interview.scheduledAt)}</span>
+                        <span className="inline-flex items-center gap-1"><FiVideo size={11} /> {interview.mode === 'onsite' ? 'On-site' : interview.mode === 'phone' ? 'Phone' : 'Video room'}</span>
+                        {interview.panel_mode && <span className="inline-flex items-center gap-1"><FiUsers size={11} /> Panel</span>}
+                        {interview.candidate_recording_consent && <span className="inline-flex items-center gap-1"><FiStar size={11} /> Consent given</span>}
+                      </div>
+                      {interview.note && (
+                        <p className="mt-2 rounded-md bg-slate-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-slate-500">{interview.note}</p>
+                      )}
                     </div>
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                        <p className="flex items-center gap-2 font-bold text-slate-700"><FiClock /> Timing</p>
-                        <p className="mt-2">{formatDateTime(interview.scheduled_at || interview.scheduledAt)}</p>
-                      </div>
-                      <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                        <p className="flex items-center gap-2 font-bold text-slate-700"><FiVideo /> Room tools</p>
-                        <p className="mt-2">Video, transcript, whiteboard, code editor</p>
-                      </div>
-                      <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                        <p className="flex items-center gap-2 font-bold text-slate-700"><FiUsers /> Panel + consent</p>
-                        <p className="mt-2">{interview.panel_mode ? 'Panel mode on' : 'Single interviewer'} • {interview.candidate_recording_consent ? 'consented' : 'awaiting consent'}</p>
-                      </div>
-                    </div>
-                    {interview.note ? (
-                      <div className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
-                        <p className="flex items-center gap-2 font-bold text-slate-700"><FiFileText /> Notes</p>
-                        <p className="mt-2">{interview.note}</p>
-                      </div>
-                    ) : null}
                   </div>
 
-                  <div className="flex min-w-[240px] flex-col gap-3">
-                    <Link to={`/portal/hr/interviews/${interview.id}/room`} className="inline-flex items-center justify-center gap-2 rounded-[1.1rem] bg-[#0f172a] px-4 py-3 text-sm font-bold text-white">
-                      <FiMonitor />
-                      Open room
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <Link to={`/portal/hr/interviews/${interview.id}/room`} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-slate-800">
+                      <FiMonitor size={12} /> Open
                     </Link>
-                    {interview.calendar_event_url ? (
-                      <a href={interview.calendar_event_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700">
-                        <FiCalendar />
-                        Calendar
+                    {interview.calendar_event_url && (
+                      <a href={interview.calendar_event_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50">
+                        <FiCalendar size={12} />
                       </a>
-                    ) : null}
-                    <button type="button" onClick={() => patchInterview(interview.id, { status: 'completed' }, 'Interview marked completed.')} className="inline-flex items-center justify-center gap-2 rounded-[1.1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
-                      <FiCheckCircle />
-                      Complete
+                    )}
+                    <button type="button" onClick={() => patchInterview(interview.id, { status: 'completed' }, 'Interview marked completed.')} className="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100" title="Mark complete">
+                      <FiCheckCircle size={14} />
                     </button>
-                    <button type="button" onClick={() => patchInterview(interview.id, { status: 'cancelled' }, 'Interview cancelled.')} className="inline-flex items-center justify-center gap-2 rounded-[1.1rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
-                      <FiInfo />
-                      Cancel
+                    <button type="button" onClick={() => patchInterview(interview.id, { status: 'cancelled' }, 'Interview cancelled.')} className="inline-flex items-center rounded-lg border border-red-200 bg-red-50 p-1.5 text-red-600 transition hover:bg-red-100" title="Cancel interview">
+                      <FiInfo size={14} />
                     </button>
                   </div>
                 </div>
-              </article>
+              </div>
             )) : (
-              <div className="rounded-[1.8rem] border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white text-brand-600 shadow-sm">
-                  <FiCalendar size={24} />
-                </div>
-                <h3 className="mt-4 text-2xl font-extrabold text-navy">No interviews in this view</h3>
-                <p className="mt-2 text-sm text-slate-500">Scheduled rooms, completed rounds, and no-show tracking will appear here.</p>
+              <div className="px-5 py-16 text-center">
+                <FiCalendar className="mx-auto text-slate-300" size={32} />
+                <p className="mt-3 text-[14px] font-semibold text-slate-500">No {activeTab} interviews</p>
+                <p className="mt-1 text-[12px] text-slate-400">
+                  {activeTab === 'upcoming' ? 'Schedule an interview using the form on the left.' : activeTab === 'completed' ? 'Completed interviews will appear here.' : 'Cancelled or no-show interviews will appear here.'}
+                </p>
               </div>
             )}
           </div>
-        </article>
+        </div>
       </section>
     </div>
   );

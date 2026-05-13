@@ -354,10 +354,10 @@ export default function HrCampusDrivesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-extrabold text-navy">Campus Drives</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-xl font-extrabold text-navy">Campus Drives</h1>
+        <p className="mt-1 max-w-4xl text-[13px] text-slate-500">
           View campus drives where your company is the hiring partner. Update shortlist, selection, and rejection results directly — the college placement cell gets notified automatically.
         </p>
       </div>
@@ -366,11 +366,11 @@ export default function HrCampusDrivesPage() {
 
       {loading ? (
         <div className="space-y-4">
-          {[1, 2, 3].map((i) => <div key={i} className="h-36 animate-pulse rounded-[1.5rem] bg-slate-100" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-100" />)}
         </div>
       ) : drives.length === 0 ? (
-        <div className="rounded-[1.75rem] border border-dashed border-slate-200 bg-white p-12 text-center">
-          <FiBriefcase size={40} className="mx-auto text-slate-300" />
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center">
+          <FiBriefcase size={34} className="mx-auto text-slate-300" />
           <p className="mt-3 text-base font-semibold text-slate-500">No campus drives found</p>
           <p className="mt-1 text-sm text-slate-400">
             Campus drives will appear here when a college creates a drive with your company name and you have an accepted connection.

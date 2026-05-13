@@ -40,7 +40,7 @@ const AuthPageShell = ({
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-white/65">{eyebrow}</p>
               ) : null}
 
-              <h2 className={`font-heading text-[1.75rem] font-extrabold leading-tight ${lockBalancedHeight ? 'mt-3.5' : 'mt-1'}`}>{sideTitle}</h2>
+              <h2 className={`font-heading text-[1.75rem] font-bold leading-tight ${lockBalancedHeight ? 'mt-3.5' : 'mt-1'}`}>{sideTitle}</h2>
               {sideDescription ? (
                 <p className="mt-2.5 text-sm leading-6 text-white/74">{sideDescription}</p>
               ) : null}
@@ -71,7 +71,7 @@ const AuthPageShell = ({
                     {eyebrow}
                   </span>
                 ) : null}
-                <h1 className={`font-heading font-extrabold text-navy ${compactHeader ? 'mt-1.5 text-[1.3rem] md:text-[1.45rem]' : 'mt-3 text-[1.65rem] md:text-[1.85rem]'}`.trim()}>{title}</h1>
+                <h1 className={`font-heading font-bold text-navy ${compactHeader ? 'mt-1.5 text-[1.3rem] md:text-[1.45rem]' : 'mt-3 text-[1.65rem] md:text-[1.85rem]'}`.trim()}>{title}</h1>
                 {description ? (
                   <p className={`${compactHeader ? 'mt-0.5 text-[0.86rem] leading-5' : 'mt-1.5 text-sm leading-6'} text-slate-600`.trim()}>{description}</p>
                 ) : null}

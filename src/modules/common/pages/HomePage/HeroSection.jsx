@@ -44,7 +44,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.08 }}
-              className="mt-4 font-heading text-3xl font-extrabold leading-[1.05] text-navy sm:text-4xl lg:text-[3rem]"
+              className="mt-4 font-heading text-3xl font-bold leading-[1.05] text-navy sm:text-4xl lg:text-[3rem]"
             >
               Find Genuine Jobs.
               <span className="gradient-text block">Hire the Best Talent.</span>

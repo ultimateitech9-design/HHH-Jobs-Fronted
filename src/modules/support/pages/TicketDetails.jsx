@@ -118,7 +118,7 @@ const TicketDetails = () => {
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-[2rem] p-8 shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-extrabold text-primary flex items-center gap-2">
+              <h3 className="text-xl font-bold text-primary flex items-center gap-2">
                 <FiAlertTriangle className="text-amber-500" /> Escalate Ticket
               </h3>
               <button onClick={() => { setEscalateModal(false); setEscalateError(''); }} className="text-neutral-400 hover:text-neutral-600 transition-colors">
@@ -178,7 +178,7 @@ const TicketDetails = () => {
 
           <section className="panel-card">
             <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-              <h2 className="text-xl font-extrabold text-primary">{ticket.title}</h2>
+              <h2 className="text-xl font-bold text-primary">{ticket.title}</h2>
               {ticket.status !== 'escalated' && ticket.status !== 'resolved' && (
                 <button
                   onClick={() => setEscalateModal(true)}
@@ -246,7 +246,7 @@ const TicketDetails = () => {
               <div className="flex items-center gap-2">
                 <FiLock size={16} className="text-purple-500 shrink-0" />
                 <div>
-                  <h3 className="text-base font-extrabold text-primary">Internal Notes</h3>
+                  <h3 className="text-base font-bold text-primary">Internal Notes</h3>
                   <p className="text-xs text-neutral-500">Visible to support team only. Not shown to customers.</p>
                 </div>
               </div>

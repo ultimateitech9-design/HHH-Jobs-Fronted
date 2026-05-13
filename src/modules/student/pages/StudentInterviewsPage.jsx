@@ -72,7 +72,7 @@ const StudentInterviewsPage = () => {
               Interview center
             </span>
             <div>
-              <h1 className="text-3xl font-extrabold text-navy">{userName}, your interview room is already inside HHH Jobs</h1>
+              <h1 className="text-3xl font-bold text-navy">{userName}, your interview room is already inside HHH Jobs</h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
                 Join the scheduled room, approve recording only if you’re comfortable, and use the built-in whiteboard plus Monaco editor for technical rounds.
               </p>
@@ -88,7 +88,7 @@ const StudentInterviewsPage = () => {
             ].map((item) => (
               <div key={item.label} className="rounded-[1.4rem] border border-slate-200 bg-white px-4 py-4">
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
-                <p className="mt-3 text-3xl font-extrabold text-navy">{item.value}</p>
+                <p className="mt-3 text-3xl font-bold text-navy">{item.value}</p>
                 <p className="mt-2 text-sm text-slate-500">{item.helper}</p>
               </div>
             ))}
@@ -123,7 +123,7 @@ const StudentInterviewsPage = () => {
                   </div>
 
                   <div>
-                    <h2 className="text-2xl font-extrabold text-navy">{interview.title || interview.job_title || 'Interview room'}</h2>
+                    <h2 className="text-2xl font-bold text-navy">{interview.title || interview.job_title || 'Interview room'}</h2>
                     <p className="mt-1 text-sm font-semibold text-slate-500">
                       {interview.company_name || 'Hiring team'} • {interview.round_label || 'Interview'}
                     </p>
@@ -183,7 +183,7 @@ const StudentInterviewsPage = () => {
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
           <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">How it works</p>
-          <h2 className="mt-2 text-2xl font-extrabold text-navy">From shortlist to saved interview artifacts</h2>
+          <h2 className="mt-2 text-2xl font-bold text-navy">From shortlist to saved interview artifacts</h2>
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             {[
               'Recruiter schedules a room and you get a notification with the exact slot.',
@@ -199,7 +199,7 @@ const StudentInterviewsPage = () => {
 
         <aside className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
           <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Quick prep</p>
-          <h2 className="mt-2 text-2xl font-extrabold text-navy">Before you join</h2>
+          <h2 className="mt-2 text-2xl font-bold text-navy">Before you join</h2>
           <div className="mt-5 space-y-3 text-sm text-slate-600">
             <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">Review the job description and your project story once before the call.</div>
             <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">Test camera and microphone early so the WebRTC room connects smoothly.</div>

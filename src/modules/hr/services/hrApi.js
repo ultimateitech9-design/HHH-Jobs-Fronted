@@ -259,7 +259,7 @@ export const checkoutRolePlan = async ({
   planSlug,
   quantity,
   couponCode = '',
-  provider = 'manual',
+  provider = 'razorpay',
   referenceId = '',
   note = '',
   paymentStatus = 'pending'
@@ -279,6 +279,28 @@ export const checkoutRolePlan = async ({
       })
     },
     extract: (payload) => payload
+  });
+
+export const verifyRolePlanAutopay = async ({
+  localSubscriptionId,
+  razorpaySubscriptionId,
+  razorpayPaymentId,
+  razorpaySignature,
+  audienceRole = 'hr'
+}) =>
+  strictRequest({
+    path: '/payments/role-subscriptions/verify',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({
+        localSubscriptionId,
+        razorpaySubscriptionId,
+        razorpayPaymentId,
+        razorpaySignature,
+        audienceRole
+      })
+    },
+    extract: (payload) => payload?.subscription || payload
   });
 
 export const getRolePlanPurchases = async (filters = {}) =>

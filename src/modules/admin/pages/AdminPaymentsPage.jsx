@@ -26,6 +26,7 @@ import {
   updateAdminRolePlanPurchaseStatus,
   updateAdminRolePricingPlan
 } from '../services/adminApi';
+import { TRIAL_DAYS } from '../../../shared/constants/planConfig';
 
 const initialFilters = {
   status: 'all',
@@ -300,7 +301,7 @@ const AdminPaymentsPage = () => {
         price: Number(draftValues.price || 0),
         durationDays: Number(draftValues.durationDays || 30),
         includedJobCredits: Number(draftValues.includedJobCredits || 0),
-        trialDays: Number(draftValues.trialDays || 0),
+        trialDays: Number(draftValues.trialDays || TRIAL_DAYS[rolePlans.find((p) => p.slug === planSlug)?.audienceRole] || 0),
         sortOrder: Number(draftValues.sortOrder || 100),
         isActive: Boolean(draftValues.isActive),
         isFeatured: Boolean(draftValues.isFeatured)
@@ -349,7 +350,7 @@ const AdminPaymentsPage = () => {
       
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
+          <h1 className="text-3xl font-bold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
             Financial Ledger
           </h1>
           <p className="text-neutral-500 text-lg">Verify incoming HR payments, reconcile subscription purchases, and issue refunds.</p>
@@ -387,7 +388,7 @@ const AdminPaymentsPage = () => {
         <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm p-6">
           <div className="flex items-center justify-between gap-3 mb-5">
             <div>
-              <h2 className="text-xl font-extrabold text-primary">Commercial Role Plans</h2>
+              <h2 className="text-xl font-bold text-primary">Commercial Role Plans</h2>
               <p className="text-sm text-neutral-500 mt-1">Control HR, Campus Connect, and Student subscriptions from one place.</p>
             </div>
             {loadingCommercial ? <span className="text-sm text-neutral-500">Loading...</span> : null}
@@ -421,7 +422,8 @@ const AdminPaymentsPage = () => {
                     </label>
                     <label className="space-y-1">
                       <span className="block text-xs font-bold uppercase tracking-wide text-neutral-500">Trial Days</span>
-                      <input value={draftValues.trialDays || ''} onChange={(e) => handleRolePlanDraftChange(plan.slug, 'trialDays', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 font-semibold" />
+                      <input value={draftValues.trialDays || ''} onChange={(e) => handleRolePlanDraftChange(plan.slug, 'trialDays', e.target.value)} placeholder={`Default: ${TRIAL_DAYS[plan.audienceRole] || 0}`} className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 font-semibold" />
+                      <span className="text-[10px] text-neutral-400">HR/Campus: 30d, Student: 15d</span>
                     </label>
                     <label className="space-y-1">
                       <span className="block text-xs font-bold uppercase tracking-wide text-neutral-500">Sort</span>
@@ -445,7 +447,7 @@ const AdminPaymentsPage = () => {
         </div>
 
         <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm p-6">
-          <h2 className="text-xl font-extrabold text-primary">Coupon Control</h2>
+          <h2 className="text-xl font-bold text-primary">Coupon Control</h2>
           <p className="text-sm text-neutral-500 mt-1 mb-5">Admin creates role-based coupons that sales can later share during follow-up.</p>
           <form onSubmit={handleCreateCoupon} className="space-y-3">
             <input value={couponDraft.code} onChange={(e) => setCouponDraft((current) => ({ ...current, code: e.target.value.toUpperCase() }))} placeholder="Coupon code" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold uppercase" />
@@ -489,7 +491,7 @@ const AdminPaymentsPage = () => {
 
       <section className="bg-white rounded-[2.5rem] border border-neutral-100 shadow-sm overflow-hidden flex flex-col min-h-[420px]">
         <div className="p-6 md:p-8 border-b border-neutral-100 bg-neutral-50/50">
-          <h2 className="text-xl font-extrabold text-primary flex items-center gap-2">
+          <h2 className="text-xl font-bold text-primary flex items-center gap-2">
             <FiBriefcase className="text-brand-500" /> Commercial Plan Purchases
           </h2>
           <p className="text-sm text-neutral-500 mt-1">Review subscriptions bought by HR, Campus Connect, and Student accounts.</p>
@@ -634,7 +636,7 @@ const AdminPaymentsPage = () => {
           
           <div className="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-6">
             <div>
-              <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 <FiCreditCard className="text-brand-400" /> B2B Subscription Underwriting
               </h2>
               <p className="text-indigo-200 text-sm mt-1">Approve recruiter plan purchases to activate ecosystem hiring credits.</p>
@@ -682,7 +684,7 @@ const AdminPaymentsPage = () => {
                     </td>
                     
                     <td className="p-4 align-top">
-                      <div className="font-extrabold text-brand-300 text-sm uppercase tracking-wide mb-1">
+                      <div className="font-bold text-brand-300 text-sm uppercase tracking-wide mb-1">
                         Tier: {purchase.plan_slug}
                       </div>
                       <div className="font-medium text-indigo-200 text-xs">
@@ -739,7 +741,7 @@ const AdminPaymentsPage = () => {
         <div className="p-6 md:p-8 border-b border-neutral-100 bg-neutral-50/50">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
             <div>
-              <h2 className="text-xl font-extrabold text-primary flex items-center gap-2">
+              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
                 <FiDollarSign className="text-brand-500" /> Individual Job Payments
               </h2>
             </div>

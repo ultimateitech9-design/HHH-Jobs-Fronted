@@ -963,7 +963,7 @@ export const getStudentRolePlanQuote = async ({ planSlug, quantity = 1, couponCo
     extract: (payload) => payload?.quote || payload
   });
 
-export const checkoutStudentRolePlan = async ({ planSlug, quantity = 1, couponCode = '', provider = 'manual', paymentStatus = 'pending' }) =>
+export const checkoutStudentRolePlan = async ({ planSlug, quantity = 1, couponCode = '', provider = 'razorpay', paymentStatus = 'pending' }) =>
   strictRequest({
     path: '/pricing/role-plans/checkout',
     options: {
@@ -971,6 +971,27 @@ export const checkoutStudentRolePlan = async ({ planSlug, quantity = 1, couponCo
       body: JSON.stringify({ planSlug, quantity, couponCode, provider, paymentStatus })
     },
     extract: (payload) => payload
+  });
+
+export const verifyStudentRolePlanAutopay = async ({
+  localSubscriptionId,
+  razorpaySubscriptionId,
+  razorpayPaymentId,
+  razorpaySignature
+}) =>
+  strictRequest({
+    path: '/payments/role-subscriptions/verify',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({
+        localSubscriptionId,
+        razorpaySubscriptionId,
+        razorpayPaymentId,
+        razorpaySignature,
+        audienceRole: 'student'
+      })
+    },
+    extract: (payload) => payload?.subscription || payload
   });
 
 export const getStudentRoleSubscriptions = async () =>

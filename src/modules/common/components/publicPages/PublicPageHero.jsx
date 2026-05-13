@@ -61,7 +61,7 @@ const PublicPageHero = ({
 
               <div className={compact ? 'mt-4' : 'mt-6'}>
                 <h1
-                  className={`font-heading font-extrabold leading-tight text-navy ${compact ? 'text-2xl sm:text-3xl md:text-[2.7rem]' : 'text-3xl sm:text-4xl md:text-5xl'
+                  className={`font-heading font-bold leading-tight text-navy ${compact ? 'text-2xl sm:text-3xl md:text-[2.7rem]' : 'text-3xl sm:text-4xl md:text-5xl'
                     } ${titleClassName}`.trim()}
                 >
                   {title}
@@ -140,7 +140,7 @@ const PublicPageHero = ({
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
                     {metric.label}
                   </p>
-                  <p className={`font-heading font-extrabold text-navy ${compact ? 'mt-2.5 text-[1.7rem]' : 'mt-3 text-3xl'}`}>
+                  <p className={`font-heading font-bold text-navy ${compact ? 'mt-2.5 text-[1.7rem]' : 'mt-3 text-3xl'}`}>
                     {metric.value}
                   </p>
                   {metric.helper ? (

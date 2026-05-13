@@ -174,7 +174,7 @@ const AdminReportsPage = () => {
       
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
+          <h1 className="text-3xl font-bold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
             Moderation Support
           </h1>
           <p className="text-neutral-500 text-lg">Review community flags, investigate violations, and enforce ecosystem rules.</p>
@@ -213,7 +213,7 @@ const AdminReportsPage = () => {
         <div className="p-6 md:p-8 border-b border-neutral-100 bg-neutral-50/50">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
             <div>
-              <h2 className="text-xl font-extrabold text-primary flex items-center gap-2">
+              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
                 <FiFlag className="text-brand-500" /> Trust & Safety Inbox
               </h2>
             </div>
@@ -283,7 +283,7 @@ const AdminReportsPage = () => {
                   return (
                     <tr key={report.id} className="hover:bg-neutral-50/30 transition-colors group">
                       <td className="p-4 pl-6 align-top">
-                        <div className="font-extrabold text-primary text-sm uppercase mb-1">
+                        <div className="font-bold text-primary text-sm uppercase mb-1">
                           <span className="text-brand-600 bg-brand-50 px-2 py-0.5 rounded mr-2">{report.targetType || 'Item'}</span>
                         </div>
                         <div className="font-mono text-xs text-neutral-500 font-bold tracking-wider mb-2">ID: {report.targetId ? report.targetId.slice(-8) : 'UNK'}</div>
@@ -294,7 +294,7 @@ const AdminReportsPage = () => {
                       
                       <td className="p-4 align-top">
                         <div className="flex flex-col gap-1.5 pr-4">
-                           <strong className="text-sm font-extrabold text-primary flex items-center gap-1.5">
+                           <strong className="text-sm font-bold text-primary flex items-center gap-1.5">
                              <FiAlertTriangle className="text-red-500 shrink-0" /> {report.reason || 'Flagged Content'}
                            </strong>
                            <p className="text-xs font-medium text-neutral-600 leading-relaxed bg-neutral-50 p-3 rounded-xl border border-neutral-200 shadow-inner">

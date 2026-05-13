@@ -138,7 +138,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
             <span className="mt-3 inline-flex rounded-full border border-red-100 bg-white px-2 py-1 text-[11px] font-bold text-red-500">
               {profileProgress}%
             </span>
-            <h1 className="mt-4 text-3xl font-extrabold text-navy">{userName}</h1>
+            <h1 className="mt-4 text-3xl font-bold text-navy">{userName}</h1>
             <p className="mt-1 text-sm text-slate-500">{headline}</p>
             <p className="mt-3 text-xs text-slate-400">Last updated yesterday</p>
             <Link
@@ -151,17 +151,17 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
 
           <div className="rounded-[1.6rem] border border-[#d9e7ff] bg-[#edf4ff] p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-extrabold text-navy">Profile performance</h2>
+              <h2 className="text-xl font-bold text-navy">Profile performance</h2>
               <FiTrendingUp className="text-brand-600" />
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3 text-left">
               <div>
                 <p className="text-xs text-slate-500">Search appearances</p>
-                <p className="mt-2 text-2xl font-extrabold text-brand-700">{overview.counters.totalApplications}</p>
+                <p className="mt-2 text-2xl font-bold text-brand-700">{overview.counters.totalApplications}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-500">Recruiter actions</p>
-                <p className="mt-2 text-2xl font-extrabold text-brand-700">{overview.counters.unreadNotifications}</p>
+                <p className="mt-2 text-2xl font-bold text-brand-700">{overview.counters.unreadNotifications}</p>
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700">
@@ -190,7 +190,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
           <div className="rounded-[1.9rem] border border-slate-200 bg-white p-6 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.35)]">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-3xl font-extrabold text-navy">Recommended jobs for you</h2>
+                <h2 className="text-3xl font-bold text-navy">Recommended jobs for you</h2>
                 <div className="mt-4 flex items-center gap-6 border-b border-slate-200 pb-3">
                   <span className="border-b-4 border-navy pb-2 text-lg font-bold text-navy">Profile ({profileJobCount})</span>
                   <span className="pb-2 text-lg font-semibold text-slate-400">Preferences (0)</span>
@@ -232,7 +232,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
 
           {showSalaryExplorer ? (
             <div className="rounded-[1.9rem] border border-emerald-100 bg-[linear-gradient(135deg,#ebfdf1_0%,#e0f7ea_100%)] p-6">
-              <p className="text-2xl font-extrabold text-navy">Explore salaries of 5 Lakh+ companies</p>
+              <p className="text-2xl font-bold text-navy">Explore salaries of 5 Lakh+ companies</p>
               <p className="mt-2 text-sm text-slate-600">Compare salaries by designations and experience.</p>
               <div className="mt-5">
                 <Link to="/portal/student/analytics" className="rounded-full bg-[#2d5bff] px-5 py-3 text-sm font-bold text-white">
@@ -248,7 +248,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-lg font-black text-slate-700">
               QR
             </div>
-            <p className="mt-4 text-2xl font-extrabold text-navy">3587 users downloaded our app in last 30 mins!</p>
+            <p className="mt-4 text-2xl font-bold text-navy">3587 users downloaded our app in last 30 mins!</p>
             <p className="mt-2 text-sm text-slate-500">Scan to download from Play Store or App Store.</p>
           </div>
 
@@ -261,7 +261,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
               />
             </div>
             <div className="p-5">
-              <p className="text-2xl font-extrabold leading-tight text-navy">Job market insights for your hiring world.</p>
+              <p className="text-2xl font-bold leading-tight text-navy">Job market insights for your hiring world.</p>
               <p className="mt-3 text-sm text-slate-500">Track recruiter movement, white-collar hiring, and market activity.</p>
               <a href={BLOG_BASE_URL} className="mt-4 inline-flex text-base font-bold text-brand-700">
                 Know more
@@ -283,7 +283,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
           ].map((stage) => (
             <article key={stage.label} className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4 text-center">
               <p className="text-sm font-semibold text-slate-500">{stage.label}</p>
-              <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{stage.count}</p>
+              <p className="mt-3 font-heading text-3xl font-bold text-navy">{stage.count}</p>
             </article>
           ))}
         </div>

@@ -178,7 +178,7 @@ export default function CampusStudentsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-navy">Student Pool</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-navy">Student Pool</h1>
           <p className="mt-1 text-sm text-slate-500">{total} students · Invite via OTP · Existing accounts auto-linked</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -207,7 +207,7 @@ export default function CampusStudentsPage() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-700">Pool Preparation</p>
-              <h2 className="mt-1 text-lg font-extrabold text-navy">Prepare eligible candidates for {poolPreparation.companyName}</h2>
+              <h2 className="mt-1 text-lg font-bold text-navy">Prepare eligible candidates for {poolPreparation.companyName}</h2>
               <p className="mt-1 text-sm text-slate-600">{poolPreparation.suggestion}</p>
             </div>
 
@@ -420,7 +420,7 @@ export default function CampusStudentsPage() {
         >
           <div className="w-full max-w-md rounded-[1.75rem] bg-white p-6 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-lg font-extrabold text-navy">Mark as Placed</h3>
+              <h3 className="text-lg font-bold text-navy">Mark as Placed</h3>
               <button type="button" onClick={() => setPlacingStudent(null)}>
                 <FiX size={18} className="text-slate-400" />
               </button>

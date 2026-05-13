@@ -216,37 +216,37 @@ const AuditDashboardPage = () => {
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Low severity alerts</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">
                     {state.alerts.filter((alert) => String(alert.severity || '').toLowerCase() === 'low').length}
                   </p>
                 </article>
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Medium alerts</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">
                     {state.alerts.filter((alert) => String(alert.severity || '').toLowerCase() === 'medium').length}
                   </p>
                 </article>
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">High / critical</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">
                     {state.alerts.filter((alert) => ['high', 'critical'].includes(String(alert.severity || '').toLowerCase())).length}
                   </p>
                 </article>
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Info events</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">
                     {state.recentEvents.filter((event) => String(event.severity || '').toLowerCase() === 'info').length}
                   </p>
                 </article>
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Warning events</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">
                     {state.recentEvents.filter((event) => String(event.severity || '').toLowerCase() === 'warning').length}
                   </p>
                 </article>
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Resolved alerts</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">
                     {state.alerts.filter((alert) => String(alert.status || '').toLowerCase() === 'resolved').length}
                   </p>
                 </article>

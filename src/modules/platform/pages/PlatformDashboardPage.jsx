@@ -247,27 +247,27 @@ const PlatformDashboardPage = () => {
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Active tenants</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{state.overview?.activeTenants || 0}</p>
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.activeTenants || 0}</p>
                 </article>
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Pending tenants</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{state.overview?.pendingTenants || 0}</p>
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.pendingTenants || 0}</p>
                 </article>
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Suspended tenants</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{state.overview?.suspendedTenants || 0}</p>
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.suspendedTenants || 0}</p>
                 </article>
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Healthy integrations</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{state.overview?.healthyIntegrations || 0}</p>
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.healthyIntegrations || 0}</p>
                 </article>
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Degraded integrations</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{state.overview?.degradedIntegrations || 0}</p>
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.degradedIntegrations || 0}</p>
                 </article>
                 <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-500">Healthy controls</p>
-                  <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{state.overview?.complianceHealthy || 0}</p>
+                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.complianceHealthy || 0}</p>
                 </article>
               </div>
             </DashboardSectionCard>

@@ -36,6 +36,7 @@ import {
   joinInterviewRoom,
   leaveInterviewRoom,
   sendInterviewSignal,
+  executeInterviewCode as executeInterviewCodeRequest,
   updateInterviewConsent,
   updateInterviewWorkspace,
   uploadInterviewRecording
@@ -95,6 +96,13 @@ const mergeUniqueSegments = (currentSegments = [], incomingSegments = []) => {
   return Array.from(merged.values()).sort((left, right) => new Date(left.createdAt) - new Date(right.createdAt));
 };
 
+const INTERVIEW_SIDEBAR_MIN_WIDTH = 280;
+const INTERVIEW_SIDEBAR_MAX_WIDTH = 520;
+const INTERVIEW_SIDEBAR_DEFAULT_WIDTH = 320;
+const INTERVIEW_STAGE_STACK_BREAKPOINT = 980;
+const INTERVIEW_PREVIEW_MARGIN = 16;
+const CODE_RUN_TIMEOUT_MS = 3000;
+
 const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const navigate = useNavigate();
   const { interviewId } = useParams();
@@ -115,6 +123,14 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const [whiteboardData, setWhiteboardData] = useState(defaultWhiteboard);
   const [codeEditorLanguage, setCodeEditorLanguage] = useState('javascript');
   const [codeEditorContent, setCodeEditorContent] = useState('// Add prompts or coding questions here.\nfunction solve(input) {\n  return input;\n}\n');
+  const [codeRunState, setCodeRunState] = useState({
+    status: 'idle',
+    output: '',
+    error: '',
+    ranAt: '',
+    language: 'javascript',
+    meta: ''
+  });
   const [isSavingWorkspace, setIsSavingWorkspace] = useState(false);
   const [isEndingRoom, setIsEndingRoom] = useState(false);
   const [isStartingMedia, setIsStartingMedia] = useState(false);
@@ -124,9 +140,16 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const [remoteVideoSource, setRemoteVideoSource] = useState('camera');
   const [isScreenShareActive, setIsScreenShareActive] = useState(false);
   const [isStageSwapped, setIsStageSwapped] = useState(false);
+  const [activeRoomTab, setActiveRoomTab] = useState('video');
+  const [sidebarWidth, setSidebarWidth] = useState(INTERVIEW_SIDEBAR_DEFAULT_WIDTH);
+  const [isStageStacked, setIsStageStacked] = useState(false);
+  const [previewPosition, setPreviewPosition] = useState(null);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const workspacePaneRef = useRef(null);
+  const mainStageContainerRef = useRef(null);
+  const previewStageRef = useRef(null);
   const whiteboardCanvasRef = useRef(null);
   const drawingRef = useRef({ active: false, currentLine: null });
   const peerConnectionRef = useRef(null);
@@ -147,6 +170,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const screenShareStreamRef = useRef(null);
   const pendingIceCandidatesRef = useRef([]);
   const remoteDescriptionReadyRef = useRef(false);
+  const sidebarResizeStateRef = useRef(null);
+  const previewDragStateRef = useRef(null);
+  const codeRunnerRef = useRef(null);
 
   const payload = roomState.payload;
   const interview = payload?.interview || null;
@@ -169,6 +195,164 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const isCandidateViewer = Boolean(permissions?.isCandidateViewer);
   const participantLabel = isManager ? 'Recruiter' : 'Candidate';
   const remoteParticipantLabel = isManager ? 'Candidate' : 'Recruiter';
+  const isLocalPrimaryStage = isStageSwapped;
+  const mainStageLabel = isLocalPrimaryStage
+    ? (videoSource === 'screen' ? 'Your screen' : participantLabel)
+    : `${remoteVideoSource === 'screen' ? 'Screen' : 'Camera'} · ${remoteParticipantLabel}`;
+  const previewStageLabel = isLocalPrimaryStage
+    ? `${remoteVideoSource === 'screen' ? 'Screen' : 'Camera'} · ${remoteParticipantLabel}`
+    : (videoSource === 'screen' ? 'Your screen' : participantLabel);
+  const hasFloatingPreviewPosition = !isStageStacked && Boolean(previewPosition);
+
+  const getPreviewBounds = () => {
+    const stageNode = mainStageContainerRef.current;
+    const previewNode = previewStageRef.current;
+    if (!stageNode || !previewNode) return null;
+
+    return {
+      minX: INTERVIEW_PREVIEW_MARGIN,
+      minY: INTERVIEW_PREVIEW_MARGIN,
+      maxX: Math.max(INTERVIEW_PREVIEW_MARGIN, stageNode.clientWidth - previewNode.offsetWidth - INTERVIEW_PREVIEW_MARGIN),
+      maxY: Math.max(INTERVIEW_PREVIEW_MARGIN, stageNode.clientHeight - previewNode.offsetHeight - INTERVIEW_PREVIEW_MARGIN)
+    };
+  };
+
+  const clampPreviewPosition = (x, y) => {
+    const bounds = getPreviewBounds();
+    if (!bounds) return null;
+
+    return {
+      x: Math.min(bounds.maxX, Math.max(bounds.minX, x)),
+      y: Math.min(bounds.maxY, Math.max(bounds.minY, y))
+    };
+  };
+
+  const getDefaultPreviewPosition = () => {
+    const bounds = getPreviewBounds();
+    if (!bounds) return null;
+
+    return {
+      x: bounds.maxX,
+      y: bounds.minY
+    };
+  };
+
+  const clearCodeRunner = () => {
+    const activeRunner = codeRunnerRef.current;
+    if (!activeRunner) return;
+
+    if (activeRunner.timeoutId) {
+      window.clearTimeout(activeRunner.timeoutId);
+    }
+    if (activeRunner.worker) {
+      activeRunner.worker.terminate();
+    }
+    if (activeRunner.objectUrl) {
+      URL.revokeObjectURL(activeRunner.objectUrl);
+    }
+    codeRunnerRef.current = null;
+  };
+
+  const formatCompilerOutput = (executionResult) => {
+    const outputSections = [];
+    const compileOutput = String(executionResult?.compile?.output || '').trim();
+    const runOutput = String(executionResult?.run?.output || '').trim();
+    const runSignal = String(executionResult?.run?.signal || '').trim();
+    const runCode = executionResult?.run?.code;
+
+    if (compileOutput) {
+      outputSections.push(`Compile:\n${compileOutput}`);
+    }
+
+    if (runOutput) {
+      outputSections.push(`Run:\n${runOutput}`);
+    }
+
+    if (runSignal) {
+      outputSections.push(`Signal: ${runSignal}`);
+    }
+
+    if (runCode !== undefined && runCode !== null) {
+      outputSections.push(`Exit code: ${runCode}`);
+    }
+
+    return outputSections.join('\n\n').trim();
+  };
+
+  const executeJavaScriptSnippet = (source) =>
+    new Promise((resolve, reject) => {
+      if (typeof Worker === 'undefined' || typeof Blob === 'undefined' || typeof URL === 'undefined') {
+        reject(new Error('This browser does not support in-room code execution.'));
+        return;
+      }
+
+      clearCodeRunner();
+
+      const workerSource = `
+        self.onmessage = async (event) => {
+          const source = String(event.data?.source || '');
+          const logs = [];
+          const serialize = (value) => {
+            if (typeof value === 'string') return value;
+            if (typeof value === 'undefined') return 'undefined';
+            if (typeof value === 'function') return '[Function]';
+            if (typeof value === 'symbol') return value.toString();
+            try {
+              return JSON.stringify(value);
+            } catch (error) {
+              return String(value);
+            }
+          };
+
+          const consoleProxy = {
+            log: (...args) => logs.push({ level: 'log', text: args.map(serialize).join(' ') }),
+            info: (...args) => logs.push({ level: 'info', text: args.map(serialize).join(' ') }),
+            warn: (...args) => logs.push({ level: 'warn', text: args.map(serialize).join(' ') }),
+            error: (...args) => logs.push({ level: 'error', text: args.map(serialize).join(' ') }),
+            clear: () => { logs.length = 0; }
+          };
+
+          try {
+            const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+            const runner = new AsyncFunction('console', '"use strict";\\n' + source + '\\n//# sourceURL=interview-room-runner.js');
+            const result = await runner(consoleProxy);
+            self.postMessage({
+              status: 'success',
+              logs,
+              result: serialize(result)
+            });
+          } catch (error) {
+            self.postMessage({
+              status: 'error',
+              logs,
+              error: error?.stack || error?.message || String(error)
+            });
+          }
+        };
+      `;
+
+      const objectUrl = URL.createObjectURL(new Blob([workerSource], { type: 'application/javascript' }));
+      const worker = new Worker(objectUrl);
+
+      const timeoutId = window.setTimeout(() => {
+        clearCodeRunner();
+        reject(new Error(`Execution timed out after ${CODE_RUN_TIMEOUT_MS / 1000} seconds.`));
+      }, CODE_RUN_TIMEOUT_MS);
+
+      codeRunnerRef.current = { worker, objectUrl, timeoutId };
+
+      worker.onmessage = (event) => {
+        clearCodeRunner();
+        resolve(event.data || {});
+      };
+
+      worker.onerror = (event) => {
+        clearCodeRunner();
+        reject(new Error(event.message || 'Unable to execute the current code snippet.'));
+      };
+
+      worker.postMessage({ source });
+    });
 
   const syncLocalVideo = (stream) => {
     if (localVideoRef.current) {
@@ -750,6 +934,65 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     };
   }, [interviewId, payload?.permissions?.canJoin]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') return undefined;
+    const observedNode = workspacePaneRef.current;
+    if (!observedNode) return undefined;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      setIsStageStacked(entry.contentRect.width < INTERVIEW_STAGE_STACK_BREAKPOINT);
+    });
+
+    observer.observe(observedNode);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (isStageStacked) {
+      setPreviewPosition(null);
+      return undefined;
+    }
+
+    const syncPreviewPosition = () => {
+      setPreviewPosition((current) => {
+        if (!current) {
+          return getDefaultPreviewPosition();
+        }
+
+        return clampPreviewPosition(current.x, current.y) || current;
+      });
+    };
+
+    syncPreviewPosition();
+
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const stageNode = mainStageContainerRef.current;
+    const previewNode = previewStageRef.current;
+    if (!stageNode || !previewNode) return undefined;
+
+    const observer = new ResizeObserver(() => {
+      syncPreviewPosition();
+    });
+
+    observer.observe(stageNode);
+    observer.observe(previewNode);
+
+    return () => observer.disconnect();
+  }, [isStageStacked, isLocalPrimaryStage, sidebarWidth]);
+
+  useEffect(() => () => {
+    if (sidebarResizeStateRef.current?.cleanup) {
+      sidebarResizeStateRef.current.cleanup();
+    }
+    if (previewDragStateRef.current?.cleanup) {
+      previewDragStateRef.current.cleanup();
+    }
+    clearCodeRunner();
+  }, []);
+
   // Auto-recording starts from room consent + stream readiness and should not
   // restart just because helper identities change between renders.
   useEffect(() => {
@@ -835,588 +1078,704 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     startCompositeRecording().catch(() => {});
   }, [isManager, recordingAllowed, remoteStreamReady]);
 
+  const handleSidebarResizeStart = (event) => {
+    if (typeof window === 'undefined') return;
+    event.preventDefault();
+
+    const startX = event.clientX;
+    const startWidth = sidebarWidth;
+
+    const handlePointerMove = (moveEvent) => {
+      const delta = startX - moveEvent.clientX;
+      const nextWidth = Math.max(
+        INTERVIEW_SIDEBAR_MIN_WIDTH,
+        Math.min(INTERVIEW_SIDEBAR_MAX_WIDTH, startWidth + delta)
+      );
+      setSidebarWidth(nextWidth);
+    };
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      sidebarResizeStateRef.current = null;
+    };
+
+    const handlePointerUp = () => {
+      cleanup();
+    };
+
+    sidebarResizeStateRef.current = { cleanup };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+  };
+
+  const handlePreviewDragStart = (event) => {
+    if (typeof window === 'undefined' || isStageStacked) return;
+    const stageNode = mainStageContainerRef.current;
+    const previewNode = previewStageRef.current;
+    if (!stageNode || !previewNode) return;
+
+    event.preventDefault();
+
+    const stageRect = stageNode.getBoundingClientRect();
+    const previewRect = previewNode.getBoundingClientRect();
+    const pointerOffsetX = event.clientX - previewRect.left;
+    const pointerOffsetY = event.clientY - previewRect.top;
+
+    const handlePointerMove = (moveEvent) => {
+      const nextX = moveEvent.clientX - stageRect.left - pointerOffsetX;
+      const nextY = moveEvent.clientY - stageRect.top - pointerOffsetY;
+      const clampedPosition = clampPreviewPosition(nextX, nextY);
+      if (clampedPosition) {
+        setPreviewPosition(clampedPosition);
+      }
+    };
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      previewDragStateRef.current = null;
+    };
+
+    const handlePointerUp = () => {
+      cleanup();
+    };
+
+    previewDragStateRef.current = { cleanup };
+    document.body.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+  };
+
+  const handleRunCode = async () => {
+    if (!codeEditorContent.trim()) {
+      setCodeRunState({
+        status: 'error',
+        output: '',
+        error: 'Write some code before running it.',
+        ranAt: new Date().toISOString(),
+        language: codeEditorLanguage,
+        meta: ''
+      });
+      return;
+    }
+
+    setCodeRunState({
+      status: 'running',
+      output: '',
+      error: '',
+      ranAt: '',
+      language: codeEditorLanguage,
+      meta: ''
+    });
+
+    try {
+      const executionResult = await executeInterviewCodeRequest(interviewId, {
+        language: codeEditorLanguage,
+        source: codeEditorContent
+      });
+      const formattedOutput = formatCompilerOutput(executionResult);
+      const hasError = Boolean(
+        (executionResult?.compile?.code ?? 0) !== 0
+        || (executionResult?.run?.code ?? 0) !== 0
+        || String(executionResult?.run?.signal || '').trim()
+      );
+
+      setCodeRunState({
+        status: hasError ? 'error' : 'success',
+        output: formattedOutput || 'Execution completed with no output.',
+        error: '',
+        ranAt: new Date().toISOString(),
+        language: codeEditorLanguage,
+        meta: executionResult?.runtime
+          ? `${executionResult.runtime.language} ${executionResult.runtime.version}`
+          : ''
+      });
+    } catch (error) {
+      if (codeEditorLanguage === 'javascript') {
+        try {
+          const executionResult = await executeJavaScriptSnippet(codeEditorContent);
+          const outputLines = (executionResult.logs || []).map((entry) =>
+            entry.level === 'log' ? entry.text : `[${entry.level}] ${entry.text}`
+          );
+
+          if (executionResult.status === 'success') {
+            if (executionResult.result && executionResult.result !== 'undefined') {
+              outputLines.push(`Return: ${executionResult.result}`);
+            }
+            setCodeRunState({
+              status: 'success',
+              output: outputLines.length > 0 ? outputLines.join('\n') : 'Execution completed with no console output.',
+              error: '',
+              ranAt: new Date().toISOString(),
+              language: codeEditorLanguage,
+              meta: 'browser fallback'
+            });
+            return;
+          }
+
+          setCodeRunState({
+            status: 'error',
+            output: outputLines.join('\n'),
+            error: executionResult.error || error.message || 'Execution failed.',
+            ranAt: new Date().toISOString(),
+            language: codeEditorLanguage,
+            meta: 'browser fallback'
+          });
+          return;
+        } catch (fallbackError) {
+          setCodeRunState({
+            status: 'error',
+            output: '',
+            error: fallbackError.message || error.message || 'Execution failed.',
+            ranAt: new Date().toISOString(),
+            language: codeEditorLanguage,
+            meta: ''
+          });
+          return;
+        }
+      }
+
+      setCodeRunState({
+        status: 'error',
+        output: '',
+        error: error.message || 'Execution failed.',
+        ranAt: new Date().toISOString(),
+        language: codeEditorLanguage,
+        meta: ''
+      });
+    }
+  };
+
+  const ROOM_TABS = [
+    { key: 'video', label: 'Video', icon: FiVideo },
+    { key: 'code', label: 'Code', icon: FiCode },
+    { key: 'whiteboard', label: 'Whiteboard', icon: FiEdit3 },
+    { key: 'transcript', label: 'Transcript', icon: FiFileText }
+  ];
+
   if (roomState.loading) {
     return (
-      <div className="flex min-h-[70vh] items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <FiRefreshCw size={24} className="animate-spin text-slate-400" />
       </div>
     );
   }
 
   if (roomState.error && !payload) {
     return (
-      <div className="space-y-4 rounded-[2rem] border border-red-200 bg-red-50 p-8">
-        <h1 className="text-2xl font-extrabold text-red-700">Interview room unavailable</h1>
-        <p className="text-sm text-red-600">{roomState.error}</p>
-        <Link to={returnPath} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-red-700">
-          <FiArrowLeft />
-          Back to interviews
+      <div className="space-y-3 rounded-xl border border-red-200 bg-red-50 p-6">
+        <h1 className="text-[16px] font-bold text-red-700">Interview room unavailable</h1>
+        <p className="text-[13px] text-red-600">{roomState.error}</p>
+        <Link to={returnPath} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-[12px] font-semibold text-red-700 border border-red-200">
+          <FiArrowLeft size={12} /> Back to interviews
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 pb-8">
-      {roomState.error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-          {roomState.error}
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
+      {roomState.error && (
+        <div className="flex items-center gap-2 border-b border-red-200 bg-red-50 px-4 py-2 text-[12px] font-medium text-red-700">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />{roomState.error}
         </div>
-      ) : null}
+      )}
 
-      <section className="rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#eff6ff_45%,#f8fafc_100%)] p-6 shadow-[0_30px_70px_-48px_rgba(15,23,42,0.45)]">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div className="space-y-3">
-            <Link to={returnPath} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600">
-              <FiArrowLeft />
-              Back
-            </Link>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-brand-700">
-                Interview Room
-              </span>
-              <span className={`rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] ${connectionMeta.className}`}>
-                {connectionMeta.label}
-              </span>
-            </div>
-            <div>
-              <h1 className="text-3xl font-extrabold text-navy">
-                {interview?.title || `${job?.job_title || 'Interview'} session`}
-              </h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-                {job?.company_name || hr?.companyName || 'HHH Jobs'} • {formatDateTime(interview?.scheduled_at)} • {interview?.round_label || 'Interview'}
-              </p>
-            </div>
-          </div>
+      {/* Compact Header */}
+      <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link to={returnPath} className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50">
+            <FiArrowLeft size={11} /> Back
+          </Link>
+          <div className="h-4 w-px bg-slate-200" />
+          <h1 className="truncate text-[14px] font-bold text-slate-900">
+            {interview?.title || job?.job_title || 'Interview'}
+          </h1>
+          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${connectionMeta.className}`}>
+            {connectionMeta.label}
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-[11px] text-slate-500">
+          <span className="hidden items-center gap-1 sm:inline-flex"><FiClock size={10} /> {formatDateTime(interview?.scheduled_at)}</span>
+          <span className="hidden items-center gap-1 md:inline-flex">{interview?.duration_minutes || 45}m</span>
+          <span className="hidden items-center gap-1 md:inline-flex">{interview?.round_label || 'Interview'}</span>
+          {calendarUrl && (
+            <a href={calendarUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-indigo-600 hover:underline">
+              <FiCalendar size={10} /> Calendar
+            </a>
+          )}
+          {isSavingWorkspace ? (
+            <span className="inline-flex items-center gap-1 text-amber-600"><FiRefreshCw size={10} className="animate-spin" /> Saving</span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-emerald-600"><FiSave size={10} /> Synced</span>
+          )}
+        </div>
+      </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:w-[420px]">
-            <div className="rounded-[1.4rem] border border-slate-200 bg-white px-4 py-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Schedule</p>
-              <p className="mt-2 text-sm font-semibold text-slate-700">{formatDateTime(interview?.scheduled_at)}</p>
-              <p className="mt-1 text-xs text-slate-500">{interview?.duration_minutes || 45} min • {interview?.timezone || 'Asia/Kolkata'}</p>
-            </div>
-            <div className="rounded-[1.4rem] border border-slate-200 bg-white px-4 py-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">AI status</p>
-              <p className="mt-2 text-sm font-semibold text-slate-700">{aiAllowed ? 'Transcript active-ready' : 'Waiting for candidate consent'}</p>
-              <p className="mt-1 text-xs text-slate-500">{recordingAllowed ? 'Recording permitted' : 'Recording disabled'}</p>
-            </div>
+      {/* Consent banner */}
+      {isCandidateViewer && interview?.candidate_consent_required && (
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2">
+          <p className="text-[12px] text-amber-800"><FiInfo size={12} className="mr-1 inline" />Recording and AI transcript require your consent.</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => updateInterviewConsent(interviewId, { recordingConsent: true, aiConsent: true }).then((r) => applyPayload(r, { hydrateDrafts: false })).catch((e) => setRoomState((c) => ({ ...c, error: e.message })))} className="rounded-md bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white">Allow</button>
+            <button type="button" onClick={() => updateInterviewConsent(interviewId, { recordingConsent: false, aiConsent: false }).then((r) => applyPayload(r, { hydrateDrafts: false })).catch((e) => setRoomState((c) => ({ ...c, error: e.message })))} className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-700">Decline</button>
           </div>
         </div>
-      </section>
+      )}
 
-      {isCandidateViewer && interview?.candidate_consent_required ? (
-        <section className="rounded-[1.8rem] border border-amber-200 bg-amber-50 p-5">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.16em] text-amber-700">
-                <FiInfo />
-                Consent required
-              </div>
-              <p className="text-sm text-amber-900">
-                Recording and AI transcription only start after you approve them for this interview.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => updateInterviewConsent(interviewId, { recordingConsent: true, aiConsent: aiAllowed || true }).then((response) => applyPayload(response, { hydrateDrafts: false })).catch((error) => setRoomState((current) => ({ ...current, error: error.message })))}
-                className="rounded-full bg-amber-500 px-4 py-2 text-sm font-bold text-white"
-              >
-                Allow recording
-              </button>
-              <button
-                type="button"
-                onClick={() => updateInterviewConsent(interviewId, { recordingConsent: false, aiConsent: false }).then((response) => applyPayload(response, { hydrateDrafts: false })).catch((error) => setRoomState((current) => ({ ...current, error: error.message })))}
-                className="rounded-full border border-amber-300 bg-white px-4 py-2 text-sm font-bold text-amber-700"
-              >
-                Decline
-              </button>
-            </div>
-          </div>
-        </section>
-      ) : null}
+      {/* Compact Toolbar */}
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-slate-200 bg-slate-50 px-4 py-1.5">
+        <button type="button" onClick={() => startLocalMedia({ createOffer: true }).catch(() => {})} disabled={isStartingMedia} className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50">
+          {isStartingMedia ? <FiRefreshCw size={11} className="animate-spin" /> : <FiPlay size={11} />}
+          {localStreamRef.current ? 'Restart' : 'Start camera'}
+        </button>
+        <button type="button" onClick={() => setIsMicOn((v) => !v)} className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-[11px] font-semibold transition ${isMicOn ? 'border-slate-200 bg-white text-slate-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+          {isMicOn ? <FiMic size={11} /> : <FiMicOff size={11} />}
+          {isMicOn ? 'Mic on' : 'Muted'}
+        </button>
+        <button type="button" onClick={() => setIsCameraOn((v) => !v)} className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-[11px] font-semibold transition ${isCameraOn ? 'border-slate-200 bg-white text-slate-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+          {isCameraOn ? <FiVideo size={11} /> : <FiVideoOff size={11} />}
+          {isCameraOn ? 'Cam on' : 'Cam off'}
+        </button>
+        <button type="button" onClick={() => (isScreenShareActive ? stopScreenShare() : startScreenShare()).catch((e) => setLocalMediaError(e.message))} disabled={!localStreamRef.current} className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40">
+          <FiCast size={11} /> {isScreenShareActive ? 'Stop share' : 'Share'}
+        </button>
+        <button type="button" onClick={() => (transcriptionActive ? stopSpeechRecognition() : startSpeechRecognition())} disabled={!aiAllowed || !localStreamRef.current} className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40">
+          <FiFileText size={11} /> {transcriptionActive ? 'Stop AI' : 'Transcript'}
+        </button>
+        <button type="button" onClick={() => maybeCreateOffer().catch(() => {})} className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-50">
+          <FiRefreshCw size={11} /> Reconnect
+        </button>
+        <button type="button" onClick={() => setIsStageSwapped((v) => !v)} className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-50">
+          <FiRepeat size={11} /> Swap
+        </button>
+        <button type="button" onClick={() => { stopSpeechRecognition(); navigate(returnPath); }} className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700 transition hover:bg-red-100">
+          <FiPhoneOff size={11} /> Leave
+        </button>
+        {localMediaError && <span className="ml-1 text-[10px] text-red-600">{localMediaError}</span>}
+      </div>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(360px,0.9fr)]">
-        <div className="space-y-6">
-          <div className={`grid gap-4 ${isStageSwapped ? 'lg:grid-cols-[minmax(260px,0.75fr)_minmax(0,1.45fr)]' : 'lg:grid-cols-[minmax(0,1.45fr)_minmax(260px,0.75fr)]'}`}>
-            <article className={`rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)] ${isStageSwapped ? 'lg:order-2' : 'lg:order-1'}`}>
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-500">{remoteParticipantLabel} feed</span>
-                <FiVideo className="text-brand-600" />
-              </div>
-              <div className="relative overflow-hidden rounded-[1.5rem] bg-slate-950">
-                <video ref={remoteVideoRef} autoPlay playsInline className="aspect-video w-full object-cover" />
-                {remoteStreamReady ? (
-                  <div className="absolute left-3 top-3 rounded-full border border-white/20 bg-slate-950/70 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-white">
-                    {remoteVideoSource === 'screen' ? 'Screen shared live' : 'Camera live'}
-                  </div>
-                ) : null}
-                {!remoteStreamReady ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center text-slate-300">
-                    <FiUsers size={28} />
-                    <p className="max-w-[220px] text-sm">Waiting for the other person to join and connect.</p>
-                  </div>
-                ) : null}
-              </div>
-            </article>
-
-            <article className={`rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)] ${isStageSwapped ? 'lg:order-1' : 'lg:order-2'}`}>
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-500">{participantLabel} preview</span>
-                <FiMonitor className="text-brand-600" />
-              </div>
-              <div className="relative overflow-hidden rounded-[1.5rem] bg-slate-900">
-                <video ref={localVideoRef} autoPlay muted playsInline className="aspect-video w-full object-cover" />
-                {localStreamRef.current ? (
-                  <div className="absolute left-3 top-3 rounded-full border border-white/20 bg-slate-950/70 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-white">
-                    {isScreenShareActive ? 'You are sharing screen' : 'Camera preview'}
-                  </div>
-                ) : null}
-                {!localStreamRef.current ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center text-slate-300">
-                    <FiVideoOff size={28} />
-                    <p className="max-w-[220px] text-sm">Enable your camera and microphone to start the room.</p>
-                  </div>
-                ) : null}
-              </div>
-            </article>
+      {/* Main content: Tabs + Sidebar */}
+      <div className="flex min-h-0 flex-1">
+        {/* Left: Tabbed workspace */}
+        <div ref={workspacePaneRef} className="flex min-w-0 flex-1 flex-col">
+          {/* Tab bar */}
+          <div className="flex shrink-0 items-center gap-0.5 border-b border-slate-200 bg-white px-4">
+            {ROOM_TABS.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button key={tab.key} type="button" onClick={() => setActiveRoomTab(tab.key)} className={`inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-[11px] font-semibold transition ${activeRoomTab === tab.key ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+                  <Icon size={12} /> {tab.label}
+                </button>
+              );
+            })}
+            {recordingState.active && <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-semibold text-red-600"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> Recording</span>}
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => startLocalMedia({ createOffer: true }).catch(() => {})}
-              disabled={isStartingMedia}
-              className="inline-flex items-center gap-2 rounded-full bg-[#2d5bff] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_22px_rgba(45,91,255,0.28)]"
-            >
-              {isStartingMedia ? <FiRefreshCw className="animate-spin" /> : <FiPlay />}
-              {localStreamRef.current ? 'Restart camera check' : 'Start camera'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsMicOn((value) => !value)}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700"
-            >
-              {isMicOn ? <FiMic /> : <FiMicOff />}
-              {isMicOn ? 'Mute mic' : 'Unmute mic'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsCameraOn((value) => !value)}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700"
-            >
-              {isCameraOn ? <FiVideo /> : <FiVideoOff />}
-              {isCameraOn ? 'Pause camera' : 'Resume camera'}
-            </button>
-            <button
-              type="button"
-              onClick={() => (isScreenShareActive ? stopScreenShare() : startScreenShare()).catch((error) => setLocalMediaError(error.message || 'Unable to share screen.'))}
-              disabled={!localStreamRef.current}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <FiCast />
-              {isScreenShareActive ? 'Switch to camera' : 'Share screen'}
-            </button>
-            <button
-              type="button"
-              onClick={() => (transcriptionActive ? stopSpeechRecognition() : startSpeechRecognition())}
-              disabled={!aiAllowed || !localStreamRef.current}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <FiFileText />
-              {transcriptionActive ? 'Stop transcript' : 'Start transcript'}
-            </button>
-            <button
-              type="button"
-              onClick={() => maybeCreateOffer().catch(() => {})}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700"
-            >
-              <FiRefreshCw />
-              Reconnect
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsStageSwapped((value) => !value)}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700"
-            >
-              <FiRepeat />
-              {isStageSwapped ? 'Focus remote screen' : 'Focus my screen'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                stopSpeechRecognition();
-                navigate(returnPath);
-              }}
-              className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-5 py-3 text-sm font-bold text-red-700"
-            >
-              <FiPhoneOff />
-              Leave room
-            </button>
-          </div>
+          {/* Tab content */}
+          <div className="flex-1 overflow-hidden bg-slate-50 p-4">
+            {activeRoomTab === 'video' && (
+              <div className="mx-auto w-full max-w-[1120px]">
+                <div ref={mainStageContainerRef} className="relative">
+                  <div className="relative aspect-video overflow-hidden rounded-[24px] border border-slate-200 bg-slate-950 shadow-[0_22px_54px_rgba(15,23,42,0.18)]">
+                    {isLocalPrimaryStage ? (
+                      <video ref={localVideoRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+                    ) : (
+                      <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 h-full w-full object-cover" />
+                    )}
 
-          {localMediaError ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-              {localMediaError}
-            </div>
-          ) : null}
+                    {isLocalPrimaryStage ? (
+                      !localStreamRef.current && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400">
+                          <FiVideoOff size={26} />
+                          <p className="text-[12px]">Click &quot;Start camera&quot; above</p>
+                        </div>
+                      )
+                    ) : (
+                      !remoteStreamReady && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400">
+                          <FiUsers size={26} />
+                          <p className="text-[12px]">Waiting for other participant...</p>
+                        </div>
+                      )
+                    )}
 
-          <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
-            <div className="mb-5 grid gap-3 md:grid-cols-3">
-              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Interview surface</p>
-                <p className="mt-2 font-semibold text-slate-800">{isStageSwapped ? 'Your screen is primary' : 'Remote screen is primary'}</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Technical tools</p>
-                <p className="mt-2 font-semibold text-slate-800">Live code editor + whiteboard</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Video mode</p>
-                <p className="mt-2 font-semibold text-slate-800">{isScreenShareActive ? 'Screen share active' : 'Camera mode active'}</p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Live transcript</p>
-                <h2 className="mt-2 text-2xl font-extrabold text-navy">AI notes stream</h2>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                <p className="font-bold text-slate-700">{interview?.sentiment_summary || 'Listening for interview patterns…'}</p>
-                {(interview?.red_flags || []).length > 0 ? (
-                  <p className="mt-1 flex items-center gap-2 text-red-600">
-                    <FiAlertTriangle />
-                    {(interview?.red_flags || []).join(' • ')}
-                  </p>
-                ) : null}
-              </div>
-            </div>
+                    <div className="absolute left-3 top-3 rounded-md bg-black/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                      {mainStageLabel}
+                    </div>
+                  </div>
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,0.7fr)]">
-              <div className="rounded-[1.3rem] border border-slate-200 bg-slate-50 p-4">
-                <div className="max-h-[280px] space-y-3 overflow-y-auto pr-1">
-                  {transcriptSegments.length > 0 ? transcriptSegments.map((segment) => (
-                    <div key={segment.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs font-black uppercase tracking-[0.16em] text-brand-700">{segment.speaker}</span>
-                        <span className="text-xs text-slate-400">{formatDateTime(segment.createdAt)}</span>
+                  <div
+                    ref={previewStageRef}
+                    onPointerDown={handlePreviewDragStart}
+                    className={`${isStageStacked ? 'mt-4 ml-auto w-full max-w-[320px]' : `absolute z-10 w-[24%] min-w-[170px] max-w-[260px] cursor-grab active:cursor-grabbing ${hasFloatingPreviewPosition ? '' : 'right-4 top-4'}`} select-none`}
+                    style={
+                      !hasFloatingPreviewPosition
+                        ? undefined
+                        : { left: `${previewPosition.x}px`, top: `${previewPosition.y}px` }
+                    }
+                  >
+                    <div className="relative aspect-video overflow-hidden rounded-[18px] border border-white/20 bg-slate-900 shadow-[0_20px_42px_rgba(15,23,42,0.34)] ring-1 ring-black/10 backdrop-blur-sm">
+                      {isLocalPrimaryStage ? (
+                        <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 h-full w-full object-cover" />
+                      ) : (
+                        <video ref={localVideoRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+                      )}
+
+                      {isLocalPrimaryStage ? (
+                        !remoteStreamReady && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-slate-400">
+                            <FiUsers size={18} />
+                            <p className="text-[10px]">Waiting...</p>
+                          </div>
+                        )
+                      ) : (
+                        !localStreamRef.current && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-slate-400">
+                            <FiVideoOff size={18} />
+                            <p className="text-[10px]">Camera off</p>
+                          </div>
+                        )
+                      )}
+
+                      <div className="absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/75 via-black/35 to-transparent px-3 py-2">
+                        <div className="rounded-md bg-black/45 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                          {previewStageLabel}
+                        </div>
+                        <div className="rounded-md bg-white/10 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-white/80">
+                          Drag
+                        </div>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-700">{segment.text}</p>
                     </div>
-                  )) : (
-                    <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
-                      Start the microphone and transcript controls to build the interview log in real time.
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
+            )}
 
-              <div className="space-y-4">
-                <div className="rounded-[1.3rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Sentiment hints</p>
-                  <div className="mt-3 space-y-2 text-sm text-slate-600">
-                    {(interview?.sentiment_hints || []).length > 0 ? (interview?.sentiment_hints || []).map((hint) => (
-                      <div key={hint} className="rounded-2xl border border-slate-200 bg-white px-3 py-2">{hint}</div>
+            {activeRoomTab === 'code' && (
+              <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={codeEditorLanguage}
+                      onChange={(e) => {
+                        setCodeEditorLanguage(e.target.value);
+                        setWorkspaceVersion((v) => v + 1);
+                        setCodeRunState({
+                          status: 'idle',
+                          output: '',
+                          error: '',
+                          ranAt: '',
+                          language: e.target.value,
+                          meta: ''
+                        });
+                      }}
+                      className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700"
+                    >
+                      <option value="javascript">JavaScript</option>
+                      <option value="typescript">TypeScript</option>
+                      <option value="python">Python</option>
+                      <option value="java">Java</option>
+                      <option value="cpp">C++</option>
+                    </select>
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-500">
+                      Compiler: Java, TypeScript, Python, C++, JavaScript
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleRunCode()}
+                      disabled={codeRunState.status === 'running'}
+                      className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {codeRunState.status === 'running' ? <FiRefreshCw size={11} className="animate-spin" /> : <FiPlay size={11} />}
+                      Run code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCodeRunState({ status: 'idle', output: '', error: '', ranAt: '', language: codeEditorLanguage, meta: '' })}
+                      className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                    >
+                      Clear output
+                    </button>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-slate-400"><FiCode size={10} /> Autosaved</span>
+                  </div>
+                </div>
+                <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
+                  <div className="min-h-[320px] min-w-0 flex-1 border-b border-slate-200 xl:min-h-0 xl:border-b-0 xl:border-r xl:border-slate-200">
+                    <Editor
+                      height="100%"
+                      language={codeEditorLanguage}
+                      theme="vs-light"
+                      value={codeEditorContent}
+                      onChange={(value) => { setCodeEditorContent(value || ''); setWorkspaceVersion((c) => c + 1); }}
+                      options={{
+                        fontSize: 13,
+                        minimap: { enabled: false },
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                        padding: { top: 12, bottom: 12 }
+                      }}
+                    />
+                  </div>
+                  <div className="flex min-h-[220px] w-full shrink-0 flex-col bg-slate-950 text-slate-100 xl:min-h-0 xl:w-[320px]">
+                    <div className="flex items-center justify-between border-b border-slate-800 px-3 py-2">
+                      <div>
+                        <p className="text-[11px] font-semibold text-white">Output</p>
+                        <p className="text-[10px] text-slate-400">
+                          {codeRunState.status === 'running'
+                            ? 'Running current snippet...'
+                            : codeRunState.ranAt
+                              ? `Last run ${formatDateTime(codeRunState.ranAt)}`
+                              : 'Run JavaScript to inspect output here.'}
+                        </p>
+                        {codeRunState.meta && (
+                          <p className="mt-0.5 text-[10px] text-slate-500">
+                            Runtime: {codeRunState.meta}
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase tracking-wide ${
+                          codeRunState.status === 'success'
+                            ? 'bg-emerald-500/15 text-emerald-300'
+                            : codeRunState.status === 'error'
+                              ? 'bg-red-500/15 text-red-300'
+                              : codeRunState.status === 'unsupported'
+                                ? 'bg-amber-500/15 text-amber-300'
+                                : codeRunState.status === 'running'
+                                  ? 'bg-sky-500/15 text-sky-300'
+                                  : 'bg-slate-700 text-slate-300'
+                        }`}
+                      >
+                        {codeRunState.status === 'idle' ? 'Ready' : codeRunState.status}
+                      </span>
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+                      {codeRunState.output ? (
+                        <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-6 text-slate-100">
+                          {codeRunState.output}
+                        </pre>
+                      ) : (
+                        <p className="text-[11px] leading-6 text-slate-400">
+                          Compile output, runtime output, and exit code will appear here after each run.
+                        </p>
+                      )}
+                      {codeRunState.error && (
+                        <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-red-300">Execution error</p>
+                          <pre className="mt-1 whitespace-pre-wrap break-words font-mono text-[11px] leading-5 text-red-100">
+                            {codeRunState.error}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeRoomTab === 'whiteboard' && (
+              <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
+                  <span className="text-[11px] font-semibold text-slate-700">Whiteboard</span>
+                  <button type="button" onClick={() => { setWhiteboardData({ lines: [], updatedAt: new Date().toISOString() }); setWorkspaceVersion((v) => v + 1); }} className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-50">
+                    Clear
+                  </button>
+                </div>
+                <canvas
+                  ref={whiteboardCanvasRef}
+                  width={920}
+                  height={520}
+                  className="h-[calc(100vh-280px)] w-full touch-none bg-slate-50"
+                  onPointerDown={(event) => {
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+                    drawingRef.current = { active: true, currentLine: { id: `line-${Date.now()}`, color: '#2563eb', width: 3, points: [point] } };
+                    event.currentTarget.setPointerCapture?.(event.pointerId);
+                  }}
+                  onPointerMove={(event) => {
+                    if (!drawingRef.current.active || !drawingRef.current.currentLine) return;
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+                    drawingRef.current.currentLine.points.push(point);
+                    const activeLine = drawingRef.current.currentLine;
+                    if (!activeLine) return;
+                    setWhiteboardData((current) => ({
+                      lines: [...(current?.lines || []).filter((line) => line && line.id !== activeLine.id), activeLine],
+                      updatedAt: new Date().toISOString()
+                    }));
+                  }}
+                  onPointerUp={() => { drawingRef.current = { active: false, currentLine: null }; setWorkspaceVersion((v) => v + 1); }}
+                  onPointerLeave={() => { drawingRef.current = { active: false, currentLine: null }; }}
+                />
+              </div>
+            )}
+
+            {activeRoomTab === 'transcript' && (
+              <div className="space-y-3">
+                <div className="rounded-lg border border-slate-200 bg-white">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
+                    <span className="text-[11px] font-semibold text-slate-700">Live Transcript</span>
+                    <span className="text-[10px] text-slate-400">{transcriptSegments.length} segments</span>
+                  </div>
+                  <div className="max-h-[calc(100vh-360px)] divide-y divide-slate-50 overflow-y-auto">
+                    {transcriptSegments.length > 0 ? transcriptSegments.map((segment) => (
+                      <div key={segment.id} className="px-3 py-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">{segment.speaker}</span>
+                          <span className="text-[9px] text-slate-400">{formatDateTime(segment.createdAt)}</span>
+                        </div>
+                        <p className="mt-1 text-[12px] leading-relaxed text-slate-700">{segment.text}</p>
+                      </div>
                     )) : (
-                      <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-3 py-6 text-center">
-                        AI guidance appears once the conversation has enough signal.
+                      <div className="px-4 py-10 text-center text-[12px] text-slate-400">
+                        Start transcript to see live speech-to-text here.
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="rounded-[1.3rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Recording</p>
-                  <p className="mt-3 text-sm font-semibold text-slate-700">{recordingState.message || (recordingAllowed ? 'Ready to record after both video streams connect.' : 'Recording is blocked until consent is granted.')}</p>
-                  {recordingState.url ? (
-                    <button type="button" onClick={handleRecordingDownload} className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-brand-700">
-                      <FiDownload />
-                      Open saved recording
-                    </button>
-                  ) : null}
-                </div>
+                {(interview?.sentiment_hints || []).length > 0 && (
+                  <div className="rounded-lg border border-slate-200 bg-white p-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">AI Hints</p>
+                    <div className="mt-2 space-y-1">
+                      {(interview?.sentiment_hints || []).map((hint) => (
+                        <p key={hint} className="rounded-md bg-slate-50 px-2 py-1.5 text-[11px] text-slate-600">{hint}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(interview?.red_flags || []).length > 0 && (
+                  <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                    <FiAlertTriangle size={12} /> {(interview?.red_flags || []).join(' • ')}
+                  </div>
+                )}
+                {recordingState.message && (
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600">
+                    <span>{recordingState.message}</span>
+                    {recordingState.url && (
+                      <button type="button" onClick={handleRecordingDownload} className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600"><FiDownload size={10} /> Download</button>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          </article>
-
-          <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Whiteboard</p>
-                <h2 className="mt-2 text-2xl font-extrabold text-navy">Sketch ideas and solve visually</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setWhiteboardData({ lines: [], updatedAt: new Date().toISOString() });
-                  setWorkspaceVersion((value) => value + 1);
-                }}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700"
-              >
-                Clear board
-              </button>
-            </div>
-            <canvas
-              ref={whiteboardCanvasRef}
-              width={920}
-              height={420}
-              className="mt-5 h-[320px] w-full touch-none rounded-[1.5rem] border border-slate-200 bg-slate-50"
-              onPointerDown={(event) => {
-                const rect = event.currentTarget.getBoundingClientRect();
-                const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-                drawingRef.current = {
-                  active: true,
-                  currentLine: {
-                    id: `line-${Date.now()}`,
-                    color: '#2563eb',
-                    width: 3,
-                    points: [point]
-                  }
-                };
-                event.currentTarget.setPointerCapture?.(event.pointerId);
-              }}
-              onPointerMove={(event) => {
-                if (!drawingRef.current.active || !drawingRef.current.currentLine) return;
-                const rect = event.currentTarget.getBoundingClientRect();
-                const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-                drawingRef.current.currentLine.points.push(point);
-                setWhiteboardData((current) => ({
-                  lines: [...(current?.lines || []).filter((line) => line.id !== drawingRef.current.currentLine.id), drawingRef.current.currentLine],
-                  updatedAt: new Date().toISOString()
-                }));
-              }}
-              onPointerUp={() => {
-                drawingRef.current = { active: false, currentLine: null };
-                setWorkspaceVersion((value) => value + 1);
-              }}
-              onPointerLeave={() => {
-                drawingRef.current = { active: false, currentLine: null };
-              }}
-            />
-          </article>
-
-          <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Technical round</p>
-                <h2 className="mt-2 text-2xl font-extrabold text-navy">Monaco code editor</h2>
-              </div>
-              <div className="flex items-center gap-3">
-                <select
-                  value={codeEditorLanguage}
-                  onChange={(event) => {
-                    setCodeEditorLanguage(event.target.value);
-                    setWorkspaceVersion((value) => value + 1);
-                  }}
-                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-                >
-                  <option value="javascript">JavaScript</option>
-                  <option value="typescript">TypeScript</option>
-                  <option value="python">Python</option>
-                  <option value="java">Java</option>
-                  <option value="cpp">C++</option>
-                </select>
-                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-600">
-                  <FiCode />
-                  Autosaved
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-5 overflow-hidden rounded-[1.5rem] border border-slate-200">
-              <Editor
-                height="360px"
-                language={codeEditorLanguage}
-                theme="vs-light"
-                value={codeEditorContent}
-                onChange={(value) => {
-                  setCodeEditorContent(value || '');
-                  setWorkspaceVersion((current) => current + 1);
-                }}
-                options={{
-                  fontSize: 14,
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true
-                }}
-              />
-            </div>
-          </article>
+            )}
+          </div>
         </div>
 
-        <aside className="space-y-6">
-          <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
-            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Interview context</p>
-            <h2 className="mt-2 text-2xl font-extrabold text-navy">{job?.job_title || 'Interview'}</h2>
-            <div className="mt-5 space-y-3 text-sm text-slate-600">
-              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="flex items-center gap-2 font-bold text-slate-700"><FiCalendar /> Scheduled</p>
-                <p className="mt-2">{formatDateTime(interview?.scheduled_at)}</p>
+        {/* Right Sidebar */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize interview details panel"
+          onPointerDown={handleSidebarResizeStart}
+          className="hidden w-1.5 shrink-0 cursor-col-resize bg-transparent transition hover:bg-slate-200 xl:block"
+        />
+        <aside
+          className="hidden shrink-0 flex-col overflow-hidden border-l border-slate-200 bg-white xl:flex"
+          style={{ width: `${sidebarWidth}px` }}
+        >
+          <div className="flex-1 overflow-y-auto pr-1.5">
+            {/* Interview Info */}
+            <div className="border-b border-slate-100 px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Interview</p>
+              <p className="mt-1 text-[13px] font-bold text-slate-900">{job?.job_title || 'Interview'}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">{job?.company_name || hr?.companyName || ''}</p>
+              <div className="mt-2 space-y-1 text-[10px] text-slate-500">
+                <p className="flex items-center gap-1"><FiCalendar size={9} /> {formatDateTime(interview?.scheduled_at)}</p>
+                <p className="flex items-center gap-1"><FiClock size={9} /> {interview?.room_status || 'Scheduled'} &middot; {interview?.duration_minutes || 45}m</p>
+                <p className="flex items-center gap-1"><FiUsers size={9} /> {interview?.panel_mode ? 'Panel' : 'Single'}</p>
               </div>
-              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="flex items-center gap-2 font-bold text-slate-700"><FiClock /> Room status</p>
-                <p className="mt-2 capitalize">{interview?.room_status || 'scheduled'}</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="flex items-center gap-2 font-bold text-slate-700"><FiUsers /> Panel mode</p>
-                <p className="mt-2">{interview?.panel_mode ? 'Enabled' : 'Single interviewer'}</p>
-                {(interview?.panel_members || []).length > 0 ? (
-                  <div className="mt-3 space-y-2">
-                    {(interview?.panel_members || []).map((member) => (
-                      <div key={member.id || member.email || member.name} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs">
-                        <p className="font-bold text-slate-700">{member.name || member.email}</p>
-                        {member.role ? <p className="text-slate-500">{member.role}</p> : null}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-              {calendarUrl ? (
-                <a href={calendarUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-bold text-brand-700">
-                  <FiLink />
-                  Add to Google Calendar
-                </a>
-              ) : null}
             </div>
-          </article>
 
-          {isManager ? (
-            <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Recruiter workspace</p>
-              <h2 className="mt-2 text-2xl font-extrabold text-navy">Resume, notes, and rating</h2>
-
-              <div className="mt-5 space-y-4">
-                <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-4">
-                  <p className="text-sm font-bold text-slate-700">{candidate?.name || 'Candidate'}</p>
-                  <p className="mt-1 text-sm text-slate-500">{candidate?.headline || 'Resume panel ready for review.'}</p>
-                  {candidate?.resume_url ? (
-                    <a href={candidate.resume_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-brand-700">
-                      <FiFileText />
-                      Open resume file
+            {isManager ? (
+              <>
+                {/* Candidate */}
+                <div className="border-b border-slate-100 px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Candidate</p>
+                  <p className="mt-1 text-[12px] font-semibold text-slate-900">{candidate?.name || 'Candidate'}</p>
+                  {candidate?.headline && <p className="text-[10px] text-slate-500">{candidate.headline}</p>}
+                  {candidate?.resume_url && (
+                    <a href={candidate.resume_url} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-indigo-600">
+                      <FiFileText size={9} /> Resume
                     </a>
-                  ) : null}
+                  )}
                 </div>
 
-                <div>
-                  <label className="text-sm font-bold text-slate-700">Live notes</label>
-                  <textarea
-                    rows={6}
-                    value={liveNotes}
-                    onChange={(event) => {
-                      setLiveNotes(event.target.value);
-                      setWorkspaceVersion((value) => value + 1);
-                    }}
-                    className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-brand-300"
-                    placeholder="Capture candidate answers, follow-up questions, and hiring signals."
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-bold text-slate-700">Final wrap-up</label>
-                  <textarea
-                    rows={4}
-                    value={finalNotes}
-                    onChange={(event) => setFinalNotes(event.target.value)}
-                    className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-brand-300"
-                    placeholder="Decision summary, follow-ups, next steps."
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
+                {/* Notes */}
+                <div className="border-b border-slate-100 px-4 py-3 space-y-2.5">
                   <div>
-                    <label className="text-sm font-bold text-slate-700">Rating</label>
-                    <select value={rating} onChange={(event) => setRating(Number(event.target.value))} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                      {[1, 2, 3, 4, 5].map((value) => (
-                        <option key={value} value={value}>{value} star{value > 1 ? 's' : ''}</option>
-                      ))}
-                    </select>
+                    <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Live notes</label>
+                    <textarea rows={3} value={liveNotes} onChange={(e) => { setLiveNotes(e.target.value); setWorkspaceVersion((v) => v + 1); }} className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-1 focus:ring-indigo-100" placeholder="Candidate answers, signals..." />
                   </div>
                   <div>
-                    <label className="text-sm font-bold text-slate-700">Application status</label>
-                    <select value={applicationStatus} onChange={(event) => setApplicationStatus(event.target.value)} className="mt-2 w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                      <option value="interviewed">Interviewed</option>
-                      <option value="offered">Offered</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="hired">Hired</option>
-                    </select>
+                    <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Wrap-up</label>
+                    <textarea rows={2} value={finalNotes} onChange={(e) => setFinalNotes(e.target.value)} className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-1 focus:ring-indigo-100" placeholder="Decision, next steps..." />
                   </div>
                 </div>
 
-                <label className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  <input type="checkbox" checked={noShowCandidate} onChange={(event) => setNoShowCandidate(event.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600" />
-                  <span>
-                    <span className="block font-bold text-slate-700">Mark candidate as no-show</span>
-                    <span className="mt-1 block text-xs">Use this only if the student never joined the interview room.</span>
-                  </span>
-                </label>
+                {/* Rating + Status */}
+                <div className="border-b border-slate-100 px-4 py-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Rating</label>
+                      <select value={rating} onChange={(e) => setRating(Number(e.target.value))} className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-semibold text-slate-700">
+                        {[1, 2, 3, 4, 5].map((v) => <option key={v} value={v}>{v} star{v > 1 ? 's' : ''}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Status</label>
+                      <select value={applicationStatus} onChange={(e) => setApplicationStatus(e.target.value)} className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-semibold text-slate-700">
+                        <option value="interviewed">Interviewed</option>
+                        <option value="offered">Offered</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="hired">Hired</option>
+                      </select>
+                    </div>
+                  </div>
 
-                {noShowCandidate ? (
-                  <textarea
-                    rows={3}
-                    value={noShowReason}
-                    onChange={(event) => setNoShowReason(event.target.value)}
-                    className="w-full rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-brand-300"
-                    placeholder="Reason for no-show tracking"
-                  />
-                ) : null}
+                  <label className="mt-2 flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-2 py-1.5">
+                    <input type="checkbox" checked={noShowCandidate} onChange={(e) => setNoShowCandidate(e.target.checked)} className="h-3 w-3 rounded border-slate-300 text-indigo-600" />
+                    <span className="text-[10px] font-medium text-slate-600">No-show</span>
+                  </label>
 
-                <button
-                  type="button"
-                  onClick={handleEndInterview}
-                  disabled={isEndingRoom}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-[1.2rem] bg-[#0f172a] px-4 py-3 text-sm font-bold text-white"
-                >
-                  {isEndingRoom ? <FiRefreshCw className="animate-spin" /> : <FiCheckCircle />}
-                  Save interview wrap-up
-                </button>
-              </div>
-            </article>
-          ) : (
-            <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Candidate checklist</p>
-              <h2 className="mt-2 text-2xl font-extrabold text-navy">Stay ready inside one screen</h2>
-              <div className="mt-5 space-y-3 text-sm text-slate-600">
-                <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                  Resume is already available to the recruiter through your profile and application.
+                  {noShowCandidate && (
+                    <textarea rows={2} value={noShowReason} onChange={(e) => setNoShowReason(e.target.value)} className="mt-2 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] text-slate-700 outline-none" placeholder="No-show reason..." />
+                  )}
                 </div>
-                <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                  Use the whiteboard and code editor during technical questions without leaving HHH Jobs.
-                </div>
-                <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                  Turn on microphone and transcript if you consent to AI note-taking.
-                </div>
-              </div>
-            </article>
-          )}
 
-          <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Sync state</p>
-                <h2 className="mt-2 text-2xl font-extrabold text-navy">Workspace health</h2>
+                {/* End interview */}
+                <div className="px-4 py-3">
+                  <button type="button" onClick={handleEndInterview} disabled={isEndingRoom} className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-900 px-3 py-2 text-[11px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50">
+                    {isEndingRoom ? <FiRefreshCw size={11} className="animate-spin" /> : <FiCheckCircle size={11} />}
+                    Save &amp; end interview
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="px-4 py-3 space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Tips</p>
+                <p className="rounded-md bg-slate-50 px-2 py-1.5 text-[10px] text-slate-600">Resume is shared with the recruiter.</p>
+                <p className="rounded-md bg-slate-50 px-2 py-1.5 text-[10px] text-slate-600">Use Code and Whiteboard tabs for technical rounds.</p>
+                <p className="rounded-md bg-slate-50 px-2 py-1.5 text-[10px] text-slate-600">Enable transcript if you consent to AI notes.</p>
               </div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-600">
-                {isSavingWorkspace ? <FiRefreshCw className="animate-spin" /> : <FiSave />}
-                {isSavingWorkspace ? 'Saving…' : 'Live'}
-              </span>
-            </div>
-
-            <div className="mt-5 space-y-3 text-sm text-slate-600">
-              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="font-bold text-slate-700">Transcript lines</p>
-                <p className="mt-2">{transcriptSegments.length}</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="font-bold text-slate-700">Whiteboard strokes</p>
-                <p className="mt-2">{whiteboardData?.lines?.length || 0}</p>
-              </div>
-              <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="font-bold text-slate-700">Code editor</p>
-                <p className="mt-2">{codeEditorLanguage}</p>
-              </div>
-            </div>
-          </article>
+            )}
+          </div>
         </aside>
-      </section>
+      </div>
     </div>
   );
 };

@@ -9,7 +9,7 @@ export function DashboardPreviewSection() {
     <section className="overflow-hidden px-4 py-10 md:py-12">
       <div className="container mx-auto max-w-7xl">
         <AnimatedSection className="mb-6 text-center">
-          <h2 className="font-heading text-2xl font-extrabold text-navy md:text-3xl">
+          <h2 className="font-heading text-2xl font-bold text-navy md:text-3xl">
             Powerful <span className="gradient-text">Dashboards</span>
           </h2>
           <p className="mx-auto mt-2 max-w-lg text-sm text-slate-500">

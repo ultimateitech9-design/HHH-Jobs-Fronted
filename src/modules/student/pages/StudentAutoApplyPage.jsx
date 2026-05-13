@@ -26,6 +26,7 @@ import {
   sendStudentAutoApplyDigest,
   updateStudentAutoApply
 } from '../services/studentApi';
+import FeatureGate from '../../../shared/components/FeatureGate';
 
 const defaultSummary = {
   appliedThisWeek: 0,
@@ -227,6 +228,7 @@ const StudentAutoApplyPage = () => {
   }
 
   return (
+    <FeatureGate feature="student.auto_apply" featureLabel="Auto Apply">
     <StudentPageShell
       eyebrow="Automation"
       badge="Auto Apply"
@@ -593,7 +595,7 @@ const StudentAutoApplyPage = () => {
                       </span>
                     ) : null}
                   </div>
-                  <p className="mt-2 text-base font-extrabold text-navy">
+                  <p className="mt-2 text-base font-bold text-navy">
                     {item.job?.jobTitle || 'Role unavailable'}
                   </p>
                   <p className="mt-1 text-sm font-medium text-slate-500">
@@ -619,6 +621,7 @@ const StudentAutoApplyPage = () => {
         )}
       </StudentSurfaceCard>
     </StudentPageShell>
+    </FeatureGate>
   );
 };
 

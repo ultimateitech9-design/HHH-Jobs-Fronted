@@ -198,7 +198,7 @@ export const getCampusRolePlanQuote = ({ planSlug, quantity = 1, couponCode = ''
     extract: (payload) => payload?.quote || payload
   });
 
-export const checkoutCampusRolePlan = ({ planSlug, quantity = 1, couponCode = '', provider = 'manual', paymentStatus = 'pending' }) =>
+export const checkoutCampusRolePlan = ({ planSlug, quantity = 1, couponCode = '', provider = 'razorpay', paymentStatus = 'pending' }) =>
   strictRequest({
     path: '/pricing/role-plans/checkout',
     options: {
@@ -206,6 +206,27 @@ export const checkoutCampusRolePlan = ({ planSlug, quantity = 1, couponCode = ''
       body: JSON.stringify({ planSlug, quantity, couponCode, provider, paymentStatus })
     },
     extract: (payload) => payload
+  });
+
+export const verifyCampusRolePlanAutopay = ({
+  localSubscriptionId,
+  razorpaySubscriptionId,
+  razorpayPaymentId,
+  razorpaySignature
+}) =>
+  strictRequest({
+    path: '/payments/role-subscriptions/verify',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({
+        localSubscriptionId,
+        razorpaySubscriptionId,
+        razorpayPaymentId,
+        razorpaySignature,
+        audienceRole: 'campus_connect'
+      })
+    },
+    extract: (payload) => payload?.subscription || payload
   });
 
 export const getCampusRoleSubscriptions = () =>

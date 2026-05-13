@@ -109,7 +109,7 @@ const AdminApplicationsPage = () => {
       
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
+          <h1 className="text-3xl font-bold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
             Cross-Portal Monitoring
           </h1>
           <p className="text-neutral-500 text-lg">Observe candidate telemetrics and marketplace liquidity across all HR funnels.</p>
@@ -143,7 +143,7 @@ const AdminApplicationsPage = () => {
         <div className="border-b border-neutral-100 bg-neutral-50/50 p-4 sm:p-6 md:p-8">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
             <div>
-              <h2 className="text-xl font-extrabold text-primary flex items-center gap-2">
+              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
                 <FiPieChart className="text-brand-500" /> Application Data Stream
               </h2>
             </div>
@@ -211,7 +211,7 @@ const AdminApplicationsPage = () => {
                 filteredApplications.map((app) => (
                   <tr key={app.id} className="hover:bg-neutral-50/50 transition-colors">
                     <td className="p-4 pl-6 align-top">
-                      <div className="font-extrabold text-primary text-sm flex items-center gap-2">
+                      <div className="font-bold text-primary text-sm flex items-center gap-2">
                         {app.applicantEmail || 'Confidential Data'}
                         {app.resumeUrl && (
                           <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:text-brand-700 transition-colors bg-brand-50 p-1 rounded-md" title="View Resume Attachment">

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SectionHeader from '../../../shared/components/SectionHeader';
-import StatusPill from '../../../shared/components/StatusPill';
 import useNotificationStore from '../../../core/notifications/notificationStore';
 import {
   fetchNotifications,
@@ -94,54 +93,100 @@ const HrNotificationsPage = () => {
     }
   };
 
+  const unreadCount = notifications.filter((item) => !item.is_read).length;
+
   return (
     <div className="module-page module-page--hr">
       <SectionHeader
         eyebrow="Notifications"
         title="HR Notifications"
         subtitle="Review job updates, new applications, approvals, and interview events."
+        action={
+          unreadCount > 0 ? (
+            <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700">
+              {unreadCount} unread
+            </span>
+          ) : null
+        }
       />
 
       {activeError ? <p className="form-error">{activeError}</p> : null}
       {message ? <p className="form-success">{message}</p> : null}
 
-      <section className="panel-card">
-        <div className="student-inline-controls">
-          <label>
-            View
-            <select value={filter} onChange={(event) => setFilter(event.target.value)}>
-              <option value="all">All</option>
-              <option value="unread">Unread</option>
-            </select>
-          </label>
+      <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            {['all', 'unread'].map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setFilter(tab)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                  filter === tab
+                    ? 'bg-navy text-white'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {tab === 'all' ? `All (${notifications.length})` : `Unread (${unreadCount})`}
+              </button>
+            ))}
+          </div>
 
-          <button type="button" className="btn-link" onClick={handleMarkAllRead}>Mark all as read</button>
+          <button
+            type="button"
+            className="text-[12px] font-semibold text-slate-500 transition hover:text-brand-600"
+            onClick={handleMarkAllRead}
+          >
+            Mark all as read
+          </button>
         </div>
 
-        {loading && !hydrated ? <p className="module-note">Loading notifications...</p> : null}
+        {loading && !hydrated ? <p className="py-6 text-center text-[13px] text-slate-400">Loading notifications...</p> : null}
 
-        <ul className="student-list">
+        <div className="mt-3 max-h-[calc(100vh-260px)] space-y-1.5 overflow-y-auto">
           {filteredNotifications.map((notification) => (
-            <li key={notification.id}>
-              <div>
-                <h4>{notification.title || 'Notification'}</h4>
-                <p>{notification.message || '-'}</p>
-                <p>{formatDateTime(notification.created_at || notification.createdAt)}</p>
-                {notification.link ? <Link to={notification.link} className="inline-link">Open linked page</Link> : null}
+            <div
+              key={notification.id}
+              className={`flex items-start justify-between gap-3 rounded-lg border px-3 py-2.5 transition ${
+                notification.is_read
+                  ? 'border-slate-100 bg-white'
+                  : 'border-brand-100 bg-brand-50/30'
+              }`}
+            >
+              <div className="min-w-0 flex-1">
+                <h4 className="text-[13px] font-semibold text-navy">{notification.title || 'Notification'}</h4>
+                <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">{notification.message || '-'}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-3">
+                  <p className="text-[11px] text-slate-400">{formatDateTime(notification.created_at || notification.createdAt)}</p>
+                  {notification.link ? (
+                    <Link to={notification.link} className="text-[11px] font-semibold text-brand-600 hover:text-brand-700">
+                      Open linked page
+                    </Link>
+                  ) : null}
+                </div>
               </div>
 
-              <div className="student-list-actions">
-                <StatusPill value={notification.is_read ? 'read' : 'unread'} />
+              <div className="flex shrink-0 items-center gap-2">
                 {!notification.is_read ? (
-                  <button type="button" className="btn-link" onClick={() => handleMarkRead(notification.id)}>
-                    Mark Read
+                  <button
+                    type="button"
+                    className="rounded-md bg-brand-50 px-2 py-1 text-[11px] font-semibold text-brand-600 transition hover:bg-brand-100"
+                    onClick={() => handleMarkRead(notification.id)}
+                  >
+                    Read
                   </button>
-                ) : null}
+                ) : (
+                  <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-400">Read</span>
+                )}
               </div>
-            </li>
+            </div>
           ))}
-          {(!loading || hydrated) && filteredNotifications.length === 0 ? <li>No notifications found.</li> : null}
-        </ul>
+          {(!loading || hydrated) && filteredNotifications.length === 0 ? (
+            <div className="py-10 text-center">
+              <p className="text-[13px] font-medium text-slate-400">No notifications found.</p>
+            </div>
+          ) : null}
+        </div>
       </section>
     </div>
   );

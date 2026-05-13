@@ -150,7 +150,7 @@ const LeadDetails = () => {
             </div>
           </form>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <h3 className="text-base font-extrabold text-slate-900">Follow-up History</h3>
+            <h3 className="text-base font-bold text-slate-900">Follow-up History</h3>
             {followupHistory.length ? (
               <ul className="mt-3 space-y-2">
                 {followupHistory.map((item) => (

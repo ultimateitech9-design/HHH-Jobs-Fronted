@@ -122,7 +122,7 @@ export function CampusConnectSection() {
             <GraduationCap className="h-3.5 w-3.5" />
             Campus Connect
           </span>
-          <h2 className="mt-4 font-heading text-3xl font-extrabold text-navy md:text-4xl">
+          <h2 className="mt-4 font-heading text-3xl font-bold text-navy md:text-4xl">
             Campus Network
           </h2>
         </AnimatedSection>

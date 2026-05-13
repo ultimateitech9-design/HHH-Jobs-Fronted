@@ -15,7 +15,7 @@ const PublicSectionHeader = ({
           <p className="text-xs font-black uppercase tracking-[0.24em] text-brand-700">{eyebrow}</p>
         ) : null}
         <h2
-          className={`mt-3 font-heading font-extrabold text-navy ${
+          className={`mt-3 font-heading font-bold text-navy ${
             compact ? 'text-2xl md:text-[2rem]' : 'text-3xl md:text-4xl'
           }`}
         >

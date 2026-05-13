@@ -57,6 +57,7 @@ const RootLayout = () => {
 
   const dashboardPath = user ? getDashboardPathByRole(user.role) : null;
   const isPortalWorkbench = portalRoutePattern.test(location.pathname);
+  const isInterviewRoomRoute = /^\/portal\/(?:hr|student)\/interviews\/[^/]+\/room$/i.test(location.pathname);
   const hidePublicFooter = campusConnectPublicRoutePattern.test(location.pathname);
   const isAuthorizedMaintenanceUser = ['admin', 'super_admin'].includes(String(user?.role || '').toLowerCase());
 
@@ -158,14 +159,14 @@ const RootLayout = () => {
 
   return (
     <div
-      className="min-h-screen overflow-x-clip font-sans text-slate-900"
+      className={`${isInterviewRoomRoute ? 'h-screen overflow-hidden' : 'min-h-screen overflow-x-clip'} font-sans text-slate-900`}
       style={isPortalWorkbench ? undefined : publicShellStyle}
     >
       {!isPortalWorkbench && !shouldHidePublicShell ? (
         <PublicNavbar user={user} dashboardPath={dashboardPath} onLogout={handleLogout} />
       ) : null}
 
-      <main className={`flex min-h-screen flex-col ${!isPortalWorkbench ? 'pt-[calc(var(--public-navbar-height,74px)+2px)]' : ''}`}>
+      <main className={`flex flex-col ${isInterviewRoomRoute ? 'h-full min-h-0 overflow-hidden' : 'min-h-screen'} ${!isPortalWorkbench ? 'pt-[calc(var(--public-navbar-height,74px)+2px)]' : ''}`}>
         {isPublicMaintenanceGatePending ? (
           <section className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-center text-white">
             <div className="max-w-xl">

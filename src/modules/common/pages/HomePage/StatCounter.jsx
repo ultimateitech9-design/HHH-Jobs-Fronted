@@ -45,7 +45,7 @@ const StatCounter = ({ duration = 2, end, label, suffix = '' }) => {
       viewport={{ once: true, amount: 0.35 }}
       className="w-full text-center"
     >
-      <div className="font-heading text-3xl font-extrabold tracking-tight text-white md:text-5xl">
+      <div className="font-heading text-3xl font-bold tracking-tight text-white md:text-5xl">
         {formatter.format(count)}
         {suffix}
       </div>

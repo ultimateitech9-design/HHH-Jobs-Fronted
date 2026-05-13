@@ -13,7 +13,7 @@ import {
 import { Link } from 'react-router-dom';
 import { getHrCandidateInterests } from '../services/hrApi';
 
-const boxClass = 'rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-[0_10px_28px_-22px_rgba(15,23,42,0.18)]';
+const boxClass = 'rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.22)]';
 const statusConfig = {
   pending: { icon: FiClock, label: 'Pending', style: 'border-amber-200 bg-amber-50 text-amber-700' },
   accepted: { icon: FiCheckCircle, label: 'Accepted', style: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
@@ -51,25 +51,25 @@ export default function HrInterestsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1120px] space-y-6 pb-12">
+    <div className="mx-auto w-full max-w-[1080px] space-y-4 pb-10">
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-navy">
+          <h1 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-navy">
             <FiSend size={20} className="text-brand-600" />
             Sent interests
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-[13px] text-slate-500">
             Track who accepted, who is pending, and which profiles are fully unlocked.
           </p>
         </div>
-        <div className="rounded-[1.25rem] border border-slate-100 bg-white px-4 py-3 shadow-sm">
+        <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Plan access</p>
           <p className="mt-1 text-base font-extrabold text-navy">{access.activePlanName || 'Free'}</p>
         </div>
       </section>
 
       {!access.hasPaidAccess ? (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
           <div className="flex items-start gap-3">
             <FiLock size={16} className="mt-0.5 shrink-0" />
             <p>Accepted interests are still plan-gated. Upgrade to a paid hiring plan to unlock contact details and resumes for connected candidates.</p>
@@ -82,7 +82,7 @@ export default function HrInterestsPage() {
 
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{error}</div> : null}
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-4">
         <SummaryCard label="Total" value={summary.total} />
         <SummaryCard label="Pending" value={summary.pending} tone="amber" />
         <SummaryCard label="Accepted" value={summary.accepted} tone="emerald" />
@@ -90,7 +90,7 @@ export default function HrInterestsPage() {
       </section>
 
       {interests.length === 0 ? (
-        <div className={`${boxClass} flex min-h-[320px] flex-col items-center justify-center text-center`}>
+        <div className={`${boxClass} flex min-h-[260px] flex-col items-center justify-center text-center`}>
           <FiSend size={36} className="text-slate-300" />
           <p className="mt-4 text-base font-bold text-slate-500">No interest requests sent yet.</p>
           <p className="mt-2 text-sm text-slate-400">Use the Candidate Database to start proactive sourcing.</p>
@@ -115,9 +115,9 @@ function SummaryCard({ label, value, tone = 'default' }) {
   };
 
   return (
-    <div className={`rounded-[1.35rem] border px-5 py-4 shadow-sm ${styles[tone] || styles.default}`}>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-70">{label}</p>
-      <p className="mt-2 text-3xl font-black">{value}</p>
+    <div className={`rounded-2xl border px-4 py-3.5 shadow-sm ${styles[tone] || styles.default}`}>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] opacity-70">{label}</p>
+      <p className="mt-1.5 text-2xl font-black">{value}</p>
     </div>
   );
 }

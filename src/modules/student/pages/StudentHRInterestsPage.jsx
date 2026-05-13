@@ -143,7 +143,7 @@ export default function StudentHRInterestsPage() {
     <div className="mx-auto w-full max-w-[860px] space-y-6 pb-12">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-navy">HR Interests</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-navy">HR Interests</h1>
         <p className="mt-1 text-sm text-slate-500">
           Manage your discoverability and respond to recruiters who are interested in your profile.
         </p>
@@ -160,7 +160,7 @@ export default function StudentHRInterestsPage() {
       <div className="rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.10)]">
         <div className="mb-2 flex items-center gap-2">
           <FiEye size={18} className="text-brand-500" />
-          <h2 className="text-lg font-extrabold text-navy">Discovery Settings</h2>
+          <h2 className="text-lg font-bold text-navy">Discovery Settings</h2>
           {savingDiscovery && <FiRefreshCw size={13} className="animate-spin text-slate-400 ml-auto" />}
         </div>
         <p className="mb-4 text-sm text-slate-500">Control whether HRs can find and contact you on HHH Jobs.</p>
@@ -271,7 +271,7 @@ function InterestRequestCard({ interest, onAccept, onDecline, isLoading }) {
             {initial}
           </div>
           <div>
-            <p className="text-sm font-extrabold text-navy">{company}</p>
+            <p className="text-sm font-bold text-navy">{company}</p>
             {profile.industry_type && <p className="text-[11px] text-slate-500">{profile.industry_type}</p>}
             {profile.location && <p className="text-[11px] text-slate-400">{profile.location}</p>}
           </div>
@@ -322,7 +322,7 @@ function ConnectedCard({ interest }) {
           {initial}
         </div>
         <div>
-          <p className="text-sm font-extrabold text-navy">{company}</p>
+          <p className="text-sm font-bold text-navy">{company}</p>
           {profile.industry_type && <p className="text-[11px] text-slate-500">{profile.industry_type}</p>}
         </div>
       </div>

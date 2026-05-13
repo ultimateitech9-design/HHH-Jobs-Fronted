@@ -307,123 +307,90 @@ export default function HrCampusConnectionsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div className="space-y-5 pb-8">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-navy">Campus Connections</h1>
-          <p className="mt-1 max-w-4xl text-sm text-slate-500">
-            Discover platform campuses, send campus-drive or campus-pool requests, and open dedicated pages for every relationship stage.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <StatPill label="Pending" value={incomingInvites.length} tone="amber" onClick={() => navigate('/portal/hr/campus-connections/activity/incoming')} />
-            <StatPill label="Sent" value={outgoingRequests.length} tone="blue" onClick={() => navigate('/portal/hr/campus-connections/activity/sent')} />
-            <StatPill label="Connected" value={activeConnections.length} tone="emerald" onClick={() => navigate('/portal/hr/campus-connections/activity/connected')} />
-            <StatPill label="Closed" value={closedConnections.length} tone="slate" onClick={() => navigate('/portal/hr/campus-connections/activity/closed')} />
-            <StatPill label="Campuses" value={directory.summary?.totalColleges || 0} tone="slate" />
-          </div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Campus Outreach</p>
+          <h1 className="mt-0.5 text-[18px] font-bold tracking-tight text-slate-900">Discover &amp; Connect with Campuses</h1>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={handleRefresh}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-          >
-            <FiRefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
-            Refresh
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={handleRefresh} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50">
+            <FiRefreshCw size={13} className={refreshing ? 'animate-spin' : ''} /> Refresh
           </button>
-          <button
-            type="button"
-            onClick={() => navigate('/portal/hr/campus-connections/activity/sent')}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-          >
-            Open activity
+          <button type="button" onClick={() => navigate('/portal/hr/campus-connections/activity/sent')} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50">
+            Activity
           </button>
-          <button
-            type="button"
-            onClick={() => openRequestModal(selectedCollegeIds)}
-            disabled={!selectedColleges.length}
-            className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
-          >
-            <FiSend size={14} />
-            Request selected{selectedColleges.length ? ` (${selectedColleges.length})` : ''}
+          <button type="button" onClick={() => openRequestModal(selectedCollegeIds)} disabled={!selectedColleges.length} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40">
+            <FiSend size={12} /> Request{selectedColleges.length ? ` (${selectedColleges.length})` : ''}
           </button>
         </div>
       </div>
 
-      {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      ) : null}
-      {notice ? (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div>
-      ) : null}
+      {/* Stat row */}
+      <div className="flex flex-wrap gap-2">
+        <StatPill label="Pending" value={incomingInvites.length} tone="amber" onClick={() => navigate('/portal/hr/campus-connections/activity/incoming')} />
+        <StatPill label="Sent" value={outgoingRequests.length} tone="blue" onClick={() => navigate('/portal/hr/campus-connections/activity/sent')} />
+        <StatPill label="Connected" value={activeConnections.length} tone="emerald" onClick={() => navigate('/portal/hr/campus-connections/activity/connected')} />
+        <StatPill label="Closed" value={closedConnections.length} tone="slate" onClick={() => navigate('/portal/hr/campus-connections/activity/closed')} />
+        <StatPill label="Campuses" value={directory.summary?.totalColleges || 0} tone="slate" />
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] font-medium text-red-700">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />{error}
+        </div>
+      )}
+      {notice && (
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-[13px] font-medium text-emerald-700">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />{notice}
+        </div>
+      )}
 
       {loading ? (
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <FiRefreshCw size={24} className="animate-spin text-brand-500" />
+        <div className="flex min-h-[30vh] items-center justify-center">
+          <FiRefreshCw size={20} className="animate-spin text-slate-400" />
         </div>
       ) : (
-        <section className="space-y-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          {/* Toolbar */}
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-3.5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-lg font-extrabold text-navy">Discover Campus Partners</h2>
-              <p className="text-sm text-slate-500">
-                {readyToInviteCount} campuses available for outreach out of {directory.summary?.totalColleges || 0} on the platform.
-              </p>
+              <h2 className="text-[15px] font-bold text-slate-900">Campus Directory</h2>
+              <p className="mt-0.5 text-[11px] text-slate-400">{readyToInviteCount} available for outreach &middot; {filteredColleges.length} shown</p>
             </div>
-
-            <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-              <label className="relative block min-w-0 flex-1 sm:min-w-[320px]">
-                <FiSearch size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="flex items-center gap-2">
+              <label className="relative block">
+                <FiSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   value={search}
-                  onChange={(event) => {
-                    const nextValue = event.target.value;
-                    startTransition(() => {
-                      setSearch(nextValue);
-                    });
-                  }}
-                  placeholder="Search campus, city, placement officer..."
-                  className="w-full rounded-full border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-sm text-slate-700 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+                  onChange={(event) => { const v = event.target.value; startTransition(() => { setSearch(v); }); }}
+                  placeholder="Search campus, city..."
+                  className="w-56 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
                 />
               </label>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleSelectAllVisible}
-                  disabled={!visibleInviteableIds.length}
-                  className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {allVisibleSelected ? 'Unselect visible' : 'Select visible'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClearSelection}
-                  disabled={!selectedColleges.length}
-                  className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
+              <button type="button" onClick={handleSelectAllVisible} disabled={!visibleInviteableIds.length} className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-40">
+                {allVisibleSelected ? 'Deselect' : 'Select all'}
+              </button>
+              {selectedColleges.length > 0 && (
+                <button type="button" onClick={handleClearSelection} className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-50">
                   Clear
                 </button>
-                <div className="inline-flex items-center rounded-full bg-slate-100 px-3 py-2 text-sm font-medium text-slate-600">
-                  {selectedColleges.length} selected
-                </div>
-              </div>
+              )}
+              {selectedColleges.length > 0 && (
+                <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">{selectedColleges.length} selected</span>
+              )}
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
-            <span>Showing {filteredColleges.length} campuses</span>
-            <span className="rounded-full bg-slate-100 px-2.5 py-1">Search ranked for fastest relevant matches</span>
           </div>
 
           {filteredColleges.length === 0 ? (
-            <div className="py-16 text-center">
-              <FiUsers size={32} className="mx-auto text-slate-300" />
-              <p className="mt-4 text-base font-semibold text-slate-500">No campuses matched</p>
-              <p className="mt-2 text-sm text-slate-400">Try a different search term or refresh the campus directory.</p>
+            <div className="px-5 py-16 text-center">
+              <FiUsers size={28} className="mx-auto text-slate-300" />
+              <p className="mt-3 text-[14px] font-semibold text-slate-500">No campuses matched</p>
+              <p className="mt-1 text-[12px] text-slate-400">Try a different search term or refresh the directory.</p>
             </div>
           ) : (
-            <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid gap-px bg-slate-100 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {filteredColleges.map((college) => (
                 <CampusCard
                   key={college.collegeId}
@@ -455,22 +422,15 @@ export default function HrCampusConnectionsPage() {
 }
 
 function StatPill({ label, value, tone, onClick }) {
-  const tones = {
-    amber: 'border-amber-200 bg-amber-50 text-amber-700',
-    blue: 'border-sky-200 bg-sky-50 text-sky-700',
-    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    slate: 'border-slate-200 bg-slate-50 text-slate-700'
-  };
-
+  const dotColors = { amber: 'bg-amber-400', blue: 'bg-sky-400', emerald: 'bg-emerald-400', slate: 'bg-slate-300' };
   const Component = onClick ? 'button' : 'div';
-
   return (
     <Component
       {...(onClick ? { type: 'button', onClick } : {})}
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${tones[tone] || tones.slate} ${onClick ? 'hover:-translate-y-[1px]' : ''}`}
+      className={`inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] font-semibold text-slate-700 transition ${onClick ? 'hover:bg-slate-50 hover:border-slate-300' : ''}`}
     >
-      <span className="text-slate-500">{label}</span>
-      <span>{value}</span>
+      <span className={`h-1.5 w-1.5 rounded-full ${dotColors[tone] || dotColors.slate}`} />
+      {label} <span className="font-bold">{value}</span>
     </Component>
   );
 }
@@ -480,74 +440,58 @@ function CampusCard({ college, selected, onToggleSelect, onInvite }) {
     available: 'Ready',
     pending: college.initiatedBy === 'company' ? 'Sent' : 'Invited',
     accepted: 'Connected',
-    rejected: 'Again'
+    rejected: 'Closed'
   };
 
   return (
-    <div className={`rounded-[1rem] border bg-white p-3 transition ${selected ? 'border-brand-300 shadow-[0_8px_20px_rgba(245,158,11,0.1)]' : 'border-slate-200 shadow-[0_4px_16px_rgba(15,23,42,0.04)]'}`}>
+    <div className={`bg-white p-4 transition ${selected ? 'ring-2 ring-indigo-200 ring-inset' : ''}`}>
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex items-start gap-2.5">
-          <label className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border ${college.canInvite ? 'border-slate-300 bg-white' : 'border-slate-200 bg-slate-100'}`}>
-            <input
-              type="checkbox"
-              checked={selected}
-              disabled={!college.canInvite}
-              onChange={onToggleSelect}
-              className="h-4 w-4 rounded border-slate-300 text-brand-500 focus:ring-brand-400"
-            />
-          </label>
+        <div className="flex items-start gap-2.5 min-w-0">
+          <input
+            type="checkbox"
+            checked={selected}
+            disabled={!college.canInvite}
+            onChange={onToggleSelect}
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-200"
+          />
           <div className="min-w-0">
-            <p className="truncate text-[14px] font-extrabold leading-5 text-navy">{college.collegeName}</p>
-            <p className="mt-1 truncate text-[13px] text-slate-500">{college.location || 'Location not shared'}</p>
+            <p className="truncate text-[13px] font-semibold text-slate-900">{college.collegeName}</p>
+            <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-slate-400">
+              <FiMapPin size={10} className="shrink-0" />{college.location || 'Location not shared'}
+            </p>
           </div>
         </div>
-
-        <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-bold ${STATUS_STYLE[college.status] || STATUS_STYLE.available}`}>
+        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLE[college.status] || STATUS_STYLE.available}`}>
           {statusLabel[college.status] || college.status}
         </span>
       </div>
 
-      <div className="mt-3 space-y-1.5 text-[13px] text-slate-600">
-        {college.placementOfficerName ? (
-          <p className="flex items-center gap-2">
-            <FiUser size={12} className="text-slate-400" />
-            <span className="truncate">{college.placementOfficerName}</span>
-          </p>
-        ) : null}
-        {college.contactEmail ? (
-          <p className="flex items-center gap-2">
-            <FiMail size={12} className="text-slate-400" />
-            <span className="truncate">{college.contactEmail}</span>
-          </p>
-        ) : null}
+      <div className="mt-2.5 space-y-1 text-[11px] text-slate-500">
+        {college.placementOfficerName && (
+          <p className="flex items-center gap-1.5"><FiUser size={10} className="text-slate-400" />{college.placementOfficerName}</p>
+        )}
+        {college.contactEmail && (
+          <p className="flex items-center gap-1.5"><FiMail size={10} className="text-slate-400" /><span className="truncate">{college.contactEmail}</span></p>
+        )}
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-2">
+      <div className="mt-3 flex items-center gap-2">
         <button
           type="button"
           onClick={onInvite}
           disabled={!college.canInvite}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition ${
-            college.canInvite
-              ? 'bg-brand-500 text-white hover:bg-brand-600'
-              : 'bg-slate-100 text-slate-400'
+          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
+            college.canInvite ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-400'
           }`}
         >
-          <FiSend size={12} />
+          <FiSend size={10} />
           {college.status === 'rejected' ? 'Request again' : 'Send request'}
         </button>
-
-        {college.website ? (
-          <a
-            href={college.website}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-brand-600"
-          >
-            <FiLink size={12} />
-            Website
+        {college.website && (
+          <a href={college.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-indigo-600">
+            <FiLink size={10} /> Website
           </a>
-        ) : null}
+        )}
       </div>
     </div>
   );
@@ -567,114 +511,64 @@ function RequestModal({
   const remainingCollegesCount = Math.max(colleges.length - previewColleges.length, 0);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/35 backdrop-blur-[2px] px-4 py-4 sm:py-6">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/40 backdrop-blur-sm px-4 py-6">
       <div className="flex min-h-full items-start justify-center">
-        <div className="my-auto flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[1.75rem] border border-white/70 bg-[linear-gradient(180deg,#ffffff_0%,#fffdf8_100%)] shadow-[0_30px_80px_rgba(15,23,42,0.22)] sm:max-h-[calc(100vh-3rem)]">
+        <div className="my-auto flex max-h-[calc(100vh-3rem)] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
           <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Campus Outreach</p>
-              <h2 className="mt-2 text-xl font-extrabold text-navy">
+              <h2 className="text-[15px] font-bold text-slate-900">
                 {colleges.length > 1 ? `Send ${colleges.length} campus requests` : `Send request to ${colleges[0]?.collegeName || 'campus'}`}
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Selected campus placement teams will receive this request inside the portal and on email.
-              </p>
+              <p className="mt-0.5 text-[12px] text-slate-500">Placement teams will be notified via portal and email.</p>
             </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
-            >
-              <FiX size={16} />
+            <button type="button" onClick={onClose} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:bg-slate-50 hover:text-slate-600">
+              <FiX size={14} />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
-            <div className="rounded-[1.25rem] border border-slate-200 bg-white/90 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Selected Campuses</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">
-                    {colleges.length} selected
-                  </span>
-                  {remainingCollegesCount ? (
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-500">
-                      +{remainingCollegesCount} more in queue
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="mt-3 flex flex-wrap gap-2">
+          <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 space-y-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Selected ({colleges.length})</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {previewColleges.map((college) => (
-                  <span
-                    key={college.collegeId}
-                    className="inline-flex max-w-full items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700"
-                    title={college.collegeName}
-                  >
+                  <span key={college.collegeId} className="inline-flex max-w-full items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-700" title={college.collegeName}>
                     <span className="truncate">{college.collegeName}</span>
                   </span>
                 ))}
+                {remainingCollegesCount > 0 && <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-500">+{remainingCollegesCount} more</span>}
               </div>
             </div>
 
-            <div className="mt-4">
-              <p className="text-sm font-semibold text-slate-700">Request type</p>
-              <div className="mt-2 flex flex-wrap gap-2">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Request type</p>
+              <div className="mt-2 flex gap-2">
                 {REQUEST_TYPE_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => onChangeRequestType(option.value)}
-                    className={`rounded-full px-3 py-2 text-sm font-semibold transition ${
-                      requestType === option.value
-                        ? 'bg-brand-500 text-white'
-                        : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
+                  <button key={option.value} type="button" onClick={() => onChangeRequestType(option.value)} className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition ${requestType === option.value ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
                     {option.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="mt-4">
-              <label className="block text-sm font-semibold text-slate-700" htmlFor="campus-request-message">
-                Request message
-              </label>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500" htmlFor="campus-request-message">Message</label>
               <textarea
                 id="campus-request-message"
                 value={requestMessage}
                 onChange={(event) => onChangeRequestMessage(event.target.value)}
-                rows={6}
+                rows={5}
                 placeholder="Describe whether you want a campus drive, talent pool access, or both."
-                className="mt-2 w-full rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+                className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] leading-relaxed text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-500">Review once and send to the selected campus hiring contacts.</p>
-
-            <div className="flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={onSubmit}
-                disabled={submitting || !colleges.length}
-                className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-60"
-              >
-                {submitting ? <FiRefreshCw size={14} className="animate-spin" /> : <FiSend size={14} />}
-                {submitting ? 'Sending...' : colleges.length > 1 ? 'Send requests' : 'Send request'}
-              </button>
-            </div>
+          <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-5 py-3">
+            <button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50">Cancel</button>
+            <button type="button" onClick={onSubmit} disabled={submitting || !colleges.length} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50">
+              {submitting ? <FiRefreshCw size={12} className="animate-spin" /> : <FiSend size={12} />}
+              {submitting ? 'Sending...' : 'Send request'}
+            </button>
           </div>
         </div>
       </div>

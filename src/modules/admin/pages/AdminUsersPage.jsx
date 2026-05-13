@@ -266,7 +266,7 @@ const AdminUsersPage = () => {
       
       <header className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
         <div>
-          <h1 className="mb-1.5 flex items-center gap-3 text-2xl font-extrabold font-heading tracking-tight text-primary md:text-[2rem]">
+          <h1 className="mb-1.5 flex items-center gap-3 text-2xl font-bold font-heading tracking-tight text-primary md:text-[2rem]">
             Identity & Access
           </h1>
           <p className="text-base text-neutral-500">Manage platform users, HR verifications, and internal workforce accounts.</p>
@@ -304,7 +304,7 @@ const AdminUsersPage = () => {
       <section className="overflow-hidden rounded-[2rem] border border-neutral-100 bg-white shadow-sm">
         <div className="flex flex-col items-start justify-between border-b border-neutral-100 bg-neutral-50/50 p-5 md:flex-row md:items-center md:p-6">
           <div>
-            <h2 className="flex items-center gap-2 text-lg font-extrabold text-primary">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-primary">
               <FiKey className="text-brand-500" /> Internal Workforce Accounts
             </h2>
             <p className="mt-1 text-xs text-neutral-500 md:text-sm">Provision access credentials for Data Entry, Accounts, and Support teams.</p>
@@ -431,7 +431,7 @@ const AdminUsersPage = () => {
                   managedAccounts.map((acc) => (
                     <tr key={acc.id} className="hover:bg-neutral-50 transition-colors">
                       <td className="p-3 pl-5 align-middle">
-                        <div className="text-sm font-extrabold text-primary">{acc.name}</div>
+                        <div className="text-sm font-bold text-primary">{acc.name}</div>
                         <div className="font-medium text-neutral-500 text-xs">{acc.email}</div>
                       </td>
                       <td className="p-3">
@@ -464,7 +464,7 @@ const AdminUsersPage = () => {
         <div className="border-b border-neutral-100 bg-neutral-50/50 p-5 md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="flex items-center gap-2 text-lg font-extrabold text-primary">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-primary">
                 <FiUsers className="text-brand-500" /> Platform Security Database
               </h2>
               <p className="mt-1 text-xs text-neutral-500 md:text-sm">Audit trail of all public users (Students & Recruiters).</p>
@@ -567,7 +567,7 @@ const AdminUsersPage = () => {
                   return (
                     <tr key={user.id} className="group transition-colors hover:bg-neutral-50/50">
                       <td className="p-3 pl-5">
-                        <div className="text-sm font-extrabold text-primary">{user.name || 'Unknown'}</div>
+                        <div className="text-sm font-bold text-primary">{user.name || 'Unknown'}</div>
                         <div className="font-medium text-neutral-500 text-xs">{user.email || 'No email'}</div>
                       </td>
                       <td className="p-3 align-middle">

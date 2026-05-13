@@ -578,7 +578,7 @@ const StudentAtsPage = () => {
                 ].map((item) => (
                   <div key={item.label} className="rounded-[0.9rem] border border-slate-200 bg-slate-50 px-3 py-2">
                     <p className="text-[11px] font-bold uppercase text-slate-400">{item.label}</p>
-                    <p className="mt-0.5 truncate text-sm font-extrabold text-navy">{item.value}</p>
+                    <p className="mt-0.5 truncate text-sm font-bold text-navy">{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -616,7 +616,7 @@ const StudentAtsPage = () => {
                       className={`mb-1 flex w-full items-center justify-between rounded-[0.85rem] px-3 py-2 text-left transition hover:bg-brand-50 ${isManualTarget ? 'bg-brand-50 text-brand-700' : 'text-slate-700'}`}
                     >
                       <span>
-                        <span className="block text-sm font-extrabold">Use manual job description</span>
+                        <span className="block text-sm font-bold">Use manual job description</span>
                         <span className="text-xs text-slate-500">Paste any JD when the exact role is not listed</span>
                       </span>
                       {isManualTarget ? <FiCheck size={16} /> : null}
@@ -639,7 +639,7 @@ const StudentAtsPage = () => {
                           className={`flex w-full items-start justify-between gap-3 rounded-[0.85rem] px-3 py-2 text-left transition hover:bg-slate-50 ${isSelected ? 'bg-slate-50' : ''}`}
                         >
                           <span className="min-w-0">
-                            <span className="block truncate text-sm font-extrabold text-navy">{job.jobTitle || 'Untitled role'}</span>
+                            <span className="block truncate text-sm font-bold text-navy">{job.jobTitle || 'Untitled role'}</span>
                             <span className="mt-0.5 block truncate text-xs text-slate-500">
                               {job.companyName || 'Company'} · {job.jobLocation || 'Location not specified'}
                             </span>
@@ -730,7 +730,7 @@ const StudentAtsPage = () => {
                       <FiUploadCloud size={18} />
                     </span>
                     <span>
-                      <span className="block text-sm font-extrabold text-navy">Attach resume</span>
+                      <span className="block text-sm font-bold text-navy">Attach resume</span>
                       <span className="text-xs text-slate-500">PDF, DOC, DOCX, TXT up to 8 MB</span>
                     </span>
                   </span>

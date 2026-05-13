@@ -8,6 +8,7 @@ import {
   FiUsers
 } from 'react-icons/fi';
 import { exportPlacementReport, getCampusStats } from '../services/campusConnectApi';
+import FeatureGate from '../../../shared/components/FeatureGate';
 
 const empty = {
   totalStudents: 0, placedStudents: 0, unplacedStudents: 0, placementRate: 0,
@@ -53,21 +54,22 @@ export default function CampusReportsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1120px] space-y-7 pb-12">
+    <FeatureGate feature="campus.reports_export" featureLabel="Placement Reports & Export">
+    <div className="mx-auto w-full max-w-[1120px] space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-navy">Placement Reports</h1>
+          <h1 className="font-heading text-xl font-bold tracking-tight text-navy">Placement Reports</h1>
           <p className="mt-1 text-sm text-slate-500">Full placement statistics and CSV export for your college.</p>
         </div>
         <button
           type="button"
           onClick={handleExport}
           disabled={exporting}
-          className="inline-flex items-center gap-2 rounded-full bg-[#2d5bff] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#2449d8] disabled:opacity-70"
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-indigo-700 disabled:opacity-70"
         >
-          {exporting ? <FiRefreshCw size={15} className="animate-spin" /> : <FiDownload size={15} />}
-          {exporting ? 'Exporting...' : 'Export CSV Report'}
+          {exporting ? <FiRefreshCw size={14} className="animate-spin" /> : <FiDownload size={14} />}
+          {exporting ? 'Exporting...' : 'Export CSV'}
         </button>
       </div>
 
@@ -87,7 +89,7 @@ export default function CampusReportsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{card.label}</p>
-                <p className={`mt-1 text-3xl font-extrabold ${card.color}`}>{card.value}</p>
+                <p className={`mt-1 text-3xl font-bold ${card.color}`}>{card.value}</p>
               </div>
               <span className={`flex h-10 w-10 items-center justify-center rounded-full ${card.bg}`}>
                 <card.icon size={20} className={card.color} />
@@ -106,14 +108,14 @@ export default function CampusReportsPage() {
         ].map((item) => (
           <div key={item.label} className="rounded-[1.5rem] border border-slate-100 bg-white p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{item.label}</p>
-            <p className="mt-1 text-2xl font-extrabold text-navy">{item.value}</p>
+            <p className="mt-1 text-2xl font-bold text-navy">{item.value}</p>
           </div>
         ))}
       </div>
 
       {/* Branch-wise full table */}
       <div className="rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.10)]">
-        <h2 className="mb-5 text-lg font-extrabold text-navy">Branch-wise Placement Report</h2>
+        <h2 className="mb-5 text-lg font-bold text-navy">Branch-wise Placement Report</h2>
         {stats.branchStats?.length === 0 ? (
           <p className="text-sm text-slate-400">No branch data available. Import students first.</p>
         ) : (
@@ -173,5 +175,6 @@ export default function CampusReportsPage() {
         </button>
       </div>
     </div>
+    </FeatureGate>
   );
 }
