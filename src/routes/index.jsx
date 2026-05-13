@@ -33,14 +33,24 @@ const ChunkRecoveryReady = ({ children }) => {
   return children;
 };
 
+const PageLoadingFallback = () => (
+  <div className="mx-auto w-full max-w-[1200px] animate-pulse space-y-4 px-4 py-8">
+    <div className="h-7 w-44 rounded-lg bg-slate-100" />
+    <div className="h-3.5 w-64 rounded bg-slate-100" />
+    <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="h-[72px] rounded-xl border border-slate-100 bg-white" />
+      ))}
+    </div>
+    <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="h-56 rounded-xl border border-slate-100 bg-white" />
+      <div className="h-56 rounded-xl border border-slate-100 bg-white" />
+    </div>
+  </div>
+);
+
 const SuspenseWrapper = ({ children }) => (
-  <Suspense
-    fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-10 w-10 border-2 border-brand-500 border-t-transparent" />
-      </div>
-    }
-  >
+  <Suspense fallback={<PageLoadingFallback />}>
     <ChunkRecoveryReady>{children}</ChunkRecoveryReady>
   </Suspense>
 );

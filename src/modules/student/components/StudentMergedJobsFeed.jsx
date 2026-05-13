@@ -714,7 +714,7 @@ const StudentMergedJobsFeed = () => {
                 <FiChevronLeft size={14} />
               </button>
 
-              <div className="min-w-[96px] text-center text-[0.95rem] font-extrabold tracking-[-0.01em] text-navy">
+              <div className="min-w-[96px] text-center text-[0.95rem] font-bold tracking-[-0.01em] text-navy">
                 Page {currentPage} <span className="mx-1 font-medium text-slate-400">/</span> {totalPages}
               </div>
 

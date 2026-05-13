@@ -23,7 +23,11 @@ const normalizeOtpErrorMessage = (message = '') => {
   const normalized = String(message || '').trim();
   if (!normalized) return 'Unable to resend OTP right now.';
 
-  if (/otp email could not be sent|smtp|connection timeout|enetunreach|econn|timed out/i.test(normalized)) {
+  if (/daily_quota_exceeded|quota exceeded|quota|rate limit/i.test(normalized)) {
+    return 'OTP email sending limit has been reached right now. Please wait and try again later or contact support.';
+  }
+
+  if (/otp email could not be sent|smtp|connection timeout|enetunreach|econn|timed out|authentication|could not send/i.test(normalized)) {
     return 'We could not deliver the OTP right now. Please wait a moment and try Resend OTP again.';
   }
 
@@ -137,9 +141,9 @@ const OtpVerificationPage = () => {
       return;
     }
 
-    if (/otp email could not be sent|smtp|connection timeout|authentication|login failed|could not send/i.test(normalizedWarning)) {
+    if (/otp email could not be sent|smtp|connection timeout|authentication|login failed|could not send|daily_quota_exceeded|quota exceeded|quota|rate limit/i.test(normalizedWarning)) {
       setNotice('');
-      setError(normalizedWarning);
+      setError(normalizeOtpErrorMessage(normalizedWarning));
       return;
     }
 

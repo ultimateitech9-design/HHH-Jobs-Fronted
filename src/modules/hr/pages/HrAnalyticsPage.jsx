@@ -83,6 +83,15 @@ const HrAnalyticsPage = () => {
   };
   const maxPipeline = Math.max(1, ...Object.values(pipeline).map((value) => Number(value || 0)));
 
+  const stageColors = {
+    applied: 'bg-blue-500',
+    shortlisted: 'bg-amber-500',
+    interviewed: 'bg-brand-500',
+    offered: 'bg-emerald-500',
+    rejected: 'bg-red-400',
+    hired: 'bg-teal-500'
+  };
+
   return (
     <div className="module-page module-page--hr">
       <SectionHeader
@@ -95,27 +104,30 @@ const HrAnalyticsPage = () => {
       {state.error ? <p className="form-error">{state.error}</p> : null}
       {state.loading ? <p className="module-note">Loading analytics...</p> : null}
 
-      <div className="stats-grid">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map((card) => (
           <StatCard key={card.label} {...card} />
         ))}
       </div>
 
-      <section className="panel-card">
+      <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
         <SectionHeader eyebrow="Pipeline" title="Application Stage Distribution" />
 
-        <div className="bar-list">
+        <div className="space-y-2.5">
           {Object.entries(pipeline).map(([stage, count]) => {
-            const width = Math.round((Number(count || 0) / maxPipeline) * 100);
+            const width = Math.max(2, Math.round((Number(count || 0) / maxPipeline) * 100));
 
             return (
-              <div className="bar-item" key={stage}>
-                <div className="bar-label-row">
-                  <span>{stage}</span>
-                  <strong>{count}</strong>
+              <div key={stage} className="space-y-0.5">
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="font-medium capitalize text-slate-600">{stage}</span>
+                  <span className="font-semibold text-navy tabular-nums">{count}</span>
                 </div>
-                <div className="bar-track">
-                  <span className="bar-fill" style={{ width: `${width}%` }} />
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${stageColors[stage] || 'bg-slate-400'}`}
+                    style={{ width: Number(count || 0) > 0 ? `${width}%` : '0%' }}
+                  />
                 </div>
               </div>
             );

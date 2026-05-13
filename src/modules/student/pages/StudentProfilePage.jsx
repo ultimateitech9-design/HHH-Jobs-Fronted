@@ -346,7 +346,7 @@ const modalInputClassName =
 const modalSelectClassName =
   'h-11 w-full rounded-[0.9rem] border border-[#dfe5f2] bg-white px-4 text-[0.88rem] text-slate-950 outline-none transition focus:border-[#2d5bff] focus:ring-2 focus:ring-[#2d5bff]/10';
 
-const modalLabelClassName = 'mb-2 block text-[0.8rem] font-extrabold text-slate-950';
+const modalLabelClassName = 'mb-2 block text-[0.8rem] font-bold text-slate-950';
 
 const profileModalBackdropClassName =
   'fixed inset-0 z-[140] flex items-center justify-center overflow-y-auto overscroll-contain bg-slate-950/65 p-4 backdrop-blur-[2px]';
@@ -1433,7 +1433,7 @@ const StudentProfilePage = () => {
             </span>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-[1rem] font-extrabold text-slate-950">Eimager verification</h2>
+                <h2 className="text-[1rem] font-bold text-slate-950">Eimager verification</h2>
                 <span className="rounded-full border border-[#cbd8ff] bg-white px-2.5 py-1 text-[0.72rem] font-bold text-[#2d5bff]">
                   {verificationLabel}
                 </span>
@@ -1479,7 +1479,7 @@ const StudentProfilePage = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[0.72rem] font-bold uppercase tracking-[0.26em] text-brand-700">Quick Update</p>
-                <h2 className="mt-1 text-[1.45rem] font-extrabold tracking-tight text-navy">Update profile</h2>
+                <h2 className="mt-1 text-[1.45rem] font-bold tracking-tight text-navy">Update profile</h2>
                 <p className="mt-1 text-sm text-slate-500">Edit your basic details here and save instantly.</p>
               </div>
               <button
@@ -1603,7 +1603,7 @@ const StudentProfilePage = () => {
           <div className="max-h-[calc(100vh-2rem)] w-full max-w-[830px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
             <div className="flex items-start justify-between gap-5">
               <div>
-                <h2 className="text-[1.45rem] font-extrabold tracking-tight text-slate-950">Resume headline</h2>
+                <h2 className="text-[1.45rem] font-bold tracking-tight text-slate-950">Resume headline</h2>
                 <p className="mt-1 max-w-2xl text-[0.95rem] leading-6 text-[#68749a]">
                   It is the first thing recruiters notice in your profile. Write a concise headline introducing yourself to employers. (Minimum 5 words)
                 </p>
@@ -1620,7 +1620,7 @@ const StudentProfilePage = () => {
             </div>
 
             <div className="mt-8">
-              <label className="text-[0.95rem] font-extrabold text-slate-950" htmlFor="resume-headline-editor">
+              <label className="text-[0.95rem] font-bold text-slate-950" htmlFor="resume-headline-editor">
                 Resume headline<span className="text-red-500">*</span>
                 <FiAward className="ml-1 inline text-[#f5a623]" size={15} />
               </label>
@@ -1684,7 +1684,7 @@ const StudentProfilePage = () => {
           <div className="max-h-[calc(100vh-2rem)] w-full max-w-[830px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
             <div className="flex items-start justify-between gap-5">
               <div>
-                <h2 className="text-[1.35rem] font-extrabold tracking-tight text-slate-950">Key skills</h2>
+                <h2 className="text-[1.35rem] font-bold tracking-tight text-slate-950">Key skills</h2>
                 <p className="mt-1 max-w-2xl text-[0.95rem] leading-6 text-[#68749a]">
                   Add skills that best define your expertise, for e.g. Direct Marketing, Oracle, Java, etc. (Minimum 1)
                 </p>
@@ -1701,7 +1701,7 @@ const StudentProfilePage = () => {
             </div>
 
             <div className="mt-8">
-              <p className="text-[0.95rem] font-extrabold text-slate-950">Skills</p>
+              <p className="text-[0.95rem] font-bold text-slate-950">Skills</p>
               <div className="mt-3 flex flex-wrap gap-3">
                 {skillsDraft.map((skill) => (
                   <span
@@ -1732,7 +1732,7 @@ const StudentProfilePage = () => {
             </div>
 
             <div className="mt-8">
-              <p className="flex items-center gap-1.5 text-[0.95rem] font-extrabold text-slate-950">
+              <p className="flex items-center gap-1.5 text-[0.95rem] font-bold text-slate-950">
                 AI suggestions
                 <FiAward className="text-[#f5a623]" size={15} />
               </p>
@@ -1783,7 +1783,7 @@ const StudentProfilePage = () => {
           <div className="max-h-[calc(100vh-2rem)] w-full max-w-[700px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
             <div className="flex items-start justify-between gap-5">
               <div>
-                <h2 className="text-[1.35rem] font-extrabold tracking-tight text-slate-950">Personal details</h2>
+                <h2 className="text-[1.35rem] font-bold tracking-tight text-slate-950">Personal details</h2>
                 <p className="mt-1 text-[0.9rem] leading-5 text-[#68749a]">This information is important for employers to know you better</p>
               </div>
               <button
@@ -1926,7 +1926,7 @@ const StudentProfilePage = () => {
               </div>
 
               <div>
-                <h3 className="text-[1.15rem] font-extrabold text-slate-950">Language proficiency</h3>
+                <h3 className="text-[1.15rem] font-bold text-slate-950">Language proficiency</h3>
                 <p className="mt-1 text-[0.86rem] text-[#68749a]">Strengthen your resume by letting recruiters know you can communicate in multiple languages</p>
                 <div className="mt-5 space-y-5">
                   {personalDraft.languages.map((language, index) => (
@@ -2010,7 +2010,7 @@ const StudentProfilePage = () => {
           <div className="max-h-[calc(100vh-2rem)] w-full max-w-[700px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
             <div className="flex items-start justify-between gap-5">
               <div>
-                <h2 className="text-[1.25rem] font-extrabold text-slate-950">Education</h2>
+                <h2 className="text-[1.25rem] font-bold text-slate-950">Education</h2>
                 <p className="mt-1 text-[0.82rem] leading-5 text-[#68749a]">Details like course, university, and more, help recruiters identify your educational background</p>
               </div>
               <button type="button" onClick={closeEducationEditor} disabled={saving} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#68749a] hover:bg-slate-50 disabled:opacity-60" aria-label="Close education editor">
@@ -2090,7 +2090,7 @@ const StudentProfilePage = () => {
           <div className="w-full max-w-[520px] rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
             <div className="flex items-start justify-between gap-5">
               <div>
-                <h2 className="text-[1.05rem] font-extrabold text-slate-950">IT skills <span className="text-[0.78rem] text-emerald-600">Add %</span></h2>
+                <h2 className="text-[1.05rem] font-bold text-slate-950">IT skills <span className="text-[0.78rem] text-emerald-600">Add %</span></h2>
                 <p className="mt-1 text-[0.78rem] leading-5 text-[#68749a]">Mention skills like programming languages, softwares and more, to show your technical expertise.</p>
               </div>
               <button type="button" onClick={closeItSkillEditor} disabled={saving} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#68749a] hover:bg-slate-50 disabled:opacity-60" aria-label="Close IT skills editor">
@@ -2142,7 +2142,7 @@ const StudentProfilePage = () => {
           <div className="max-h-[calc(100vh-2rem)] w-full max-w-[560px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
             <div className="flex items-start justify-between gap-5">
               <div>
-                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Project</h2>
+                <h2 className="text-[1.05rem] font-bold text-slate-950">Project</h2>
                 <p className="mt-1 text-[0.78rem] leading-5 text-[#68749a]">Stand out for employers by adding details about projects you have done in college, internships, or at work</p>
               </div>
               <div className="flex items-center gap-2">
@@ -2250,7 +2250,7 @@ const StudentProfilePage = () => {
           <div className="max-h-[calc(100vh-2rem)] w-full max-w-[520px] overflow-y-auto rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
             <div className="flex items-start justify-between gap-5">
               <div>
-                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Career profile</h2>
+                <h2 className="text-[1.05rem] font-bold text-slate-950">Career profile</h2>
                 <p className="mt-1 text-[0.78rem] leading-5 text-[#68749a]">Add details about your current and preferred job profile. This helps us personalise your job recommendations.</p>
               </div>
               <button type="button" onClick={closeCareerEditor} disabled={saving} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#68749a] hover:bg-slate-50 disabled:opacity-60" aria-label="Close career profile editor">
@@ -2357,7 +2357,7 @@ const StudentProfilePage = () => {
           <div className="w-full max-w-[520px] rounded-[1.25rem] bg-white p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] sm:p-8">
             <div className="flex items-start justify-between gap-5">
               <div>
-                <h2 className="text-[1.1rem] font-extrabold text-slate-950">Diversity &amp; inclusion</h2>
+                <h2 className="text-[1.1rem] font-bold text-slate-950">Diversity &amp; inclusion</h2>
                 <p className="mt-1 text-[0.82rem] leading-5 text-[#68749a]">Share details to attract recruiters who value people from different backgrounds.</p>
               </div>
               <button type="button" onClick={closeDiversityEditor} disabled={saving} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#68749a] hover:bg-slate-50 disabled:opacity-60" aria-label="Close diversity editor">
@@ -2424,7 +2424,7 @@ const StudentProfilePage = () => {
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-1.5">
-                <h1 className="text-[1.24rem] font-extrabold tracking-tight text-navy">{userName}</h1>
+                <h1 className="text-[1.24rem] font-bold tracking-tight text-navy">{userName}</h1>
                 <button
                   type="button"
                   onClick={openProfileEditor}
@@ -2577,7 +2577,7 @@ const StudentProfilePage = () => {
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[238px_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className={`${cardClassName} space-y-0.5 px-1`}>
-            <h2 className="px-3 pb-2 text-[0.92rem] font-extrabold tracking-tight text-navy">Quick links</h2>
+            <h2 className="px-3 pb-2 text-[0.92rem] font-bold tracking-tight text-navy">Quick links</h2>
             {quickLinks.map((item) => {
               return (
                 <button
@@ -2604,7 +2604,7 @@ const StudentProfilePage = () => {
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Resume</h2>
+                <h2 className="text-[1.05rem] font-bold text-slate-950">Resume</h2>
                 <span className="text-[0.95rem] font-bold text-emerald-600">{hasResume ? 'Updated' : 'Add 10%'}</span>
               </div>
               {hasResume ? (
@@ -2630,7 +2630,7 @@ const StudentProfilePage = () => {
                     <FiFileText size={18} />
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-[1rem] font-extrabold text-slate-950">{resumeFileName}</p>
+                    <p className="truncate text-[1rem] font-bold text-slate-950">{resumeFileName}</p>
                     <p className="mt-0.5 text-[0.82rem] text-[#8a94b7]">Stored resume is ready for one-click apply.</p>
                   </div>
                 </div>
@@ -2661,7 +2661,7 @@ const StudentProfilePage = () => {
               disabled={resumeImporting}
               className="mt-5 flex min-h-[116px] w-full flex-col items-center justify-center rounded-[1rem] border border-dashed border-[#9facdf] px-5 py-7 text-center transition hover:border-[#2d5bff] hover:bg-[#f8faff] disabled:opacity-70"
             >
-              <span className="text-[1rem] font-extrabold text-slate-950">
+              <span className="text-[1rem] font-bold text-slate-950">
                 Already have a resume?{' '}
                 <span className="text-[#2d5bff]">{resumeImporting ? 'Uploading...' : hasResume ? 'Upload newer resume' : 'Upload resume'}</span>
               </span>
@@ -2680,7 +2680,7 @@ const StudentProfilePage = () => {
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Resume headline</h2>
+                <h2 className="text-[1.05rem] font-bold text-slate-950">Resume headline</h2>
                 <FiAward className="text-[#f5a623]" size={18} />
                 <button
                   type="button"
@@ -2714,7 +2714,7 @@ const StudentProfilePage = () => {
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Key skills</h2>
+                <h2 className="text-[1.05rem] font-bold text-slate-950">Key skills</h2>
                 <FiAward className="text-[#f5a623]" size={18} />
                 <button
                   type="button"
@@ -2756,7 +2756,7 @@ const StudentProfilePage = () => {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-navy">Employment</h2>
+                  <h2 className="text-2xl font-bold text-navy">Employment</h2>
                   <span className="text-base font-bold text-emerald-600">{hasEmployment ? 'Updated' : 'Add 18%'}</span>
                 </div>
                 <p className="mt-2 text-sm text-slate-500">
@@ -2797,7 +2797,7 @@ const StudentProfilePage = () => {
                     {/* Card header */}
                     <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="text-lg font-extrabold text-navy">
+                        <p className="text-lg font-bold text-navy">
                           {entry.designation || entry.companyName || `Experience #${index + 1}`}
                         </p>
                         {entry.designation && entry.companyName && (
@@ -2978,7 +2978,7 @@ const StudentProfilePage = () => {
             className={cardClassName}
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-[1.05rem] font-extrabold text-slate-950">Education</h2>
+              <h2 className="text-[1.05rem] font-bold text-slate-950">Education</h2>
               <button type="button" onClick={() => openEducationEditor()} className="text-[0.9rem] font-bold text-[#2d5bff]">
                 Add education
               </button>
@@ -2990,7 +2990,7 @@ const StudentProfilePage = () => {
                   <div key={`education-display-${index}`} className="max-w-[620px]">
                     <div className="flex items-start gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-[0.88rem] font-extrabold text-slate-950">
+                        <p className="truncate text-[0.88rem] font-bold text-slate-950">
                           {getEducationDisplayTitle(entry, index)}
                         </p>
                         <p className="mt-1 text-[0.82rem] font-semibold text-slate-950">
@@ -3034,7 +3034,7 @@ const StudentProfilePage = () => {
             className={cardClassName}
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-[1.05rem] font-extrabold text-slate-950">IT skills</h2>
+              <h2 className="text-[1.05rem] font-bold text-slate-950">IT skills</h2>
               <button type="button" onClick={() => openItSkillEditor()} className="text-[0.9rem] font-bold text-[#2d5bff]">
                 Add details
               </button>
@@ -3087,7 +3087,7 @@ const StudentProfilePage = () => {
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-[1.05rem] font-extrabold text-slate-950">Projects</h2>
+                <h2 className="text-[1.05rem] font-bold text-slate-950">Projects</h2>
                 <FiAward className="text-[#f5a623]" size={16} />
               </div>
               <button type="button" onClick={() => openProjectEditor()} className="text-[0.9rem] font-bold text-[#2d5bff]">
@@ -3108,7 +3108,7 @@ const StudentProfilePage = () => {
                   <div key={`project-display-${index}`} className="border-b border-transparent pb-2 last:border-b-0">
                     <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className="text-[0.88rem] font-extrabold text-slate-950">{entry.title || `Project #${index + 1}`}</p>
+                        <p className="text-[0.88rem] font-bold text-slate-950">{entry.title || `Project #${index + 1}`}</p>
                         <p className="mt-1 whitespace-pre-line text-[0.78rem] font-medium text-slate-950">{getProjectDisplayMeta(entry)}</p>
                         <p className="mt-1 text-[0.78rem] leading-5 text-[#23305f]">
                           - {previewText(entry.description)}
@@ -3152,7 +3152,7 @@ const StudentProfilePage = () => {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-navy">Profile summary</h2>
+                  <h2 className="text-2xl font-bold text-navy">Profile summary</h2>
                   <span className="text-base font-bold text-emerald-600">{hasProfileSummary ? 'Updated' : 'Add 8%'}</span>
                 </div>
                 <p className="mt-2 text-sm text-slate-500">Highlight your key career achievements to help employers know your potential.</p>
@@ -3179,7 +3179,7 @@ const StudentProfilePage = () => {
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-extrabold text-navy">Accomplishments</h2>
+                <h2 className="text-2xl font-bold text-navy">Accomplishments</h2>
                 <p className="mt-2 text-sm text-slate-500">Showcase your credentials by adding relevant certifications, work samples, and online profiles.</p>
               </div>
               <button type="button" onClick={() => scrollToNode(sectionRefs.current.accomplishments)} className="text-lg font-bold text-[#2d5bff]">
@@ -3243,7 +3243,7 @@ const StudentProfilePage = () => {
             className={cardClassName}
           >
             <div className="flex items-center gap-2">
-              <h2 className="text-[1.05rem] font-extrabold text-slate-950">Career profile</h2>
+              <h2 className="text-[1.05rem] font-bold text-slate-950">Career profile</h2>
               <button
                 type="button"
                 onClick={openCareerEditor}
@@ -3304,7 +3304,7 @@ const StudentProfilePage = () => {
             className={cardClassName}
           >
             <div className="flex items-center gap-2">
-              <h2 className="text-[1.05rem] font-extrabold text-slate-950">Personal details</h2>
+              <h2 className="text-[1.05rem] font-bold text-slate-950">Personal details</h2>
               <button
                 type="button"
                 onClick={openPersonalEditor}
@@ -3345,7 +3345,7 @@ const StudentProfilePage = () => {
 
             <div className="mt-6 border-t border-[#e2e7f3] pt-6">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-[1rem] font-extrabold text-slate-950">Languages</h3>
+                <h3 className="text-[1rem] font-bold text-slate-950">Languages</h3>
                 <button type="button" onClick={openPersonalEditor} className="text-[0.9rem] font-bold text-[#2d5bff]">
                   Add languages
                 </button>
@@ -3394,7 +3394,7 @@ const StudentProfilePage = () => {
           >
             <span className="absolute right-4 top-0 inline-flex rounded-b-xl bg-[#f0ebff] px-3 py-1 text-[0.72rem] font-bold text-[#8c6cf6]">New</span>
             <div className="flex items-center gap-2">
-              <h2 className="text-[1.05rem] font-extrabold text-slate-950">Diversity &amp; inclusion</h2>
+              <h2 className="text-[1.05rem] font-bold text-slate-950">Diversity &amp; inclusion</h2>
               <button
                 type="button"
                 onClick={openDiversityEditor}

@@ -37,8 +37,8 @@ const PortalDashboardHero = ({
     ? 'grid gap-3 xl:grid-cols-[minmax(0,1.02fr)_minmax(260px,0.98fr)] xl:items-start'
     : 'grid gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.88fr)] xl:items-start';
   const titleClass = compact
-    ? 'mt-1.5 max-w-3xl text-balance break-words font-heading text-[1.35rem] font-extrabold leading-tight sm:text-[1.55rem] lg:text-[1.75rem]'
-    : 'mt-3 max-w-3xl text-balance break-words font-heading text-[2rem] font-extrabold leading-tight lg:text-[2.7rem]';
+    ? 'mt-1.5 max-w-3xl text-balance break-words font-heading text-[1.35rem] font-bold leading-tight sm:text-[1.55rem] lg:text-[1.75rem]'
+    : 'mt-3 max-w-3xl text-balance break-words font-heading text-[2rem] font-bold leading-tight lg:text-[2.7rem]';
   const descriptionClass = compact
     ? 'mt-1.5 max-w-2xl text-[12px] leading-4.5 text-white/78 sm:text-[13px] sm:leading-5'
     : 'mt-3 max-w-2xl text-sm leading-6 text-white/78 md:text-base';

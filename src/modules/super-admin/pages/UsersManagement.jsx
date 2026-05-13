@@ -6,8 +6,9 @@ import FilterBar from '../components/FilterBar';
 import Pagination from '../components/Pagination';
 import UsersTable from '../components/UsersTable';
 import useUsers from '../hooks/useUsers';
-import { USER_ROLES, USER_ROLE_LABELS } from '../constants/userRoles';
+import { ASSIGNABLE_DASHBOARD_ROLE_OPTIONS, USER_ROLES, USER_ROLE_LABELS } from '../constants/userRoles';
 import { createAdminUser, deleteUser, updateUserStatus } from '../services/usersApi';
+import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
 
 const INITIAL_ADMIN_FORM = {
   name: '',
@@ -17,18 +18,134 @@ const INITIAL_ADMIN_FORM = {
   role: 'admin'
 };
 
+const CreateUserForm = ({ existingEmails, onCreate }) => {
+  const [adminForm, setAdminForm] = useState(INITIAL_ADMIN_FORM);
+  const [formError, setFormError] = useState('');
+  const [savingAdmin, setSavingAdmin] = useState(false);
+  const passwordPolicyError = adminForm.password
+    ? getPasswordPolicyError(adminForm.password, '')
+    : '';
+  const passwordPolicyMessage = adminForm.password
+    ? (passwordPolicyError || 'Strong password ready to use.')
+    : PASSWORD_POLICY_HELPER;
+
+  const handleCreateAdmin = async (event) => {
+    event.preventDefault();
+    const name = adminForm.name.trim();
+    const email = adminForm.email.trim().toLowerCase();
+    const company = adminForm.company.trim() || 'HHH Jobs';
+    const password = String(adminForm.password || '');
+    const role = adminForm.role || 'admin';
+
+    if (!name || !email || !password) {
+      setFormError('Name, email, and password are required to create a user ID.');
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setFormError('Enter a valid email address like user@example.com.');
+      return;
+    }
+
+    const passwordError = getPasswordPolicyError(password);
+    if (passwordError) {
+      setFormError(passwordError);
+      return;
+    }
+
+    if (existingEmails.has(email)) {
+      setFormError('An account with this email already exists.');
+      return;
+    }
+
+    setSavingAdmin(true);
+    setFormError('');
+
+    try {
+      await onCreate({ name, email, company, password, role });
+      setAdminForm(INITIAL_ADMIN_FORM);
+    } catch (createError) {
+      setFormError(createError.message || 'Unable to create user ID.');
+    } finally {
+      setSavingAdmin(false);
+    }
+  };
+
+  return (
+    <form className="form-grid" onSubmit={handleCreateAdmin}>
+      <label>
+        Full Name
+        <input
+          type="text"
+          value={adminForm.name}
+          onChange={(event) => setAdminForm((current) => ({ ...current, name: event.target.value }))}
+          placeholder="Enter full name"
+        />
+      </label>
+      <label>
+        Email
+        <input
+          type="email"
+          value={adminForm.email}
+          onChange={(event) => setAdminForm((current) => ({ ...current, email: event.target.value }))}
+          placeholder="user@hhh-jobs.com"
+        />
+      </label>
+      <label>
+        Password
+        <input
+          type="password"
+          value={adminForm.password}
+          onChange={(event) => {
+            setAdminForm((current) => ({ ...current, password: event.target.value }));
+            if (formError) setFormError('');
+          }}
+          placeholder="Create a strong password"
+          autoComplete="new-password"
+          minLength={8}
+          aria-invalid={Boolean(passwordPolicyError)}
+        />
+        <span className={`text-xs font-semibold ${passwordPolicyError ? 'text-rose-600' : 'text-slate-500'}`}>{passwordPolicyMessage}</span>
+      </label>
+      <label>
+        Company / Team
+        <input
+          type="text"
+          value={adminForm.company}
+          onChange={(event) => setAdminForm((current) => ({ ...current, company: event.target.value }))}
+          placeholder="HHH Jobs"
+        />
+      </label>
+      <label>
+        Assigned Role
+        <select value={adminForm.role} onChange={(event) => setAdminForm((current) => ({ ...current, role: event.target.value }))}>
+          {ASSIGNABLE_DASHBOARD_ROLE_OPTIONS.map((role) => (
+            <option key={role.value} value={role.value}>{role.label}</option>
+          ))}
+        </select>
+      </label>
+      {formError ? <p className="form-error">{formError}</p> : null}
+      <div className="student-job-actions">
+        <button type="submit" className="btn-primary w-full sm:w-auto" disabled={savingAdmin}>
+          {savingAdmin ? 'Creating User...' : `Create ${USER_ROLE_LABELS[adminForm.role] || 'User'} ID`}
+        </button>
+      </div>
+    </form>
+  );
+};
+
 const UsersManagement = () => {
   const { users, setUsers, filteredUsers, filters, setFilters, loading, error, isDemo } = useUsers();
   const [page, setPage] = useState(1);
   const [targetUser, setTargetUser] = useState(null);
-  const [adminForm, setAdminForm] = useState(INITIAL_ADMIN_FORM);
-  const [formError, setFormError] = useState('');
   const [formMessage, setFormMessage] = useState('');
-  const [savingAdmin, setSavingAdmin] = useState(false);
   const [deletingAdmin, setDeletingAdmin] = useState(null);
   const pageSize = 5;
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
-  const paginatedUsers = filteredUsers.slice((page - 1) * pageSize, page * pageSize);
+  const paginatedUsers = useMemo(
+    () => filteredUsers.slice((page - 1) * pageSize, page * pageSize),
+    [filteredUsers, page]
+  );
 
   const cards = useMemo(() => [
     { label: 'Total Users', value: String(users.length), helper: `${users.filter((item) => item.status === 'active').length} active`, tone: 'info' },
@@ -45,48 +162,19 @@ const UsersManagement = () => {
     setTargetUser(null);
   };
 
-  const handleCreateAdmin = async (event) => {
-    event.preventDefault();
-    const name = adminForm.name.trim();
-    const email = adminForm.email.trim().toLowerCase();
-    const company = adminForm.company.trim() || 'HHH Jobs';
-    const password = String(adminForm.password || '');
-    const role = adminForm.role || 'admin';
-
-    if (!name || !email || !password) {
-      setFormError('Name, email, and password are required to create a user ID.');
-      setFormMessage('');
-      return;
-    }
-
-    if (!email.includes('@')) {
-      setFormError('Enter a valid email address.');
-      setFormMessage('');
-      return;
-    }
-
-    if (users.some((user) => String(user.email).toLowerCase() === email)) {
-      setFormError('An account with this email already exists.');
-      setFormMessage('');
-      return;
-    }
-
-    setSavingAdmin(true);
-    setFormError('');
+  const handleCreateAdmin = async ({ name, email, company, password, role }) => {
     setFormMessage('');
 
-    try {
-      const createdUser = await createAdminUser({ name, email, company, password, role });
-      setUsers((current) => [{ ...createdUser, role }, ...current]);
-      setAdminForm(INITIAL_ADMIN_FORM);
-      setFormMessage(`${USER_ROLE_LABELS[role] || 'User'} ID created for ${name}. This email and password can now open the assigned dashboard.`);
-      setPage(1);
-    } catch (createError) {
-      setFormError(createError.message || 'Unable to create user ID.');
-    } finally {
-      setSavingAdmin(false);
-    }
+    const createdUser = await createAdminUser({ name, email, company, password, role });
+    setUsers((current) => [{ ...createdUser, role }, ...current]);
+    setFormMessage(`${USER_ROLE_LABELS[role] || 'User'} ID created for ${name}. This email and password can now open the assigned dashboard.`);
+    setPage(1);
   };
+
+  const existingEmails = useMemo(
+    () => new Set(users.map((user) => String(user.email || '').toLowerCase()).filter(Boolean)),
+    [users]
+  );
 
   const handleDeleteAdmin = async () => {
     if (!deletingAdmin) return;
@@ -111,60 +199,7 @@ const UsersManagement = () => {
             <p className="module-note">Super admin can create operational IDs here. The generated email and password will open the assigned dashboard directly.</p>
           </div>
         </div>
-        <form className="form-grid" onSubmit={handleCreateAdmin}>
-          <label>
-            Full Name
-            <input
-              type="text"
-              value={adminForm.name}
-              onChange={(event) => setAdminForm((current) => ({ ...current, name: event.target.value }))}
-              placeholder="Enter full name"
-            />
-          </label>
-          <label>
-            Email
-            <input
-              type="email"
-              value={adminForm.email}
-              onChange={(event) => setAdminForm((current) => ({ ...current, email: event.target.value }))}
-              placeholder="user@hhh-jobs.com"
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="text"
-              value={adminForm.password}
-              onChange={(event) => setAdminForm((current) => ({ ...current, password: event.target.value }))}
-              placeholder="Create password"
-            />
-          </label>
-          <label>
-            Company / Team
-            <input
-              type="text"
-              value={adminForm.company}
-              onChange={(event) => setAdminForm((current) => ({ ...current, company: event.target.value }))}
-              placeholder="HHH Jobs"
-            />
-          </label>
-          <label>
-            Assigned Role
-            <select value={adminForm.role} onChange={(event) => setAdminForm((current) => ({ ...current, role: event.target.value }))}>
-              <option value="admin">Admin</option>
-              <option value="dataentry">Data Entry</option>
-              <option value="support">Support</option>
-              <option value="accounts">Accounts</option>
-              <option value="sales">Sales</option>
-            </select>
-          </label>
-          {formError ? <p className="form-error">{formError}</p> : null}
-          <div className="student-job-actions">
-            <button type="submit" className="btn-primary w-full sm:w-auto" disabled={savingAdmin}>
-              {savingAdmin ? 'Creating User...' : `Create ${USER_ROLE_LABELS[adminForm.role] || 'User'} ID`}
-            </button>
-          </div>
-        </form>
+        <CreateUserForm existingEmails={existingEmails} onCreate={handleCreateAdmin} />
       </section>
       <section className="panel-card min-w-0">
         <FilterBar

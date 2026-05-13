@@ -93,7 +93,7 @@ export const StudentPageShell = ({
                 ) : null}
               </div>
 
-              <h1 className={`max-w-4xl font-heading font-extrabold leading-tight text-white ${isMiniHero ? 'mt-2 text-[1.35rem] md:text-[1.65rem]' : isCompactHero ? 'mt-3 text-[1.7rem] sm:text-[2rem] md:text-[2.45rem]' : 'mt-3 text-[1.8rem] sm:text-3xl md:mt-4 md:text-4xl'}`}>
+              <h1 className={`max-w-4xl font-heading font-bold leading-tight text-white ${isMiniHero ? 'mt-2 text-[1.35rem] md:text-[1.65rem]' : isCompactHero ? 'mt-3 text-[1.7rem] sm:text-[2rem] md:text-[2.45rem]' : 'mt-3 text-[1.8rem] sm:text-3xl md:mt-4 md:text-4xl'}`}>
                 {title}
               </h1>
 
@@ -158,7 +158,7 @@ export const StudentSurfaceCard = ({
             {eyebrow ? (
               <p className="mb-2 text-[11px] font-black uppercase tracking-[0.22em] text-brand-700">{eyebrow}</p>
             ) : null}
-            {title ? <h2 className="font-heading text-2xl font-extrabold text-navy">{title}</h2> : null}
+            {title ? <h2 className="font-heading text-2xl font-bold text-navy">{title}</h2> : null}
             {subtitle ? <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{subtitle}</p> : null}
           </div>
           {action ? <div className="shrink-0">{action}</div> : null}

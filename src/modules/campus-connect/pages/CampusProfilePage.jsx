@@ -81,7 +81,7 @@ export default function CampusProfilePage() {
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-navy">College Profile</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-navy">College Profile</h1>
           <p className="mt-1 text-sm text-slate-500">
             This is how your college appears to companies browsing the Campus Connect network.
           </p>
@@ -119,14 +119,14 @@ export default function CampusProfilePage() {
           </div>
         ) : (
           <div className="flex gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-brand-100 bg-white text-2xl font-extrabold text-brand-600">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-brand-100 bg-white text-2xl font-bold text-brand-600">
               {form.logoUrl
                 ? <img src={form.logoUrl} alt="College logo" className="h-full w-full object-cover" />
                 : (form.name || 'C').charAt(0).toUpperCase()
               }
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-navy">{form.name || 'Your College Name'}</h2>
+              <h2 className="text-xl font-bold text-navy">{form.name || 'Your College Name'}</h2>
               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
                 {form.city && <span className="flex items-center gap-1"><FiMapPin size={11} />{form.city}{form.state ? `, ${form.state}` : ''}</span>}
                 {form.affiliation && <span>{form.affiliation}</span>}
@@ -140,7 +140,7 @@ export default function CampusProfilePage() {
 
       {/* Basic info */}
       <div className={cardClass}>
-        <h2 className="mb-5 text-lg font-extrabold text-navy">Basic Information</h2>
+        <h2 className="mb-5 text-lg font-bold text-navy">Basic Information</h2>
         {loading ? (
           <div className="grid gap-4 md:grid-cols-2">
             {Array.from({ length: 6 }).map((_, index) => (
@@ -194,7 +194,7 @@ export default function CampusProfilePage() {
 
       {/* Contact info */}
       <div className={cardClass}>
-        <h2 className="mb-5 text-lg font-extrabold text-navy">Placement Cell Contact</h2>
+        <h2 className="mb-5 text-lg font-bold text-navy">Placement Cell Contact</h2>
         {loading ? (
           <div className="grid gap-4 md:grid-cols-2">
             {Array.from({ length: 3 }).map((_, index) => (
@@ -237,7 +237,7 @@ export default function CampusProfilePage() {
 
       {/* About */}
       <div className={cardClass}>
-        <h2 className="mb-5 flex items-center gap-2 text-lg font-extrabold text-navy">
+        <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-navy">
           <FiEdit2 size={18} />
           About the College
         </h2>

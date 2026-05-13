@@ -74,10 +74,12 @@ const PortalWorkbenchLayout = ({
   const avatarLetter = String(user?.name || user?.email || 'U').trim().slice(0, 1).toUpperCase();
   const avatarUrl = user?.avatarUrl || user?.avatar_url || '';
   const isCompactViewportRoute = location.pathname === '/portal/hr/employee-verification';
+  const isInterviewRoomRoute = /\/portal\/(?:hr|student)\/interviews\/[^/]+\/room$/i.test(location.pathname);
   const isStudentWorkbench = portalKey === 'student';
   const mainPaddingClass = isStudentWorkbench
     ? 'px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4'
     : `px-3 py-3 sm:px-4 sm:py-4 md:px-5 ${isCompactViewportRoute ? 'md:py-3' : 'md:py-5'}`;
+  const effectiveMainPaddingClass = isInterviewRoomRoute ? 'px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-3' : mainPaddingClass;
 
   useEffect(() => {
     const sync = () => setUser(getCurrentUser());
@@ -100,14 +102,14 @@ const PortalWorkbenchLayout = ({
     navigate('/login', { replace: true });
   };
 
-  const sidebarMarginClass = hideSidebar ? 'lg:ml-0' : sidebarOpen ? 'lg:ml-[260px]' : 'lg:ml-[72px]';
+  const sidebarMarginClass = hideSidebar ? 'xl:ml-0' : sidebarOpen ? 'xl:ml-[260px]' : 'xl:ml-[72px]';
   const sidebarClassName = sidebarBelowHeader
-    ? 'fixed bottom-0 left-0 top-16 z-20 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl lg:flex lg:flex-col'
-    : 'fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl lg:flex lg:flex-col';
+    ? 'fixed bottom-0 left-0 top-16 z-20 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl xl:flex xl:flex-col'
+    : 'fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/80 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl xl:flex xl:flex-col';
 
   return (
     <div
-      className={`min-h-screen overflow-x-clip portal-workbench--${portalKey}`}
+      className={`portal-workbench w-full overflow-x-clip ${isInterviewRoomRoute ? 'h-full overflow-hidden' : 'min-h-screen'} portal-workbench--${portalKey}`}
       style={{
         background:
           'radial-gradient(circle at top left, rgba(229,155,23,0.12), transparent 26%), radial-gradient(circle at 100% 0%, rgba(36,95,176,0.1), transparent 24%), linear-gradient(180deg, #f8f6f2 0%, #f3f6fb 100%)'
@@ -163,9 +165,9 @@ const PortalWorkbenchLayout = ({
       )}
 
       <div
-        className={`min-h-screen min-w-0 transition-all ${sidebarMarginClass}`}
+        className={`${isInterviewRoomRoute ? 'h-full min-h-0' : 'min-h-screen'} min-w-0 transition-all ${sidebarMarginClass}`}
       >
-        <div className="flex min-h-screen flex-col">
+        <div className={`flex flex-col ${isInterviewRoomRoute ? 'h-full min-h-0' : 'min-h-screen'}`}>
           {fullWidthHeader ? null : (
             <PortalWorkbenchHeader
               avatarLetter={avatarLetter}
@@ -187,9 +189,9 @@ const PortalWorkbenchLayout = ({
           <motion.main
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`flex-1 ${mainPaddingClass}`}
+            className={`flex flex-1 flex-col ${effectiveMainPaddingClass} ${isInterviewRoomRoute ? 'overflow-hidden' : ''}`}
           >
-            <div className={`mx-auto flex min-w-0 w-full max-w-[1480px] flex-col ${isCompactViewportRoute ? 'gap-2.5' : 'gap-2.5 sm:gap-3 md:gap-4'}`}>
+            <div className={`mx-auto flex min-h-0 min-w-0 w-full max-w-[1480px] flex-1 flex-col ${isCompactViewportRoute ? 'gap-2.5' : 'gap-2.5 sm:gap-3 md:gap-4'}`}>
               <Outlet />
             </div>
           </motion.main>

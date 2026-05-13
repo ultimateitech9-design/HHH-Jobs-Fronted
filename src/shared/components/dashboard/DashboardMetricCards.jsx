@@ -51,7 +51,7 @@ const renderMetricCard = (card, tone) => (
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="break-words text-[13px] font-semibold leading-4.5 text-slate-500">{card.label}</p>
-          <p className="mt-1.5 font-heading text-[1.4rem] font-extrabold leading-none text-navy">{card.value}</p>
+          <p className="mt-1.5 font-heading text-[1.4rem] font-bold leading-none text-navy">{card.value}</p>
         </div>
         {card.icon ? (
           <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone.surface}`}>

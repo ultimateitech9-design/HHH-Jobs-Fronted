@@ -1,4 +1,8 @@
-const DataEntryProfileForm = ({ draft, saving, onChange, onSubmit }) => {
+import { countryCodeOptions } from '../../auth/config/authOptions';
+
+const DataEntryProfileForm = ({ draft, saving, mobileError, mobileValidationMessage, onChange, onSubmit }) => {
+  const countryCode = draft.mobileCountryCode || '+91';
+
   return (
     <form className="form-grid" onSubmit={onSubmit}>
       <label>
@@ -11,7 +15,22 @@ const DataEntryProfileForm = ({ draft, saving, onChange, onSubmit }) => {
       </label>
       <label>
         Mobile
-        <input value={draft.mobile || ''} onChange={(event) => onChange('mobile', event.target.value)} />
+        <div className="flex gap-2">
+          <select value={countryCode} onChange={(event) => onChange('mobileCountryCode', event.target.value)} className="max-w-[180px]">
+            {countryCodeOptions.map((option) => (
+              <option key={option.code} value={option.code}>{option.label}</option>
+            ))}
+          </select>
+          <input
+            value={draft.mobile || ''}
+            type="tel"
+            inputMode="numeric"
+            onChange={(event) => onChange('mobile', event.target.value.replace(/\D/g, ''))}
+            placeholder="Mobile number"
+            aria-invalid={Boolean(mobileError)}
+          />
+        </div>
+        <span className={`text-xs font-semibold ${mobileError ? 'text-red-600' : 'text-slate-500'}`}>{mobileValidationMessage}</span>
       </label>
       <label>
         Employee ID

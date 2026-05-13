@@ -154,11 +154,11 @@ export const ExternalJobCard = ({
         
         <div className="min-w-0 flex-1 pt-0.5">
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
-             <span className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] ${sourceColor}`}>
+             <span className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] ${sourceColor}`}>
                <span className="truncate">{sourceName}</span>
              </span>
              {job.is_remote ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-emerald-700">
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-700">
                   <FiTrendingUp size={9} />
                   Remote
                 </span>
@@ -495,7 +495,7 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
         </div>
       ) : (
         <>
-          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="student-job-grid mt-6">
             {jobsState.jobs.map((job) => (
               <ExternalJobCard
                 key={job.id}

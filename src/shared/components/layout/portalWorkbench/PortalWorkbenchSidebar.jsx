@@ -110,7 +110,7 @@ const PortalWorkbenchSidebar = ({
 
       {isCollapsed ? null : (
         <div className="space-y-2 px-4 py-2">
-          <span className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-brand-700">
+          <span className="inline-flex max-w-full rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-brand-700">
             {portalLabel}
           </span>
 
@@ -119,7 +119,7 @@ const PortalWorkbenchSidebar = ({
             className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900"
           >
             <Home className="h-4 w-4 shrink-0" />
-            <span>Back to Home</span>
+            <span className="truncate">Back to Home</span>
           </Link>
         </div>
       )}
@@ -157,7 +157,7 @@ const PortalWorkbenchSidebar = ({
                     </span>
                   ) : null}
 
-                  <span className={`flex-1 text-left ${isGroupedItemActive ? 'font-semibold' : ''}`}>{item.label}</span>
+                  <span className={`flex-1 truncate text-left ${isGroupedItemActive ? 'font-semibold' : ''}`}>{item.label}</span>
 
                   <ChevronDown
                     className={`h-4 w-4 shrink-0 transition-transform duration-150 ${openGroups[itemKey] ? 'rotate-180' : ''}`}
@@ -188,7 +188,7 @@ const PortalWorkbenchSidebar = ({
                                   <ChildIcon size={15} />
                                 </span>
                               ) : null}
-                              <span className={isActive ? 'font-semibold' : ''}>{child.label}</span>
+                              <span className={`truncate ${isActive ? 'font-semibold' : ''}`}>{child.label}</span>
                             </>
                           )}
                         </NavLink>
@@ -264,7 +264,7 @@ const PortalWorkbenchSidebar = ({
                     </span>
                   ) : null}
                   {isCollapsed ? null : (
-                    <span className={isActive ? 'font-semibold' : ''}>{item.label}</span>
+                    <span className={`truncate ${isActive ? 'font-semibold' : ''}`}>{item.label}</span>
                   )}
                 </>
               )}

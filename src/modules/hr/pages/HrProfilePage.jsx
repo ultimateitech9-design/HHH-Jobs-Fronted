@@ -91,7 +91,7 @@ const HrProfilePage = () => {
     <div className="space-y-8 pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2">Company Profile</h1>
+          <h1 className="text-3xl font-bold font-heading text-primary tracking-tight mb-2">Company Profile</h1>
           <p className="text-neutral-500 text-lg">Manage your organization&apos;s brand, details, and verification data.</p>
         </div>
         <div className="bg-brand-50 text-brand-700 px-4 py-2 rounded-xl flex items-center gap-2 border border-brand-100 shadow-sm shrink-0">
@@ -145,7 +145,7 @@ const HrProfilePage = () => {
                 </div>
               </div>
               
-              <h2 className="text-2xl font-extrabold text-primary mb-1 w-full truncate">
+              <h2 className="text-2xl font-bold text-primary mb-1 w-full truncate">
                 {form.companyName || 'Your Company'}
               </h2>
               <p className="text-sm font-bold text-neutral-400 mb-6 flex items-center justify-center lg:justify-start gap-1">
@@ -169,7 +169,7 @@ const HrProfilePage = () => {
             <div className="w-full lg:w-2/3 flex-1 space-y-6">
               
               <div className="space-y-4">
-                <h3 className="text-lg font-extrabold text-primary border-b border-neutral-100 pb-2 mb-4">General Details</h3>
+                <h3 className="text-lg font-bold text-primary border-b border-neutral-100 pb-2 mb-4">General Details</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
@@ -249,7 +249,7 @@ const HrProfilePage = () => {
               </div>
 
               <div className="space-y-6 pt-4">
-                <h3 className="text-lg font-extrabold text-primary border-b border-neutral-100 pb-2">Media & Summary</h3>
+                <h3 className="text-lg font-bold text-primary border-b border-neutral-100 pb-2">Media & Summary</h3>
                 
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiImage className="text-neutral-400"/> Logo Image URL</label>

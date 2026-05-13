@@ -29,9 +29,14 @@ const CreateTicket = () => {
     }
     setSaving(true);
     setError('');
-    const saved = await createTicket(draft);
-    setMessage(`Ticket ${saved.id} created successfully.`);
-    setDraft(initialDraft);
+    const response = await createTicket(draft);
+    if (response.error) {
+      setError(response.error);
+    } else {
+      const saved = response.data;
+      setMessage(`Ticket ${saved?.ticketNumber || saved?.id || ''} created successfully.`);
+      setDraft(initialDraft);
+    }
     setSaving(false);
   };
 

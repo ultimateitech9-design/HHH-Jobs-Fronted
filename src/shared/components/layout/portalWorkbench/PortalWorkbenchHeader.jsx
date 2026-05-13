@@ -64,7 +64,7 @@ const PortalWorkbenchHeader = ({
               <button
                 type="button"
                 onClick={onOpenMobileNav}
-                className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 lg:hidden"
+                className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 xl:hidden"
               >
                 <Menu className="h-5 w-5" />
               </button>
@@ -77,7 +77,7 @@ const PortalWorkbenchHeader = ({
               </Link>
             </div>
 
-            <nav ref={navRef} className="hidden min-w-0 items-center justify-center gap-5 lg:flex xl:gap-8">
+            <nav ref={navRef} className="hidden min-w-0 items-center justify-center gap-5 xl:flex xl:gap-8">
               {headerNavItems.map((item) => {
                 const hasChildren = Array.isArray(item.children) && item.children.length > 0;
                 const isOpen = openDropdown === item.label;
@@ -145,7 +145,7 @@ const PortalWorkbenchHeader = ({
               {headerBadge?.to ? (
                 <Link
                   to={headerBadge.to}
-                  className="hidden rounded-full border border-brand-500 bg-white px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 lg:inline-flex"
+                  className="hidden rounded-full border border-brand-500 bg-white px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 xl:inline-flex"
                 >
                   {headerBadge.label}
                 </Link>
@@ -247,7 +247,7 @@ const PortalWorkbenchHeader = ({
           <button
             type="button"
             onClick={onOpenMobileNav}
-            className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 lg:hidden"
+            className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 xl:hidden"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -262,7 +262,7 @@ const PortalWorkbenchHeader = ({
           {support?.to ? (
             <Link
               to={support.to}
-              className="hidden rounded-full border border-brand-200 bg-brand-50 px-3.5 py-1 text-[13px] font-semibold text-brand-700 transition-colors hover:bg-brand-100 lg:inline-flex"
+              className="hidden rounded-full border border-brand-200 bg-brand-50 px-3.5 py-1 text-[13px] font-semibold text-brand-700 transition-colors hover:bg-brand-100 xl:inline-flex"
             >
               {support.cta || 'Open module'}
             </Link>

@@ -104,7 +104,7 @@ export function TestimonialsSection() {
     <section className="bg-secondary-50/50 px-3 py-10 md:px-4 md:py-12">
       <div className="mx-auto w-full max-w-none">
         <AnimatedSection className="mb-7 text-center md:mb-8">
-          <h2 className="font-heading text-3xl font-extrabold text-navy md:text-4xl">
+          <h2 className="font-heading text-3xl font-bold text-navy md:text-4xl">
             What Our Users <span className="gradient-text">Say</span>
           </h2>
           <p className="mt-3 text-slate-500">Real stories from real users across your platform roles.</p>

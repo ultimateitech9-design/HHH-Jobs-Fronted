@@ -143,7 +143,7 @@ const StudentMarketplaceShell = ({ children }) => {
               <span className="mt-3 inline-flex rounded-full border border-red-100 bg-white px-2 py-1 text-[11px] font-bold text-red-500">
                 {profileProgress}%
               </span>
-              <h2 className="mt-2.5 text-[1.5rem] font-extrabold leading-none text-navy">{userName}</h2>
+              <h2 className="mt-2.5 text-[1.5rem] font-bold leading-none text-navy">{userName}</h2>
               <p className="mt-1 text-sm text-slate-500">{headline}</p>
               <p className="mt-2.5 text-[13px] text-slate-400">Last updated yesterday</p>
               <span className="mt-4 inline-flex items-center justify-center rounded-full bg-[#2d5bff] px-4 py-2 text-[14px] font-bold leading-none text-white shadow-[0_8px_18px_rgba(45,91,255,0.28)]">
@@ -153,17 +153,17 @@ const StudentMarketplaceShell = ({ children }) => {
 
             <Link to="/portal/student/home" className="mt-3.5 block rounded-[1.35rem] border border-[#d9e7ff] bg-[#eef4ff] p-3 transition hover:border-brand-200 hover:shadow-sm">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-extrabold text-navy">HHH Jobs profile</h2>
+                <h2 className="text-lg font-bold text-navy">HHH Jobs profile</h2>
                 <FiTrendingUp className="text-brand-600" />
               </div>
               <div className="mt-2.5 grid grid-cols-2 gap-2.5 border-b border-[#cadcff] pb-2.5 text-left">
                 <div>
                   <p className="text-xs text-slate-500">Search appearances</p>
-                  <p className="mt-1 text-xl font-extrabold text-brand-700">{overview.counters.totalApplications}</p>
+                  <p className="mt-1 text-xl font-bold text-brand-700">{overview.counters.totalApplications}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500">Recruiter actions</p>
-                  <p className="mt-1 text-xl font-extrabold text-brand-700">{overview.counters.unreadNotifications}</p>
+                  <p className="mt-1 text-xl font-bold text-brand-700">{overview.counters.unreadNotifications}</p>
                 </div>
               </div>
               <div className="mt-2.5 flex items-center justify-between rounded-2xl bg-white px-3 py-2 text-left text-[11px] font-semibold text-slate-700">
@@ -177,7 +177,7 @@ const StudentMarketplaceShell = ({ children }) => {
               className="mt-3.5 block rounded-[1.35rem] border border-emerald-100 bg-[linear-gradient(135deg,#f5fff8_0%,#ecfdf3_100%)] p-3 transition hover:border-emerald-200 hover:shadow-sm"
             >
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-extrabold text-navy">Campus Connect</h2>
+                <h2 className="text-lg font-bold text-navy">Campus Connect</h2>
                 <FiBookOpen className="text-emerald-600" />
               </div>
 
@@ -267,7 +267,7 @@ const StudentMarketplaceShell = ({ children }) => {
                   {campusDriveCount} drives
                 </span>
               </div>
-              <p className="mt-3 text-[15px] font-extrabold leading-6 text-navy">{campusCollege.name}</p>
+              <p className="mt-3 text-[15px] font-bold leading-6 text-navy">{campusCollege.name}</p>
               <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
                 <FiMapPin size={12} />
                 {[campusCollege.city, campusCollege.state].filter(Boolean).join(', ') || 'Campus linked'}
@@ -287,7 +287,7 @@ const StudentMarketplaceShell = ({ children }) => {
               QR
             </div>
             <p className="mt-3 text-[15px] font-medium leading-snug text-slate-900">
-              <span className="text-[1.45rem] font-extrabold text-navy">3587</span> users explored HHH Jobs in the last 30 mins!
+              <span className="text-[1.45rem] font-bold text-navy">3587</span> users explored HHH Jobs in the last 30 mins!
             </p>
             <p className="mt-2.5 text-xs leading-5 text-slate-500">Scan to open HHH Jobs on Play Store or App Store.</p>
           </button>
@@ -304,7 +304,7 @@ const StudentMarketplaceShell = ({ children }) => {
               />
             </div>
             <div className="p-3.5">
-              <p className="text-[15px] font-extrabold leading-6 text-navy">
+              <p className="text-[15px] font-bold leading-6 text-navy">
                 HHH Jobs Career Pulse: March&apos;26 shows stronger white-collar hiring as FY&apos;26 opens.
               </p>
               <span className="mt-3 inline-flex text-sm font-bold text-brand-700">

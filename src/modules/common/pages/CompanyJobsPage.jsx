@@ -185,11 +185,11 @@ const CompanyJobCard = ({ canOpenPortalJobs, isAuthenticated, job, onAction }) =
         
         <div className="min-w-0 flex-1 pt-0.5">
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
-             <span className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] ${sourceColor}`}>
+             <span className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] ${sourceColor}`}>
                <span className="truncate">{job.sourceLabel}</span>
              </span>
              {job.isRemote ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-emerald-700">
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-700">
                   <FiTrendingUp size={9} />
                   Remote
                 </span>
@@ -397,13 +397,13 @@ const CompanyJobsPage = () => {
             <div>
               <div className="mb-6 flex flex-wrap items-center gap-2.5">
                 {company.sponsored ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8b55e] bg-[linear-gradient(180deg,#fff8e8,#f3dfaf)] px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.17em] text-[#7b5a12] shadow-[0_8px_24px_rgba(180,140,45,0.12)]">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8b55e] bg-[linear-gradient(180deg,#fff8e8,#f3dfaf)] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.17em] text-[#7b5a12] shadow-[0_8px_24px_rgba(180,140,45,0.12)]">
                     <FiStar size={11} />
                     Sponsor Company
                   </span>
                 ) : null}
                 {company.premium ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8b55e] bg-[linear-gradient(180deg,#fff8e8,#f3dfaf)] px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.17em] text-[#7b5a12] shadow-[0_8px_24px_rgba(180,140,45,0.12)]">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d8b55e] bg-[linear-gradient(180deg,#fff8e8,#f3dfaf)] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.17em] text-[#7b5a12] shadow-[0_8px_24px_rgba(180,140,45,0.12)]">
                     <FiStar size={11} />
                     Premium Company
                   </span>
@@ -428,7 +428,7 @@ const CompanyJobsPage = () => {
                 )}
 
                 <div className="min-w-0">
-                  <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] text-[#8e6a1c]">
+                  <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-[#8e6a1c]">
                     Company Hiring Lounge
                   </p>
                   <h1 className="mt-2 break-words font-heading text-[2.1rem] font-black leading-tight text-navy sm:text-[2.35rem]">
@@ -472,7 +472,7 @@ const CompanyJobsPage = () => {
             {companyOverview?.description ? (
               <div className="xl:border-l xl:border-[#e7dbc3] xl:pl-8">
                 <div className="flex items-center gap-3">
-                  <p className="shrink-0 text-[12px] font-extrabold uppercase tracking-[0.2em] text-[#8e6a1c]">
+                  <p className="shrink-0 text-[12px] font-bold uppercase tracking-[0.2em] text-[#8e6a1c]">
                     Company Overview
                   </p>
                   <span className="h-px flex-1 bg-[#ddd3c2]" />

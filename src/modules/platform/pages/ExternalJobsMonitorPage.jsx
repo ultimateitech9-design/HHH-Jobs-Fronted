@@ -216,8 +216,8 @@ export default function ExternalJobsMonitorPage() {
             {monitorLoading ? (
               <div className="h-32 flex items-center justify-center text-neutral-400 text-sm">Loading...</div>
             ) : (
-              <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
-                <table className="w-full text-sm">
+              <div className="bg-white rounded-xl border border-neutral-200 overflow-x-auto">
+                <table className="w-full min-w-[720px] text-sm">
                   <thead className="bg-neutral-50 border-b border-neutral-200">
                     <tr>
                       <th className="text-left px-4 py-3 font-medium text-neutral-600">Source</th>
@@ -271,8 +271,8 @@ export default function ExternalJobsMonitorPage() {
 
           <div>
             <h2 className="text-base font-semibold text-neutral-800 mb-3">Recent Sync Activity</h2>
-            <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-white rounded-xl border border-neutral-200 overflow-x-auto">
+              <table className="w-full min-w-[720px] text-sm">
                 <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
                     <th className="text-left px-4 py-3 font-medium text-neutral-600">Source</th>
@@ -306,11 +306,11 @@ export default function ExternalJobsMonitorPage() {
 
       {activeTab === 'logs' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-neutral-200 overflow-x-auto">
             {logsLoading ? (
               <div className="h-40 flex items-center justify-center text-neutral-400 text-sm">Loading logs...</div>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[760px] text-sm">
                 <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
                     <th className="text-left px-4 py-3 font-medium text-neutral-600">Source</th>
@@ -369,11 +369,11 @@ export default function ExternalJobsMonitorPage() {
 
       {activeTab === 'jobs' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-neutral-200 overflow-x-auto">
             {jobsLoading ? (
               <div className="h-40 flex items-center justify-center text-neutral-400 text-sm">Loading jobs...</div>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[760px] text-sm">
                 <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
                     <th className="text-left px-4 py-3 font-medium text-neutral-600">Title</th>

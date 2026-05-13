@@ -29,7 +29,7 @@ const EmployeeVerificationPage = () => {
             Employee Verification
           </span>
 
-          <h1 className="mt-3 font-heading text-[3.3rem] font-extrabold leading-[0.95] text-navy">
+          <h1 className="mt-3 font-heading text-[3.3rem] font-bold leading-[0.95] text-navy">
             Employee Verification Powered by <span className="gradient-text">Eimager</span>
           </h1>
 
@@ -88,7 +88,7 @@ const EmployeeVerificationPage = () => {
             className="rounded-[1.8rem] border border-slate-200 bg-white/88 p-4 shadow-sm backdrop-blur-sm"
           >
             <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{card.label}</p>
-            <p className="mt-2.5 font-heading text-[3rem] font-extrabold leading-[0.98] text-navy">{card.value}</p>
+            <p className="mt-2.5 font-heading text-[3rem] font-bold leading-[0.98] text-navy">{card.value}</p>
             <p className="mt-2.5 text-sm leading-6 text-slate-500">{card.helper}</p>
           </article>
         ))}

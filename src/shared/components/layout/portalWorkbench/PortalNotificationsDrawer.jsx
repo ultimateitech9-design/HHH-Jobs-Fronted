@@ -133,7 +133,7 @@ const PortalNotificationsDrawer = ({
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-brand-600">Alerts</p>
-                <h2 className="mt-1 font-heading text-[1.7rem] font-extrabold text-slate-950">Notifications</h2>
+                <h2 className="mt-1 font-heading text-[1.7rem] font-bold text-slate-950">Notifications</h2>
               </div>
               <button
                 type="button"

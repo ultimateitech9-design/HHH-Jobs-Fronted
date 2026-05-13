@@ -150,7 +150,7 @@ const SupportDashboard = () => {
                 ].map(([label, value]) => (
                   <article key={label} className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                     <p className="text-sm font-semibold text-slate-500">{label}</p>
-                    <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{value}</p>
+                    <p className="mt-3 font-heading text-3xl font-bold text-navy">{value}</p>
                   </article>
                 ))}
               </div>

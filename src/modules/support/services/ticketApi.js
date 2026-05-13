@@ -74,8 +74,8 @@ export const getTicketDetails = async (ticketId) =>
   safeRequest({
     path: `${SUPPORT_BASE}/tickets/${ticketId}`,
     emptyData: {},
-    fallbackData: supportDummyData.tickets.find((ticket) => ticket.id === ticketId) || supportDummyData.tickets[0] || {},
-    extract: (payload) => payload?.ticket || payload || {}
+    fallbackData: normalizeTicket(supportDummyData.tickets.find((ticket) => ticket.id === ticketId) || supportDummyData.tickets[0] || {}),
+    extract: (payload) => normalizeTicket(payload?.ticket || payload || {})
   });
 
 export const createTicket = async (ticketPayload) =>
@@ -83,7 +83,7 @@ export const createTicket = async (ticketPayload) =>
     path: `${SUPPORT_BASE}/tickets`,
     options: { method: 'POST', body: JSON.stringify(ticketPayload) },
     emptyData: null,
-    extract: (payload) => payload?.ticket || payload
+    extract: (payload) => normalizeTicket(payload?.ticket || payload)
   });
 
 export const replyToTicket = async (ticketId, message) =>
@@ -99,7 +99,7 @@ export const escalateTicket = async (ticketId, reason = '') =>
     path: `${SUPPORT_BASE}/tickets/${ticketId}/escalate`,
     options: { method: 'POST', body: JSON.stringify({ reason }) },
     emptyData: null,
-    extract: (payload) => payload?.ticket || payload
+    extract: (payload) => normalizeTicket(payload?.ticket || payload)
   });
 
 export const addInternalNote = async (ticketId, message) =>
@@ -115,5 +115,5 @@ export const updateTicket = async (ticketId, updates = {}) =>
     path: `${SUPPORT_BASE}/tickets/${ticketId}`,
     options: { method: 'PATCH', body: JSON.stringify(updates) },
     emptyData: null,
-    extract: (payload) => payload?.ticket || payload
+    extract: (payload) => normalizeTicket(payload?.ticket || payload)
   });

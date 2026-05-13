@@ -37,6 +37,18 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+}
+
+html {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   font-family: var(--font-body);
@@ -83,6 +95,47 @@ select {
   display: flex;
   flex-direction: column;
   overflow-x: clip;
+}
+
+.portal-workbench {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: -0.006em;
+}
+
+.portal-workbench h1,
+.portal-workbench h2,
+.portal-workbench h3,
+.portal-workbench h4,
+.portal-workbench h5,
+.portal-workbench h6 {
+  font-family: var(--font-body);
+}
+
+.portal-workbench :where(.flex, .grid, div, section, article, main, header, aside, nav, form, label) {
+  min-width: 0;
+}
+
+.portal-workbench :where(h1, h2, h3, h4, h5, h6, p, span, a, button, label, td, th) {
+  overflow-wrap: anywhere;
+}
+
+.portal-workbench :where(button, a, input, select, textarea) {
+  max-width: 100%;
+}
+
+.portal-workbench :where(.overflow-x-auto) {
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.portal-workbench :where(img, video, canvas) {
+  max-width: 100%;
 }
 
 .site-header {
@@ -2928,6 +2981,19 @@ select {
   transition: transform var(--transition-standard), box-shadow var(--transition-standard), opacity var(--transition-standard);
 }
 
+.portal-workbench .btn-primary,
+.portal-workbench .btn-secondary,
+.portal-workbench .btn-danger,
+.portal-workbench .btn-link {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  text-align: center;
+  white-space: normal;
+}
+
 .btn-primary {
   padding: 0.55rem 0.95rem;
   border-radius: 999px;
@@ -4358,6 +4424,13 @@ select {
   align-items: end;
   gap: 0.75rem;
   margin-bottom: 0.85rem;
+  min-width: 0;
+}
+
+.student-inline-controls > * {
+  flex: 1 1 180px;
+  min-width: min(100%, 150px);
+  max-width: 100%;
 }
 
 .student-inline-controls label,
@@ -4372,7 +4445,8 @@ select {
 }
 
 .full-width-control {
-  flex: 1;
+  flex: 999 1 280px;
+  min-width: min(100%, 220px);
 }
 
 .filter-bar {
@@ -4426,11 +4500,14 @@ select {
 }
 
 @media (max-width: 520px) {
+  .student-inline-controls,
   .filter-bar,
   .filter-bar__actions {
     gap: 0.55rem;
   }
 
+  .student-inline-controls > *,
+  .student-inline-controls .full-width-control,
   .filter-bar__search,
   .filter-bar__field,
   .filter-bar__actions,
@@ -6998,6 +7075,12 @@ select {
 @media (max-width: 480px) {
   .main-shell {
     width: calc(100% - 0.5rem);
+  }
+
+  .portal-workbench .btn-primary,
+  .portal-workbench .btn-secondary,
+  .portal-workbench .btn-danger {
+    width: 100%;
   }
 
   .module-page {

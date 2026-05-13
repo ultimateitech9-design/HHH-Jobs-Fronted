@@ -259,7 +259,7 @@ export const checkoutRolePlan = async ({
   planSlug,
   quantity,
   couponCode = '',
-  provider = 'manual',
+  provider = 'razorpay',
   referenceId = '',
   note = '',
   paymentStatus = 'pending'
@@ -279,6 +279,28 @@ export const checkoutRolePlan = async ({
       })
     },
     extract: (payload) => payload
+  });
+
+export const verifyRolePlanAutopay = async ({
+  localSubscriptionId,
+  razorpaySubscriptionId,
+  razorpayPaymentId,
+  razorpaySignature,
+  audienceRole = 'hr'
+}) =>
+  strictRequest({
+    path: '/payments/role-subscriptions/verify',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({
+        localSubscriptionId,
+        razorpaySubscriptionId,
+        razorpayPaymentId,
+        razorpaySignature,
+        audienceRole
+      })
+    },
+    extract: (payload) => payload?.subscription || payload
   });
 
 export const getRolePlanPurchases = async (filters = {}) =>
@@ -742,4 +764,41 @@ export const updateHrCampusDriveApplication = async (driveId, applicationId, { s
       body: JSON.stringify({ status, currentRound, notes, eliminatedInRound })
     },
     extract: (payload) => payload?.application || payload
+  });
+
+export const fetchHrCampusConnections = async () =>
+  safeRequest({
+    path: '/hr/campus-connections',
+    emptyData: [],
+    extract: (payload) => payload?.connections || []
+  });
+
+export const fetchHrCampusConnectionDirectory = async () =>
+  safeRequest({
+    path: '/hr/campus-connections/directory',
+    emptyData: { colleges: [], summary: null },
+    extract: (payload) => ({
+      colleges: payload?.colleges || [],
+      summary: payload?.summary || null
+    })
+  });
+
+export const createHrCampusConnection = async ({ collegeId, message }) =>
+  strictRequest({
+    path: '/hr/campus-connections',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ collegeId, message })
+    },
+    extract: (payload) => payload?.connection || payload
+  });
+
+export const respondHrCampusConnection = async (connectionId, status) =>
+  strictRequest({
+    path: `/hr/campus-connections/${connectionId}`,
+    options: {
+      method: 'PATCH',
+      body: JSON.stringify({ status })
+    },
+    extract: (payload) => payload?.connection || payload
   });

@@ -108,22 +108,22 @@ const SalesOverview = () => {
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <article className="rounded-[1.4rem] border-2 border-brand-100 bg-gradient-to-br from-brand-50 to-white p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-brand-500">Open leads</p>
-                <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{state.overview.stats?.openLeads || 0}</p>
+                <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview.stats?.openLeads || 0}</p>
                 <p className="mt-2 text-sm text-slate-500">Top of funnel demand to qualify</p>
               </article>
               <article className="rounded-[1.4rem] border-2 border-success-100 bg-gradient-to-br from-success-50 to-white p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-success-600">Converted leads</p>
-                <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{state.overview.stats?.convertedLeads || 0}</p>
+                <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview.stats?.convertedLeads || 0}</p>
                 <p className="mt-2 text-sm text-slate-500">Deals moved through the pipeline</p>
               </article>
               <article className="rounded-[1.4rem] border-2 border-secondary-100 bg-gradient-to-br from-secondary-50 to-white p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-secondary-600">Orders</p>
-                <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{state.overview.stats?.totalOrders || 0}</p>
+                <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview.stats?.totalOrders || 0}</p>
                 <p className="mt-2 text-sm text-slate-500">Processed across the commercial flow</p>
               </article>
               <article className="rounded-[1.4rem] border-2 border-info-100 bg-gradient-to-br from-info-50 to-white p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-info-600">Active customers</p>
-                <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{state.overview.stats?.activeCustomers || 0}</p>
+                <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview.stats?.activeCustomers || 0}</p>
                 <p className="mt-2 text-sm text-slate-500">Accounts to retain and grow</p>
               </article>
             </div>
@@ -157,7 +157,7 @@ const SalesOverview = () => {
                     <div key={stage.stage}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-bold text-primary">{stage.label}</span>
-                        <span className="text-sm font-extrabold text-navy">{stage.count} <span className="text-xs font-semibold text-slate-400">({pct}%)</span></span>
+                        <span className="text-sm font-bold text-navy">{stage.count} <span className="text-xs font-semibold text-slate-400">({pct}%)</span></span>
                       </div>
                       <div className="h-3 w-full bg-neutral-100 rounded-full overflow-hidden">
                         <div
@@ -170,7 +170,7 @@ const SalesOverview = () => {
                 })}
                 <div className="mt-4 pt-4 border-t border-neutral-100 flex items-center justify-between text-sm">
                   <span className="text-slate-500 font-semibold">Total Revenue (converted)</span>
-                  <span className="font-extrabold text-navy">{formatCompactCurrency(funnel.summary.totalRevenue)}</span>
+                  <span className="font-bold text-navy">{formatCompactCurrency(funnel.summary.totalRevenue)}</span>
                 </div>
               </div>
             )}

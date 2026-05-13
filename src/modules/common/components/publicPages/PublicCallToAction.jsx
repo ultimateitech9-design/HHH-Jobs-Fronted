@@ -29,7 +29,7 @@ const PublicCallToAction = ({
             </p>
           ) : null}
 
-          <h2 className={`mt-4 font-heading text-2xl font-extrabold sm:text-3xl md:text-4xl ${isDark ? 'text-white' : 'text-navy'}`}>
+          <h2 className={`mt-4 font-heading text-2xl font-bold sm:text-3xl md:text-4xl ${isDark ? 'text-white' : 'text-navy'}`}>
             {title}
           </h2>
           {description ? (

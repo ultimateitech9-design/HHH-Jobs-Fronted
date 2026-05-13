@@ -118,7 +118,7 @@ const StudentApplicationsPage = () => {
             <span className="mt-3 inline-flex rounded-full border border-brand-100 bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700">
               {counts.total} tracked
             </span>
-            <h1 className="mt-4 text-3xl font-extrabold text-navy">{userName}</h1>
+            <h1 className="mt-4 text-3xl font-bold text-navy">{userName}</h1>
             <p className="mt-1 text-sm text-slate-500">Application workspace</p>
             <Link
               to="/portal/student/jobs"
@@ -130,17 +130,17 @@ const StudentApplicationsPage = () => {
 
           <div className="rounded-[1.6rem] border border-[#d9e7ff] bg-[#edf4ff] p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-extrabold text-navy">Pipeline snapshot</h2>
+              <h2 className="text-xl font-bold text-navy">Pipeline snapshot</h2>
               <FiTrendingUp className="text-brand-600" />
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3 text-left">
               <div>
                 <p className="text-xs text-slate-500">Shortlisted</p>
-                <p className="mt-2 text-2xl font-extrabold text-brand-700">{counts.shortlisted}</p>
+                <p className="mt-2 text-2xl font-bold text-brand-700">{counts.shortlisted}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-500">Offers</p>
-                <p className="mt-2 text-2xl font-extrabold text-brand-700">{counts.offers}</p>
+                <p className="mt-2 text-2xl font-bold text-brand-700">{counts.offers}</p>
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700">
@@ -179,7 +179,7 @@ const StudentApplicationsPage = () => {
                     Pipeline board
                   </span>
                 </div>
-                <h2 className="mt-4 text-3xl font-extrabold text-navy">Track every application with a cleaner dashboard flow</h2>
+                <h2 className="mt-4 text-3xl font-bold text-navy">Track every application with a cleaner dashboard flow</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
                   Filter the pipeline fast, see which roles are moving, and keep each application readable without the oversized old dashboard wrapper.
                 </p>
@@ -194,7 +194,7 @@ const StudentApplicationsPage = () => {
               ].map((stat) => (
                 <article key={stat.label} className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{stat.label}</p>
-                  <p className="mt-3 text-3xl font-extrabold text-navy">{stat.value}</p>
+                  <p className="mt-3 text-3xl font-bold text-navy">{stat.value}</p>
                   <p className="mt-2 text-sm text-slate-500">{stat.helper}</p>
                 </article>
               ))}
@@ -266,7 +266,7 @@ const StudentApplicationsPage = () => {
                             </span>
                           </div>
 
-                          <h3 className="mt-4 text-2xl font-extrabold text-navy">
+                          <h3 className="mt-4 text-2xl font-bold text-navy">
                             {app.jobTitle || app.job?.jobTitle || 'Untitled Role'}
                           </h3>
                           <p className="mt-1 text-sm font-semibold text-slate-500">
@@ -346,7 +346,7 @@ const StudentApplicationsPage = () => {
         <aside className="space-y-5">
           <div className="rounded-[1.6rem] border border-slate-200 bg-white p-5">
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Status mix</p>
-            <h2 className="mt-3 text-2xl font-extrabold text-navy">How your pipeline is distributed</h2>
+            <h2 className="mt-3 text-2xl font-bold text-navy">How your pipeline is distributed</h2>
             <div className="mt-5 space-y-3">
               {[
                 { label: 'Applied', value: state.applications.filter((item) => String(item.status || '').toLowerCase() === 'applied').length },
@@ -356,7 +356,7 @@ const StudentApplicationsPage = () => {
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
                   <span className="text-sm font-semibold text-slate-600">{item.label}</span>
-                  <span className="text-lg font-extrabold text-navy">{item.value}</span>
+                  <span className="text-lg font-bold text-navy">{item.value}</span>
                 </div>
               ))}
             </div>
@@ -364,7 +364,7 @@ const StudentApplicationsPage = () => {
 
           <div className="rounded-[1.6rem] border border-slate-200 bg-white p-5">
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Next move</p>
-            <h2 className="mt-3 text-2xl font-extrabold text-navy">Keep momentum high</h2>
+            <h2 className="mt-3 text-2xl font-bold text-navy">Keep momentum high</h2>
             <div className="mt-5 space-y-3 text-sm text-slate-600">
               <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
                 Follow up on shortlisted roles before they go cold.

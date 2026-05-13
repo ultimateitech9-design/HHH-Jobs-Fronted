@@ -12,6 +12,7 @@ import { FaGem, FaMedal } from 'react-icons/fa';
 import PublicCallToAction from '../components/publicPages/PublicCallToAction';
 import PublicSectionHeader from '../components/publicPages/PublicSectionHeader';
 import { getCurrentUser } from '../../../utils/auth';
+import { jobPostingPlans } from '../../../shared/config/pricingCatalog';
 
 const premiumFeatures = [
   {
@@ -37,94 +38,6 @@ const premiumFeatures = [
     subtitle: 'Improved recruiter discovery',
     description: 'Increase profile discoverability in higher-intent searches and stronger role-fit recommendations.',
     icon: FiShield
-  }
-];
-
-const jobPostingPlans = [
-  {
-    title: 'Premium',
-    tone: 'premium',
-    price: '₹1,200',
-    previousPrice: '₹2,000',
-    discountText: '40% OFF',
-    taxNote: '*GST as applicable',
-    features: [
-      { label: 'Detailed job description', included: true },
-      { label: '20 job locations', included: true },
-      { label: 'Unlimited applies', included: true },
-      { label: 'Applies expiry 90 days', included: true },
-      { label: 'Jobseeker contact details visible', included: true },
-      { label: 'Boost on Job Search Page', included: true },
-      { label: 'Job Branding', included: true }
-    ],
-    offerText: 'Flat 10% OFF on 5 Job Postings or more',
-    ctaLabel: 'Buy now',
-    ctaTo: '/sign-up?plan=Premium',
-    withQuantity: true,
-    validity: 'Job validity 30 days'
-  },
-  {
-    title: 'Pro',
-    tone: 'pro',
-    price: '₹600',
-    previousPrice: '₹1000',
-    discountText: '40% OFF',
-    taxNote: '*GST as applicable',
-    features: [
-      { label: 'Upto 250 character job description', included: true },
-      { label: '8 job locations', included: true },
-      { label: 'Unlimited applies', included: true },
-      { label: 'Applies expiry 60 days', included: true },
-      { label: 'Jobseeker contact details visible', included: true },
-      { label: 'Boost on Job Search Page', included: false },
-      { label: 'Job Branding', included: false }
-    ],
-    offerText: 'Flat 10% OFF on 5 Job Postings or more',
-    ctaLabel: 'Buy now',
-    ctaTo: '/sign-up?plan=Pro',
-    withQuantity: true,
-    validity: 'Job validity 30 days'
-  },
-  {
-    title: 'Standard',
-    tone: 'standard',
-    price: '₹300',
-    previousPrice: '₹500',
-    discountText: '40% OFF',
-    taxNote: '*GST as applicable',
-    features: [
-      { label: 'Upto 250 character job description', included: true },
-      { label: '3 job locations', included: true },
-      { label: '200 applies', included: true },
-      { label: 'Applies expiry 30 days', included: true },
-      { label: 'Jobseeker contact details visible', included: false },
-      { label: 'Boost on Job Search Page', included: false },
-      { label: 'Job Branding', included: false }
-    ],
-    offerText: 'Flat 10% OFF on 5 Job Postings or more',
-    ctaLabel: 'Buy now',
-    ctaTo: '/sign-up?plan=Standard',
-    withQuantity: true,
-    validity: 'Job validity 15 days'
-  },
-  {
-    title: 'Free',
-    tone: 'free',
-    price: 'Free',
-    subTitle: 'Job Posting',
-    features: [
-      { label: 'Upto 250 character job description', included: true },
-      { label: '1 job location', included: true },
-      { label: '50 applies', included: true },
-      { label: 'Applies expiry 15 days', included: true },
-      { label: 'Jobseeker contact details visible', included: false },
-      { label: 'Boost on Job Search Page', included: false },
-      { label: 'Job Branding', included: false }
-    ],
-    ctaLabel: 'Post a free job',
-    ctaTo: '/sign-up?plan=Free',
-    withQuantity: false,
-    validity: 'Job validity 7 days'
   }
 ];
 

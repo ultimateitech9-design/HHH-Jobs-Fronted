@@ -9,6 +9,7 @@ import {
   FiClock,
   FiFileText,
   FiLink,
+  FiTrendingUp,
   FiUsers
 } from 'react-icons/fi';
 import SectionHeader from '../../../shared/components/SectionHeader';
@@ -18,6 +19,24 @@ import {
   markAllNotificationsReadRequest,
   markNotificationReadRequest
 } from '../../../core/notifications/notificationApi';
+import {
+  getCampusConnectionDirectory,
+  getCampusConnections,
+  getCampusDrives,
+  getCampusStats
+} from '../services/campusConnectApi';
+
+const EMPTY_WORKSPACE = {
+  connections: [],
+  directory: { companies: [], summary: null },
+  drives: [],
+  stats: {}
+};
+
+const normalizeCompanyKey = (value = '') => String(value)
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim();
 
 const formatRelativeTime = (value) => {
   if (!value) return 'Recently';
@@ -63,7 +82,7 @@ const getCampusNotificationMeta = (notification) => {
     };
   }
 
-  if (content.includes('connection')) {
+  if (content.includes('connection') || content.includes('invite')) {
     return {
       label: 'Connections',
       icon: FiLink,
@@ -86,6 +105,162 @@ const getCampusNotificationMeta = (notification) => {
   };
 };
 
+const buildDriveDraft = (company, notification) => ({
+  companyName: company.companyName,
+  jobTitle: '',
+  driveMode: 'on-campus',
+  location: company.location || '',
+  visibilityScope: 'campus_only',
+  description: [
+    `Campus Connect partnership is active with ${company.companyName}.`,
+    company.openRoles ? `Start with ${company.openRoles} visible role${company.openRoles > 1 ? 's' : ''} and align a hiring round.` : 'Use this workflow to align a hiring round and shortlist students.',
+    notification?.title ? `Triggered from notification: "${notification.title}".` : ''
+  ].filter(Boolean).join(' ')
+});
+
+const buildPoolPreparationState = (company) => ({
+  companyName: company.companyName,
+  companyUserId: company.companyUserId,
+  suggestedBranches: company.suggestedBranches || [],
+  suggestion: company.hasDrive
+    ? `Refresh the eligible student pool for ${company.companyName} before the next shortlist round.`
+    : `Prepare a clean student pool for ${company.companyName} so the first drive can be launched quickly.`
+});
+
+const buildConnectedPartnerships = ({ connections, directory, drives }) => {
+  const directoryByUserId = Object.fromEntries((directory.companies || []).map((company) => [company.companyUserId, company]));
+  const activeDriveCompanyKeys = new Set(
+    (drives || []).map((drive) => normalizeCompanyKey(drive.company_name || drive.companyName || ''))
+  );
+
+  return (connections || [])
+    .filter((connection) => connection.status === 'accepted')
+    .map((connection) => {
+      const company = directoryByUserId[connection.company_user_id] || {};
+      const companyName = connection.company_name || company.companyName || 'Connected company';
+      const normalizedKey = normalizeCompanyKey(companyName);
+      const connectedAt = connection.responded_at || connection.created_at;
+      const connectedDaysAgo = connectedAt
+        ? Math.max(0, Math.floor((Date.now() - new Date(connectedAt).getTime()) / 86400000))
+        : 999;
+      const openRoles = Number(company.openRoles || 0);
+      const hasDrive = activeDriveCompanyKeys.has(normalizedKey);
+      const score = (
+        (hasDrive ? 8 : 30)
+        + Math.min(openRoles, 10) * 4
+        + (company.isVerified ? 12 : 0)
+        + (company.contactEmail ? 8 : 0)
+        + (connectedDaysAgo <= 7 ? 16 : connectedDaysAgo <= 30 ? 8 : 0)
+      );
+
+      return {
+        companyUserId: connection.company_user_id,
+        companyName,
+        contactName: company.contactName || '',
+        contactEmail: company.contactEmail || '',
+        location: company.location || '',
+        companyWebsite: company.companyWebsite || '',
+        isVerified: Boolean(company.isVerified),
+        openRoles,
+        hasDrive,
+        connectedAt,
+        connectedDaysAgo,
+        score,
+        recommendation: hasDrive
+          ? 'Drive workflow already exists. Keep the pool warm and move faster on shortlist updates.'
+          : 'No live drive exists yet. This partnership is the best place to launch the next campus workflow.',
+        suggestedBranches: Array.isArray(company.preferredBranches) ? company.preferredBranches : []
+      };
+    })
+    .sort((left, right) => right.score - left.score || left.companyName.localeCompare(right.companyName));
+};
+
+const matchCompanyToNotification = (notification, connectedPartnerships) => {
+  const content = [
+    notification?.title,
+    notification?.message
+  ].join(' ').toLowerCase();
+
+  return [...connectedPartnerships]
+    .sort((left, right) => right.companyName.length - left.companyName.length)
+    .find((company) => {
+      const key = normalizeCompanyKey(company.companyName);
+      return key && content.includes(key);
+    }) || null;
+};
+
+const buildNotificationActions = ({ notification, meta, matchedCompany }) => {
+  const content = [
+    notification?.title,
+    notification?.message
+  ].join(' ').toLowerCase();
+
+  if (meta.label === 'Connections' && matchedCompany && (content.includes('accepted') || content.includes('approved') || content.includes('connected'))) {
+    return [
+      {
+        to: '/portal/campus-connect/drives',
+        state: {
+          autoOpenDriveForm: true,
+          prefillDrive: buildDriveDraft(matchedCompany, notification)
+        },
+        label: `Launch Drive`,
+        variant: 'primary'
+      },
+      {
+        to: '/portal/campus-connect/students',
+        state: {
+          poolPreparation: buildPoolPreparationState(matchedCompany)
+        },
+        label: 'Prepare Pool',
+        variant: 'secondary'
+      },
+      {
+        to: '/portal/campus-connect/relationship-activity/connected',
+        label: 'View Partnership',
+        variant: 'ghost'
+      }
+    ];
+  }
+
+  if (meta.label === 'Connections') {
+    return [
+      {
+        to: notification.link || '/portal/campus-connect/relationship-activity/incoming',
+        label: 'Review Request',
+        variant: 'primary'
+      }
+    ];
+  }
+
+  if (meta.label === 'Drives') {
+    return [
+      {
+        to: notification.link || '/portal/campus-connect/drives',
+        label: 'Open Drive Workflow',
+        variant: 'primary'
+      }
+    ];
+  }
+
+  if (meta.label === 'Students') {
+    return [
+      {
+        to: notification.link || '/portal/campus-connect/students',
+        label: 'Review Student Pool',
+        variant: 'primary'
+      }
+    ];
+  }
+
+  return notification.link ? [
+    {
+      to: notification.link,
+      label: 'Open Context',
+      variant: 'primary'
+    }
+  ] : [];
+};
+
 const CampusNotificationsPage = () => {
   const notifications = useNotificationStore((state) => state.notifications);
   const loading = useNotificationStore((state) => state.loading);
@@ -99,6 +274,9 @@ const CampusNotificationsPage = () => {
 
   const [pageError, setPageError] = useState('');
   const [message, setMessage] = useState('');
+  const [workspace, setWorkspace] = useState(EMPTY_WORKSPACE);
+  const [workspaceLoading, setWorkspaceLoading] = useState(true);
+  const [workspaceError, setWorkspaceError] = useState('');
 
   useEffect(() => {
     if (hydrated || loading) return undefined;
@@ -129,6 +307,41 @@ const CampusNotificationsPage = () => {
     };
   }, [hydrated, loading, replaceNotifications, setLoading]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadWorkspace = async () => {
+      setWorkspaceLoading(true);
+      const [connectionsResponse, directoryResponse, drivesResponse, statsResponse] = await Promise.all([
+        getCampusConnections(),
+        getCampusConnectionDirectory(),
+        getCampusDrives(),
+        getCampusStats()
+      ]);
+
+      if (!active) return;
+
+      setWorkspace({
+        connections: connectionsResponse.data || [],
+        directory: directoryResponse.data || { companies: [], summary: null },
+        drives: drivesResponse.data || [],
+        stats: statsResponse.data || {}
+      });
+      setWorkspaceError(
+        [connectionsResponse.error, directoryResponse.error, drivesResponse.error, statsResponse.error]
+          .filter(Boolean)
+          .join(' | ')
+      );
+      setWorkspaceLoading(false);
+    };
+
+    loadWorkspace();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const unreadCount = useMemo(
     () => notifications.filter((notification) => !notification.is_read).length,
     [notifications]
@@ -139,13 +352,55 @@ const CampusNotificationsPage = () => {
   );
   const latestNotification = notifications[0] || null;
   const isLoading = loading && !hydrated;
-  const activeError = storeError || pageError;
+  const activeError = [storeError, pageError, workspaceError].filter(Boolean).join(' | ');
 
   const categoryCounts = useMemo(() => notifications.reduce((accumulator, notification) => {
     const key = getCampusNotificationMeta(notification).label;
     accumulator[key] = (accumulator[key] || 0) + 1;
     return accumulator;
   }, {}), [notifications]);
+
+  const connectedPartnerships = useMemo(
+    () => buildConnectedPartnerships(workspace),
+    [workspace]
+  );
+
+  const recommendedPartnerships = useMemo(
+    () => connectedPartnerships.slice(0, 3),
+    [connectedPartnerships]
+  );
+
+  const nextBusinessMove = useMemo(() => {
+    if (workspace.stats?.totalStudents === 0) {
+      return {
+        title: 'Import student pool first',
+        helper: 'No student pool is available yet, so the next business step is to onboard eligible candidates.',
+        to: '/portal/campus-connect/students',
+        label: 'Import Students'
+      };
+    }
+
+    const firstOpportunity = connectedPartnerships[0];
+    if (firstOpportunity) {
+      return {
+        title: `${firstOpportunity.companyName} is ready for activation`,
+        helper: firstOpportunity.recommendation,
+        to: '/portal/campus-connect/drives',
+        state: {
+          autoOpenDriveForm: true,
+          prefillDrive: buildDriveDraft(firstOpportunity)
+        },
+        label: firstOpportunity.hasDrive ? 'Refresh Drive Workflow' : 'Launch First Drive'
+      };
+    }
+
+    return {
+      title: 'Review incoming company requests',
+      helper: 'Accept a strong company request first, then launch a drive from the partnership.',
+      to: '/portal/campus-connect/relationship-activity/incoming',
+      label: 'Review Requests'
+    };
+  }, [connectedPartnerships, workspace.stats]);
 
   const handleMarkRead = async (notificationId) => {
     setMessage('');
@@ -181,7 +436,7 @@ const CampusNotificationsPage = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1120px] space-y-6 pb-12">
+    <div className="mx-auto w-full max-w-[1180px] space-y-6 pb-12">
       <SectionHeader
         eyebrow="Campus inbox"
         title="Campus notifications"
@@ -223,7 +478,7 @@ const CampusNotificationsPage = () => {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{stat.label}</p>
-                <p className="mt-2 text-3xl font-extrabold text-navy">{stat.value}</p>
+                <p className="mt-2 text-3xl font-bold text-navy">{stat.value}</p>
                 <p className="mt-2 text-xs text-slate-400">{stat.helper}</p>
               </div>
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-700">
@@ -234,19 +489,38 @@ const CampusNotificationsPage = () => {
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <section className="rounded-[1.75rem] border border-slate-100 bg-[linear-gradient(135deg,#fff9ef,#ffffff)] p-5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.18)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Business signal</p>
+            <h2 className="mt-2 text-2xl font-bold text-navy">{nextBusinessMove.title}</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">{nextBusinessMove.helper}</p>
+          </div>
+
+          <Link
+            to={nextBusinessMove.to}
+            state={nextBusinessMove.state}
+            className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
+          >
+            <FiTrendingUp size={15} />
+            {nextBusinessMove.label}
+          </Link>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.18)]">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-extrabold text-navy">Activity feed</h2>
-              <p className="mt-1 text-sm text-slate-500">Every campus-side alert stays timestamped, readable, and ready to open.</p>
+              <h2 className="text-xl font-bold text-navy">Activity feed</h2>
+              <p className="mt-1 text-sm text-slate-500">Every campus-side alert stays timestamped, readable, and ready to convert into a next step.</p>
             </div>
             <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
               {notifications.length} notifications
             </div>
           </div>
 
-          {isLoading ? (
+          {isLoading || workspaceLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((item) => (
                 <div key={item} className="h-32 animate-pulse rounded-[1.5rem] bg-slate-100" />
@@ -256,6 +530,8 @@ const CampusNotificationsPage = () => {
             <div className="space-y-4">
               {notifications.map((notification) => {
                 const meta = getCampusNotificationMeta(notification);
+                const matchedCompany = matchCompanyToNotification(notification, connectedPartnerships);
+                const actions = buildNotificationActions({ notification, meta, matchedCompany });
                 const Icon = meta.icon;
 
                 return (
@@ -280,9 +556,27 @@ const CampusNotificationsPage = () => {
                                 New
                               </span>
                             ) : null}
+                            {matchedCompany?.openRoles ? (
+                              <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                                {matchedCompany.openRoles} open roles
+                              </span>
+                            ) : null}
                           </div>
-                          <h3 className="mt-3 text-lg font-extrabold text-navy">{notification.title || 'Notification'}</h3>
+                          <h3 className="mt-3 text-lg font-bold text-navy">{notification.title || 'Notification'}</h3>
                           <p className="mt-2 text-sm leading-6 text-slate-600">{notification.message || 'No details available yet.'}</p>
+
+                          {matchedCompany ? (
+                            <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Recommended next move</p>
+                              <p className="mt-2 text-sm font-semibold text-navy">
+                                {matchedCompany.hasDrive
+                                  ? `Refresh the active workflow with ${matchedCompany.companyName}`
+                                  : `Launch the first campus drive with ${matchedCompany.companyName}`}
+                              </p>
+                              <p className="mt-1 text-xs leading-5 text-slate-500">{matchedCompany.recommendation}</p>
+                            </div>
+                          ) : null}
+
                           <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-400">
                             <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1">
                               <FiClock size={12} />
@@ -293,7 +587,7 @@ const CampusNotificationsPage = () => {
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-3 lg:w-[220px] lg:justify-end">
+                      <div className="flex flex-wrap gap-3 lg:w-[280px] lg:justify-end">
                         {!notification.is_read ? (
                           <button
                             type="button"
@@ -305,15 +599,9 @@ const CampusNotificationsPage = () => {
                           </button>
                         ) : null}
 
-                        {notification.link ? (
-                          <Link
-                            to={notification.link}
-                            className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
-                          >
-                            <FiArrowRight size={14} />
-                            Open
-                          </Link>
-                        ) : null}
+                        {actions.map((action) => (
+                          <ActionLink key={`${notification.id}-${action.label}`} action={action} />
+                        ))}
                       </div>
                     </div>
                   </article>
@@ -323,7 +611,7 @@ const CampusNotificationsPage = () => {
           ) : (
             <div className="rounded-[1.75rem] border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-16 text-center">
               <FiBell size={34} className="mx-auto text-slate-300" />
-              <h3 className="mt-4 text-2xl font-extrabold text-navy">No campus notifications yet</h3>
+              <h3 className="mt-4 text-2xl font-bold text-navy">No campus notifications yet</h3>
               <p className="mt-2 text-sm text-slate-500">Drive delivery summaries and company connection activity will appear here.</p>
             </div>
           )}
@@ -331,7 +619,7 @@ const CampusNotificationsPage = () => {
 
         <aside className="space-y-5">
           <div className="rounded-[1.6rem] border border-slate-100 bg-white p-5 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.12)]">
-            <h2 className="text-lg font-extrabold text-navy">Activity mix</h2>
+            <h2 className="text-lg font-bold text-navy">Activity mix</h2>
             <div className="mt-4 space-y-3">
               {[
                 { label: 'Drives', value: categoryCounts.Drives || 0 },
@@ -341,32 +629,79 @@ const CampusNotificationsPage = () => {
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3">
                   <span className="text-sm font-semibold text-slate-600">{item.label}</span>
-                  <span className="text-lg font-extrabold text-navy">{item.value}</span>
+                  <span className="text-lg font-bold text-navy">{item.value}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="rounded-[1.6rem] border border-slate-100 bg-white p-5 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.12)]">
-            <h2 className="text-lg font-extrabold text-navy">Quick follow-up</h2>
+            <h2 className="text-lg font-bold text-navy">Connected next steps</h2>
             <div className="mt-4 space-y-3">
-              {[
-                { to: '/portal/campus-connect/drives', label: 'Review drives', icon: FiBriefcase },
-                { to: '/portal/campus-connect/connections', label: 'Open company requests', icon: FiLink },
-                { to: '/portal/campus-connect/students', label: 'Check student pool', icon: FiUsers }
-              ].map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className="flex items-center justify-between rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <item.icon size={14} />
-                    {item.label}
-                  </span>
-                  <FiArrowRight size={14} />
-                </Link>
-              ))}
+              {recommendedPartnerships.length > 0 ? recommendedPartnerships.map((company) => (
+                <div key={company.companyUserId} className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-navy">{company.companyName}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">{company.recommendation}</p>
+                    </div>
+                    <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                      Score {company.score}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-500">
+                      {company.openRoles || 0} roles
+                    </span>
+                    <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-500">
+                      {company.hasDrive ? 'Drive linked' : 'Drive missing'}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      to="/portal/campus-connect/drives"
+                      state={{
+                        autoOpenDriveForm: true,
+                        prefillDrive: buildDriveDraft(company)
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#ef5c30]"
+                    >
+                      <FiBriefcase size={13} />
+                      {company.hasDrive ? 'Refresh Drive' : 'Launch Drive'}
+                    </Link>
+                    <Link
+                      to="/portal/campus-connect/students"
+                      state={{ poolPreparation: buildPoolPreparationState(company) }}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      <FiUsers size={13} />
+                      Prepare Pool
+                    </Link>
+                  </div>
+                </div>
+              )) : (
+                <>
+                  {[
+                    { to: '/portal/campus-connect/drives', label: 'Review drives', icon: FiBriefcase },
+                    { to: '/portal/campus-connect/connections', label: 'Open company requests', icon: FiLink },
+                    { to: '/portal/campus-connect/students', label: 'Check student pool', icon: FiUsers }
+                  ].map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      className="flex items-center justify-between rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <item.icon size={14} />
+                        {item.label}
+                      </span>
+                      <FiArrowRight size={14} />
+                    </Link>
+                  ))}
+                </>
+              )}
             </div>
           </div>
         </aside>
@@ -374,5 +709,24 @@ const CampusNotificationsPage = () => {
     </div>
   );
 };
+
+function ActionLink({ action }) {
+  const variantClassName = action.variant === 'primary'
+    ? 'bg-[#ff6b3d] text-white hover:bg-[#ef5c30]'
+    : action.variant === 'secondary'
+      ? 'border border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100'
+      : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50';
+
+  return (
+    <Link
+      to={action.to}
+      state={action.state}
+      className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition ${variantClassName}`}
+    >
+      <FiArrowRight size={14} />
+      {action.label}
+    </Link>
+  );
+}
 
 export default CampusNotificationsPage;

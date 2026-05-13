@@ -40,14 +40,14 @@ const StatCard = ({ label, value, helper, tone = 'default' }) => {
   const styles = toneStyles[tone] || toneStyles.default;
 
   return (
-    <article className={`group relative overflow-hidden rounded-3xl border-2 bg-white p-6 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover ${styles.border}`}>
-      <div className={`absolute -right-8 -top-8 h-28 w-28 rounded-full opacity-60 transition-transform duration-300 group-hover:scale-125 ${styles.glow}`} />
+    <article className={`group relative min-h-[116px] overflow-hidden rounded-[1.35rem] border bg-white px-5 py-4 shadow-[0_14px_34px_-28px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-26px_rgba(15,23,42,0.34)] ${styles.border}`}>
+      <div className={`absolute -right-7 -top-7 h-24 w-24 rounded-full opacity-55 transition-transform duration-300 group-hover:scale-110 ${styles.glow}`} />
       <div className={`absolute bottom-0 left-0 h-0.5 w-full ${styles.bar} opacity-40`} />
       <div className="relative z-10">
-        <p className={`text-xs font-bold uppercase tracking-widest ${styles.accent}`}>{label}</p>
-        <p className="mt-3 font-heading text-3xl font-extrabold text-navy">{value}</p>
+        <p className={`text-[11px] font-bold uppercase tracking-[0.16em] ${styles.accent}`}>{label}</p>
+        <p className="mt-2 font-heading text-[1.65rem] font-extrabold leading-none text-navy">{value}</p>
         {helper ? (
-          <p className={`mt-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${styles.chip}`}>
+          <p className={`mt-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${styles.chip}`}>
             {helper}
           </p>
         ) : null}

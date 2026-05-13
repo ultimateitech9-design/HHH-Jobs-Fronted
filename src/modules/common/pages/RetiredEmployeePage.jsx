@@ -112,7 +112,7 @@ const RetiredEmployeePage = () => {
         ]}
         aside={
           <div className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 p-6 text-white shadow-xl">
-            <h2 className="font-heading text-2xl font-extrabold">Why this lane exists</h2>
+            <h2 className="font-heading text-2xl font-bold">Why this lane exists</h2>
             <div className="mt-6 space-y-3">
               {[
                 'Senior-experience-focused opportunities',

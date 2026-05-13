@@ -33,8 +33,11 @@ import {
   getRolePlanSubscriptions,
   getRolePricingPlanQuote,
   getRolePricingPlans,
+  verifyRolePlanAutopay,
   updateHrJob
 } from '../services/hrApi';
+import { openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpayCheckout';
+import { hrStarterPricing } from '../../../shared/config/pricingCatalog';
 
 const initialCheckoutForm = {
   planSlug: '',
@@ -49,7 +52,7 @@ const initialRoleCheckoutForm = {
   planSlug: '',
   quantity: 1,
   couponCode: '',
-  provider: 'manual',
+  provider: 'razorpay',
   paymentStatus: 'pending'
 };
 
@@ -63,6 +66,17 @@ const isFreePlan = (plan = {}) => {
   if (String(plan.slug || '').toLowerCase() === 'free') return true;
   return toSafeNumber(plan.price, 0) <= 0;
 };
+
+const formatMoney = (currency = 'INR', amount = 0) => `${currency} ${Number(amount || 0).toLocaleString('en-IN')}`;
+
+const getRolePlanListPrice = (plan = {}) =>
+  Number(plan?.meta?.listPrice || (plan.slug === hrStarterPricing.slug ? hrStarterPricing.listPrice : plan.price) || 0);
+
+const getRolePlanRenewalPrice = (plan = {}) =>
+  Number(plan?.meta?.trialRenewalPrice || (plan.slug === hrStarterPricing.slug ? hrStarterPricing.trialRenewalPrice : plan.price) || 0);
+
+const getRolePlanDiscountLabel = (plan = {}) =>
+  plan?.meta?.discountText || (plan.slug === hrStarterPricing.slug ? hrStarterPricing.discountText : '');
 
 const getStatusColor = (status) => {
   const s = String(status || '').toLowerCase();
@@ -79,6 +93,7 @@ const getStatusColor = (status) => {
 const HrJobsPage = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('jobs'); // 'jobs', 'post', 'billing'
+  const [billingSubTab, setBillingSubTab] = useState('subscription'); // 'subscription', 'credits', 'history'
 
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,21 +155,45 @@ const HrJobsPage = () => {
     [rolePlans, roleCheckoutForm.planSlug]
   );
 
-  const selectedPlanCredits = useMemo(() => {
-    if (!selectedPlan) return 0;
-    return Number(creditsSummary?.byPlan?.[selectedPlan.slug]?.remaining || 0);
-  }, [selectedPlan, creditsSummary]);
-
   const checkoutQuantity = useMemo(() => {
     const parsed = Number(checkoutForm.quantity);
     if (!Number.isFinite(parsed) || parsed < 1) return 1;
     return Math.floor(parsed);
   }, [checkoutForm.quantity]);
+
   const roleCheckoutQuantity = useMemo(() => {
     const parsed = Number(roleCheckoutForm.quantity);
     if (!Number.isFinite(parsed) || parsed < 1) return 1;
     return Math.floor(parsed);
   }, [roleCheckoutForm.quantity]);
+
+  const roleQuoteDisplay = useMemo(() => {
+    if (!selectedRolePlan) return null;
+
+    const currency = roleQuote?.currency || selectedRolePlan.currency || 'INR';
+    const renewalUnitPrice = getRolePlanRenewalPrice(selectedRolePlan);
+    const listUnitPrice = getRolePlanListPrice(selectedRolePlan);
+    const subtotal = renewalUnitPrice * roleCheckoutQuantity;
+    const listSubtotal = listUnitPrice * roleCheckoutQuantity;
+    const discountAmount = Math.max(listSubtotal - subtotal, 0);
+    const gstRate = Number(roleQuote?.gstRate ?? selectedRolePlan.gstRate ?? 18);
+    const gstAmount = subtotal * (gstRate / 100);
+    const totalAmount = subtotal + gstAmount;
+
+    return {
+      currency,
+      subtotal,
+      discountAmount,
+      gstAmount,
+      totalAmount,
+      includedJobCredits: roleQuote?.includedJobCredits ?? ((selectedRolePlan.includedJobCredits || 0) * roleCheckoutQuantity)
+    };
+  }, [selectedRolePlan, roleQuote, roleCheckoutQuantity]);
+
+  const selectedPlanCredits = useMemo(() => {
+    if (!selectedPlan) return 0;
+    return Number(creditsSummary?.byPlan?.[selectedPlan.slug]?.remaining || 0);
+  }, [selectedPlan, creditsSummary]);
 
   const planNameBySlug = useMemo(
     () => Object.fromEntries(normalizedPlans.map((plan) => [plan.slug, plan.name || plan.slug])),
@@ -540,9 +579,47 @@ const HrJobsPage = () => {
         planSlug: selectedRolePlan.slug,
         quantity: roleCheckoutQuantity,
         couponCode: roleCheckoutForm.couponCode,
-        provider: roleCheckoutForm.provider,
+        provider: 'razorpay',
         paymentStatus: roleCheckoutForm.paymentStatus
       });
+
+      if (response?.alreadyAuthorized) {
+        await loadRolePricingState();
+        await loadPricingState();
+        setMessage('Recruiter auto-pay is already enabled. The trial will move into recurring billing automatically.');
+        return;
+      }
+
+      if (response?.paymentSession?.subscriptionId) {
+        const checkoutResult = await openRazorpaySubscriptionCheckout({
+          ...response.paymentSession,
+          name: 'HHH Jobs Recruiter Plan',
+          description: 'Start the HR starter trial now and enable Razorpay auto-pay for renewal.'
+        });
+
+        if (checkoutResult.dismissed) {
+          setMessage('Checkout was closed before recruiter auto-pay authorisation completed.');
+          return;
+        }
+
+        await verifyRolePlanAutopay({
+          localSubscriptionId: response.paymentSession.localSubscriptionId,
+          razorpaySubscriptionId: checkoutResult.razorpaySubscriptionId,
+          razorpayPaymentId: checkoutResult.razorpayPaymentId,
+          razorpaySignature: checkoutResult.razorpaySignature,
+          audienceRole: 'hr'
+        });
+
+        await loadRolePricingState();
+        await loadPricingState();
+        setMessage('HR trial is active and Razorpay auto-pay is now enabled for renewal.');
+        setRoleCheckoutForm((current) => ({
+          ...current,
+          quantity: 1,
+          couponCode: ''
+        }));
+        return;
+      }
 
       await loadRolePricingState();
       await loadPricingState();
@@ -565,33 +642,25 @@ const HrJobsPage = () => {
 
   return (
     <div className="space-y-8 pb-10">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2">Job Postings</h1>
-          <p className="text-neutral-500 text-lg">Manage your active jobs, post new roles, and oversee billing.</p>
+          <h1 className="font-heading text-xl font-bold tracking-tight text-slate-900">Job Postings</h1>
+          <p className="mt-0.5 text-sm text-neutral-500">Manage your active jobs, post new roles, and oversee billing.</p>
         </div>
-        <div className="flex bg-neutral-100 rounded-xl p-1 w-full md:w-auto overflow-x-auto hide-scrollbar">
-          <button
-            onClick={() => { setActiveTab('jobs'); setEditingJobId(''); }}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'jobs' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-primary'
-              }`}
-          >
-            <FiBriefcase size={16} /> My Jobs
-          </button>
-          <button
-            onClick={() => setActiveTab('post')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'post' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-primary'
-              }`}
-          >
-            <FiPlus size={16} /> Post a Job
-          </button>
-          <button
-            onClick={() => { setActiveTab('billing'); setEditingJobId(''); }}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'billing' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-primary'
-              }`}
-          >
-            <FiCreditCard size={16} /> Billing & Credits
-          </button>
+        <div className="flex bg-neutral-100 rounded-xl p-1 shrink-0 overflow-x-auto hide-scrollbar">
+          {[
+            { key: 'jobs', label: 'My Jobs', icon: FiBriefcase, action: () => { setActiveTab('jobs'); setEditingJobId(''); } },
+            { key: 'post', label: 'Post a Job', icon: FiPlus, action: () => setActiveTab('post') },
+            { key: 'billing', label: 'Billing & Credits', icon: FiCreditCard, action: () => { setActiveTab('billing'); setEditingJobId(''); } }
+          ].map(({ key, label, icon: Icon, action }) => (
+            <button
+              key={key}
+              onClick={action}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${activeTab === key ? 'bg-white text-slate-900 shadow-sm' : 'text-neutral-500 hover:text-slate-700'}`}
+            >
+              <Icon size={14} /> {label}
+            </button>
+          ))}
         </div>
       </header>
 
@@ -652,7 +721,7 @@ const HrJobsPage = () => {
 
                   <div className="space-y-2 mb-6 text-sm text-neutral-600 relative z-10 font-medium">
                     <div className="flex items-center gap-2"><FiMapPin className="text-neutral-400" /> {job.jobLocation || 'Remote'}</div>
-                    <div className="flex items-center gap-2"><FiBriefcase className="text-neutral-400" /> {job.experienceLevel || 'Any Experience'} • {job.employmentType || 'Full-Time'}</div>
+                    <div className="flex items-center gap-2"><FiBriefcase className="text-neutral-400" /> {job.experienceLevel || 'Any Experience'} &bull; {job.employmentType || 'Full-Time'}</div>
                     <div className="flex items-center gap-2"><FiClock className="text-neutral-400" /> Valid till: {formatDateTime(job.validTill).split(' ')[0]}</div>
                   </div>
 
@@ -814,247 +883,274 @@ const HrJobsPage = () => {
 
       {/* BILLING & CREDITS TAB */}
       {activeTab === 'billing' && (
-        <div className="space-y-8 animate-fade-in">
-          <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_0.9fr] gap-6">
-            <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm p-6 md:p-8">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-600">Recruiter Subscription</p>
-                  <h3 className="mt-2 text-2xl font-black text-primary">Plans for hiring, follow-up, and onboarding</h3>
-                  <p className="mt-2 text-sm text-neutral-500">
-                    Recruiter plans sit above job-posting credits. Admin can approve, sales can follow up, and accounts can reconcile each purchase.
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 min-w-[220px]">
-                  <p className="text-xs font-bold uppercase tracking-wider text-brand-700">Current Subscription</p>
-                  <p className="mt-2 text-lg font-black text-brand-800">
+        <div className="space-y-6 animate-fade-in">
+          {/* Billing Sub-Tabs */}
+          <div className="flex gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1 w-full sm:w-auto overflow-x-auto">
+            {[
+              { key: 'subscription', label: 'Subscription' },
+              { key: 'credits', label: 'Job Credits' },
+              { key: 'history', label: 'Purchase History' }
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setBillingSubTab(key)}
+                className={`flex-1 sm:flex-none whitespace-nowrap px-5 py-2 rounded-lg text-xs font-bold transition-all ${billingSubTab === key ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-primary'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* --- SUB-TAB: Subscription --- */}
+          {billingSubTab === 'subscription' && (
+            <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_0.9fr] gap-6">
+              {/* Left: Plan Info */}
+              <div className="space-y-5">
+                {/* Current Plan Banner */}
+                <div className="rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white px-5 py-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-600">Current Subscription</p>
+                  <p className="mt-1.5 text-lg font-extrabold text-slate-900">
                     {currentRoleSubscription ? (rolePlanNameBySlug[currentRoleSubscription.role_plan_slug] || currentRoleSubscription.role_plan_slug) : 'No active plan'}
                   </p>
-                  <p className="mt-1 text-xs text-brand-700">
-                    {currentRoleSubscription?.ends_at
-                      ? `Active until ${formatDateTime(currentRoleSubscription.ends_at)}`
-                      : 'Choose a plan to unlock recruiter-side billing and onboarding flow.'}
+                  <p className="mt-1 text-xs text-slate-500">
+                    {currentRoleSubscription?.meta?.isTrial
+                      ? `Trial until ${formatDateTime(currentRoleSubscription.trial_ends_at || currentRoleSubscription.ends_at)}`
+                      : (currentRoleSubscription?.ends_at
+                        ? `Active until ${formatDateTime(currentRoleSubscription.ends_at)}`
+                        : 'Choose a plan to unlock recruiter-side billing.')}
                   </p>
+                  {currentRoleSubscription && (
+                    <p className="mt-1 text-[11px] font-semibold text-brand-700">
+                      Auto-pay: {currentRoleSubscription?.autopay_enabled ? (currentRoleSubscription?.autopay_status || 'active') : 'not enabled'}
+                    </p>
+                  )}
+                </div>
+
+                {rolePricingError && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-medium text-amber-700">{rolePricingError}</div>
+                )}
+
+                {/* Plan Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {rolePlans.map((plan) => {
+                    const isActivePlan = currentRoleSubscription?.role_plan_slug === plan.slug;
+                    const listPrice = getRolePlanListPrice(plan);
+                    const renewalPrice = getRolePlanRenewalPrice(plan);
+                    const discountLabel = getRolePlanDiscountLabel(plan);
+                    return (
+                      <div key={plan.slug} className={`rounded-xl border p-4 transition-all ${isActivePlan ? 'border-brand-400 bg-brand-50/50 ring-1 ring-brand-300' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <p className="text-sm font-bold text-slate-900">{plan.name}</p>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${isActivePlan ? 'bg-brand-600 text-white' : 'bg-neutral-100 text-neutral-500'}`}>
+                            {isActivePlan ? 'Active' : (plan.billingCycle || 'monthly')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-500 mb-3 line-clamp-2">{plan.description || 'Commercial recruiter plan'}</p>
+                        <p className="text-xl font-extrabold text-slate-900">
+                          {formatMoney(plan.currency, listPrice)}
+                          <span className="text-xs font-medium text-neutral-400 ml-1">/{plan.durationDays}d</span>
+                        </p>
+                        {renewalPrice < listPrice ? (
+                          <p className="mt-1 text-xs font-bold text-emerald-700">
+                            After trial {formatMoney(plan.currency, renewalPrice)}/month
+                          </p>
+                        ) : null}
+                        {discountLabel ? (
+                          <p className="mt-1 rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">
+                            {discountLabel}
+                          </p>
+                        ) : null}
+                        <div className="mt-3 flex gap-2 text-[11px]">
+                          <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.includedJobCredits || 0} credits</span>
+                          <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.trialDays || 0}d trial</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              {rolePricingError ? (
-                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-                  {rolePricingError}
-                </div>
-              ) : null}
+              {/* Right: Checkout Form */}
+              <div className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm self-start">
+                <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <FiUsers size={16} className="text-brand-500" /> Start / Change Plan
+                </h3>
+                <form onSubmit={handleRolePlanCheckout} className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-500 mb-1 block">Select Plan</label>
+                    <select
+                      value={roleCheckoutForm.planSlug}
+                      onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, planSlug: e.target.value })}
+                      className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-400"
+                      disabled={rolePlans.length === 0}
+                    >
+                      {rolePlans.map((plan) => <option key={plan.slug} value={plan.slug}>{plan.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-500 mb-1 block">Seats</label>
+                    <input type="number" min="1" value={roleCheckoutForm.quantity} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, quantity: e.target.value })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-400" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-500 mb-1 block">Coupon Code</label>
+                    <input value={roleCheckoutForm.couponCode} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, couponCode: e.target.value.toUpperCase() })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold uppercase text-slate-900 focus:ring-2 focus:ring-brand-400" placeholder="OPTIONAL COUPON" />
+                  </div>
 
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                {rolePlans.map((plan) => {
-                  const isActivePlan = currentRoleSubscription?.role_plan_slug === plan.slug;
+                  {roleQuoteError && <p className="text-xs font-medium text-red-600">{roleQuoteError}</p>}
+                  {roleQuoteLoading && <p className="text-xs text-neutral-400 animate-pulse">Refreshing quote...</p>}
+                  {roleQuoteDisplay && (
+                    <div className="rounded-lg bg-neutral-50 border border-neutral-100 p-3 space-y-1.5 text-xs">
+                      <div className="flex justify-between text-neutral-600"><span>Subtotal:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.subtotal).toFixed(2)}</span></div>
+                      <div className="flex justify-between text-emerald-600"><span>Discount:</span><span>-{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.discountAmount).toFixed(2)}</span></div>
+                      <div className="flex justify-between text-neutral-600"><span>GST:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.gstAmount).toFixed(2)}</span></div>
+                      <div className="flex justify-between text-neutral-600"><span>Job credits:</span><span>{roleQuoteDisplay.includedJobCredits}</span></div>
+                      <div className="border-t border-neutral-200 pt-1.5 flex justify-between font-bold text-sm text-brand-700"><span>Total:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.totalAmount).toFixed(2)}</span></div>
+                    </div>
+                  )}
+
+                  <p className="text-[11px] text-neutral-400">New accounts start with a trial. Checkout authorises Razorpay auto-renewal.</p>
+
+                  <button type="submit" disabled={roleCheckoutSaving || rolePlans.length === 0} className="w-full py-2.5 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50">
+                    {roleCheckoutSaving ? 'Processing...' : 'Start Trial + Enable Auto-pay'}
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* --- SUB-TAB: Job Credits --- */}
+          {billingSubTab === 'credits' && (
+            <div className="space-y-6">
+              {/* Credit Plan Summary Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {plans.map(plan => {
+                  const planCredits = creditsSummary?.byPlan?.[plan.slug] || { total: 0, used: 0, remaining: 0 };
+                  const isFree = isFreePlan(plan);
                   return (
-                    <div key={plan.slug} className={`rounded-[1.6rem] border p-5 transition-all ${isActivePlan ? 'border-brand-500 bg-brand-50/60 shadow-sm' : 'border-neutral-200 bg-white'}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-lg font-black text-primary">{plan.name}</p>
-                          <p className="mt-1 text-sm text-neutral-500">{plan.description || 'Commercial recruiter plan'}</p>
-                        </div>
-                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-wider ${isActivePlan ? 'bg-brand-600 text-white' : 'bg-neutral-100 text-neutral-600'}`}>
-                          {plan.billingCycle || 'monthly'}
-                        </span>
+                    <div key={plan.slug} className="rounded-xl border border-neutral-200 bg-white p-4 hover:border-neutral-300 transition-all">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-bold text-slate-900">{plan.name}</p>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isFree ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-700'}`}>{isFree ? 'Free' : 'Paid'}</span>
                       </div>
-                      <div className="mt-4 flex items-end gap-2">
-                        <span className="text-3xl font-black text-primary">{plan.currency} {plan.price}</span>
-                        <span className="pb-1 text-sm font-bold text-neutral-400">/{plan.durationDays} days</span>
-                      </div>
-                      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                        <div className="rounded-xl bg-neutral-50 px-3 py-2">
-                          <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Included credits</p>
-                          <p className="mt-1 font-black text-primary">{plan.includedJobCredits || 0}</p>
-                        </div>
-                        <div className="rounded-xl bg-neutral-50 px-3 py-2">
-                          <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Trial</p>
-                          <p className="mt-1 font-black text-primary">{plan.trialDays || 0} days</p>
-                        </div>
+                      <p className="text-lg font-extrabold text-slate-900">
+                        {plan.currency} {plan.price}
+                        <span className="text-xs font-medium text-neutral-400 ml-1">/ {plan.jobValidityDays}d</span>
+                      </p>
+                      <div className="mt-3 rounded-lg bg-neutral-50 p-2.5">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Credits</p>
+                        <p className="text-base font-extrabold text-brand-600 mt-0.5">{isFree ? 'Unlimited' : planCredits.remaining}</p>
+                        {!isFree && <p className="text-[10px] text-neutral-400 mt-0.5">Used: {planCredits.used} / {planCredits.total}</p>}
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
 
-            <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm p-6">
-              <h3 className="text-xl font-extrabold text-primary mb-6 flex items-center gap-2"><FiUsers className="text-brand-500" /> Recruiter Plan Checkout</h3>
-              <form onSubmit={handleRolePlanCheckout} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-neutral-500">Select Recruiter Plan</label>
-                  <select
-                    value={roleCheckoutForm.planSlug}
-                    onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, planSlug: e.target.value })}
-                    className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold text-primary focus:ring-2 focus:ring-brand-500"
-                    disabled={rolePlans.length === 0}
-                  >
-                    {rolePlans.map((plan) => <option key={plan.slug} value={plan.slug}>{plan.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-neutral-500">Seats / Quantity</label>
-                  <input type="number" min="1" value={roleCheckoutForm.quantity} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, quantity: e.target.value })} className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold text-primary focus:ring-2 focus:ring-brand-500" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-neutral-500">Coupon Code</label>
-                  <input value={roleCheckoutForm.couponCode} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, couponCode: e.target.value.toUpperCase() })} className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold uppercase text-primary focus:ring-2 focus:ring-brand-500" placeholder="Optional coupon" />
-                </div>
-
-                {roleQuoteError ? <p className="text-sm font-medium text-red-600">{roleQuoteError}</p> : null}
-                {roleQuoteLoading ? <p className="text-sm text-neutral-500">Refreshing quote...</p> : null}
-                {roleQuote ? (
-                  <div className="bg-brand-50 p-4 rounded-xl border border-brand-100 space-y-2 text-sm mt-4">
-                    <div className="flex justify-between font-medium text-neutral-600"><span>Subtotal:</span> <span>{roleQuote.currency} {Number(roleQuote.subtotal).toFixed(2)}</span></div>
-                    <div className="flex justify-between font-medium text-emerald-600"><span>Discount:</span> <span>-{roleQuote.currency} {Number(roleQuote.discountAmount).toFixed(2)}</span></div>
-                    <div className="flex justify-between font-medium text-neutral-600"><span>GST:</span> <span>{roleQuote.currency} {Number(roleQuote.gstAmount).toFixed(2)}</span></div>
-                    <div className="flex justify-between font-medium text-neutral-600"><span>Included posting credits:</span> <span>{roleQuote.includedJobCredits}</span></div>
-                    <div className="border-t border-brand-200 pt-2 flex justify-between font-bold text-lg text-brand-700"><span>Total:</span> <span>{roleQuote.currency} {Number(roleQuote.totalAmount).toFixed(2)}</span></div>
-                  </div>
-                ) : null}
-
-                <button type="submit" disabled={roleCheckoutSaving || rolePlans.length === 0} className="w-full py-3.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-500 transition-colors disabled:opacity-50 mt-4">
-                  {roleCheckoutSaving ? 'Processing...' : 'Activate Recruiter Plan'}
-                </button>
-              </form>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-neutral-100">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-              <div>
-                <h3 className="text-xl font-extrabold text-primary">Recruiter Plan Purchase History</h3>
-                <p className="text-sm text-neutral-500 mt-1">These purchases are visible to admin, sales, and accounts for onboarding and reconciliation.</p>
-              </div>
-            </div>
-            {rolePurchases.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-neutral-100 text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                      <th className="pb-4 pr-4">Plan</th>
-                      <th className="pb-4 px-4">Qty</th>
-                      <th className="pb-4 px-4">Coupon</th>
-                      <th className="pb-4 px-4">Amount</th>
-                      <th className="pb-4 px-4">Status</th>
-                      <th className="pb-4 pl-4 text-right">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {rolePurchases.slice(0, 10).map((purchase, index) => (
-                      <tr key={purchase.id || index} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors">
-                        <td className="py-4 pr-4 font-bold text-primary">{rolePlanNameBySlug[purchase.role_plan_slug] || purchase.role_plan_slug}</td>
-                        <td className="py-4 px-4 font-medium text-neutral-600">{purchase.quantity}</td>
-                        <td className="py-4 px-4 font-medium text-neutral-600">{purchase.coupon_code || '-'}</td>
-                        <td className="py-4 px-4 font-bold text-neutral-700">{purchase.currency || 'INR'} {purchase.total_amount}</td>
-                        <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded text-[10px] uppercase font-bold border ${getStatusColor(purchase.status)}`}>{purchase.status}</span></td>
-                        <td className="py-4 pl-4 text-right text-neutral-500">{formatDateTime(purchase.created_at || purchase.createdAt).split(' ')[0]}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-neutral-500 font-medium bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
-                No recruiter plan purchases yet.
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {plans.map(plan => {
-              const planCredits = creditsSummary?.byPlan?.[plan.slug] || { total: 0, used: 0, remaining: 0 };
-              const isFree = isFreePlan(plan);
-              return (
-                <div key={plan.slug} className={`bg-white p-6 rounded-3xl border shadow-sm relative overflow-hidden transition-all ${plan.slug === 'premium' ? 'border-brand-500 ring-1 ring-brand-500 scale-[1.02]' : 'border-neutral-200'}`}>
-                  {plan.slug === 'premium' && <div className="absolute top-0 right-0 bg-brand-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-xl tracking-wider">Popular</div>}
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-xl font-black text-primary">{plan.name}</h3>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isFree ? 'bg-neutral-100 text-neutral-600' : 'bg-amber-100 text-amber-700'}`}>{isFree ? 'Free Forever' : 'Paid Plan'}</span>
-                  </div>
-                  <div className="mb-6">
-                    <span className="text-3xl font-bold text-primary">{plan.currency} {plan.price}</span>
-                    <span className="text-sm font-bold text-neutral-400"> / {plan.jobValidityDays} days</span>
-                  </div>
-
-                  <div className="bg-neutral-50 rounded-xl p-4 mb-4">
-                    <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">Available Credits</p>
-                    <p className="text-2xl font-black text-brand-600">{isFree ? 'Unlimited' : planCredits.remaining}</p>
-                    <p className="text-xs font-medium text-neutral-400 mt-1">Used: {isFree ? '-' : planCredits.used} of {isFree ? '-' : planCredits.total}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-neutral-100">
-                <h3 className="text-xl font-extrabold text-primary mb-6 flex items-center gap-2"><FiCreditCard className="text-brand-500" /> Buy Credits</h3>
-                <form onSubmit={handleCheckout} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-neutral-500">Select Plan</label>
-                    <select value={checkoutForm.planSlug} onChange={e => setCheckoutForm({ ...checkoutForm, planSlug: e.target.value })} className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold text-primary focus:ring-2 focus:ring-brand-500" disabled={paidPlans.length === 0}>
+              {/* Buy Credits Form */}
+              <div className="max-w-md rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm">
+                <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <FiCreditCard size={16} className="text-brand-500" /> Buy Job Credits
+                </h3>
+                <form onSubmit={handleCheckout} className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-500 mb-1 block">Plan</label>
+                    <select value={checkoutForm.planSlug} onChange={e => setCheckoutForm({ ...checkoutForm, planSlug: e.target.value })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-400" disabled={paidPlans.length === 0}>
                       {paidPlans.map(plan => <option key={plan.slug} value={plan.slug}>{plan.name}</option>)}
                     </select>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-neutral-500">Credit Quantity</label>
-                    <input type="number" min="1" value={checkoutForm.quantity} onChange={e => setCheckoutForm({ ...checkoutForm, quantity: e.target.value })} className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 font-bold text-primary focus:ring-2 focus:ring-brand-500" />
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-500 mb-1 block">Quantity</label>
+                    <input type="number" min="1" value={checkoutForm.quantity} onChange={e => setCheckoutForm({ ...checkoutForm, quantity: e.target.value })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-400" />
                   </div>
-
                   {quote && (
-                    <div className="bg-brand-50 p-4 rounded-xl border border-brand-100 space-y-2 text-sm mt-4">
-                      <div className="flex justify-between font-medium text-neutral-600"><span>Subtotal:</span> <span>{quote.currency} {Number(quote.subtotal).toFixed(2)}</span></div>
-                      <div className="flex justify-between font-medium text-emerald-600"><span>Discount:</span> <span>-{quote.currency} {Number(quote.discountAmount).toFixed(2)}</span></div>
-                      <div className="flex justify-between font-medium text-neutral-600"><span>GST:</span> <span>{quote.currency} {Number(quote.gstAmount).toFixed(2)}</span></div>
-                      <div className="border-t border-brand-200 pt-2 flex justify-between font-bold text-lg text-brand-700"><span>Total:</span> <span>{quote.currency} {Number(quote.totalAmount).toFixed(2)}</span></div>
+                    <div className="rounded-lg bg-neutral-50 border border-neutral-100 p-3 space-y-1.5 text-xs">
+                      <div className="flex justify-between text-neutral-600"><span>Subtotal:</span><span>{quote.currency} {Number(quote.subtotal).toFixed(2)}</span></div>
+                      <div className="flex justify-between text-emerald-600"><span>Discount:</span><span>-{quote.currency} {Number(quote.discountAmount).toFixed(2)}</span></div>
+                      <div className="flex justify-between text-neutral-600"><span>GST:</span><span>{quote.currency} {Number(quote.gstAmount).toFixed(2)}</span></div>
+                      <div className="border-t border-neutral-200 pt-1.5 flex justify-between font-bold text-sm text-brand-700"><span>Total:</span><span>{quote.currency} {Number(quote.totalAmount).toFixed(2)}</span></div>
                     </div>
                   )}
-
-                  <button type="submit" disabled={checkoutSaving || paidPlans.length === 0} className="w-full py-3.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-500 transition-colors disabled:opacity-50 mt-4">
+                  <button type="submit" disabled={checkoutSaving || paidPlans.length === 0} className="w-full py-2.5 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50">
                     {checkoutSaving ? 'Processing...' : 'Checkout'}
                   </button>
                 </form>
               </div>
             </div>
+          )}
 
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-neutral-100 h-full">
-                <h3 className="text-xl font-extrabold text-primary mb-6">Recent Purchases</h3>
-                {purchases.length > 0 ? (
+          {/* --- SUB-TAB: Purchase History --- */}
+          {billingSubTab === 'history' && (
+            <div className="space-y-6">
+              {/* Recruiter Plan Purchases */}
+              <div className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-900 mb-1">Recruiter Plan Purchases</h3>
+                <p className="text-xs text-neutral-400 mb-4">Visible to admin, sales, and accounts for reconciliation.</p>
+                {rolePurchases.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full min-w-[640px] text-left">
                       <thead>
-                        <tr className="border-b border-neutral-100 text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                          <th className="pb-4 pr-4">Plan</th>
-                          <th className="pb-4 px-4">Qty</th>
-                          <th className="pb-4 px-4">Amount</th>
-                          <th className="pb-4 px-4">Status</th>
-                          <th className="pb-4 pl-4 text-right">Date</th>
+                        <tr className="border-b border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                          <th className="pb-3 pr-3">Plan</th>
+                          <th className="pb-3 px-3">Qty</th>
+                          <th className="pb-3 px-3">Coupon</th>
+                          <th className="pb-3 px-3">Amount</th>
+                          <th className="pb-3 px-3">Status</th>
+                          <th className="pb-3 pl-3 text-right">Date</th>
                         </tr>
                       </thead>
-                      <tbody className="text-sm">
-                        {purchases.slice(0, 10).map((purchase, i) => (
-                          <tr key={purchase.id || i} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors">
-                            <td className="py-4 pr-4 font-bold text-primary">{planNameBySlug[purchase.plan_slug] || purchase.plan_slug}</td>
-                            <td className="py-4 px-4 font-medium text-neutral-600">{purchase.quantity}</td>
-                            <td className="py-4 px-4 font-bold text-neutral-700">{purchase.currency || 'INR'} {purchase.total_amount}</td>
-                            <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded text-[10px] uppercase font-bold border ${getStatusColor(purchase.status)}`}>{purchase.status}</span></td>
-                            <td className="py-4 pl-4 text-right text-neutral-500">{formatDateTime(purchase.created_at || purchase.createdAt).split(' ')[0]}</td>
+                      <tbody className="text-xs">
+                        {rolePurchases.slice(0, 15).map((purchase, index) => (
+                          <tr key={purchase.id || index} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50 transition-colors">
+                            <td className="py-3 pr-3 font-bold text-slate-800">{rolePlanNameBySlug[purchase.role_plan_slug] || purchase.role_plan_slug}</td>
+                            <td className="py-3 px-3 text-neutral-600">{purchase.quantity}</td>
+                            <td className="py-3 px-3 text-neutral-600">{purchase.coupon_code || '-'}</td>
+                            <td className="py-3 px-3 font-semibold text-slate-700">{purchase.currency || 'INR'} {purchase.total_amount}</td>
+                            <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold border ${getStatusColor(purchase.status)}`}>{purchase.status}</span></td>
+                            <td className="py-3 pl-3 text-right text-neutral-500">{formatDateTime(purchase.created_at || purchase.createdAt).split(' ')[0]}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-neutral-500 font-medium bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
-                    You haven&apos;t made any purchases yet.
+                  <div className="py-8 text-center text-xs font-medium text-neutral-400 bg-neutral-50 rounded-xl border border-dashed border-neutral-200">No recruiter plan purchases yet.</div>
+                )}
+              </div>
+
+              {/* Job Credit Purchases */}
+              <div className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-900 mb-4">Job Credit Purchases</h3>
+                {purchases.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[560px] text-left">
+                      <thead>
+                        <tr className="border-b border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                          <th className="pb-3 pr-3">Plan</th>
+                          <th className="pb-3 px-3">Qty</th>
+                          <th className="pb-3 px-3">Amount</th>
+                          <th className="pb-3 px-3">Status</th>
+                          <th className="pb-3 pl-3 text-right">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-xs">
+                        {purchases.slice(0, 15).map((purchase, i) => (
+                          <tr key={purchase.id || i} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50 transition-colors">
+                            <td className="py-3 pr-3 font-bold text-slate-800">{planNameBySlug[purchase.plan_slug] || purchase.plan_slug}</td>
+                            <td className="py-3 px-3 text-neutral-600">{purchase.quantity}</td>
+                            <td className="py-3 px-3 font-semibold text-slate-700">{purchase.currency || 'INR'} {purchase.total_amount}</td>
+                            <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold border ${getStatusColor(purchase.status)}`}>{purchase.status}</span></td>
+                            <td className="py-3 pl-3 text-right text-neutral-500">{formatDateTime(purchase.created_at || purchase.createdAt).split(' ')[0]}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
+                ) : (
+                  <div className="py-8 text-center text-xs font-medium text-neutral-400 bg-neutral-50 rounded-xl border border-dashed border-neutral-200">No credit purchases yet.</div>
                 )}
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

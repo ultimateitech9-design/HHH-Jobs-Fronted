@@ -127,6 +127,36 @@ export const updateCampusDriveApplication = (driveId, applicationId, payload) =>
 export const getCampusConnections = () =>
   safeRequest({ path: '/campus-connect/connections', emptyData: [], extract: (p) => p.connections || [] });
 
+export const getCampusConnectionDirectory = () =>
+  safeRequest({
+    path: '/campus-connect/connections/directory',
+    emptyData: {
+      companies: [],
+      summary: {
+        totalCompanies: 0,
+        connectedCompanies: 0,
+        pendingInvites: 0,
+        availableCompanies: 0
+      }
+    },
+    extract: (p) => ({
+      companies: p.companies || [],
+      summary: p.summary || {
+        totalCompanies: 0,
+        connectedCompanies: 0,
+        pendingInvites: 0,
+        availableCompanies: 0
+      }
+    })
+  });
+
+export const inviteCampusCompany = ({ companyUserId, message = '' }) =>
+  strictRequest({
+    path: '/campus-connect/connections',
+    options: { method: 'POST', body: JSON.stringify({ companyUserId, message }) },
+    extract: (p) => p.connection || p
+  });
+
 export const respondToConnection = (id, status) =>
   strictRequest({
     path: `/campus-connect/connections/${id}`,
@@ -168,7 +198,7 @@ export const getCampusRolePlanQuote = ({ planSlug, quantity = 1, couponCode = ''
     extract: (payload) => payload?.quote || payload
   });
 
-export const checkoutCampusRolePlan = ({ planSlug, quantity = 1, couponCode = '', provider = 'manual', paymentStatus = 'pending' }) =>
+export const checkoutCampusRolePlan = ({ planSlug, quantity = 1, couponCode = '', provider = 'razorpay', paymentStatus = 'pending' }) =>
   strictRequest({
     path: '/pricing/role-plans/checkout',
     options: {
@@ -176,6 +206,27 @@ export const checkoutCampusRolePlan = ({ planSlug, quantity = 1, couponCode = ''
       body: JSON.stringify({ planSlug, quantity, couponCode, provider, paymentStatus })
     },
     extract: (payload) => payload
+  });
+
+export const verifyCampusRolePlanAutopay = ({
+  localSubscriptionId,
+  razorpaySubscriptionId,
+  razorpayPaymentId,
+  razorpaySignature
+}) =>
+  strictRequest({
+    path: '/payments/role-subscriptions/verify',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({
+        localSubscriptionId,
+        razorpaySubscriptionId,
+        razorpayPaymentId,
+        razorpaySignature,
+        audienceRole: 'campus_connect'
+      })
+    },
+    extract: (payload) => payload?.subscription || payload
   });
 
 export const getCampusRoleSubscriptions = () =>

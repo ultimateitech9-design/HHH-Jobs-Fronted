@@ -61,6 +61,8 @@ const initialForm = {
 };
 
 const isActive = (value) => value !== false;
+const actionButtonClass = 'inline-flex items-center justify-center rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-black text-neutral-700 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700';
+const dangerButtonClass = 'inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-black text-red-700 shadow-sm transition hover:bg-red-100';
 
 const AdminMasterDataPage = () => {
   const [form, setForm] = useState(initialForm);
@@ -163,8 +165,8 @@ const AdminMasterDataPage = () => {
               <div><strong>{item.name}</strong></div>
               <div className="student-list-actions">
                 <StatusPill value={isActive(item.is_active) ? 'active' : 'inactive'} />
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => updateAdminCategory(item.id, { isActive: !isActive(item.is_active) }), 'Category status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => deleteAdminCategory(item.id), 'Category deleted.')}>Delete</button>
+                <button type="button" className={actionButtonClass} onClick={() => runMutation(async () => updateAdminCategory(item.id, { isActive: !isActive(item.is_active) }), 'Category status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
+                <button type="button" className={dangerButtonClass} onClick={() => runMutation(async () => deleteAdminCategory(item.id), 'Category deleted.')}>Delete</button>
               </div>
             </li>
           ))}
@@ -187,8 +189,8 @@ const AdminMasterDataPage = () => {
               <div><strong>{item.name}</strong></div>
               <div className="student-list-actions">
                 <StatusPill value={isActive(item.is_active) ? 'active' : 'inactive'} />
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => updateAdminLocation(item.id, { isActive: !isActive(item.is_active) }), 'Location status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => deleteAdminLocation(item.id), 'Location deleted.')}>Delete</button>
+                <button type="button" className={actionButtonClass} onClick={() => runMutation(async () => updateAdminLocation(item.id, { isActive: !isActive(item.is_active) }), 'Location status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
+                <button type="button" className={dangerButtonClass} onClick={() => runMutation(async () => deleteAdminLocation(item.id), 'Location deleted.')}>Delete</button>
               </div>
             </li>
           ))}
@@ -213,8 +215,8 @@ const AdminMasterDataPage = () => {
               <div><strong>{item.name}</strong> ({item.code || '-'})</div>
               <div className="student-list-actions">
                 <StatusPill value={isActive(item.is_active) ? 'active' : 'inactive'} />
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => updateAdminState(item.id, { isActive: !isActive(item.is_active) }), 'State status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => deleteAdminState(item.id), 'State deleted.')}>Delete</button>
+                <button type="button" className={actionButtonClass} onClick={() => runMutation(async () => updateAdminState(item.id, { isActive: !isActive(item.is_active) }), 'State status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
+                <button type="button" className={dangerButtonClass} onClick={() => runMutation(async () => deleteAdminState(item.id), 'State deleted.')}>Delete</button>
               </div>
             </li>
           ))}
@@ -268,8 +270,8 @@ const AdminMasterDataPage = () => {
               <div><strong>{item.name}</strong> | {stateNameById[item.state_id] || '-'}</div>
               <div className="student-list-actions">
                 <StatusPill value={isActive(item.is_active) ? 'active' : 'inactive'} />
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => updateAdminDistrict(item.id, { isActive: !isActive(item.is_active) }), 'District status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => deleteAdminDistrict(item.id), 'District deleted.')}>Delete</button>
+                <button type="button" className={actionButtonClass} onClick={() => runMutation(async () => updateAdminDistrict(item.id, { isActive: !isActive(item.is_active) }), 'District status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
+                <button type="button" className={dangerButtonClass} onClick={() => runMutation(async () => deleteAdminDistrict(item.id), 'District deleted.')}>Delete</button>
               </div>
             </li>
           ))}
@@ -281,8 +283,8 @@ const AdminMasterDataPage = () => {
               <div><strong>{item.name}</strong> | {districtNameById[item.district_id] || '-'}</div>
               <div className="student-list-actions">
                 <StatusPill value={isActive(item.is_active) ? 'active' : 'inactive'} />
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => updateAdminTehsil(item.id, { isActive: !isActive(item.is_active) }), 'Tehsil status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => deleteAdminTehsil(item.id), 'Tehsil deleted.')}>Delete</button>
+                <button type="button" className={actionButtonClass} onClick={() => runMutation(async () => updateAdminTehsil(item.id, { isActive: !isActive(item.is_active) }), 'Tehsil status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
+                <button type="button" className={dangerButtonClass} onClick={() => runMutation(async () => deleteAdminTehsil(item.id), 'Tehsil deleted.')}>Delete</button>
               </div>
             </li>
           ))}
@@ -294,8 +296,8 @@ const AdminMasterDataPage = () => {
               <div><strong>{item.name}</strong> | {tehsilNameById[item.tehsil_id] || '-'} | {item.pincode || '-'}</div>
               <div className="student-list-actions">
                 <StatusPill value={isActive(item.is_active) ? 'active' : 'inactive'} />
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => updateAdminVillage(item.id, { isActive: !isActive(item.is_active) }), 'Village status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => deleteAdminVillage(item.id), 'Village deleted.')}>Delete</button>
+                <button type="button" className={actionButtonClass} onClick={() => runMutation(async () => updateAdminVillage(item.id, { isActive: !isActive(item.is_active) }), 'Village status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
+                <button type="button" className={dangerButtonClass} onClick={() => runMutation(async () => deleteAdminVillage(item.id), 'Village deleted.')}>Delete</button>
               </div>
             </li>
           ))}
@@ -329,7 +331,7 @@ const AdminMasterDataPage = () => {
             <li key={item.id}>
               <div><strong>{item.pincode}</strong> | {stateNameById[item.state_id] || '-'} | {districtNameById[item.district_id] || '-'} | {villageNameById[item.village_id] || '-'}</div>
               <div className="student-list-actions">
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => deleteAdminPincode(item.id), 'Pincode deleted.')}>Delete</button>
+                <button type="button" className={dangerButtonClass} onClick={() => runMutation(async () => deleteAdminPincode(item.id), 'Pincode deleted.')}>Delete</button>
               </div>
             </li>
           ))}
@@ -365,8 +367,8 @@ const AdminMasterDataPage = () => {
               <div><strong>{item.name}</strong></div>
               <div className="student-list-actions">
                 <StatusPill value={isActive(item.is_active) ? 'active' : 'inactive'} />
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => updateAdminIndustry(item.id, { isActive: !isActive(item.is_active) }), 'Industry status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => deleteAdminIndustry(item.id), 'Industry deleted.')}>Delete</button>
+                <button type="button" className={actionButtonClass} onClick={() => runMutation(async () => updateAdminIndustry(item.id, { isActive: !isActive(item.is_active) }), 'Industry status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
+                <button type="button" className={dangerButtonClass} onClick={() => runMutation(async () => deleteAdminIndustry(item.id), 'Industry deleted.')}>Delete</button>
               </div>
             </li>
           ))}
@@ -378,8 +380,8 @@ const AdminMasterDataPage = () => {
               <div><strong>{item.name}</strong> | {industryNameById[item.industry_id] || '-'}</div>
               <div className="student-list-actions">
                 <StatusPill value={isActive(item.is_active) ? 'active' : 'inactive'} />
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => updateAdminSkill(item.id, { isActive: !isActive(item.is_active) }), 'Skill status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
-                <button type="button" className="btn-link" onClick={() => runMutation(async () => deleteAdminSkill(item.id), 'Skill deleted.')}>Delete</button>
+                <button type="button" className={actionButtonClass} onClick={() => runMutation(async () => updateAdminSkill(item.id, { isActive: !isActive(item.is_active) }), 'Skill status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
+                <button type="button" className={dangerButtonClass} onClick={() => runMutation(async () => deleteAdminSkill(item.id), 'Skill deleted.')}>Delete</button>
               </div>
             </li>
           ))}

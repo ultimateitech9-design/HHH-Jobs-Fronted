@@ -200,7 +200,7 @@ const StudentCompaniesPage = () => {
                           </div>
                         )}
                         <div className="min-w-0">
-                          <h3 className="truncate text-base font-extrabold text-navy">{company.name}</h3>
+                          <h3 className="truncate text-base font-bold text-navy">{company.name}</h3>
                           <p className="mt-0.5 line-clamp-2 text-[12px] leading-4 text-slate-500">
                             {company.headline || company.industry || 'Hiring on HHH Jobs'}
                           </p>
@@ -218,7 +218,7 @@ const StudentCompaniesPage = () => {
                     <div className="mt-2.5 grid grid-cols-2 gap-2">
                       <div className="rounded-[0.8rem] border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-sm text-slate-600">
                         <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Open roles</p>
-                        <p className="mt-1 text-lg font-extrabold text-navy">{Number(company.totalJobs || 0)}</p>
+                        <p className="mt-1 text-lg font-bold text-navy">{Number(company.totalJobs || 0)}</p>
                       </div>
                       <div className="rounded-[0.8rem] border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-sm text-slate-600">
                         <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">

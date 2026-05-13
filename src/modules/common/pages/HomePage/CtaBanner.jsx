@@ -39,7 +39,7 @@ export function CtaBanner() {
             ))}
 
             <div className="relative z-10">
-              <h2 className="font-heading text-3xl font-extrabold text-white md:text-4xl">
+              <h2 className="font-heading text-3xl font-bold text-white md:text-4xl">
                 Ready to Transform Your Career?
               </h2>
               <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row">

@@ -273,7 +273,7 @@ const HrJobApplicantsPage = () => {
           </Link>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-xl md:text-2xl font-extrabold text-primary truncate max-w-sm md:max-w-xl">{targetJob?.jobTitle || 'Loading Job...'}</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-primary truncate max-w-sm md:max-w-xl">{targetJob?.jobTitle || 'Loading Job...'}</h1>
               {targetJob && <span className="bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider">{targetJob.employmentType || 'Full-Time'}</span>}
             </div>
             <p className="text-sm font-bold text-neutral-400">
@@ -315,7 +315,7 @@ const HrJobApplicantsPage = () => {
             <div className="p-4 border-b border-neutral-100 bg-neutral-50/50 flex items-center justify-between">
               <button
                 onClick={toggleSelectAll}
-                className="flex items-center gap-2 text-sm font-extrabold text-primary hover:text-brand-600 transition-colors"
+                className="flex items-center gap-2 text-sm font-bold text-primary hover:text-brand-600 transition-colors"
               >
                 {allSelected ? <FiCheckSquare size={16} className="text-brand-600" /> : someSelected ? <FiCheckSquare size={16} className="text-brand-300" /> : <FiSquare size={16} />}
                 Applications ({state.applicants.length})
@@ -405,7 +405,7 @@ const HrJobApplicantsPage = () => {
                       {activeApplicant.applicant?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'CA'}
                     </div>
                     <div>
-                      <h2 className="text-2xl font-extrabold text-primary mb-2">
+                      <h2 className="text-2xl font-bold text-primary mb-2">
                         {activeApplicant.applicant?.name || activeApplicant.applicantEmail || 'Candidate Profile'}
                       </h2>
                       <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-neutral-500">
@@ -432,7 +432,7 @@ const HrJobApplicantsPage = () => {
                   {/* Status & Notes */}
                   <div className="space-y-6">
                     <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-200">
-                      <h3 className="text-lg font-extrabold text-primary mb-4 flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
                         <FiCheckCircle className="text-brand-500" /> Application Status
                       </h3>
 
@@ -491,7 +491,7 @@ const HrJobApplicantsPage = () => {
                   {/* Interview Scheduling */}
                   <div className="space-y-6">
                     <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100">
-                      <h3 className="text-lg font-extrabold text-purple-900 mb-4 flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
                         <FiVideo className="text-purple-600" /> Schedule Interview
                       </h3>
 

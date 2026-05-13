@@ -31,6 +31,29 @@ export const getMaxSignupDob = () => {
 export const getSelectedCountry = (countryCode) =>
   countryCodeOptions.find((item) => item.code === countryCode) || countryCodeOptions[0];
 
+export const validatePhoneByCountryCode = (countryCode, value, { required = true } = {}) => {
+  const selectedCountry = getSelectedCountry(countryCode);
+  const mobileValue = String(value || '').trim();
+
+  if (!mobileValue) {
+    return required ? 'Mobile number is required.' : '';
+  }
+
+  if (!/^\d+$/.test(mobileValue)) {
+    return 'Mobile number should contain only digits.';
+  }
+
+  if (mobileValue.length !== selectedCountry.digits) {
+    return `Mobile number must be exactly ${selectedCountry.digits} digits for ${selectedCountry.label}.`;
+  }
+
+  if (selectedCountry.code === '+91' && !/^[6-9]\d{9}$/.test(mobileValue)) {
+    return 'Enter a valid India mobile number with 10 digits starting from 6-9.';
+  }
+
+  return '';
+};
+
 export const validateSignupField = (key, value, nextForm) => {
   switch (key) {
     case 'name':
@@ -54,15 +77,7 @@ export const validateSignupField = (key, value, nextForm) => {
       return '';
 
     case 'mobile': {
-      const selectedCountry = getSelectedCountry(nextForm.countryCode);
-      const mobileValue = String(value || '').trim();
-
-      if (!mobileValue) return 'Mobile number is required.';
-      if (!/^\d+$/.test(mobileValue)) return 'Mobile number should contain only digits.';
-      if (mobileValue.length !== selectedCountry.digits) {
-        return `Mobile number must be exactly ${selectedCountry.digits} digits for ${selectedCountry.label}.`;
-      }
-      return '';
+      return validatePhoneByCountryCode(nextForm.countryCode, value);
     }
 
     case 'password':

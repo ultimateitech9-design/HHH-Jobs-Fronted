@@ -225,7 +225,7 @@ const AdminJobsPage = () => {
       
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
+          <h1 className="text-3xl font-bold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
             Oversight & Moderation
           </h1>
           <p className="text-neutral-500 text-lg">Control lifecycle, compliance clearance, and retention of all platform job postings.</p>
@@ -264,7 +264,7 @@ const AdminJobsPage = () => {
         <div className="border-b border-neutral-100 bg-neutral-50/50 p-4 sm:p-6 md:p-8">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
             <div>
-              <h2 className="text-xl font-extrabold text-primary flex items-center gap-2">
+              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
                 <FiBriefcase className="text-brand-500" /> Posting Registry
               </h2>
             </div>
@@ -351,7 +351,7 @@ const AdminJobsPage = () => {
                   return (
                     <tr key={jobId} className="hover:bg-neutral-50/30 transition-colors group">
                       <td className="p-4 pl-6 align-top">
-                        <div className="font-extrabold text-primary text-base line-clamp-1">{job.jobTitle || 'Unknown Role'}</div>
+                        <div className="font-bold text-primary text-base line-clamp-1">{job.jobTitle || 'Unknown Role'}</div>
                         <div className="font-bold text-neutral-500 text-sm mt-0.5">{job.companyName || 'Unknown Corp'}</div>
                         <div className="text-[10px] font-bold text-neutral-400 mt-2 uppercase tracking-wide">Created {formatDateTime(job.createdAt)}</div>
                       </td>

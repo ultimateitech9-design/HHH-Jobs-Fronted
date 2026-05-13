@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FiAlertCircle,
   FiAward,
@@ -29,6 +28,7 @@ import {
   sendBulkCandidateInterest,
   sendCandidateInterest
 } from '../services/hrApi';
+import UpgradePlanModal from '../../../shared/components/UpgradePlanModal';
 
 const EMPTY_FILTERS = {
   search: '',
@@ -52,10 +52,10 @@ const statusStyles = {
   declined: 'border-red-200 bg-red-50 text-red-600'
 };
 
-const panelClass = 'rounded-xl border border-slate-200/80 bg-white p-5 shadow-[0_18px_42px_-30px_rgba(15,23,42,0.32)]';
-const inputClass = 'w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-secondary-300 focus:bg-white focus:ring-4 focus:ring-secondary-100/80';
-const primaryButtonClass = 'inline-flex items-center justify-center gap-2 rounded-lg bg-secondary-700 px-4 py-3 text-sm font-bold text-white shadow-[0_12px_24px_-16px_rgba(47,83,143,0.9)] transition hover:bg-secondary-600 disabled:cursor-not-allowed disabled:opacity-60';
-const softButtonClass = 'inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-secondary-200 hover:bg-secondary-50 disabled:cursor-not-allowed disabled:opacity-60';
+const panelClass = 'rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_18px_42px_-32px_rgba(15,23,42,0.32)]';
+const inputClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[13px] font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-secondary-300 focus:bg-white focus:ring-4 focus:ring-secondary-100/80';
+const primaryButtonClass = 'inline-flex items-center justify-center gap-2 rounded-xl bg-secondary-700 px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_12px_24px_-16px_rgba(47,83,143,0.9)] transition hover:bg-secondary-600 disabled:cursor-not-allowed disabled:opacity-60';
+const softButtonClass = 'inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-bold text-slate-700 transition hover:border-secondary-200 hover:bg-secondary-50 disabled:cursor-not-allowed disabled:opacity-60';
 
 const renderTemplateMessage = (template, candidate) => {
   if (!template?.message) return '';
@@ -83,8 +83,12 @@ export default function HrCandidatesPage() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkMessage, setBulkMessage] = useState('');
   const [bulkTemplateId, setBulkTemplateId] = useState('');
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const searchRequestRef = useRef(0);
 
-  const runSearch = async (activeFilters = filters, requestedPage = 1) => {
+  const runSearch = useCallback(async (activeFilters = EMPTY_FILTERS, requestedPage = 1) => {
+    const requestId = searchRequestRef.current + 1;
+    searchRequestRef.current = requestId;
     setLoading(true);
     setError('');
     const response = await searchHrCandidatesV2({
@@ -92,6 +96,7 @@ export default function HrCandidatesPage() {
       page: requestedPage,
       limit: DEFAULT_PAGE_SIZE
     });
+    if (requestId !== searchRequestRef.current) return;
     const payload = response.data || {};
     setAccess(payload.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanName: 'Free' });
     setSummary(payload.summary || { total: 0, blurred: 0, connected: 0, availableNow: 0, verified: 0 });
@@ -100,7 +105,7 @@ export default function HrCandidatesPage() {
     setError(response.error || '');
     setLoading(false);
     setSelectedIds(new Set());
-  };
+  }, []);
 
   const loadTemplates = async () => {
     const response = await getHrCandidateMessageTemplates();
@@ -111,8 +116,7 @@ export default function HrCandidatesPage() {
   useEffect(() => {
     runSearch(EMPTY_FILTERS, 1);
     loadTemplates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [runSearch]);
 
   const activeFilterCount = useMemo(
     () => Object.entries(filters).filter(([key, value]) => (key === 'availableOnly' ? value : String(value).trim())).length,
@@ -236,31 +240,40 @@ export default function HrCandidatesPage() {
   };
 
   return (
-    <div className="space-y-5 pb-12 text-slate-700">
+    <div className="space-y-4 pb-10 text-slate-700">
       {!access.hasPaidAccess ? (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50/90 px-5 py-4 text-sm leading-6 text-amber-900 shadow-[0_14px_34px_-30px_rgba(180,83,9,0.45)]">
-          <div className="flex min-w-0 items-start gap-3">
-            <FiAlertCircle size={18} className="mt-0.5 shrink-0" />
-            <p className="max-w-4xl">
-              You are seeing blurred candidate previews. Upgrade to a paid hiring plan to unlock full profiles, send direct interest requests, and access resumes after candidate acceptance.
-            </p>
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="flex items-center gap-2 text-[13px] font-medium text-amber-800">
+            <FiAlertCircle size={16} className="shrink-0" />
+            <span>Blurred previews — upgrade to unlock full profiles &amp; direct outreach.</span>
           </div>
-          <Link
-            to="/portal/hr/jobs"
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-amber-700 px-4 py-2 font-bold text-white transition hover:bg-amber-800"
+          <button
+            type="button"
+            onClick={() => setUpgradeModalOpen(true)}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700"
           >
-            <FiLayers size={14} />
-            Upgrade plan
-          </Link>
+            <FiLayers size={12} />
+            Upgrade
+          </button>
         </div>
       ) : null}
 
+      <UpgradePlanModal
+        isOpen={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        featureKey="hr.candidate_search"
+        featureLabel="Candidate Database Access"
+        currentTier={0}
+        requiredTier={1}
+        audienceRole="hr"
+      />
+
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{error}</div> : null}
 
-      <section className="grid gap-6 lg:grid-cols-[290px_minmax(0,1fr)]">
+      <section className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className={`${panelClass} space-y-4 lg:sticky lg:top-24 lg:self-start`}>
           <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-extrabold text-navy">
+            <h2 className="flex items-center gap-2 text-base font-extrabold text-navy">
               <FiFilter size={16} />
               Search filters
             </h2>
@@ -278,7 +291,7 @@ export default function HrCandidatesPage() {
             ) : null}
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <Field label="Keyword" value={filters.search} onChange={(value) => updateFilter('search', value)} placeholder="React developer, final year..." />
             <Field label="Skills" value={filters.skills} onChange={(value) => updateFilter('skills', value)} placeholder="React, JavaScript, REST APIs" />
             <Field label="Location" value={filters.location} onChange={(value) => updateFilter('location', value)} placeholder="Mumbai, Remote" />
@@ -289,24 +302,24 @@ export default function HrCandidatesPage() {
             <Field label="Batch year" value={filters.batchYear} onChange={(value) => updateFilter('batchYear', value)} placeholder="2026" />
             <Field label="Min CGPA" type="number" value={filters.minCgpa} onChange={(value) => updateFilter('minCgpa', value)} placeholder="7.5" />
 
-            <label className="flex min-h-12 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-secondary-100 hover:bg-white">
+            <label className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 transition hover:border-secondary-100 hover:bg-white">
               <input
                 type="checkbox"
                 checked={filters.availableOnly}
                 onChange={(event) => updateFilter('availableOnly', event.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 accent-secondary-700"
               />
-              <span className="text-sm font-semibold text-slate-700">Available to hire only</span>
+              <span className="text-[13px] font-semibold text-slate-700">Available to hire only</span>
             </label>
 
-            <label className="flex min-h-12 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-secondary-100 hover:bg-white">
+            <label className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 transition hover:border-secondary-100 hover:bg-white">
               <input
                 type="checkbox"
                 checked={filters.verifiedOnly}
                 onChange={(event) => updateFilter('verifiedOnly', event.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 accent-secondary-700"
               />
-              <span className="text-sm font-semibold text-slate-700">Verified candidates only</span>
+              <span className="text-[13px] font-semibold text-slate-700">Verified candidates only</span>
             </label>
 
             <button
@@ -320,8 +333,8 @@ export default function HrCandidatesPage() {
           </div>
         </aside>
 
-        <div className="space-y-4">
-          <div className={`${panelClass} flex flex-wrap items-center gap-3 py-4`}>
+        <div className="space-y-3.5">
+          <div className={`${panelClass} flex flex-wrap items-center gap-3 py-3.5`}>
             <button
               type="button"
               onClick={toggleSelectAll}
@@ -344,15 +357,15 @@ export default function HrCandidatesPage() {
               Send bulk interest
             </button>
 
-            <span className="ml-auto text-sm font-semibold text-slate-500">
+            <span className="ml-auto text-[13px] font-semibold text-slate-500">
               {selectedCount} selected
             </span>
           </div>
 
           {loading ? (
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3 xl:grid-cols-2">
               {[1, 2, 3, 4].map((item) => (
-                <div key={item} className="h-60 animate-pulse rounded-xl border border-slate-200 bg-white" />
+                <div key={item} className="h-56 animate-pulse rounded-2xl border border-slate-200 bg-white" />
               ))}
             </div>
           ) : candidates.length === 0 ? (
@@ -362,8 +375,8 @@ export default function HrCandidatesPage() {
               <p className="mt-2 max-w-md text-sm text-slate-400">Try broadening your search or removing a few constraints.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-500">
                 <span>
                   Showing <strong className="text-navy">{candidates.length}</strong> of <strong className="text-navy">{pagination.total || summary.total}</strong> candidates
                 </span>
@@ -375,7 +388,7 @@ export default function HrCandidatesPage() {
                 </span>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 xl:grid-cols-2">
                 {candidates.map((candidate) => (
                   <CandidateCard
                     key={candidate.id}
@@ -394,7 +407,7 @@ export default function HrCandidatesPage() {
                 ))}
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                 <button
                   type="button"
                   disabled={loading || pagination.page <= 1}

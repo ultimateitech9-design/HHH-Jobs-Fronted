@@ -340,9 +340,19 @@ export const getDataEntryPortalRecords = async () =>
     extract: (payload) => payload?.records || payload || {}
   });
 
-export const updateDataEntryProfile = async (profilePayload) =>
-  strictRequest({
+export const updateDataEntryProfile = async (profilePayload) => {
+  const { mobileCountryCode, ...payload } = profilePayload || {};
+  return strictRequest({
     path: `${DATA_ENTRY_BASE}/profile`,
-    options: { method: 'PATCH', body: JSON.stringify(profilePayload) },
+    options: {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ...payload,
+        mobile: mobileCountryCode
+          ? `${profilePayload.mobileCountryCode}${String(profilePayload.mobile || '').replace(/\D/g, '')}`
+          : profilePayload?.mobile
+      })
+    },
     extract: (payload) => normalizeDataEntryProfile(payload?.profile || payload || {})
   });
+};

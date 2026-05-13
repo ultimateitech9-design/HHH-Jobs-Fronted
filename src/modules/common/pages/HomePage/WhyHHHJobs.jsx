@@ -40,7 +40,7 @@ export function WhyHHHJobs() {
     <section className="px-4 py-12 md:py-14">
       <div className="container mx-auto max-w-7xl">
         <AnimatedSection className="mb-8 text-center md:mb-10">
-          <h2 className="font-heading text-3xl font-extrabold text-navy md:text-4xl">
+          <h2 className="font-heading text-3xl font-bold text-navy md:text-4xl">
             Why Choose <span className="gradient-text">HHH Jobs</span>
           </h2>
         </AnimatedSection>

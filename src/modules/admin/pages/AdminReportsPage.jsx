@@ -10,7 +10,8 @@ import {
   FiX,
   FiChevronDown,
   FiMessageSquare,
-  FiFileText
+  FiFileText,
+  FiSend
 } from 'react-icons/fi';
 import { formatDateTime, getAdminReports, updateAdminReport } from '../services/adminApi';
 
@@ -119,6 +120,8 @@ const AdminReportsPage = () => {
       [reportId]: {
         status: current[reportId]?.status || '',
         adminNote: current[reportId]?.adminNote || '',
+        escalationAction: current[reportId]?.escalationAction || '',
+        assignedTeam: current[reportId]?.assignedTeam || '',
         [key]: value
       }
     }));
@@ -127,7 +130,9 @@ const AdminReportsPage = () => {
   const getDraft = (report) => (
     reportDrafts[report.id] || {
       status: report.status || '',
-      adminNote: report.adminNote || ''
+      adminNote: report.adminNote || '',
+      escalationAction: report.escalationAction || '',
+      assignedTeam: report.assignedTeam || ''
     }
   );
 
@@ -143,10 +148,16 @@ const AdminReportsPage = () => {
     setError('');
     setMessage('');
 
+    const workflowNote = [
+      draft.adminNote || '',
+      draft.escalationAction ? `Next action: ${draft.escalationAction}` : '',
+      draft.assignedTeam ? `Assigned to: ${draft.assignedTeam}` : ''
+    ].filter(Boolean).join('\n');
+
     try {
       const updated = await updateAdminReport(report.id, {
         status: nextStatus,
-        adminNote: draft.adminNote || ''
+        adminNote: workflowNote
       });
       updateLocalReport(report.id, updated);
       setMessage(`Support ticket ${report.id.slice(-6).toUpperCase()} updated.`);
@@ -163,7 +174,7 @@ const AdminReportsPage = () => {
       
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
+          <h1 className="text-3xl font-bold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
             Moderation Support
           </h1>
           <p className="text-neutral-500 text-lg">Review community flags, investigate violations, and enforce ecosystem rules.</p>
@@ -202,7 +213,7 @@ const AdminReportsPage = () => {
         <div className="p-6 md:p-8 border-b border-neutral-100 bg-neutral-50/50">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
             <div>
-              <h2 className="text-xl font-extrabold text-primary flex items-center gap-2">
+              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
                 <FiFlag className="text-brand-500" /> Trust & Safety Inbox
               </h2>
             </div>
@@ -272,7 +283,7 @@ const AdminReportsPage = () => {
                   return (
                     <tr key={report.id} className="hover:bg-neutral-50/30 transition-colors group">
                       <td className="p-4 pl-6 align-top">
-                        <div className="font-extrabold text-primary text-sm uppercase mb-1">
+                        <div className="font-bold text-primary text-sm uppercase mb-1">
                           <span className="text-brand-600 bg-brand-50 px-2 py-0.5 rounded mr-2">{report.targetType || 'Item'}</span>
                         </div>
                         <div className="font-mono text-xs text-neutral-500 font-bold tracking-wider mb-2">ID: {report.targetId ? report.targetId.slice(-8) : 'UNK'}</div>
@@ -283,7 +294,7 @@ const AdminReportsPage = () => {
                       
                       <td className="p-4 align-top">
                         <div className="flex flex-col gap-1.5 pr-4">
-                           <strong className="text-sm font-extrabold text-primary flex items-center gap-1.5">
+                           <strong className="text-sm font-bold text-primary flex items-center gap-1.5">
                              <FiAlertTriangle className="text-red-500 shrink-0" /> {report.reason || 'Flagged Content'}
                            </strong>
                            <p className="text-xs font-medium text-neutral-600 leading-relaxed bg-neutral-50 p-3 rounded-xl border border-neutral-200 shadow-inner">
@@ -320,7 +331,7 @@ const AdminReportsPage = () => {
                              <button 
                                className="bg-brand-600 text-white px-3 py-1.5 rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50 shrink-0 font-bold text-xs flex items-center gap-1.5 shadow-sm border border-brand-700"
                                onClick={() => handleUpdateReport(report)}
-                               disabled={isBusy || (draft.status === report.status && draft.adminNote === report.adminNote)}
+                               disabled={isBusy || (draft.status === report.status && draft.adminNote === report.adminNote && !draft.escalationAction && !draft.assignedTeam)}
                                title="Save Resolution"
                              >
                                {isBusy ? '...' : <><FiCheck size={14} /> Update</>}
@@ -336,6 +347,35 @@ const AdminReportsPage = () => {
                                onChange={(e) => updateDraft(report.id, 'adminNote', e.target.value)}
                              />
                            </div>
+                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                             <select
+                               value={draft.escalationAction}
+                               onChange={(e) => updateDraft(report.id, 'escalationAction', e.target.value)}
+                               className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500"
+                             >
+                               <option value="">Next workflow action</option>
+                               <option value="Escalate to resolver team">Escalate to resolver team</option>
+                               <option value="Assign owner for final review">Assign owner for final review</option>
+                               <option value="Send for resolution">Send for resolution</option>
+                             </select>
+                             <select
+                               value={draft.assignedTeam}
+                               onChange={(e) => updateDraft(report.id, 'assignedTeam', e.target.value)}
+                               className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500"
+                             >
+                               <option value="">Responsible team</option>
+                               <option value="Trust & Safety">Trust & Safety</option>
+                               <option value="Support Desk">Support Desk</option>
+                               <option value="Platform Ops">Platform Ops</option>
+                               <option value="Audit Desk">Audit Desk</option>
+                             </select>
+                           </div>
+                           {(draft.escalationAction || draft.assignedTeam) ? (
+                             <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] font-bold text-blue-700">
+                               <FiSend size={13} />
+                               {draft.escalationAction || 'Workflow selected'}{draft.assignedTeam ? ` - ${draft.assignedTeam}` : ''}
+                             </div>
+                           ) : null}
                            {report.adminNote && report.adminNote !== draft.adminNote && (
                               <div className="text-[10px] text-neutral-500 font-medium">
                                 Last saved note: <span className="italic">&ldquo;{report.adminNote}&rdquo;</span>

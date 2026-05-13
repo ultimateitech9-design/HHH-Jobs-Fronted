@@ -66,6 +66,13 @@ export const updateInterviewWorkspace = async (interviewId, payload) =>
     extract: (responsePayload) => responsePayload
   });
 
+export const executeInterviewCode = async (interviewId, payload) =>
+  strictRequest({
+    path: `/interviews/${interviewId}/code/execute`,
+    options: { method: 'POST', body: JSON.stringify(payload) },
+    extract: (responsePayload) => responsePayload?.execution || responsePayload
+  });
+
 export const endInterviewRoom = async (interviewId, payload) =>
   strictRequest({
     path: `/interviews/${interviewId}/end`,
