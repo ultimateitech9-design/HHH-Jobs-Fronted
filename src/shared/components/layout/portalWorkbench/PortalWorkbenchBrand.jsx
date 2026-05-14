@@ -1,6 +1,8 @@
 import { ChevronLeft, Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const PortalWorkbenchBrand = ({
+  brandPath = '/',
   collapsed = false,
   viewport = 'desktop',
   onCollapseToggle,
@@ -9,7 +11,7 @@ const PortalWorkbenchBrand = ({
   if (viewport === 'mobile') {
     return (
       <div className="flex h-16 items-center justify-between border-b border-slate-200/80 px-4">
-        <div className="flex items-center gap-3">
+        <Link to={brandPath} onClick={onClose} className="flex items-center gap-3">
           <img
             src="/hhh-job-logo.png"
             alt="HHH Jobs"
@@ -21,7 +23,7 @@ const PortalWorkbenchBrand = ({
               Career Compass
             </p>
           </div>
-        </div>
+        </Link>
 
         <button
           type="button"
@@ -50,17 +52,19 @@ const PortalWorkbenchBrand = ({
 
   return (
     <div className="flex h-16 items-center gap-3 border-b border-slate-200/80 px-4">
-      <img
-        src="/hhh-job-logo.png"
-        alt="HHH Jobs"
-        className="h-10 w-10 rounded-2xl object-cover"
-      />
-      <div className="leading-none">
-        <p className="font-heading font-bold text-slate-900">HHH Jobs</p>
-        <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-gold-dark">
-          Career Compass
-        </p>
-      </div>
+      <Link to={brandPath} className="flex min-w-0 items-center gap-3">
+        <img
+          src="/hhh-job-logo.png"
+          alt="HHH Jobs"
+          className="h-10 w-10 rounded-2xl object-cover"
+        />
+        <div className="leading-none">
+          <p className="font-heading font-bold text-slate-900">HHH Jobs</p>
+          <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-gold-dark">
+            Career Compass
+          </p>
+        </div>
+      </Link>
 
       <button
         type="button"

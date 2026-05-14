@@ -52,7 +52,6 @@ const defaultJobDraft = {
   maxPrice: '',
   salaryType: 'LPA',
   jobLocation: '',
-  jobLocationsInput: '',
   postingDate: '',
   experienceLevel: '',
   skillsInput: '',
@@ -78,16 +77,7 @@ const formatJobDraftForApi = (draft = {}) => ({
   maxPrice: draft.maxPrice ? Number(draft.maxPrice) : null,
   salaryType: draft.salaryType,
   jobLocation: draft.jobLocation,
-  jobLocations: [
-    ...new Set(
-      String(draft.jobLocationsInput || '')
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .concat(String(draft.jobLocation || '').trim())
-        .filter(Boolean)
-    )
-  ],
+  jobLocations: String(draft.jobLocation || '').trim() ? [String(draft.jobLocation || '').trim()] : [],
   postingDate: draft.postingDate || null,
   experienceLevel: draft.experienceLevel,
   skills: parseSkillsInput(draft.skillsInput),
@@ -106,9 +96,6 @@ const hydrateJobDraftFromJob = (job = {}) => ({
   maxPrice: job.maxPrice || '',
   salaryType: job.salaryType || 'LPA',
   jobLocation: job.jobLocation || '',
-  jobLocationsInput: Array.isArray(job.jobLocations)
-    ? job.jobLocations.join(', ')
-    : (job.jobLocation || ''),
   postingDate: job.postingDate ? String(job.postingDate).slice(0, 10) : '',
   experienceLevel: job.experienceLevel || '',
   skillsInput: Array.isArray(job.skills) ? job.skills.join(', ') : '',
@@ -460,7 +447,11 @@ export const createHrInterview = async (payload) =>
     options: {
       method: 'POST',
       body: JSON.stringify({
+        sourceType: payload.sourceType || 'job',
         applicationId: payload.applicationId,
+        applicationIds: payload.applicationIds || [],
+        campusDriveId: payload.campusDriveId || null,
+        campusApplicationIds: payload.campusApplicationIds || [],
         scheduledAt: payload.scheduledAt,
         title: payload.title,
         roundLabel: payload.roundLabel,
@@ -476,7 +467,7 @@ export const createHrInterview = async (payload) =>
         candidateConsentRequired: payload.candidateConsentRequired
       })
     },
-    extract: (responsePayload) => responsePayload?.interview || responsePayload
+    extract: (responsePayload) => responsePayload
   });
 
 export const updateHrInterview = async (interviewId, payload) =>
@@ -746,15 +737,29 @@ export const fetchHrCampusDrives = async () =>
     extract: (payload) => payload?.drives || []
   });
 
-export const fetchHrCampusDriveApplications = async (driveId) =>
-  strictRequest({
-    path: `/hr/campus-drives/${driveId}/applications`,
+export const fetchHrCampusDriveApplications = async (driveId, filters = {}) => {
+  const query = buildQueryString({
+    all: filters.all ? 'true' : '',
+    page: filters.page,
+    limit: filters.limit,
+    search: filters.search,
+    status: filters.status,
+    round: filters.round,
+    readyOnly: filters.readyOnly ? 'true' : ''
+  });
+
+  return strictRequest({
+    path: `/hr/campus-drives/${driveId}/applications${query ? `?${query}` : ''}`,
     extract: (payload) => ({
       drive: payload?.drive || null,
       applications: payload?.applications || [],
-      summary: payload?.summary || { total: 0 }
+      summary: payload?.summary || { total: 0, applied: 0, shortlisted: 0, selected: 0, rejected: 0, withdrawn: 0, interviewReady: 0 },
+      pagination: payload?.pagination || { page: 1, limit: 25, total: 0, totalPages: 1, count: 0 },
+      filters: payload?.filters || { search: '', status: 'all', round: 'all', readyOnly: false },
+      availableRounds: payload?.availableRounds || []
     })
   });
+};
 
 export const updateHrCampusDriveApplication = async (driveId, applicationId, { status, currentRound, notes, eliminatedInRound } = {}) =>
   strictRequest({

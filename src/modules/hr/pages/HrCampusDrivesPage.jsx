@@ -34,7 +34,7 @@ const DRIVE_STATUS_STYLES = {
   expired: 'bg-slate-100 text-slate-500'
 };
 
-const ROUNDS = ['Aptitude', 'Group Discussion', 'Technical Round 1', 'Technical Round 2', 'HR Round', 'Final Round'];
+const ROUNDS = ['Aptitude', 'Group Discussion', 'Virtual Interview', 'Technical Round 1', 'Technical Round 2', 'HR Round', 'Final Round'];
 
 const formatDate = (value) => {
   if (!value) return 'Not set';
@@ -109,8 +109,16 @@ function ApplicantRow({ app, onUpdate, updating }) {
   const [round, setRound] = useState(app.currentRound || '');
   const [notes, setNotes] = useState(app.notes || '');
 
-  const handleAction = async (status) => {
-    await onUpdate(app.id, { status, currentRound: round, notes, eliminatedInRound: status === 'rejected' ? round : '' });
+  const handleAction = async (status, options = {}) => {
+    const nextRound = options.useInterviewFallback
+      ? (round || 'Virtual Interview')
+      : round;
+    await onUpdate(app.id, {
+      status,
+      currentRound: nextRound,
+      notes,
+      eliminatedInRound: status === 'rejected' ? nextRound : ''
+    });
     setOpen(false);
   };
 
@@ -179,6 +187,14 @@ function ApplicantRow({ app, onUpdate, updating }) {
             </button>
             <button
               type="button"
+              onClick={() => handleAction('shortlisted', { useInterviewFallback: true })}
+              disabled={updating}
+              className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+            >
+              <FiCalendar size={13} /> Interview
+            </button>
+            <button
+              type="button"
               onClick={() => handleAction('selected')}
               disabled={updating}
               className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
@@ -217,11 +233,14 @@ function DriveApplicantsView({ driveId, onBack }) {
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkRound, setBulkRound] = useState('');
+  const [bulkNotes, setBulkNotes] = useState('');
 
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await fetchHrCampusDriveApplications(driveId);
+      const result = await fetchHrCampusDriveApplications(driveId, { all: true });
       setDrive(result.drive);
       setApplications(result.applications);
       setSummary(result.summary);
@@ -233,6 +252,9 @@ function DriveApplicantsView({ driveId, onBack }) {
   }, [driveId]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    setSelectedIds((current) => current.filter((id) => applications.some((app) => app.id === id)));
+  }, [applications]);
 
   const handleUpdate = async (applicationId, payload) => {
     try {
@@ -247,6 +269,95 @@ function DriveApplicantsView({ driveId, onBack }) {
   };
 
   const filtered = filter === 'all' ? applications : applications.filter((a) => a.status === filter);
+  const filteredIds = filtered.map((app) => app.id);
+  const selectedCount = selectedIds.length;
+  const allFilteredSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.includes(id));
+
+  const toggleSelected = (applicationId) => {
+    setSelectedIds((current) => (
+      current.includes(applicationId)
+        ? current.filter((id) => id !== applicationId)
+        : [...current, applicationId]
+    ));
+  };
+
+  const toggleSelectAllFiltered = () => {
+    if (allFilteredSelected) {
+      setSelectedIds((current) => current.filter((id) => !filteredIds.includes(id)));
+      return;
+    }
+
+    setSelectedIds((current) => [...new Set([...current, ...filteredIds])]);
+  };
+
+  const runBulkRoundUpdate = async (scope = 'selected') => {
+    const targetIds = scope === 'filtered' ? filteredIds : selectedIds;
+    const nextRound = String(bulkRound || '').trim() || 'Virtual Interview';
+
+    if (targetIds.length === 0) {
+      setError(scope === 'filtered' ? 'No filtered applicants available for round update.' : 'Select applicants first.');
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      setError('');
+      const results = await Promise.allSettled(
+        targetIds.map((applicationId) => updateHrCampusDriveApplication(driveId, applicationId, {
+          status: 'shortlisted',
+          currentRound: nextRound,
+          notes: bulkNotes
+        }))
+      );
+
+      const failedCount = results.filter((result) => result.status === 'rejected').length;
+      if (failedCount > 0) {
+        setError(`${failedCount} applicant update(s) failed. The rest were updated successfully.`);
+      }
+
+      setSelectedIds([]);
+      await load();
+    } catch (err) {
+      setError(err.message || 'Failed to update selected applicants.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const runBulkStatusUpdate = async (status) => {
+    const targetIds = [...selectedIds];
+    const nextRound = String(bulkRound || '').trim();
+
+    if (targetIds.length === 0) {
+      setError('Select applicants first.');
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      setError('');
+      const results = await Promise.allSettled(
+        targetIds.map((applicationId) => updateHrCampusDriveApplication(driveId, applicationId, {
+          status,
+          currentRound: nextRound,
+          notes: bulkNotes,
+          eliminatedInRound: status === 'rejected' ? nextRound : ''
+        }))
+      );
+
+      const failedCount = results.filter((result) => result.status === 'rejected').length;
+      if (failedCount > 0) {
+        setError(`${failedCount} applicant update(s) failed. The rest were updated successfully.`);
+      }
+
+      setSelectedIds([]);
+      await load();
+    } catch (err) {
+      setError(err.message || 'Failed to update selected applicants.');
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -270,6 +381,11 @@ function DriveApplicantsView({ driveId, onBack }) {
         <div className="rounded-[1.5rem] border border-slate-100 bg-white p-5">
           <h2 className="text-lg font-extrabold text-navy">{drive.jobTitle}</h2>
           <p className="text-sm text-slate-500">{drive.collegeName} · {formatDate(drive.driveDate)}</p>
+          {String(drive.driveMode || '').toLowerCase() === 'virtual' && (
+            <p className="mt-2 rounded-xl bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700">
+              Virtual drive: use round updates here, including "Virtual Interview". No separate interview room is created from this screen.
+            </p>
+          )}
 
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
             {[
@@ -291,7 +407,7 @@ function DriveApplicantsView({ driveId, onBack }) {
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-medium text-red-600">{error}</p>}
 
       <div className="flex flex-wrap gap-2">
-        {['all', 'applied', 'shortlisted', 'selected', 'rejected'].map((f) => (
+        {['all', 'applied', 'shortlisted', 'selected', 'rejected', 'withdrawn'].map((f) => (
           <button
             key={f}
             type="button"
@@ -305,6 +421,95 @@ function DriveApplicantsView({ driveId, onBack }) {
         ))}
       </div>
 
+      <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-bold text-navy">Bulk Round Handling</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Select one or many applicants, assign the same round, and push them together. This is the fastest way to handle multiple candidates in one or many rounds.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={toggleSelectAllFiltered}
+              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
+            >
+              {allFilteredSelected ? 'Unselect filtered' : 'Select filtered'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedIds([])}
+              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
+            >
+              Clear selection
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_1fr_auto]">
+          <label className="grid gap-1 text-xs font-semibold text-slate-600">
+            Round
+            <select
+              value={bulkRound}
+              onChange={(e) => setBulkRound(e.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-300"
+            >
+              <option value="">Virtual Interview</option>
+              {ROUNDS.map((round) => <option key={round} value={round}>{round}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-slate-600">
+            Notes
+            <input
+              type="text"
+              value={bulkNotes}
+              onChange={(e) => setBulkNotes(e.target.value)}
+              placeholder="Optional note for all selected applicants"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-300"
+            />
+          </label>
+          <div className="rounded-xl bg-slate-50 px-4 py-3 text-xs font-bold text-slate-600">
+            {selectedCount} selected
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => runBulkRoundUpdate('selected')}
+            disabled={updating}
+            className="rounded-full bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            Move selected to round
+          </button>
+          <button
+            type="button"
+            onClick={() => runBulkRoundUpdate('filtered')}
+            disabled={updating}
+            className="rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            Move all filtered to round
+          </button>
+          <button
+            type="button"
+            onClick={() => runBulkStatusUpdate('selected')}
+            disabled={updating}
+            className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            Select selected
+          </button>
+          <button
+            type="button"
+            onClick={() => runBulkStatusUpdate('rejected')}
+            disabled={updating}
+            className="rounded-full bg-red-500 px-4 py-2 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
+          >
+            Reject selected
+          </button>
+        </div>
+      </div>
+
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
           <FiUsers size={32} className="mx-auto text-slate-300" />
@@ -313,7 +518,19 @@ function DriveApplicantsView({ driveId, onBack }) {
       ) : (
         <div className="space-y-3">
           {filtered.map((app) => (
-            <ApplicantRow key={app.id} app={app} onUpdate={handleUpdate} updating={updating} />
+            <div key={app.id} className="flex gap-3">
+              <label className="mt-4 flex shrink-0 items-start">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(app.id)}
+                  onChange={() => toggleSelected(app.id)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+              </label>
+              <div className="flex-1">
+                <ApplicantRow app={app} onUpdate={handleUpdate} updating={updating} />
+              </div>
+            </div>
           ))}
         </div>
       )}

@@ -41,6 +41,7 @@ const PortalWorkbenchLayout = ({
   portalLabel,
   subtitle,
   navItems = [],
+  brandPath,
   support,
   fullWidthHeader = false,
   hideSidebar = false,
@@ -70,6 +71,7 @@ const PortalWorkbenchLayout = ({
     : user?.role === 'student' || user?.role === 'retired_employee'
       ? '/portal/student/profile'
       : getFirstNavPath(navItems);
+  const resolvedBrandPath = brandPath || profilePath || getFirstNavPath(navItems);
 
   const avatarLetter = String(user?.name || user?.email || 'U').trim().slice(0, 1).toUpperCase();
   const avatarUrl = user?.avatarUrl || user?.avatar_url || '';
@@ -117,6 +119,7 @@ const PortalWorkbenchLayout = ({
     >
       <PortalWorkbenchMobileDrawer
         open={mobileMenuOpen}
+        brandPath={resolvedBrandPath}
         portalLabel={portalLabel}
         navItems={navItems}
         profilePath={profilePath}
@@ -151,6 +154,7 @@ const PortalWorkbenchLayout = ({
           className={sidebarClassName}
         >
           <PortalWorkbenchSidebar
+            brandPath={resolvedBrandPath}
             collapsed={!sidebarOpen}
             hideBrand={hideSidebarBrand}
             portalLabel={portalLabel}

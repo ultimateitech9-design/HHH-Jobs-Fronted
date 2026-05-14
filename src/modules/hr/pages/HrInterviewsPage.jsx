@@ -14,6 +14,8 @@ import {
 } from 'react-icons/fi';
 import {
   createHrInterview,
+  fetchHrCampusDriveApplications,
+  fetchHrCampusDrives,
   formatDateTime,
   getApplicantsForJob,
   getHrInterviews,
@@ -22,8 +24,12 @@ import {
 } from '../services/hrApi';
 
 const defaultInterviewForm = {
+  sourceType: 'job',
   jobId: '',
   applicationId: '',
+  applicationIds: [],
+  campusDriveId: '',
+  campusApplicationIds: [],
   title: '',
   roundLabel: 'Technical Round',
   scheduledAt: '',
@@ -38,6 +44,30 @@ const defaultInterviewForm = {
   panelMode: false,
   panelMembersInput: ''
 };
+
+const MAX_INTERVIEW_ROOM_PARTICIPANTS = 25;
+const defaultCampusApplicantSummary = {
+  total: 0,
+  applied: 0,
+  shortlisted: 0,
+  selected: 0,
+  rejected: 0,
+  withdrawn: 0,
+  interviewReady: 0
+};
+const defaultCampusApplicantPagination = {
+  page: 1,
+  limit: 25,
+  total: 0,
+  totalPages: 1,
+  count: 0
+};
+
+const toggleSelection = (list = [], value) => (
+  list.includes(value)
+    ? list.filter((item) => item !== value)
+    : [...list, value]
+);
 
 const parsePanelMembersInput = (value = '') =>
   String(value || '')
@@ -59,20 +89,37 @@ const getStatusBadge = (status) => {
 
 const HrInterviewsPage = () => {
   const [jobs, setJobs] = useState([]);
+  const [campusDrives, setCampusDrives] = useState([]);
   const [jobApplicants, setJobApplicants] = useState([]);
+  const [campusApplicants, setCampusApplicants] = useState([]);
   const [interviews, setInterviews] = useState([]);
   const [state, setState] = useState({ loading: true, error: '', message: '' });
   const [form, setForm] = useState(defaultInterviewForm);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('upcoming');
+  const [campusApplicantQuery, setCampusApplicantQuery] = useState({
+    search: '',
+    status: 'all',
+    round: 'all',
+    readyOnly: true,
+    page: 1,
+    limit: 25
+  });
+  const [campusApplicantMeta, setCampusApplicantMeta] = useState({
+    loading: false,
+    summary: defaultCampusApplicantSummary,
+    pagination: defaultCampusApplicantPagination,
+    availableRounds: []
+  });
 
   useEffect(() => {
     let mounted = true;
 
     const loadInitial = async () => {
-      const [jobsResponse, interviewsResponse] = await Promise.all([
+      const [jobsResponse, interviewsResponse, campusDrivesResponse] = await Promise.all([
         getHrJobs(),
-        getHrInterviews()
+        getHrInterviews(),
+        fetchHrCampusDrives()
       ]);
 
       if (!mounted) return;
@@ -83,6 +130,7 @@ const HrInterviewsPage = () => {
       );
 
       setJobs(jobsList);
+      setCampusDrives(campusDrivesResponse.data || []);
       setInterviews(interviewList);
       setState({
         loading: false,
@@ -90,9 +138,11 @@ const HrInterviewsPage = () => {
         message: ''
       });
 
-      if (jobsList.length > 0) {
-        setForm((current) => ({ ...current, jobId: current.jobId || jobsList[0].id || jobsList[0]._id }));
-      }
+      setForm((current) => ({
+        ...current,
+        jobId: current.jobId || jobsList[0]?.id || jobsList[0]?._id || '',
+        campusDriveId: current.campusDriveId || campusDrivesResponse.data?.[0]?.id || ''
+      }));
     };
 
     loadInitial();
@@ -103,6 +153,10 @@ const HrInterviewsPage = () => {
     let mounted = true;
 
     const loadApplicants = async () => {
+      if (form.sourceType !== 'job') {
+        setJobApplicants([]);
+        return;
+      }
       if (!form.jobId) {
         setJobApplicants([]);
         return;
@@ -115,13 +169,68 @@ const HrInterviewsPage = () => {
       setJobApplicants(applicants);
       setForm((current) => ({
         ...current,
-        applicationId: current.applicationId || applicants[0]?.id || ''
+        applicationId: current.applicationId && applicants.some((item) => item.id === current.applicationId) ? current.applicationId : '',
+        applicationIds: current.applicationIds.filter((id) => applicants.some((item) => item.id === id))
       }));
     };
 
     loadApplicants();
     return () => { mounted = false; };
-  }, [form.jobId]);
+  }, [form.jobId, form.sourceType]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadCampusApplicants = async () => {
+      if (form.sourceType !== 'campus' || !form.campusDriveId) {
+        setCampusApplicants([]);
+        setCampusApplicantMeta({
+          loading: false,
+          summary: defaultCampusApplicantSummary,
+          pagination: defaultCampusApplicantPagination,
+          availableRounds: []
+        });
+        return;
+      }
+
+      setCampusApplicantMeta((current) => ({ ...current, loading: true }));
+      try {
+        const response = await fetchHrCampusDriveApplications(form.campusDriveId, campusApplicantQuery);
+        if (!mounted) return;
+
+        setCampusApplicants(response.applications || []);
+        setCampusApplicantMeta({
+          loading: false,
+          summary: response.summary || defaultCampusApplicantSummary,
+          pagination: response.pagination || defaultCampusApplicantPagination,
+          availableRounds: response.availableRounds || []
+        });
+        setState((current) => ({ ...current, error: '' }));
+      } catch (error) {
+        if (!mounted) return;
+        setCampusApplicants([]);
+        setCampusApplicantMeta({
+          loading: false,
+          summary: defaultCampusApplicantSummary,
+          pagination: defaultCampusApplicantPagination,
+          availableRounds: []
+        });
+        setState((current) => ({ ...current, error: error.message || 'Unable to load campus applicants.' }));
+      }
+    };
+
+    loadCampusApplicants();
+    return () => { mounted = false; };
+  }, [
+    campusApplicantQuery.limit,
+    campusApplicantQuery.page,
+    campusApplicantQuery.readyOnly,
+    campusApplicantQuery.round,
+    campusApplicantQuery.search,
+    campusApplicantQuery.status,
+    form.campusDriveId,
+    form.sourceType
+  ]);
 
   const applicantOptions = useMemo(
     () => jobApplicants.map((item) => ({
@@ -131,21 +240,88 @@ const HrInterviewsPage = () => {
     [jobApplicants]
   );
 
-  const filteredInterviews = useMemo(() => interviews.filter((interview) => {
+  const campusApplicantOptions = useMemo(
+    () => campusApplicants.map((item) => ({
+      value: item.id,
+      label: `${item.candidate?.name || item.candidate?.email || 'Candidate'} • ${item.currentRound || item.status || 'applied'}`,
+      disabled: item.canScheduleInterview === false,
+      helpText: item.canScheduleInterview === false ? 'This student is not linked to a platform account yet.' : ''
+    })),
+    [campusApplicants]
+  );
+
+  const campusSelectedCount = form.campusApplicationIds.length;
+  const visibleCampusSelectableIds = useMemo(
+    () => campusApplicants.filter((item) => item.canScheduleInterview !== false).map((item) => item.id),
+    [campusApplicants]
+  );
+
+  const groupedInterviews = useMemo(() => {
+    const grouped = new Map();
+    interviews.forEach((interview) => {
+      const roomInterviewId = interview.room_interview_id || interview.id;
+      if (!grouped.has(roomInterviewId) || interview.id === roomInterviewId) {
+        grouped.set(roomInterviewId, {
+          ...interview,
+          room_interview_id: roomInterviewId
+        });
+      }
+    });
+    return Array.from(grouped.values());
+  }, [interviews]);
+
+  const filteredInterviews = useMemo(() => groupedInterviews.filter((interview) => {
     const normalized = String(interview.status || 'scheduled').toLowerCase();
     if (activeTab === 'upcoming') return ['scheduled', 'rescheduled'].includes(normalized);
     if (activeTab === 'completed') return normalized === 'completed';
     return normalized === 'cancelled' || normalized === 'no_show';
-  }), [activeTab, interviews]);
+  }), [activeTab, groupedInterviews]);
 
   const setMessage = (message, isError = false) => {
     setState((current) => ({ ...current, message, error: isError ? message : current.error }));
   };
 
+  const updateCampusApplicantQuery = (patch) => {
+    setCampusApplicantQuery((current) => ({
+      ...current,
+      ...patch,
+      page: patch.page !== undefined ? patch.page : 1
+    }));
+  };
+
+  const handleSelectVisibleCampusApplicants = () => {
+    setForm((current) => {
+      const next = new Set(current.campusApplicationIds);
+      visibleCampusSelectableIds.forEach((id) => {
+        if (next.size < MAX_INTERVIEW_ROOM_PARTICIPANTS) {
+          next.add(id);
+        }
+      });
+      return { ...current, campusApplicationIds: Array.from(next) };
+    });
+
+    if ((form.campusApplicationIds.length + visibleCampusSelectableIds.length) > MAX_INTERVIEW_ROOM_PARTICIPANTS) {
+      setState((current) => ({
+        ...current,
+        error: `A single room supports up to ${MAX_INTERVIEW_ROOM_PARTICIPANTS} participants. Filter by round/status and schedule the rest in another batch.`
+      }));
+    }
+  };
+
+  const handleClearCampusSelection = () => {
+    setForm((current) => ({ ...current, campusApplicationIds: [] }));
+  };
+
   const handleCreateInterview = async (event) => {
     event.preventDefault();
-    if (!form.applicationId || !form.scheduledAt) {
-      setMessage('Application and time are required.', true);
+    const selectedIds = form.sourceType === 'campus' ? form.campusApplicationIds : form.applicationIds;
+    if (!selectedIds.length || !form.scheduledAt) {
+      setMessage('Select at least one applicant and choose a schedule time.', true);
+      return;
+    }
+
+    if (selectedIds.length > MAX_INTERVIEW_ROOM_PARTICIPANTS) {
+      setMessage(`A single room supports up to ${MAX_INTERVIEW_ROOM_PARTICIPANTS} participants. Please schedule in smaller batches.`, true);
       return;
     }
 
@@ -153,16 +329,27 @@ const HrInterviewsPage = () => {
     try {
       const created = await createHrInterview({
         ...form,
+        applicationIds: form.applicationIds,
+        campusApplicationIds: form.campusApplicationIds,
         panelMembers: parsePanelMembersInput(form.panelMembersInput)
       });
-      setInterviews((current) => [created, ...current]);
-      setState((current) => ({ ...current, message: 'Interview scheduled inside HHH Jobs.', error: '' }));
+      const refreshed = await getHrInterviews();
+      setInterviews((refreshed.data || []).sort(
+        (left, right) => new Date(right.scheduled_at || right.scheduledAt) - new Date(left.scheduled_at || left.scheduledAt)
+      ));
+      setState((current) => ({
+        ...current,
+        message: `${created.createdCount || selectedIds.length} interview room participant(s) scheduled inside HHH Jobs.`,
+        error: ''
+      }));
       setForm((current) => ({
         ...current,
         title: '',
         scheduledAt: '',
         note: '',
-        panelMembersInput: ''
+        panelMembersInput: '',
+        applicationIds: current.sourceType === 'job' ? current.applicationIds : [],
+        campusApplicationIds: current.sourceType === 'campus' ? current.campusApplicationIds : []
       }));
     } catch (error) {
       setState((current) => ({ ...current, error: error.message || 'Unable to schedule interview.' }));
@@ -185,10 +372,10 @@ const HrInterviewsPage = () => {
   const labelClass = 'block text-[10px] font-semibold uppercase tracking-wide text-slate-500';
 
   const tabCounts = useMemo(() => ({
-    upcoming: interviews.filter((i) => ['scheduled', 'rescheduled'].includes(String(i.status || 'scheduled').toLowerCase())).length,
-    completed: interviews.filter((i) => String(i.status || '').toLowerCase() === 'completed').length,
-    attention: interviews.filter((i) => ['cancelled', 'no_show'].includes(String(i.status || '').toLowerCase())).length
-  }), [interviews]);
+    upcoming: groupedInterviews.filter((i) => ['scheduled', 'rescheduled'].includes(String(i.status || 'scheduled').toLowerCase())).length,
+    completed: groupedInterviews.filter((i) => String(i.status || '').toLowerCase() === 'completed').length,
+    attention: groupedInterviews.filter((i) => ['cancelled', 'no_show'].includes(String(i.status || '').toLowerCase())).length
+  }), [groupedInterviews]);
 
   return (
     <div className="space-y-5 pb-8">
@@ -215,22 +402,208 @@ const HrInterviewsPage = () => {
 
           <form onSubmit={handleCreateInterview} className="space-y-2.5 px-4 py-3">
             <div>
-              <label className={labelClass}>Job role</label>
-              <select value={form.jobId} onChange={(event) => setForm((current) => ({ ...current, jobId: event.target.value, applicationId: '' }))} className={inputClass}>
-                <option value="" disabled>Select a role</option>
-                {jobs.map((job) => (
-                  <option key={job.id || job._id} value={job.id || job._id}>{job.jobTitle}</option>
-                ))}
+              <label className={labelClass}>Interview source</label>
+              <select
+                value={form.sourceType}
+                onChange={(event) => {
+                  const nextSourceType = event.target.value;
+                  setForm((current) => ({ ...current, sourceType: nextSourceType, applicationId: '', applicationIds: [], campusApplicationIds: [] }));
+                  if (nextSourceType === 'campus') {
+                    setCampusApplicantQuery((current) => ({ ...current, page: 1 }));
+                  }
+                }}
+                className={inputClass}
+              >
+                <option value="job">Job posting applicants</option>
+                <option value="campus">Campus drive round</option>
               </select>
             </div>
 
             <div>
-              <label className={labelClass}>Candidate</label>
-              <select value={form.applicationId} onChange={(event) => setForm((current) => ({ ...current, applicationId: event.target.value }))} className={inputClass}>
-                {applicantOptions.length > 0 ? applicantOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                )) : <option value="">No applicants</option>}
-              </select>
+              <label className={labelClass}>{form.sourceType === 'campus' ? 'Campus drive' : 'Job role'}</label>
+              {form.sourceType === 'campus' ? (
+                <select
+                  value={form.campusDriveId}
+                  onChange={(event) => {
+                    setForm((current) => ({ ...current, campusDriveId: event.target.value, campusApplicationIds: [] }));
+                    setCampusApplicantQuery((current) => ({ ...current, search: '', status: 'all', round: 'all', readyOnly: true, page: 1 }));
+                  }}
+                  className={inputClass}
+                >
+                  <option value="" disabled>Select a campus drive</option>
+                  {campusDrives.map((drive) => (
+                    <option key={drive.id} value={drive.id}>{drive.jobTitle} • {drive.college?.name || drive.collegeName || 'Campus drive'}</option>
+                  ))}
+                </select>
+              ) : (
+                <select value={form.jobId} onChange={(event) => setForm((current) => ({ ...current, jobId: event.target.value, applicationId: '', applicationIds: [] }))} className={inputClass}>
+                  <option value="" disabled>Select a role</option>
+                  {jobs.map((job) => (
+                    <option key={job.id || job._id} value={job.id || job._id}>{job.jobTitle}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div>
+              <label className={labelClass}>{form.sourceType === 'campus' ? 'Campus applicants' : 'Candidates'}</label>
+              {form.sourceType === 'campus' && (
+                <div className="mt-1 space-y-2 rounded-md border border-slate-200 bg-slate-50/70 p-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      value={campusApplicantQuery.search}
+                      onChange={(event) => updateCampusApplicantQuery({ search: event.target.value })}
+                      className={inputClass}
+                      placeholder="Search name, email, phone, branch"
+                    />
+                    <select
+                      value={campusApplicantQuery.status}
+                      onChange={(event) => updateCampusApplicantQuery({ status: event.target.value })}
+                      className={inputClass}
+                    >
+                      <option value="all">All statuses</option>
+                      <option value="applied">Applied</option>
+                      <option value="shortlisted">Shortlisted</option>
+                      <option value="selected">Selected</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="withdrawn">Withdrawn</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={campusApplicantQuery.round}
+                      onChange={(event) => updateCampusApplicantQuery({ round: event.target.value })}
+                      className={inputClass}
+                    >
+                      <option value="all">All rounds</option>
+                      <option value="__unassigned__">No round yet</option>
+                      {campusApplicantMeta.availableRounds.map((round) => (
+                        <option key={round} value={round}>{round}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={campusApplicantQuery.limit}
+                      onChange={(event) => updateCampusApplicantQuery({ limit: Number(event.target.value) })}
+                      className={inputClass}
+                    >
+                      <option value={25}>25 per page</option>
+                      <option value={50}>50 per page</option>
+                      <option value={100}>100 per page</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-2 text-[10px] text-slate-500">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span>Total: <strong className="text-slate-700">{campusApplicantMeta.summary.total}</strong></span>
+                      <span>Ready: <strong className="text-slate-700">{campusApplicantMeta.summary.interviewReady}</strong></span>
+                      <span>Filtered: <strong className="text-slate-700">{campusApplicantMeta.pagination.total}</strong></span>
+                      <span>Selected: <strong className={campusSelectedCount > MAX_INTERVIEW_ROOM_PARTICIPANTS ? 'text-red-600' : 'text-slate-700'}>{campusSelectedCount}</strong> / {MAX_INTERVIEW_ROOM_PARTICIPANTS}</span>
+                    </div>
+                    <label className="inline-flex items-center gap-1.5">
+                      <input
+                        type="checkbox"
+                        checked={campusApplicantQuery.readyOnly}
+                        onChange={(event) => updateCampusApplicantQuery({ readyOnly: event.target.checked })}
+                        className="h-3 w-3 rounded border-slate-300 text-indigo-600"
+                      />
+                      <span>Ready only</span>
+                    </label>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={handleSelectVisibleCampusApplicants}
+                      disabled={visibleCampusSelectableIds.length === 0}
+                      className="rounded-md border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Select visible
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearCampusSelection}
+                      disabled={campusSelectedCount === 0}
+                      className="rounded-md border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Clear selection
+                    </button>
+                    <span className="text-slate-400">
+                      Page {campusApplicantMeta.pagination.page} of {campusApplicantMeta.pagination.totalPages}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-1 max-h-56 overflow-y-auto rounded-md border border-slate-200 bg-white p-2">
+                {form.sourceType === 'campus' && campusApplicantMeta.loading ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((item) => (
+                      <div key={item} className="h-9 animate-pulse rounded-md bg-slate-100" />
+                    ))}
+                  </div>
+                ) : (form.sourceType === 'campus' ? campusApplicantOptions : applicantOptions).length > 0 ? (
+                  <div className="space-y-1.5">
+                    {(form.sourceType === 'campus' ? campusApplicantOptions : applicantOptions).map((option) => {
+                      const checked = form.sourceType === 'campus'
+                        ? form.campusApplicationIds.includes(option.value)
+                        : form.applicationIds.includes(option.value);
+                      const disabled = Boolean(option.disabled) || (!checked && form.sourceType === 'campus' && campusSelectedCount >= MAX_INTERVIEW_ROOM_PARTICIPANTS);
+                      return (
+                        <label key={option.value} className={`flex items-start gap-2 rounded-md px-2 py-1.5 text-[12px] ${disabled ? 'cursor-not-allowed bg-slate-50 text-slate-400' : 'cursor-pointer text-slate-700 hover:bg-slate-50'}`}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={disabled}
+                            onChange={() => setForm((current) => ({
+                              ...current,
+                              applicationId: option.value,
+                              applicationIds: current.sourceType === 'job' ? toggleSelection(current.applicationIds, option.value) : current.applicationIds,
+                              campusApplicationIds: current.sourceType === 'campus' ? toggleSelection(current.campusApplicationIds, option.value) : current.campusApplicationIds
+                            }))}
+                            className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-indigo-600"
+                          />
+                          <span className="min-w-0">
+                            <span className="block break-words">{option.label}</span>
+                            {option.helpText && <span className="mt-0.5 block text-[10px] text-amber-600">{option.helpText}</span>}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-[12px] text-slate-400">
+                    {form.sourceType === 'campus' ? 'No applicants match the current filters.' : 'No applicants available.'}
+                  </p>
+                )}
+              </div>
+              {form.sourceType === 'campus' && (
+                <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-slate-400">
+                  <button
+                    type="button"
+                    onClick={() => setCampusApplicantQuery((current) => ({ ...current, page: Math.max(1, current.page - 1) }))}
+                    disabled={campusApplicantMeta.pagination.page <= 1 || campusApplicantMeta.loading}
+                    className="rounded-md border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span>
+                    Showing {campusApplicantMeta.pagination.count} of {campusApplicantMeta.pagination.total} filtered applicants
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCampusApplicantQuery((current) => ({ ...current, page: current.page + 1 }))}
+                    disabled={campusApplicantMeta.pagination.page >= campusApplicantMeta.pagination.totalPages || campusApplicantMeta.loading}
+                    className="rounded-md border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+              <p className="mt-1 text-[10px] text-slate-400">
+                {form.sourceType === 'campus'
+                  ? `For large campus drives, filter by round or status and schedule interview rooms in batches of up to ${MAX_INTERVIEW_ROOM_PARTICIPANTS} participants.`
+                  : 'Select one candidate for a one-to-one room, or multiple candidates to create one shared interview room for the same round.'}
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -295,7 +668,11 @@ const HrInterviewsPage = () => {
 
             <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-900 px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-50">
               <FiVideo size={12} />
-              {saving ? 'Scheduling...' : 'Schedule Interview'}
+              {saving
+                ? 'Scheduling...'
+                : ((form.sourceType === 'campus' ? form.campusApplicationIds.length : form.applicationIds.length) > 1
+                  ? 'Schedule Group Interview Room'
+                  : 'Schedule Interview')}
             </button>
           </form>
         </div>
@@ -353,10 +730,20 @@ const HrInterviewsPage = () => {
                         <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${getStatusBadge(interview.status)}`}>
                           {interview.status || 'Scheduled'}
                         </span>
+                        {interview.is_group_room && (
+                          <span className="shrink-0 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700">
+                            Group room
+                          </span>
+                        )}
                       </div>
                       <p className="mt-0.5 truncate text-[12px] text-slate-500">
-                        {interview.candidate_name || 'Candidate'} &middot; {interview.round_label || 'Interview'} &middot; {interview.company_name || 'HHH Jobs'}
+                        {interview.is_group_room
+                          ? `${interview.room_participant_count || 1} candidates`
+                          : (interview.candidate_name || 'Candidate')} &middot; {interview.round_label || 'Interview'} &middot; {interview.company_name || 'HHH Jobs'}
                       </p>
+                      {interview.is_group_room && Array.isArray(interview.room_participant_names) && interview.room_participant_names.length > 0 && (
+                        <p className="mt-1 truncate text-[11px] text-slate-400">{interview.room_participant_names.slice(0, 4).join(', ')}</p>
+                      )}
                       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-400">
                         <span className="inline-flex items-center gap-1"><FiClock size={11} /> {formatDateTime(interview.scheduled_at || interview.scheduledAt)}</span>
                         <span className="inline-flex items-center gap-1"><FiVideo size={11} /> {interview.mode === 'onsite' ? 'On-site' : interview.mode === 'phone' ? 'Phone' : 'Video room'}</span>
@@ -370,7 +757,7 @@ const HrInterviewsPage = () => {
                   </div>
 
                   <div className="flex shrink-0 items-center gap-1.5">
-                    <Link to={`/portal/hr/interviews/${interview.id}/room`} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-slate-800">
+                    <Link to={`/portal/hr/interviews/${interview.room_interview_id || interview.id}/room`} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-slate-800">
                       <FiMonitor size={12} /> Open
                     </Link>
                     {interview.calendar_event_url && (

@@ -21,6 +21,7 @@ const PortalWorkbenchSidebar = ({
   collapsed = false,
   hideBrand = false,
   viewport = 'desktop',
+  brandPath,
   portalLabel,
   navItems = [],
   profilePath,
@@ -101,6 +102,7 @@ const PortalWorkbenchSidebar = ({
     <div className="flex h-full flex-col">
       {hideBrand && viewport === 'desktop' ? null : (
         <PortalWorkbenchBrand
+          brandPath={brandPath}
           collapsed={isCollapsed}
           viewport={viewport}
           onCollapseToggle={onCollapseToggle}

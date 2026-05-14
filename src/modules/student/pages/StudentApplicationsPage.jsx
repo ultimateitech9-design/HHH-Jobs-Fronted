@@ -31,6 +31,22 @@ const STATUS_STAGES = [
   { id: 'hired', label: 'Hired' }
 ];
 
+const STATUS_FILTERS = ['all', ...STATUS_STAGES.map((stage) => stage.id), 'selected', 'withdrawn', 'rejected'];
+
+const getProgressStatus = (status = '') => {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized === 'selected') return 'hired';
+  return normalized;
+};
+
+const getStatusLabel = (status = '') => {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (!normalized) return 'Unknown';
+  if (normalized === 'selected') return 'Selected';
+  if (normalized === 'withdrawn') return 'Withdrawn';
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+};
+
 const QUICK_LINKS = [
   { label: 'My home', icon: FiUser, to: '/portal/student/home' },
   { label: 'Jobs', icon: FiBriefcase, to: '/portal/student/jobs' },
@@ -76,7 +92,7 @@ const StudentApplicationsPage = () => {
     const shortlisted = state.applications.filter((item) => String(item.status || '').toLowerCase() === 'shortlisted').length;
     const interviews = state.applications.filter((item) => String(item.status || '').toLowerCase() === 'interviewed').length;
     const rejected = state.applications.filter((item) => String(item.status || '').toLowerCase() === 'rejected').length;
-    const offers = state.applications.filter((item) => String(item.status || '').toLowerCase() === 'offered').length;
+    const offers = state.applications.filter((item) => ['offered', 'selected', 'hired'].includes(String(item.status || '').toLowerCase())).length;
 
     return { total, shortlisted, interviews, rejected, offers };
   }, [state.applications]);
@@ -89,6 +105,8 @@ const StudentApplicationsPage = () => {
       case 'interviewed': return 'border-violet-200 bg-violet-50 text-violet-700';
       case 'offered': return 'border-emerald-200 bg-emerald-50 text-emerald-700';
       case 'hired': return 'border-teal-200 bg-teal-50 text-teal-700';
+      case 'selected': return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+      case 'withdrawn': return 'border-amber-200 bg-amber-50 text-amber-700';
       case 'rejected': return 'border-red-200 bg-red-50 text-red-700';
       default: return 'border-slate-200 bg-slate-50 text-slate-600';
     }
@@ -212,7 +230,7 @@ const StudentApplicationsPage = () => {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {['all', ...STATUS_STAGES.map((stage) => stage.id), 'rejected'].map((status) => (
+                {STATUS_FILTERS.map((status) => (
                   <button
                     key={status}
                     type="button"
@@ -223,7 +241,7 @@ const StudentApplicationsPage = () => {
                         : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700'
                     }`}
                   >
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                    {getStatusLabel(status)}
                   </button>
                 ))}
               </div>
@@ -246,8 +264,11 @@ const StudentApplicationsPage = () => {
                 {filtered.map((app) => {
                   const targetId = app.jobId || app.job_id || app.job?.id;
                   const currentStatus = String(app.status || 'applied').toLowerCase();
-                  const progressIndex = getTimelineProgress(currentStatus);
+                  const progressStatus = getProgressStatus(currentStatus);
+                  const progressIndex = getTimelineProgress(progressStatus);
                   const isRejected = currentStatus === 'rejected';
+                  const isWithdrawn = currentStatus === 'withdrawn';
+                  const sourceType = String(app.sourceType || 'platform').toLowerCase();
 
                   return (
                     <article
@@ -258,12 +279,20 @@ const StudentApplicationsPage = () => {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-3">
                             <span className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] ${getStatusColor(currentStatus)}`}>
-                              {currentStatus}
+                              {getStatusLabel(currentStatus)}
+                            </span>
+                            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                              {sourceType === 'campus' ? 'Campus Connect' : 'Platform'}
                             </span>
                             <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
                               <FiClock size={12} />
                               Updated {formatDateTime(app.statusUpdatedAt)}
                             </span>
+                            {sourceType === 'campus' && app.currentRound ? (
+                              <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                                Round {app.currentRound}
+                              </span>
+                            ) : null}
                           </div>
 
                           <h3 className="mt-4 text-2xl font-bold text-navy">
@@ -272,6 +301,11 @@ const StudentApplicationsPage = () => {
                           <p className="mt-1 text-sm font-semibold text-slate-500">
                             {app.companyName || app.job?.companyName || 'Unknown company'}
                           </p>
+                          {sourceType === 'campus' && app.collegeName ? (
+                            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                              {app.collegeName}
+                            </p>
+                          ) : null}
                         </div>
 
                         {targetId ? (
@@ -286,14 +320,16 @@ const StudentApplicationsPage = () => {
                         <div className="relative">
                           <div className="absolute left-5 right-5 top-4 h-1 rounded-full bg-white" />
                           <div
-                            className={`absolute left-5 top-4 h-1 rounded-full transition-all duration-700 ${isRejected ? 'bg-red-500' : 'bg-gradient-to-r from-brand-500 to-secondary-500'}`}
-                            style={{ width: isRejected ? 'calc(100% - 2.5rem)' : `calc(${(progressIndex / (STATUS_STAGES.length - 1)) * 100}% - 0.25rem)` }}
+                            className={`absolute left-5 top-4 h-1 rounded-full transition-all duration-700 ${
+                              isRejected ? 'bg-red-500' : isWithdrawn ? 'bg-amber-500' : 'bg-gradient-to-r from-brand-500 to-secondary-500'
+                            }`}
+                            style={{ width: isRejected || isWithdrawn ? 'calc(100% - 2.5rem)' : `calc(${(progressIndex / (STATUS_STAGES.length - 1)) * 100}% - 0.25rem)` }}
                           />
 
                           <div className="relative z-10 grid gap-5 md:grid-cols-5">
                             {STATUS_STAGES.map((stage, index) => {
-                              const isActive = !isRejected && progressIndex >= index;
-                              const isCurrent = !isRejected && progressIndex === index;
+                              const isActive = !isRejected && !isWithdrawn && progressIndex >= index;
+                              const isCurrent = !isRejected && !isWithdrawn && progressIndex === index;
 
                               return (
                                 <div key={stage.id} className="flex flex-col items-center text-center">
@@ -313,13 +349,24 @@ const StudentApplicationsPage = () => {
                           </div>
                         </div>
 
-                        {isRejected ? (
+                        {isRejected || isWithdrawn ? (
                           <div className="mt-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                             <FiXCircle className="mt-0.5 shrink-0" size={16} />
                             <div>
-                              <p className="font-bold">Application closed out</p>
-                              <p className="mt-1 text-red-600">Use this result to tighten resume language and improve the next application.</p>
+                              <p className="font-bold">{isWithdrawn ? 'Application withdrawn' : 'Application closed out'}</p>
+                              <p className="mt-1 text-red-600">
+                                {isWithdrawn
+                                  ? 'This application is no longer active in your pipeline.'
+                                  : 'Use this result to tighten resume language and improve the next application.'}
+                              </p>
                             </div>
+                          </div>
+                        ) : null}
+
+                        {app.hrNotes ? (
+                          <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                            <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Notes</p>
+                            <p className="mt-2 leading-6">{app.hrNotes}</p>
                           </div>
                         ) : null}
                       </div>

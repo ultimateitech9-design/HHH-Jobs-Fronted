@@ -90,7 +90,9 @@ const HrDashboardPage = () => {
   };
 
   const totalInterviews = state.interviews.length || 0;
-  const applicantHubRoute = '/portal/hr/jobs';
+  const jobPostingsRoute = '/portal/hr/jobs?tab=jobs';
+  const hrReportsRoute = '/portal/hr/analytics';
+  const applicantHubRoute = jobPostingsRoute;
 
   const candidatePool = useMemo(() => {
     const interviewCandidates = state.interviews.map((item, index) => ({
@@ -189,7 +191,7 @@ const HrDashboardPage = () => {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
-          { label: 'Open Roles', val: analytics.openJobs || analytics.totalJobs || 0, icon: FiBriefcase, accent: 'text-blue-600', bg: 'bg-blue-50', to: '/portal/hr/jobs' },
+          { label: 'Open Roles', val: analytics.openJobs || analytics.totalJobs || 0, icon: FiBriefcase, accent: 'text-blue-600', bg: 'bg-blue-50', to: jobPostingsRoute },
           { label: 'Total Applicants', val: analytics.totalApplications || 0, icon: FiUsers, accent: 'text-emerald-600', bg: 'bg-emerald-50', to: applicantHubRoute },
           { label: 'Interviews', val: totalInterviews, icon: FiCalendar, accent: 'text-violet-600', bg: 'bg-violet-50', to: '/portal/hr/interviews' },
           { label: 'Hired', val: analytics.pipeline?.hired || 0, icon: FiTrendingUp, accent: 'text-amber-600', bg: 'bg-amber-50', to: applicantHubRoute }
@@ -216,7 +218,7 @@ const HrDashboardPage = () => {
             <h2 className="text-[15px] font-bold text-slate-900">Hiring Pipeline</h2>
             <p className="mt-0.5 text-[11px] text-slate-400">{pipelineTotal > 1 ? `${pipelineTotal} candidates across all stages` : 'Candidate funnel stages'}</p>
           </div>
-          <Link to={applicantHubRoute} className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50">
+          <Link to={hrReportsRoute} className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50">
             View all <FiArrowRight size={11} />
           </Link>
         </div>
@@ -254,7 +256,7 @@ const HrDashboardPage = () => {
         <section className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-50 px-5 py-3.5">
             <h2 className="text-[15px] font-bold text-slate-900">Activity Feed</h2>
-            <Link to="/portal/hr/jobs" className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700">
+            <Link to={jobPostingsRoute} className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700">
               View all <FiArrowRight size={11} />
             </Link>
           </div>

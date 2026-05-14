@@ -78,6 +78,9 @@ const getRolePlanRenewalPrice = (plan = {}) =>
 const getRolePlanDiscountLabel = (plan = {}) =>
   plan?.meta?.discountText || (plan.slug === hrStarterPricing.slug ? hrStarterPricing.discountText : '');
 
+const JOB_POSTING_DESCRIPTION_LIMIT = 250;
+const JOB_POSTING_LOCATION_LIMIT = 1;
+
 const getStatusColor = (status) => {
   const s = String(status || '').toLowerCase();
   switch (s) {
@@ -208,23 +211,25 @@ const HrJobsPage = () => {
     const value = new URLSearchParams(location.search).get('audience');
     return value === 'retired_employee' || value === 'all' || value === 'student' ? value : '';
   }, [location.search]);
+  const requestedTab = useMemo(() => {
+    const value = new URLSearchParams(location.search).get('tab');
+    return ['jobs', 'post', 'billing'].includes(value) ? value : '';
+  }, [location.search]);
 
   useEffect(() => {
+    if (requestedTab) {
+      setActiveTab(requestedTab);
+      return;
+    }
+
     if (requestedAudience === 'retired_employee') {
       setActiveTab('post');
     }
-  }, [requestedAudience]);
+  }, [requestedAudience, requestedTab]);
 
   const resolveDraftLocations = (jobDraft = draft) => {
-    const locations = [
-      ...String(jobDraft.jobLocationsInput || '')
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean),
-      String(jobDraft.jobLocation || '').trim()
-    ].filter(Boolean);
-
-    return [...new Set(locations)];
+    const primaryLocation = String(jobDraft.jobLocation || '').trim();
+    return primaryLocation ? [primaryLocation] : [];
   };
 
   const loadPricingState = async () => {
@@ -411,7 +416,7 @@ const HrJobsPage = () => {
   };
 
   const validateDraft = () => {
-    const requiredFields = ['jobTitle', 'companyName', 'salaryType', 'experienceLevel', 'employmentType', 'description'];
+    const requiredFields = ['jobTitle', 'companyName', 'salaryType', 'experienceLevel', 'employmentType', 'description', 'jobLocation'];
     const missing = requiredFields.filter((key) => !String(draft[key] || '').trim());
 
     if (missing.length > 0) {
@@ -423,17 +428,19 @@ const HrJobsPage = () => {
       return 'At least one job location is required.';
     }
 
+    if (resolvedLocations.length > JOB_POSTING_LOCATION_LIMIT) {
+      return `Only ${JOB_POSTING_LOCATION_LIMIT} location is allowed for each job posting.`;
+    }
+
+    const descriptionLimit = Math.min(
+      JOB_POSTING_DESCRIPTION_LIMIT,
+      Number(selectedPlan?.maxDescriptionChars || JOB_POSTING_DESCRIPTION_LIMIT) || JOB_POSTING_DESCRIPTION_LIMIT
+    );
+    if (String(draft.description || '').length > descriptionLimit) {
+      return `Description cannot exceed ${descriptionLimit} characters.`;
+    }
+
     if (selectedPlan) {
-      const descriptionLimit = Number(selectedPlan.maxDescriptionChars || 0);
-      if (descriptionLimit > 0 && String(draft.description || '').length > descriptionLimit) {
-        return `Description exceeds ${selectedPlan.maxDescriptionChars} characters for ${selectedPlan.name}.`;
-      }
-
-      const locationsLimit = Number(selectedPlan.maxLocations || 0);
-      if (locationsLimit > 0 && resolvedLocations.length > locationsLimit) {
-        return `${selectedPlan.name} allows maximum ${selectedPlan.maxLocations} location(s).`;
-      }
-
       if (!editingJobId && !selectedPlan.isFreeNormalized && selectedPlanCredits <= 0) {
         return `No remaining ${selectedPlan.name} credits. Purchase credits before posting.`;
       }
@@ -803,7 +810,8 @@ const HrJobsPage = () => {
                 </div>
                 {selectedPlan && (
                   <div className="md:col-span-2 text-xs font-bold text-brand-700 bg-brand-50 p-3 rounded-lg flex gap-4">
-                    <span>Max Locations: {selectedPlan.maxLocations}</span>
+                    <span>Max Locations: 1</span>
+                    <span>Description Limit: {Math.min(JOB_POSTING_DESCRIPTION_LIMIT, Number(selectedPlan.maxDescriptionChars || JOB_POSTING_DESCRIPTION_LIMIT) || JOB_POSTING_DESCRIPTION_LIMIT)}</span>
                     <span>Contact Visible: {selectedPlan.contactDetailsVisible ? 'Yes' : 'No'}</span>
                     <span>Credits Remaining: {selectedPlan.isFreeNormalized ? 'Unlimited' : selectedPlanCredits}</span>
                   </div>
@@ -840,11 +848,7 @@ const HrJobsPage = () => {
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-neutral-700">Primary Location</label>
               <input required value={draft.jobLocation} onChange={(e) => updateDraftField('jobLocation', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. Bangalore" />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-neutral-700">Additional Locations (Comma separated)</label>
-              <input value={draft.jobLocationsInput} onChange={(e) => updateDraftField('jobLocationsInput', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Pune, Chennai" />
+              <p className="text-xs font-medium text-neutral-400">Only one location is allowed for each posting.</p>
             </div>
 
             <div className="space-y-1.5">
@@ -864,7 +868,8 @@ const HrJobsPage = () => {
 
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-bold text-neutral-700">Full Job Description</label>
-              <textarea required rows={6} value={draft.description} onChange={(e) => updateDraftField('description', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Detailed job description and responsibilities..."></textarea>
+              <textarea required rows={6} maxLength={JOB_POSTING_DESCRIPTION_LIMIT} value={draft.description} onChange={(e) => updateDraftField('description', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Detailed job description and responsibilities..."></textarea>
+              <p className="text-xs font-medium text-neutral-400">{String(draft.description || '').length}/{JOB_POSTING_DESCRIPTION_LIMIT} characters</p>
             </div>
 
             <div className="md:col-span-2 pt-6 border-t border-neutral-100 flex gap-4 justify-end">

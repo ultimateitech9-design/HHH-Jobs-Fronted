@@ -7,12 +7,14 @@ import {
   FiMail,
   FiRefreshCw,
   FiSend,
+  FiTrash2,
   FiUser,
   FiX,
   FiXCircle
 } from 'react-icons/fi';
 import DataTable from '../../../shared/components/DataTable';
 import {
+  deleteCampusConnection,
   getCampusConnectionDirectory,
   getCampusConnections,
   inviteCampusCompany,
@@ -100,7 +102,8 @@ export default function CampusRelationshipActivityPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [responding, setResponding] = useState({});
-  const [inviteModal, setInviteModal] = useState({ open: false, companyIds: [] });
+  const [deleting, setDeleting] = useState({});
+  const [inviteModal, setInviteModal] = useState({ open: false, companies: [] });
   const [inviteMessage, setInviteMessage] = useState('');
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
   const [page, setPage] = useState(1);
@@ -157,35 +160,32 @@ export default function CampusRelationshipActivityPage() {
     [directory.companies]
   );
 
-  const inviteModalCompanies = useMemo(
-    () => (directory.companies || []).filter((company) => inviteModal.companyIds.includes(company.companyUserId)),
-    [directory.companies, inviteModal.companyIds]
-  );
+  const inviteModalCompanies = inviteModal.companies;
 
-  const openInviteModal = (companyIds, options = {}) => {
+  const openInviteModal = (companies, options = {}) => {
     const {
       allowExistingPending = false,
       draftMessage = ''
     } = options;
 
-    const nextCompanies = (directory.companies || []).filter(
-      (company) => companyIds.includes(company.companyUserId)
-        && (company.canInvite || (allowExistingPending && company.status === 'pending'))
-    );
+    const nextCompanies = (companies || [])
+      .filter(Boolean)
+      .filter((company) => company.companyUserId)
+      .filter((company) => company.canInvite || (allowExistingPending && company.status === 'pending'));
 
     if (!nextCompanies.length) return;
 
     setInviteMessage(draftMessage || buildInviteDraft(nextCompanies));
     setInviteModal({
       open: true,
-      companyIds: nextCompanies.map((company) => company.companyUserId)
+      companies: nextCompanies
     });
     setError('');
     setNotice('');
   };
 
   const closeInviteModal = () => {
-    setInviteModal({ open: false, companyIds: [] });
+    setInviteModal({ open: false, companies: [] });
     setInviteMessage('');
     setInviteSubmitting(false);
   };
@@ -210,6 +210,25 @@ export default function CampusRelationshipActivityPage() {
       setError(responseError.message || 'Unable to update company request.');
     } finally {
       setResponding((current) => ({ ...current, [connectionId]: '' }));
+    }
+  };
+
+  const handleDeleteInvite = async (connection) => {
+    if (!connection?.id) return;
+    if (!window.confirm(`Remove the sent invite for ${connection.company_name || 'this company'}?`)) return;
+
+    setDeleting((current) => ({ ...current, [connection.id]: true }));
+    setError('');
+    setNotice('');
+
+    try {
+      await deleteCampusConnection(connection.id);
+      setConnections((current) => current.filter((item) => item.id !== connection.id));
+      setNotice('Sent invite removed successfully.');
+    } catch (responseError) {
+      setError(responseError.message || 'Unable to remove sent invite.');
+    } finally {
+      setDeleting((current) => ({ ...current, [connection.id]: false }));
     }
   };
 
@@ -242,7 +261,10 @@ export default function CampusRelationshipActivityPage() {
           ? 'Unable to send company invites right now.'
           : `${failedIds.length} company invite${failedIds.length > 1 ? 's were' : ' was'} not sent. You can retry them.`
       );
-      setInviteModal({ open: true, companyIds: failedIds });
+      setInviteModal({
+        open: true,
+        companies: inviteModalCompanies.filter((company) => failedIds.includes(company.companyUserId))
+      });
     } else {
       closeInviteModal();
       navigate('/portal/campus-connect/relationship-activity/sent');
@@ -253,9 +275,20 @@ export default function CampusRelationshipActivityPage() {
   };
 
   const handleResend = (connection) => {
-    if (!connection?.company_user_id || !companyDirectoryByUserId[connection.company_user_id]) return;
+    if (!connection?.company_user_id) return;
 
-    openInviteModal([connection.company_user_id], {
+    const fallbackCompany = companyDirectoryByUserId[connection.company_user_id] || {
+      companyUserId: connection.company_user_id,
+      companyName: connection.company_name || 'Company',
+      contactName: connection.companyProfile?.contactName || '',
+      contactEmail: connection.companyProfile?.contactEmail || '',
+      location: connection.companyProfile?.location || '',
+      industryType: connection.companyProfile?.industryType || '',
+      status: 'pending',
+      canInvite: false
+    };
+
+    openInviteModal([fallbackCompany], {
       allowExistingPending: true,
       draftMessage: connection.message || ''
     });
@@ -297,11 +330,13 @@ export default function CampusRelationshipActivityPage() {
     () => buildColumns({
       activeView,
       responding,
+      deleting,
       onAccept: (connection) => handleRespond(connection.id, 'accepted'),
       onDecline: (connection) => handleRespond(connection.id, 'rejected'),
+      onDelete: handleDeleteInvite,
       onResend: handleResend
     }),
-    [activeView, responding]
+    [activeView, responding, deleting]
   );
 
   return (
@@ -505,8 +540,10 @@ export default function CampusRelationshipActivityPage() {
 function buildColumns({
   activeView,
   responding,
+  deleting,
   onAccept,
   onDecline,
+  onDelete,
   onResend
 }) {
   const statusHeading = activeView === 'sent'
@@ -582,9 +619,11 @@ function buildColumns({
         <ActionCell
           row={row}
           view={activeView}
+          deleteLoading={Boolean(deleting[row.id])}
           loadingState={responding[row.id]}
           onAccept={() => onAccept(row)}
           onDecline={() => onDecline(row)}
+          onDelete={() => onDelete(row)}
           onResend={() => onResend(row)}
         />
       )
@@ -690,9 +729,11 @@ function StatusCell({ row, view }) {
 function ActionCell({
   row,
   view,
+  deleteLoading,
   loadingState,
   onAccept,
   onDecline,
+  onDelete,
   onResend
 }) {
   const canResend = Boolean(row.company_user_id && row.companyProfile);
@@ -728,6 +769,31 @@ function ActionCell({
         <FiCheckCircle size={14} />
         Partnership Active
       </span>
+    );
+  }
+
+  if (view === 'sent') {
+    return (
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={onResend}
+          disabled={!canResend}
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+        >
+          <FiSend size={14} />
+          Send Follow-up
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={deleteLoading}
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
+        >
+          {deleteLoading ? <FiRefreshCw size={14} className="animate-spin" /> : <FiTrash2 size={14} />}
+          Remove Invite
+        </button>
+      </div>
     );
   }
 

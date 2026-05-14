@@ -123,6 +123,16 @@ export const updateCampusDriveApplication = (driveId, applicationId, payload) =>
     extract: (p) => p.application || p
   });
 
+export const bulkUpdateCampusDriveApplications = (driveId, payload) =>
+  strictRequest({
+    path: `/campus-connect/drives/${driveId}/applications`,
+    options: { method: 'PATCH', body: JSON.stringify(payload) },
+    extract: (p) => ({
+      updatedCount: p.updatedCount || 0,
+      applications: p.applications || []
+    })
+  });
+
 // ── Connections ───────────────────────────────────────────────────────────────
 export const getCampusConnections = () =>
   safeRequest({ path: '/campus-connect/connections', emptyData: [], extract: (p) => p.connections || [] });
@@ -162,6 +172,13 @@ export const respondToConnection = (id, status) =>
     path: `/campus-connect/connections/${id}`,
     options: { method: 'PATCH', body: JSON.stringify({ status }) },
     extract: (p) => p.connection
+  });
+
+export const deleteCampusConnection = (id) =>
+  strictRequest({
+    path: `/campus-connect/connections/${id}`,
+    options: { method: 'DELETE' },
+    extract: (p) => p
   });
 
 // ── Stats ─────────────────────────────────────────────────────────────────────

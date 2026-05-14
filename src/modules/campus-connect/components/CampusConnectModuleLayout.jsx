@@ -26,6 +26,7 @@ const CampusConnectModuleLayout = () => (
     portalKey="campus-connect"
     portalLabel="Campus Connect"
     subtitle="Manage students, schedule drives, connect with companies, and track placements."
+    brandPath="/portal/campus-connect/profile"
     navItems={campusNavItems}
   />
 );

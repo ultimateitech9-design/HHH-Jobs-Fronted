@@ -157,7 +157,7 @@ const StudentInterviewsPage = () => {
                     </div>
                   </div>
 
-                  <Link to={`/portal/student/interviews/${interview.id}/room`} className={`${studentPrimaryButtonClassName} mt-auto`}>
+                  <Link to={`/portal/student/interviews/${interview.room_interview_id || interview.id}/room`} className={`${studentPrimaryButtonClassName} mt-auto`}>
                     <FiMonitor size={15} />
                     Join interview room
                   </Link>

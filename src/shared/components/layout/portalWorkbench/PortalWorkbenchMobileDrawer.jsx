@@ -3,6 +3,7 @@ import PortalWorkbenchSidebar from './PortalWorkbenchSidebar';
 
 const PortalWorkbenchMobileDrawer = ({
   open,
+  brandPath,
   portalLabel,
   navItems,
   profilePath,
@@ -30,6 +31,7 @@ const PortalWorkbenchMobileDrawer = ({
           >
             <PortalWorkbenchSidebar
               viewport="mobile"
+              brandPath={brandPath}
               portalLabel={portalLabel}
               navItems={navItems}
               profilePath={profilePath}
