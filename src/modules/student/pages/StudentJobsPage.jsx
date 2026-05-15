@@ -25,7 +25,8 @@ import { getStudentJobs } from '../services/studentApi';
 import { getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
 
 const FEED_PAGE_LIMIT = 50;
-const JOBS_PER_PAGE = 8;
+const DEFAULT_JOBS_PER_PAGE = 10;
+const MAX_BACKGROUND_FEED_PAGES = 6;
 
 const makeDefaultFilters = (audience = '') => ({
   search: '',
@@ -113,30 +114,29 @@ const fetchAllPages = async (fetcher, filters = {}) => {
     return { jobs: firstJobs, error: '' };
   }
 
-  const responses = await Promise.all(
-    Array.from({ length: totalPages - 1 }, (_, index) =>
-      fetcher({
-        ...filters,
-        page: index + 2,
-        limit: FEED_PAGE_LIMIT
-      })
-    )
-  );
+  // Avoid blasting every external page at once just to render a client-paginated feed.
+  const pagesToLoad = Math.min(totalPages, MAX_BACKGROUND_FEED_PAGES);
+  const collectedJobs = [...firstJobs];
+  let partialLoadError = '';
 
-  const failedResponse = responses.find((response) => response.error);
-  if (failedResponse) {
-    return {
-      jobs: firstJobs,
-      error: failedResponse.error || 'Unable to load all jobs.'
-    };
+  for (let page = 2; page <= pagesToLoad; page += 1) {
+    const response = await fetcher({
+      ...filters,
+      page,
+      limit: FEED_PAGE_LIMIT
+    });
+
+    if (response.error) {
+      partialLoadError = response.error || 'Unable to load all jobs.';
+      break;
+    }
+
+    collectedJobs.push(...(response.data?.jobs || []));
   }
 
   return {
-    jobs: [
-      ...firstJobs,
-      ...responses.flatMap((response) => response.data?.jobs || [])
-    ],
-    error: ''
+    jobs: collectedJobs,
+    error: partialLoadError
   };
 };
 
@@ -162,6 +162,7 @@ const StudentJobsPage = ({
   title = 'Search and Apply Jobs',
   subtitle = 'Filter jobs, save opportunities, and apply directly with profile resume.',
   detailsPathBase = '/portal/student/jobs',
+  jobsPerPage = DEFAULT_JOBS_PER_PAGE,
   embedded = false
 }) => {
   const navigate = useNavigate();
@@ -267,11 +268,11 @@ const StudentJobsPage = ({
   }, []);
 
   const totalJobs = jobsState.jobs.length;
-  const totalPages = Math.max(1, Math.ceil(totalJobs / JOBS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(totalJobs / jobsPerPage));
   const paginatedJobs = useMemo(() => {
-    const startIndex = (currentPage - 1) * JOBS_PER_PAGE;
-    return jobsState.jobs.slice(startIndex, startIndex + JOBS_PER_PAGE);
-  }, [currentPage, jobsState.jobs]);
+    const startIndex = (currentPage - 1) * jobsPerPage;
+    return jobsState.jobs.slice(startIndex, startIndex + jobsPerPage);
+  }, [currentPage, jobsPerPage, jobsState.jobs]);
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));

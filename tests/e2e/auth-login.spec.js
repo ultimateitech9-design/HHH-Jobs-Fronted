@@ -144,7 +144,7 @@ test('invalid portal login clears stale session and stays on login instead of fo
   }
 });
 
-test('wrong portal credentials stay on login instead of opening forbidden', async ({ page }) => {
+test('super admin credentials can open the admin portal through shared management access', async ({ page }) => {
   await page.route('**/auth/providers', async (route) => {
     await route.fulfill({
       status: 200,
@@ -181,13 +181,13 @@ test('wrong portal credentials stay on login instead of opening forbidden', asyn
   await page.getByPlaceholder('Enter your password').fill('CorrectButWrongPortal123!');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 
-  await expect(page).toHaveURL(/\/management\/login\/admin$/);
+  await expect(page).toHaveURL(/\/portal\/admin\/dashboard$/);
   await expect(page).not.toHaveURL(/\/forbidden$/);
-  await expect(page.getByText('Wrong ID or password.', { exact: true })).toBeVisible();
+  await expect(page.getByText('Admin Dashboard', { exact: true })).toBeVisible();
 
   const storedToken = await page.evaluate(() => window.localStorage.getItem('job_portal_token'));
   const storedUser = await page.evaluate(() => window.localStorage.getItem('job_portal_user'));
 
-  expect(storedToken).toBeNull();
-  expect(storedUser).toBeNull();
+  expect(storedToken).toBe('super-admin-token');
+  expect(JSON.parse(storedUser || '{}').role).toBe('super_admin');
 });

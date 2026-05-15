@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { FiEye, FiEyeOff, FiSearch } from 'react-icons/fi';
 import AdminHeader from '../components/AdminHeader';
 import ConfirmModal from '../components/ConfirmModal';
 import DashboardStatsCards from '../components/DashboardStatsCards';
@@ -22,6 +23,7 @@ const CreateUserForm = ({ existingEmails, onCreate }) => {
   const [adminForm, setAdminForm] = useState(INITIAL_ADMIN_FORM);
   const [formError, setFormError] = useState('');
   const [savingAdmin, setSavingAdmin] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const passwordPolicyError = adminForm.password
     ? getPasswordPolicyError(adminForm.password, '')
     : '';
@@ -93,18 +95,30 @@ const CreateUserForm = ({ existingEmails, onCreate }) => {
       </label>
       <label>
         Password
-        <input
-          type="password"
-          value={adminForm.password}
-          onChange={(event) => {
-            setAdminForm((current) => ({ ...current, password: event.target.value }));
-            if (formError) setFormError('');
-          }}
-          placeholder="Create a strong password"
-          autoComplete="new-password"
-          minLength={8}
-          aria-invalid={Boolean(passwordPolicyError)}
-        />
+        <div className="relative">
+          <input
+            type={showPassword ? 'text' : 'password'}
+            value={adminForm.password}
+            onChange={(event) => {
+              setAdminForm((current) => ({ ...current, password: event.target.value }));
+              if (formError) setFormError('');
+            }}
+            placeholder="Create a strong password"
+            autoComplete="new-password"
+            minLength={8}
+            aria-invalid={Boolean(passwordPolicyError)}
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((current) => !current)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            title={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+          </button>
+        </div>
         <span className={`text-xs font-semibold ${passwordPolicyError ? 'text-rose-600' : 'text-slate-500'}`}>{passwordPolicyMessage}</span>
       </label>
       <label>
@@ -137,9 +151,12 @@ const CreateUserForm = ({ existingEmails, onCreate }) => {
 const UsersManagement = () => {
   const { users, setUsers, filteredUsers, filters, setFilters, loading, error, isDemo } = useUsers();
   const [page, setPage] = useState(1);
-  const [targetUser, setTargetUser] = useState(null);
+  const [pendingStatusAction, setPendingStatusAction] = useState(null);
   const [formMessage, setFormMessage] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [statusBusyId, setStatusBusyId] = useState('');
   const [deletingAdmin, setDeletingAdmin] = useState(null);
+  const [draftFilters, setDraftFilters] = useState(filters);
   const pageSize = 5;
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
   const paginatedUsers = useMemo(
@@ -150,24 +167,17 @@ const UsersManagement = () => {
   const cards = useMemo(() => [
     { label: 'Total Users', value: String(users.length), helper: `${users.filter((item) => item.status === 'active').length} active`, tone: 'info' },
     { label: 'Pending Verification', value: String(users.filter((item) => item.status === 'pending').length), helper: 'Requires approval or onboarding review', tone: 'warning' },
-    { label: 'Blocked', value: String(users.filter((item) => item.status === 'blocked').length), helper: 'Trust and policy watchlist', tone: 'danger' },
+    { label: 'Blocked', value: String(users.filter((item) => item.status === 'blocked').length), helper: 'Temporarily restricted', tone: 'danger' },
+    { label: 'Banned', value: String(users.filter((item) => item.status === 'banned').length), helper: 'Permanently removed from access', tone: 'danger' },
     { label: 'Verified Accounts', value: String(users.filter((item) => item.verified).length), helper: 'Identity checks complete', tone: 'success' }
   ], [users]);
-
-  const handleSuspend = async () => {
-    if (!targetUser) return;
-    const nextStatus = targetUser.status === 'active' ? 'blocked' : 'active';
-    const updated = await updateUserStatus(targetUser.id, nextStatus);
-    setUsers((current) => current.map((user) => (user.id === targetUser.id ? { ...user, ...updated, status: nextStatus } : user)));
-    setTargetUser(null);
-  };
 
   const handleCreateAdmin = async ({ name, email, company, password, role }) => {
     setFormMessage('');
 
     const createdUser = await createAdminUser({ name, email, company, password, role });
     setUsers((current) => [{ ...createdUser, role }, ...current]);
-    setFormMessage(`${USER_ROLE_LABELS[role] || 'User'} ID created for ${name}. This email and password can now open the assigned dashboard.`);
+    setFormMessage(`${USER_ROLE_LABELS[role] || 'User'} ID ${(createdUser.displayId || createdUser.id)} created for ${name}. This email and password can now open the assigned dashboard.`);
     setPage(1);
   };
 
@@ -178,10 +188,43 @@ const UsersManagement = () => {
 
   const handleDeleteAdmin = async () => {
     if (!deletingAdmin) return;
-    await deleteUser(deletingAdmin.id);
-    setUsers((current) => current.filter((user) => user.id !== deletingAdmin.id));
-    setFormMessage(`${USER_ROLE_LABELS[deletingAdmin.role] || 'User'} ID ${deletingAdmin.id} deleted.`);
-    setDeletingAdmin(null);
+    try {
+      await deleteUser(deletingAdmin.id);
+      setUsers((current) => current.filter((user) => user.id !== deletingAdmin.id));
+      setFormMessage(`${USER_ROLE_LABELS[deletingAdmin.role] || 'User'} ID ${(deletingAdmin.displayId || deletingAdmin.id)} deleted.`);
+      setActionError('');
+      setDeletingAdmin(null);
+    } catch (deleteError) {
+      setActionError(deleteError.message || 'Unable to delete this user.');
+    }
+  };
+
+  const applyFilters = (nextFilters) => {
+    setPage(1);
+    setFilters(nextFilters);
+  };
+
+  const handleStatusAction = (user, status) => {
+    if (!user || user.status === status) return;
+    setPendingStatusAction({ user, status });
+  };
+
+  const confirmStatusAction = async () => {
+    if (!pendingStatusAction?.user || !pendingStatusAction?.status) return;
+
+    const { user, status } = pendingStatusAction;
+    setStatusBusyId(user.id);
+    try {
+      const updated = await updateUserStatus(user.id, status);
+      setUsers((current) => current.map((entry) => (entry.id === user.id ? { ...entry, ...updated, status } : entry)));
+      setFormMessage(`${user.name} is now ${status}.`);
+      setActionError('');
+      setPendingStatusAction(null);
+    } catch (updateError) {
+      setActionError(updateError.message || 'Unable to update this user.');
+    } finally {
+      setStatusBusyId('');
+    }
   };
 
   return (
@@ -189,6 +232,7 @@ const UsersManagement = () => {
       <AdminHeader title="Users Management" subtitle="Control account lifecycle, role visibility, verification state, and risk response across the portal." />
       {isDemo ? <p className="module-note">Demo user data is shown because super admin user endpoints are not connected yet.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
+      {actionError ? <p className="form-error">{actionError}</p> : null}
       {formMessage ? <p className="module-note">{formMessage}</p> : null}
       <p className="module-note">Super admin can review and remove Admin, HR, Student, and Super Admin IDs from this panel.</p>
       <DashboardStatsCards cards={cards} />
@@ -203,11 +247,11 @@ const UsersManagement = () => {
       </section>
       <section className="panel-card min-w-0">
         <FilterBar
-          filters={filters}
-          onChange={(key, value) => { setPage(1); setFilters((current) => ({ ...current, [key]: value })); }}
+          filters={draftFilters}
+          onChange={(key, value) => setDraftFilters((current) => ({ ...current, [key]: value }))}
           fields={[
             { key: 'role', label: 'Role', options: USER_ROLES.map((role) => ({ value: role, label: USER_ROLE_LABELS[role] || role })) },
-            { key: 'status', label: 'Status', options: ['active', 'pending', 'blocked'].map((status) => ({ value: status, label: status })) }
+            { key: 'status', label: 'Status', options: ['active', 'pending', 'blocked', 'banned'].map((status) => ({ value: status, label: status })) }
           ]}
           actions={(
             <>
@@ -215,39 +259,41 @@ const UsersManagement = () => {
                 type="button"
                 className="btn-secondary"
                 onClick={() => {
-                  setPage(1);
-                  setFilters((current) => ({ ...current, role: current.role === 'hr' ? '' : 'hr' }));
+                  const nextFilters = {
+                    ...draftFilters,
+                    role: draftFilters.role === 'hr' ? '' : 'hr'
+                  };
+                  setDraftFilters(nextFilters);
+                  applyFilters(nextFilters);
                 }}
               >
-                {filters.role === 'hr' ? 'Show All IDs' : 'Show HR IDs'}
+                {draftFilters.role === 'hr' ? 'Show All IDs' : 'Show HR IDs'}
               </button>
-              {paginatedUsers[0] ? (
-                <button type="button" className="btn-secondary" onClick={() => setTargetUser(paginatedUsers[0])}>
-                  Toggle selected user status
-                </button>
-              ) : null}
+              <button type="button" className="btn-primary inline-flex items-center gap-2" onClick={() => applyFilters(draftFilters)}>
+                <FiSearch size={14} /> Search
+              </button>
             </>
           )}
         />
         {loading ? <p className="module-note">Loading users...</p> : null}
-        <UsersTable rows={paginatedUsers} onDelete={setDeletingAdmin} />
+        <UsersTable rows={paginatedUsers} onDelete={setDeletingAdmin} onStatusChange={handleStatusAction} busyUserId={statusBusyId} />
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </section>
       <ConfirmModal
-        open={Boolean(targetUser)}
-        title="Change user status"
-        message={targetUser ? `Set ${targetUser.name} to ${targetUser.status === 'active' ? 'blocked' : 'active'}?` : ''}
-        confirmLabel="Apply status change"
-        onConfirm={handleSuspend}
-        onClose={() => setTargetUser(null)}
-      />
-      <ConfirmModal
         open={Boolean(deletingAdmin)}
         title="Delete user account"
-        message={deletingAdmin ? `Delete ${USER_ROLE_LABELS[deletingAdmin.role] || 'user'} ID ${deletingAdmin.id} for ${deletingAdmin.name}? This action removes portal access for that account.` : ''}
+        message={deletingAdmin ? `Delete ${USER_ROLE_LABELS[deletingAdmin.role] || 'user'} ID ${(deletingAdmin.displayId || deletingAdmin.id)} for ${deletingAdmin.name}? This action removes portal access for that account.` : ''}
         confirmLabel={`Delete ${USER_ROLE_LABELS[deletingAdmin?.role] || 'user'}`}
         onConfirm={handleDeleteAdmin}
         onClose={() => setDeletingAdmin(null)}
+      />
+      <ConfirmModal
+        open={Boolean(pendingStatusAction)}
+        title="Change user status"
+        message={pendingStatusAction ? `Set ${pendingStatusAction.user.name} to ${pendingStatusAction.status}?` : ''}
+        confirmLabel={`Mark ${pendingStatusAction?.status || 'user'}`}
+        onConfirm={confirmStatusAction}
+        onClose={() => setPendingStatusAction(null)}
       />
     </div>
   );

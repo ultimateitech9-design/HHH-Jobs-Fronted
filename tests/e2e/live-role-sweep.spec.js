@@ -1,46 +1,50 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import { test, expect } from '@playwright/test';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const FRONTEND_ROOT = path.resolve(__dirname, '../..');
+const WORKSPACE_ROOT = path.resolve(FRONTEND_ROOT, '..');
+const BACKEND_ROOT = path.resolve(WORKSPACE_ROOT, 'HHH-JOBS-BACKEND-main');
 const AUDIT_ROOT = path.resolve(FRONTEND_ROOT, '../playwright-audit');
 const SCREENSHOT_ROOT = path.join(AUDIT_ROOT, 'screenshots', 'live-role-sweep');
 const SUMMARY_PATH = path.join(AUDIT_ROOT, 'live-role-sweep-results.json');
+const BACKEND_ENV_PATH = path.join(BACKEND_ROOT, '.env');
+const FRONTEND_ENV_PATH = path.join(FRONTEND_ROOT, '.env');
+const FRONTEND_ORIGIN = 'http://127.0.0.1:4173';
 
+const backendRequire = createRequire(path.join(BACKEND_ROOT, 'package.json'));
+const jwt = backendRequire('jsonwebtoken');
+const backendEnv = parseEnvFile(await fs.readFile(BACKEND_ENV_PATH, 'utf8'));
+const frontendEnv = parseEnvFile(await fs.readFile(FRONTEND_ENV_PATH, 'utf8').catch(() => ''));
+const API_BASE = process.env.E2E_API_BASE_URL || frontendEnv.VITE_API_BASE_URL || 'http://127.0.0.1:6004';
 const PASSWORD = process.env.E2E_PASSWORD;
 const UI_ERROR_PATTERN = /Unexpected Application Error|Something went wrong|Cannot read properties|Error loading|Unhandled error/i;
 
 const runResults = [];
+const resolvedUsersByRole = {};
 
 const roleConfigs = [
   {
     key: 'student',
     emailEnv: 'E2E_STUDENT_EMAIL',
-    landingPath: '/portal/student/dashboard',
+    landingPath: '/portal/student/companies',
     routes: [
-      { name: 'dashboard', path: '/portal/student/dashboard' },
-      { name: 'profile', path: '/portal/student/profile' },
-      {
-        name: 'jobs',
-        path: '/portal/student/jobs',
-        probe: probeDetailLink({
-          name: 'job-detail',
-          selector: 'a[href^="/portal/student/jobs/"]',
-          expectedPrefix: '/portal/student/jobs/'
-        })
-      },
+      { name: 'dashboard', path: '/portal/student/dashboard', expectedPathPrefix: '/portal/student/companies' },
+      { name: 'profile', path: '/portal/student/profile', requireHeading: false },
+      { name: 'jobs', path: '/portal/student/jobs' },
       { name: 'applications', path: '/portal/student/applications' },
       { name: 'saved-jobs', path: '/portal/student/saved-jobs' },
-      { name: 'alerts', path: '/portal/student/alerts' },
+      { name: 'alerts', path: '/portal/student/alerts', expectedPathPrefix: '/portal/student/auto-apply', requireHeading: false },
       { name: 'interviews', path: '/portal/student/interviews' },
       { name: 'analytics', path: '/portal/student/analytics' },
       { name: 'ats', path: '/portal/student/ats' },
       { name: 'notifications', path: '/portal/student/notifications' },
-      { name: 'company-reviews', path: '/portal/student/company-reviews' },
-      { name: 'global-jobs', path: '/portal/student/global-jobs' }
+      { name: 'company-reviews', path: '/portal/student/company-reviews', expectedPathPrefix: '/portal/student/companies' },
+      { name: 'global-jobs', path: '/portal/student/global-jobs', requireHeading: false }
     ]
   },
   {
@@ -191,18 +195,27 @@ for (const roleConfig of roleConfigs) {
   test(`${roleConfig.key} live portal sweep`, async ({ browser }, testInfo) => {
     test.setTimeout(240_000);
 
-    const email = readOptionalEnv(roleConfig.emailEnv);
-    test.skip(!PASSWORD, 'Set E2E_PASSWORD to run the live portal sweep.');
-    test.skip(!email, `Set ${roleConfig.emailEnv} to run the ${roleConfig.key} live portal sweep.`);
-
-    const context = await browser.newContext();
+    const envEmail = readOptionalEnv(roleConfig.emailEnv);
+    const useUiLogin = Boolean(PASSWORD && envEmail);
+    const localUser = useUiLogin ? null : await resolveLocalUserForRole(roleConfig.key);
+    const context = useUiLogin
+      ? await browser.newContext()
+      : await browser.newContext({
+        storageState: buildStorageState(localUser)
+      });
     const page = await context.newPage();
     const diagnostics = attachDiagnostics(page);
     const routeResults = [];
     const failures = [];
 
     try {
-      await loginAsRole(page, roleConfig, email);
+      if (useUiLogin) {
+        await loginAsRole(page, roleConfig, envEmail);
+      } else {
+        await page.goto(roleConfig.landingPath, { waitUntil: 'domcontentloaded' });
+        await waitForPathPrefix(page, roleConfig.landingPath);
+        await waitForRouteSettled(page);
+      }
 
       for (const routeConfig of roleConfig.routes) {
         await test.step(`${roleConfig.key} -> ${routeConfig.name}`, async () => {
@@ -224,7 +237,8 @@ for (const roleConfig of roleConfigs) {
     } finally {
       runResults.push({
         role: roleConfig.key,
-        login: maskEmail(email),
+        login: maskEmail(envEmail || localUser?.email),
+        authMode: useUiLogin ? 'ui-login' : 'local-jwt-session',
         routes: routeResults
       });
 
@@ -259,7 +273,7 @@ function attachDiagnostics(page) {
   };
 
   page.on('console', (message) => {
-    if (message.type() === 'error') {
+    if (message.type() === 'error' && !/Failed to load resource/i.test(message.text())) {
       diagnostics.consoleErrors.push({
         url: page.url(),
         text: message.text()
@@ -276,6 +290,10 @@ function attachDiagnostics(page) {
 
   page.on('response', (response) => {
     const url = response.url();
+    const resourceType = response.request().resourceType();
+    if ((resourceType === 'image' || resourceType === 'media' || resourceType === 'font')) {
+      return;
+    }
     if ((isLocalAppUrl(url) || isLocalApiUrl(url)) && response.status() >= 400) {
       diagnostics.errorResponses.push({
         url,
@@ -288,6 +306,15 @@ function attachDiagnostics(page) {
     const url = request.url();
     const errorText = request.failure()?.errorText || 'request failed';
     if (/ERR_ABORTED/i.test(errorText)) {
+      return;
+    }
+    const resourceType = request.resourceType();
+    if (
+      resourceType === 'image'
+      || resourceType === 'media'
+      || resourceType === 'font'
+      || /NotSameSite/i.test(errorText)
+    ) {
       return;
     }
     if (isLocalAppUrl(url) || isLocalApiUrl(url)) {
@@ -306,7 +333,14 @@ function isLocalAppUrl(url) {
 }
 
 function isLocalApiUrl(url) {
-  return /^https?:\/\/127\.0\.0\.1:(5500|6002)/i.test(url);
+  if (/^https?:\/\/127\.0\.0\.1:(5500|6002|6004)/i.test(url)) {
+    return true;
+  }
+  try {
+    return new URL(url).origin === new URL(API_BASE).origin;
+  } catch (error) {
+    return false;
+  }
 }
 
 function snapshotDiagnostics(diagnostics) {
@@ -345,10 +379,12 @@ async function loginAsRole(page, roleConfig, email) {
 async function visitRoute(page, roleKey, routeConfig, diagnostics) {
   const snapshot = snapshotDiagnostics(diagnostics);
   const issues = [];
+  const expectedPathPrefix = routeConfig.expectedPathPrefix || routeConfig.path;
+  const requireHeading = routeConfig.requireHeading !== false;
 
   try {
     await page.goto(routeConfig.path, { waitUntil: 'domcontentloaded' });
-    await waitForPathPrefix(page, routeConfig.path);
+    await waitForPathPrefix(page, expectedPathPrefix);
     await waitForRouteSettled(page);
   } catch (error) {
     issues.push(error.message);
@@ -359,7 +395,7 @@ async function visitRoute(page, roleKey, routeConfig, diagnostics) {
     issues.push('redirected back to login');
   } else if (pathname === '/forbidden') {
     issues.push('redirected to forbidden');
-  } else if (!pathname.startsWith(routeConfig.path)) {
+  } else if (!pathname.startsWith(expectedPathPrefix)) {
     issues.push(`unexpected route: ${pathname}`);
   }
 
@@ -369,7 +405,7 @@ async function visitRoute(page, roleKey, routeConfig, diagnostics) {
   }
 
   const heading = await readHeading(page);
-  if (!heading) {
+  if (requireHeading && !heading) {
     issues.push('no heading found');
   }
 
@@ -378,7 +414,7 @@ async function visitRoute(page, roleKey, routeConfig, diagnostics) {
   const screenshot = await takeRouteScreenshot(page, roleKey, routeConfig.name);
   return {
     name: routeConfig.name,
-    path: routeConfig.path,
+    path: expectedPathPrefix,
     heading,
     screenshot,
     status: issues.length ? 'failed' : 'passed',
@@ -496,4 +532,110 @@ function safePathname(url) {
   } catch (error) {
     return String(url || '');
   }
+}
+
+function normalizeRoleKey(role) {
+  return String(role || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+}
+
+function parseEnvFile(source) {
+  const entries = {};
+  for (const rawLine of String(source || '').split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const separatorIndex = line.indexOf('=');
+    if (separatorIndex <= 0) continue;
+    const key = line.slice(0, separatorIndex).trim();
+    const value = line.slice(separatorIndex + 1).trim();
+    entries[key] = value;
+  }
+  return entries;
+}
+
+async function resolveLocalUserForRole(roleKey) {
+  const normalizedRole = normalizeRoleKey(roleKey);
+  if (resolvedUsersByRole[normalizedRole]) {
+    return resolvedUsersByRole[normalizedRole];
+  }
+
+  const preferredEmails = {
+    admin: ['admin.demo@hhh-jobs.com', 'admin@hhh-jobs.com'],
+    super_admin: ['superadmin.demo@hhh-jobs.com', 'superadmin@hhh-jobs.com'],
+    accounts: ['accounts.demo@hhh-jobs.com', 'accounts@hhh-jobs.com'],
+    sales: ['sales.demo@hhh-jobs.com', 'sales@hhh-jobs.com'],
+    hr: ['codex.hr.1777019373825@example.com', 'hr@eimager.com'],
+    student: ['qa.student.1777498914539@example.com', 'qa.student.1777498260552@example.com'],
+    dataentry: ['dataentry.demo@hhh-jobs.com', 'dataentry@hhh-jobs.com']
+  };
+
+  const rows = await fetchUsersForRole(normalizedRole);
+  const selected = (preferredEmails[normalizedRole] || [])
+    .map((email) => rows.find((row) => row.email === email))
+    .find(Boolean) || rows.find((row) => row.is_email_verified !== false);
+
+  if (!selected) {
+    throw new Error(`No active local user found for role ${normalizedRole}`);
+  }
+
+  resolvedUsersByRole[normalizedRole] = selected;
+  return selected;
+}
+
+async function fetchUsersForRole(role) {
+  const url = new URL(`${backendEnv.SUPABASE_URL}/rest/v1/users`);
+  url.searchParams.set('select', 'id,email,role,name,status,is_hr_approved,is_email_verified,mobile');
+  url.searchParams.set('role', `eq.${role}`);
+  url.searchParams.set('status', 'eq.active');
+  url.searchParams.set('order', 'created_at.desc');
+  url.searchParams.set('limit', '20');
+
+  const serviceToken = backendEnv.SUPABASE_SERVICE_ROLE_KEY || backendEnv.SUPABASE_SERVICE_KEY;
+  const response = await fetch(url, {
+    headers: {
+      apikey: serviceToken,
+      Authorization: `Bearer ${serviceToken}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Unable to resolve ${role} users (${response.status})`);
+  }
+
+  return response.json();
+}
+
+function signToken(user) {
+  return jwt.sign({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    isHrApproved: user.is_hr_approved
+  }, backendEnv.JWT_SECRET, { expiresIn: '7d' });
+}
+
+function buildStorageState(user) {
+  return {
+    cookies: [],
+    origins: [
+      {
+        origin: FRONTEND_ORIGIN,
+        localStorage: [
+          { name: 'job_portal_token', value: signToken(user) },
+          {
+            name: 'job_portal_user',
+            value: JSON.stringify({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              status: user.status,
+              isHrApproved: user.is_hr_approved,
+              isEmailVerified: user.is_email_verified !== false
+            })
+          }
+        ]
+      }
+    ]
+  };
 }

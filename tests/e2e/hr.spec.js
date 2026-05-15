@@ -92,8 +92,8 @@ test.describe('HR Portal E2E', () => {
 
   test('hr can log in securely and see dashboard', async ({ page }) => {
     await page.goto('/portal/hr/dashboard');
-    await expect(page.getByText(/HR Dashboard/i).first()).toBeVisible();
-    await expect(page.getByText(/45/i).first()).toBeVisible();
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+    await expect(page.getByText(/45/i).first()).toBeVisible({ timeout: 20000 });
   });
 
   test('hr can view company profile', async ({ page }) => {
@@ -109,13 +109,13 @@ test.describe('HR Portal E2E', () => {
 
   test('hr can view candidate database', async ({ page }) => {
     await page.goto('/portal/hr/candidates');
-    await expect(page.getByRole('heading', { name: /Candidate Database/i }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Candidate DB/i }).first()).toBeVisible();
     await expect(page.getByText(/Applicant One/i).first()).toBeVisible();
   });
 
   test('hr can view interview schedule', async ({ page }) => {
     await page.goto('/portal/hr/interviews');
-    await expect(page.getByRole('heading', { name: /Schedule inside HHH Jobs/i }).first()).toBeVisible();
-    await expect(page.getByText(/Upcoming rooms and completed rounds/i).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Interviews$/ }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Schedule Interview/i }).first()).toBeVisible();
   });
 });

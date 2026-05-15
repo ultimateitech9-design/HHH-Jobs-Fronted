@@ -48,6 +48,7 @@ const resumeDatabasePlans = [
     icon: FaMedal,
     subTitle: 'Best for small and medium businesses with focused hiring needs',
     price: '₹3,600',
+    numericPrice: 3600,
     taxNote: '*GST as applicable',
     offerText: 'Flat ₹1,500 OFF on purchasing 3 requirements',
     features: [
@@ -104,11 +105,32 @@ const planWrapperClassByTone = {
   dimond: 'bg-slate-900 text-white border-slate-800 shadow-xl'
 };
 
+const buildPlanLink = (path, extraParams = {}) => {
+  const [pathname, existingSearch = ''] = String(path || '').split('?');
+  const searchParams = new URLSearchParams(existingSearch);
+
+  Object.entries(extraParams).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    searchParams.set(key, String(value));
+  });
+
+  const query = searchParams.toString();
+  return `${pathname}${query ? `?${query}` : ''}`;
+};
+
+const formatPlanPrice = (amount) => `₹${Number(amount || 0).toLocaleString('en-IN')}`;
+
 const ServicesPage = () => {
   const user = getCurrentUser();
   const isStudent = user?.role === 'student';
   const isHr = user?.role === 'hr' || user?.role === 'admin';
   const [activePremiumKey, setActivePremiumKey] = useState(premiumFeatures[0].key);
+  const [jobPostingQuantities, setJobPostingQuantities] = useState(() => (
+    Object.fromEntries(jobPostingPlans.filter((plan) => plan.withQuantity).map((plan) => [plan.slug, '01']))
+  ));
+  const [resumePlanQuantities, setResumePlanQuantities] = useState(() => (
+    Object.fromEntries(resumeDatabasePlans.filter((plan) => plan.withQuantity).map((plan) => [plan.title, '01']))
+  ));
 
   const premiumCtaPath = isStudent ? '/contact-us' : isHr ? '/portal/hr/jobs' : '/sign-up';
   const premiumLearnMorePath = (featureKey) => {
@@ -136,17 +158,24 @@ const ServicesPage = () => {
         />
 
         <div className="mt-4.5 grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
-          {jobPostingPlans.map((plan) => (
-            <article
-              key={plan.title}
-              className={`flex flex-col rounded-[1.05rem] border p-2.5 md:p-3 ${planWrapperClassByTone[plan.tone]}`}
-            >
+          {jobPostingPlans.map((plan) => {
+            const selectedQuantity = Number(jobPostingQuantities[plan.slug] || '01');
+            const ctaTo = plan.withQuantity ? buildPlanLink(plan.ctaTo, { quantity: selectedQuantity }) : plan.ctaTo;
+            const displayPrice = plan.withQuantity && plan.numericPrice
+              ? formatPlanPrice(plan.numericPrice * selectedQuantity)
+              : plan.price;
+
+            return (
+              <article
+                key={plan.title}
+                className={`flex flex-col rounded-[1.05rem] border p-2.5 md:p-3 ${planWrapperClassByTone[plan.tone]}`}
+              >
               <div>
                 <h3 className={`font-heading text-[1.2rem] font-extrabold ${plan.tone === 'premium' ? 'text-white' : 'text-navy'}`}>
                   {plan.title}
                 </h3>
                 <div className="mt-1.5">
-                  <span className="text-[1.35rem] font-black leading-none">{plan.price}</span>
+                  <span className="text-[1.35rem] font-black leading-none">{displayPrice}</span>
                 </div>
                 {plan.previousPrice ? (
                   <div className={`mt-1 flex items-center gap-1.5 text-[13px] font-semibold ${plan.tone === 'premium' ? 'text-white/72' : 'text-slate-500'}`}>
@@ -183,7 +212,8 @@ const ServicesPage = () => {
               <div className="mt-auto pt-2.5">
                 {plan.withQuantity ? (
                   <select
-                    defaultValue="01"
+                    value={jobPostingQuantities[plan.slug] || '01'}
+                    onChange={(event) => setJobPostingQuantities((current) => ({ ...current, [plan.slug]: event.target.value }))}
                     className={`mb-2 w-full rounded-xl border px-3 py-1.5 text-[10.5px] font-semibold ${
                       plan.tone === 'premium'
                         ? 'border-white/20 bg-white/10 text-white'
@@ -196,8 +226,13 @@ const ServicesPage = () => {
                     <option value="05">5 Job Posts</option>
                   </select>
                 ) : null}
+                {plan.withQuantity ? (
+                  <p className={`mb-2 text-center text-[9px] font-semibold uppercase tracking-[0.13em] ${plan.tone === 'premium' ? 'text-white/70' : 'text-slate-500'}`}>
+                    {selectedQuantity} job post{selectedQuantity > 1 ? 's' : ''} selected
+                  </p>
+                ) : null}
                 <Link
-                  to={plan.ctaTo}
+                  to={ctaTo}
                   className={`block rounded-full px-4 py-1.5 text-center text-[10.5px] font-semibold ${
                     plan.tone === 'premium'
                       ? 'bg-white text-navy'
@@ -210,8 +245,9 @@ const ServicesPage = () => {
                   {plan.validity}
                 </p>
               </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -229,6 +265,11 @@ const ServicesPage = () => {
             {resumeDatabasePlans.map((plan) => {
               const Icon = plan.icon;
               const isGold = plan.tone === 'gold';
+              const selectedQuantity = Number(resumePlanQuantities[plan.title] || '01');
+              const ctaTo = plan.withQuantity ? buildPlanLink(plan.ctaTo, { quantity: selectedQuantity }) : plan.ctaTo;
+              const displayPrice = plan.withQuantity && plan.numericPrice
+                ? formatPlanPrice(plan.numericPrice * selectedQuantity)
+                : plan.price;
 
               return (
                 <article
@@ -245,7 +286,7 @@ const ServicesPage = () => {
                     {plan.subTitle}
                   </p>
                   <div className="mt-2">
-                    <span className="text-[1.26rem] font-black md:text-[1.45rem]">{plan.price}</span>
+                    <span className="text-[1.26rem] font-black md:text-[1.45rem]">{displayPrice}</span>
                   </div>
                   <p className={`mt-1 text-[9.5px] font-semibold uppercase tracking-[0.13em] ${isGold ? 'text-amber-100' : 'text-slate-400'}`}>
                     {plan.taxNote}
@@ -267,14 +308,23 @@ const ServicesPage = () => {
 
                   <div className="mt-auto pt-2.5">
                     {plan.withQuantity ? (
-                      <select defaultValue="01" className="mb-2 w-full rounded-xl border border-white/15 bg-white/10 px-3 py-1.5 text-[10.5px] font-semibold text-white">
+                      <select
+                        value={resumePlanQuantities[plan.title] || '01'}
+                        onChange={(event) => setResumePlanQuantities((current) => ({ ...current, [plan.title]: event.target.value }))}
+                        className="mb-2 w-full rounded-xl border border-white/15 bg-white/10 px-3 py-1.5 text-[10.5px] font-semibold text-white"
+                      >
                         <option value="01">1 Requirement</option>
                         <option value="03">3 Requirements</option>
                         <option value="05">5 Requirements</option>
                       </select>
                     ) : null}
+                    {plan.withQuantity ? (
+                      <p className={`mb-2 text-center text-[9px] font-semibold uppercase tracking-[0.13em] ${isGold ? 'text-amber-100' : 'text-slate-400'}`}>
+                        {selectedQuantity} requirement{selectedQuantity > 1 ? 's' : ''} selected
+                      </p>
+                    ) : null}
                     <Link
-                      to={plan.ctaTo}
+                      to={ctaTo}
                       className={`block rounded-full px-4 py-1.5 text-center text-[10.5px] font-semibold ${
                         isGold ? 'bg-white text-amber-700' : 'gradient-gold text-primary shadow-lg shadow-gold/20'
                       }`}

@@ -50,6 +50,8 @@ const getStatusColor = (status) => {
   }
 };
 
+const getApplicationId = (application = {}) => application.id || application._id || '';
+
 const HrJobApplicantsPage = () => {
   const { jobId } = useParams();
   const [state, setState] = useState({ loading: true, error: '', applicants: [], jobs: [] });
@@ -89,9 +91,11 @@ const HrJobApplicantsPage = () => {
       const nextInterview = {};
 
       applicants.forEach((item) => {
-        nextStatus[item.id] = item.status || 'applied';
-        nextNotes[item.id] = item.hrNotes || '';
-        nextInterview[item.id] = { ...defaultInterviewDraft };
+        const applicationId = getApplicationId(item);
+        if (!applicationId) return;
+        nextStatus[applicationId] = item.status || 'applied';
+        nextNotes[applicationId] = item.hrNotes || '';
+        nextInterview[applicationId] = { ...defaultInterviewDraft };
       });
 
       setStatusDrafts(nextStatus);
@@ -99,7 +103,7 @@ const HrJobApplicantsPage = () => {
       setInterviewDrafts(nextInterview);
 
       if (applicants.length > 0) {
-        setActiveApplicantId(applicants[0].id);
+        setActiveApplicantId(getApplicationId(applicants[0]));
       }
     };
 
@@ -111,7 +115,10 @@ const HrJobApplicantsPage = () => {
   }, [jobId]);
 
   const targetJob = useMemo(() => state.jobs.find((job) => (job.id || job._id) === jobId), [state.jobs, jobId]);
-  const activeApplicant = useMemo(() => state.applicants.find(a => a.id === activeApplicantId), [state.applicants, activeApplicantId]);
+  const activeApplicant = useMemo(
+    () => state.applicants.find((application) => getApplicationId(application) === activeApplicantId),
+    [state.applicants, activeApplicantId]
+  );
 
   const showMessage = useCallback((msg) => {
     setMessage(msg);
@@ -206,12 +213,18 @@ const HrJobApplicantsPage = () => {
 
   const handleBulkAction = async (action) => {
     if (selectedIds.size === 0) return;
+    const selectedApplicationIds = Array.from(selectedIds).filter(Boolean);
+    if (selectedApplicationIds.length === 0) {
+      showMessage('Please select valid applications first.');
+      return;
+    }
+
     setBulkProcessing(true);
     setMessage('');
 
     const result = await bulkUpdateApplications({
       jobId,
-      applicationIds: Array.from(selectedIds),
+      applicationIds: selectedApplicationIds,
       action
     });
 
@@ -222,16 +235,18 @@ const HrJobApplicantsPage = () => {
       setState((current) => ({
         ...current,
         applicants: current.applicants.map((app) =>
-          selectedIds.has(app.id) ? { ...app, status: newStatus } : app
+          selectedApplicationIds.includes(getApplicationId(app)) ? { ...app, status: newStatus } : app
         )
       }));
       setStatusDrafts((prev) => {
         const next = { ...prev };
-        selectedIds.forEach(id => { next[id] = newStatus; });
+        selectedApplicationIds.forEach((id) => {
+          next[id] = newStatus;
+        });
         return next;
       });
       setSelectedIds(new Set());
-      showMessage(`${result.data?.updatedCount || selectedIds.size} applications ${newStatus}.`);
+      showMessage(`${result.data?.updatedCount || selectedApplicationIds.length} applications moved to ${newStatus}.`);
     }
 
     setBulkProcessing(false);
@@ -262,6 +277,12 @@ const HrJobApplicantsPage = () => {
 
   const allSelected = state.applicants.length > 0 && selectedIds.size === state.applicants.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
+  const activeApplicantResumeUrl =
+    activeApplicant?.resumeUrl
+    || activeApplicant?.applicant?.resumeUrl
+    || activeApplicant?.applicant?.resume_url
+    || '';
+  const activeApplicantCoverLetter = String(activeApplicant?.coverLetter || '').trim();
 
   return (
     <div className="space-y-6 pb-10 h-full flex flex-col min-h-[calc(100vh-8rem)]">
@@ -355,21 +376,22 @@ const HrJobApplicantsPage = () => {
 
             <div className="overflow-y-auto flex-1 p-2 space-y-1 custom-scrollbar">
               {state.applicants.map(app => {
-                const isActive = activeApplicantId === app.id;
-                const isSelected = selectedIds.has(app.id);
+                const applicationId = getApplicationId(app);
+                const isActive = activeApplicantId === applicationId;
+                const isSelected = selectedIds.has(applicationId);
                 const name = app.applicant?.name || app.applicantEmail || 'Candidate';
                 const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
                 return (
-                  <div key={app.id} className="flex items-start gap-1.5">
+                  <div key={applicationId} className="flex items-start gap-1.5">
                     <button
-                      onClick={(e) => { e.stopPropagation(); toggleSelect(app.id); }}
+                      onClick={(e) => { e.stopPropagation(); toggleSelect(applicationId); }}
                       className={`mt-3.5 p-1 rounded transition-colors shrink-0 ${isSelected ? 'text-brand-600' : 'text-neutral-300 hover:text-neutral-500'}`}
                     >
                       {isSelected ? <FiCheckSquare size={15} /> : <FiSquare size={15} />}
                     </button>
                     <button
-                      onClick={() => setActiveApplicantId(app.id)}
+                      onClick={() => setActiveApplicantId(applicationId)}
                       className={`flex-1 text-left p-3 rounded-xl transition-all flex items-start gap-3 ${isActive ? 'bg-brand-50 border border-brand-200 shadow-sm' : 'hover:bg-neutral-50 border border-transparent'
                         }`}
                     >
@@ -415,9 +437,9 @@ const HrJobApplicantsPage = () => {
                     </div>
                   </div>
 
-                  {activeApplicant.applicant?.resume_url && (
+                  {activeApplicantResumeUrl && (
                     <a
-                      href={activeApplicant.applicant.resume_url}
+                      href={activeApplicantResumeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white font-bold rounded-xl hover:bg-neutral-800 transition-colors shadow-sm shrink-0"
@@ -431,6 +453,19 @@ const HrJobApplicantsPage = () => {
 
                   {/* Status & Notes */}
                   <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-2xl border border-neutral-200">
+                      <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+                        <FiFileText className="text-brand-500" /> Cover Letter
+                      </h3>
+                      {activeApplicantCoverLetter ? (
+                        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-7 text-neutral-700 whitespace-pre-wrap">
+                          {activeApplicantCoverLetter}
+                        </div>
+                      ) : (
+                        <p className="text-sm font-medium text-neutral-500">No cover letter was submitted with this application.</p>
+                      )}
+                    </div>
+
                     <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-200">
                       <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
                         <FiCheckCircle className="text-brand-500" /> Application Status

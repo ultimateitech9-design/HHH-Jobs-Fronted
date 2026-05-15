@@ -1,5 +1,23 @@
 const DELETED_USERS_KEY = 'hhh_jobs_deleted_user_ids';
 const MANAGED_ACCOUNTS_KEY = 'hhh_jobs_managed_accounts';
+const MANAGEMENT_ID_PREFIX = 'M';
+const MANAGEMENT_ID_LENGTH = 12;
+const MANAGEMENT_ROLE_TOKENS = Object.freeze({
+  admin: 'AD',
+  super_admin: 'SA',
+  hr: 'HR',
+  student: 'ST',
+  retired_employee: 'RE',
+  support: 'SP',
+  sales: 'SL',
+  accounts: 'AC',
+  dataentry: 'DE',
+  data_entry: 'DE',
+  campus_connect: 'CC',
+  platform: 'PF',
+  audit: 'AU',
+  company_admin: 'CA'
+});
 
 const notifyManagedUsersChanged = () => {
   if (typeof window !== 'undefined') {
@@ -65,6 +83,79 @@ const isStrongAuthKey = (value) => {
   return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
 };
 const nowIso = () => new Date().toISOString();
+const normalizeAlphaNumeric = (value) => String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const normalizeRoleToken = (role) => String(role || '').trim().toLowerCase();
+
+const getManagementRoleToken = (role) => {
+  const normalizedRole = normalizeRoleToken(role);
+  return MANAGEMENT_ROLE_TOKENS[normalizedRole]
+    || normalizeAlphaNumeric(normalizedRole).slice(0, 2).padEnd(2, 'X');
+};
+
+const createHashToken = (value, length) => {
+  let hash = 2166136261;
+  const input = String(value || '');
+
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+
+  let token = '';
+  let rollingHash = hash >>> 0;
+  while (token.length < length) {
+    rollingHash = Math.imul(rollingHash ^ 0x9e3779b9, 2246822519) >>> 0;
+    token += rollingHash.toString(36).toUpperCase();
+  }
+
+  return token.slice(0, length);
+};
+
+const createRandomToken = (length) => {
+  let token = '';
+
+  while (token.length < length) {
+    if (typeof globalThis !== 'undefined' && globalThis.crypto?.getRandomValues) {
+      const values = new Uint32Array(2);
+      globalThis.crypto.getRandomValues(values);
+      token += Array.from(values, (value) => value.toString(36).toUpperCase()).join('');
+    } else {
+      token += Math.random().toString(36).slice(2).toUpperCase();
+    }
+  }
+
+  return normalizeAlphaNumeric(token).slice(0, length);
+};
+
+export const isManagedAccountId = (value) =>
+  new RegExp(`^${MANAGEMENT_ID_PREFIX}[A-Z0-9]{${MANAGEMENT_ID_LENGTH - 1}}$`, 'i').test(String(value || '').trim());
+
+export const getManagementDisplayId = (value, role = '') => {
+  const normalizedValue = normalizeAlphaNumeric(value);
+  if (isManagedAccountId(normalizedValue)) {
+    return normalizedValue.slice(0, MANAGEMENT_ID_LENGTH);
+  }
+
+  const roleToken = getManagementRoleToken(role);
+  const sourceToken = normalizedValue.slice(-2).padStart(2, '0');
+  const hashLength = MANAGEMENT_ID_LENGTH - MANAGEMENT_ID_PREFIX.length - roleToken.length - sourceToken.length;
+  const hashToken = createHashToken(`${role}:${value}`, hashLength);
+  return `${MANAGEMENT_ID_PREFIX}${roleToken}${sourceToken}${hashToken}`;
+};
+
+export const generateManagedAccountId = (role, existingAccounts = []) => {
+  const roleToken = getManagementRoleToken(role);
+  const existingIds = new Set(
+    existingAccounts.map((account) => normalizeAlphaNumeric(account?.id)).filter(Boolean)
+  );
+
+  let nextId = '';
+  do {
+    nextId = `${MANAGEMENT_ID_PREFIX}${roleToken}${createRandomToken(MANAGEMENT_ID_LENGTH - MANAGEMENT_ID_PREFIX.length - roleToken.length)}`;
+  } while (existingIds.has(nextId));
+
+  return nextId;
+};
 
 export const getManagedAccounts = () => filterDeletedUsers(readManagedAccounts());
 
@@ -94,7 +185,7 @@ export const createManagedAccount = ({ name, email, password, role, phone, depar
   }
 
   const newAccount = {
-    id: `managed-${role}-${Date.now()}`,
+    id: generateManagedAccountId(role, current),
     name: String(name || '').trim() || `${role} operator`,
     email: normalizedEmail,
     password: String(password),

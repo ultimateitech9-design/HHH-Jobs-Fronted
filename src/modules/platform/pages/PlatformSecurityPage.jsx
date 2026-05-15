@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { FiSearch } from 'react-icons/fi';
 import DataTable from '../../../shared/components/DataTable';
 import SectionHeader from '../../../shared/components/SectionHeader';
 import StatCard from '../../../shared/components/StatCard';
@@ -16,6 +17,7 @@ const PlatformSecurityPage = () => {
   const [isDemo, setIsDemo] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -49,6 +51,34 @@ const PlatformSecurityPage = () => {
       { label: 'Open Alerts', value: String(openAlerts), helper: 'From audit stream', tone: openAlerts > 0 ? 'warning' : 'default' }
     ];
   }, [checks, alerts]);
+
+  const securitySuggestions = useMemo(() => {
+    const values = new Set();
+    [...checks, ...alerts].forEach((item) => {
+      [item.control, item.owner, item.note, item.target, item.observed, item.title, item.description, item.severity, item.status]
+        .map((value) => String(value || '').trim())
+        .filter(Boolean)
+        .forEach((value) => values.add(value));
+    });
+    return Array.from(values).sort((left, right) => left.localeCompare(right)).slice(0, 30);
+  }, [checks, alerts]);
+
+  const normalizedSearchTerm = String(searchTerm || '').trim().toLowerCase();
+  const filteredChecks = useMemo(() => {
+    if (!normalizedSearchTerm) return checks;
+    return checks.filter((item) =>
+      [item.control, item.owner, item.note, item.target, item.observed, item.status]
+        .some((value) => String(value || '').toLowerCase().includes(normalizedSearchTerm))
+    );
+  }, [checks, normalizedSearchTerm]);
+
+  const filteredAlerts = useMemo(() => {
+    if (!normalizedSearchTerm) return alerts;
+    return alerts.filter((item) =>
+      [item.title, item.description, item.severity, item.status]
+        .some((value) => String(value || '').toLowerCase().includes(normalizedSearchTerm))
+    );
+  }, [alerts, normalizedSearchTerm]);
 
   const setCheckStatus = async (check, status) => {
     setError('');
@@ -105,14 +135,36 @@ const PlatformSecurityPage = () => {
 
       <div className="split-grid">
         <section className="panel-card">
-          <SectionHeader eyebrow="Control Matrix" title="Security and Compliance Checks" />
-          <DataTable columns={controlColumns} rows={checks} />
+          <SectionHeader
+            eyebrow="Control Matrix"
+            title="Security and Compliance Checks"
+            action={(
+              <div className="relative w-full min-w-[250px] max-w-[340px]">
+                <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search controls, owners, alerts, notes"
+                  list="platform-security-search-suggestions"
+                  autoComplete="off"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm font-medium text-slate-700 shadow-sm focus:ring-2 focus:ring-brand-500"
+                />
+                <datalist id="platform-security-search-suggestions">
+                  {securitySuggestions.map((suggestion) => (
+                    <option key={suggestion} value={suggestion} />
+                  ))}
+                </datalist>
+              </div>
+            )}
+          />
+          <DataTable columns={controlColumns} rows={filteredChecks} />
         </section>
 
         <section className="panel-card">
           <SectionHeader eyebrow="Audit Alerts" title="Recent Risk Signals" />
           <ul className="student-list">
-            {alerts.map((alert) => (
+            {filteredAlerts.map((alert) => (
               <li key={alert.id}>
                 <div>
                   <h4>{alert.title}</h4>
@@ -125,7 +177,7 @@ const PlatformSecurityPage = () => {
                 </div>
               </li>
             ))}
-            {alerts.length === 0 ? <li>No alerts available.</li> : null}
+            {filteredAlerts.length === 0 ? <li>No alerts available.</li> : null}
           </ul>
         </section>
       </div>

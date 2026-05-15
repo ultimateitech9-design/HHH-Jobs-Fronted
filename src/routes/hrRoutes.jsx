@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
+import { PORTAL_ACCESS } from './portalAccess';
 
 const HrModuleLayout = lazy(() => import('../modules/hr/components/HrModuleLayout'));
 const HrDashboardPage = lazy(() => import('../modules/hr/pages/HrDashboardPage'));
@@ -24,7 +25,7 @@ const hrRoutes = [
   {
     path: 'portal/hr',
     element: (
-      <RoleProtectedRoute roles={['hr']}>
+      <RoleProtectedRoute roles={PORTAL_ACCESS.hr}>
         <HrModuleLayout />
       </RoleProtectedRoute>
     ),

@@ -15,6 +15,94 @@ const DASHBOARD_REDIRECT_RULES = [
   { legacy: '/platform', canonical: '/portal/platform', defaultPath: '/portal/platform/dashboard' },
   { legacy: '/audit', canonical: '/portal/audit', defaultPath: '/portal/audit/dashboard' }
 ];
+const PORTAL_ROLE_METADATA = Object.freeze({
+  student: Object.freeze({
+    label: 'Student Dashboard',
+    dashboardPath: '/portal/student/companies',
+    profilePath: '/portal/student/profile',
+    notificationPath: '/portal/student/notifications'
+  }),
+  retired_employee: Object.freeze({
+    label: 'Retired Professional Dashboard',
+    dashboardPath: '/portal/student/companies',
+    profilePath: '/portal/student/profile',
+    notificationPath: '/portal/student/notifications'
+  }),
+  hr: Object.freeze({
+    label: 'HR Dashboard',
+    dashboardPath: '/portal/hr/dashboard',
+    profilePath: '/portal/hr/profile',
+    notificationPath: '/portal/hr/notifications'
+  }),
+  admin: Object.freeze({
+    label: 'Admin Console',
+    dashboardPath: '/portal/admin/dashboard',
+    profilePath: '/portal/admin/dashboard',
+    notificationPath: ''
+  }),
+  super_admin: Object.freeze({
+    label: 'Super Admin',
+    dashboardPath: '/portal/super-admin/dashboard',
+    profilePath: '/portal/super-admin/dashboard',
+    notificationPath: ''
+  }),
+  platform: Object.freeze({
+    label: 'Platform Console',
+    dashboardPath: '/portal/platform/dashboard',
+    profilePath: '/portal/platform/dashboard',
+    notificationPath: ''
+  }),
+  audit: Object.freeze({
+    label: 'Audit Console',
+    dashboardPath: '/portal/audit/dashboard',
+    profilePath: '/portal/audit/dashboard',
+    notificationPath: ''
+  }),
+  support: Object.freeze({
+    label: 'Support Center',
+    dashboardPath: '/portal/support/dashboard',
+    profilePath: '/portal/support/dashboard',
+    notificationPath: ''
+  }),
+  sales: Object.freeze({
+    label: 'Sales Dashboard',
+    dashboardPath: '/portal/sales/overview',
+    profilePath: '/portal/sales/overview',
+    notificationPath: ''
+  }),
+  accounts: Object.freeze({
+    label: 'Accounts Dashboard',
+    dashboardPath: '/portal/accounts/overview',
+    profilePath: '/portal/accounts/overview',
+    notificationPath: ''
+  }),
+  dataentry: Object.freeze({
+    label: 'Data Entry Workspace',
+    dashboardPath: '/portal/dataentry/dashboard',
+    profilePath: '/portal/dataentry/profile',
+    notificationPath: '/portal/dataentry/notifications'
+  }),
+  campus_connect: Object.freeze({
+    label: 'Campus Connect',
+    dashboardPath: '/portal/campus-connect/dashboard',
+    profilePath: '/portal/campus-connect/profile',
+    notificationPath: '/portal/campus-connect/notifications'
+  })
+});
+const ADMIN_PORTAL_SWITCH_ROLES = Object.freeze([
+  'admin',
+  'super_admin',
+  'hr',
+  'student',
+  'platform',
+  'audit',
+  'support',
+  'sales',
+  'accounts',
+  'dataentry',
+  'campus_connect'
+]);
+const ADMIN_ACCESS_ROLES = new Set(['admin', 'super_admin']);
 
 const notifyAuthChange = () => {
   if (typeof window !== 'undefined') {
@@ -146,29 +234,57 @@ export const normalizeRole = (role) => {
 
 export const getUserRole = () => normalizeRole(getCurrentUser()?.role);
 
+export const getRoleLabel = (role) => {
+  const normalizedRole = normalizeRole(role);
+  return PORTAL_ROLE_METADATA[normalizedRole]?.label || String(role || '').trim() || 'Dashboard';
+};
+
+export const getProfilePathByRole = (role) => {
+  const normalizedRole = normalizeRole(role);
+  return PORTAL_ROLE_METADATA[normalizedRole]?.profilePath || getDashboardPathByRole(normalizedRole);
+};
+
+export const isAdminAccessRole = (role) => ADMIN_ACCESS_ROLES.has(normalizeRole(role));
+
+export const getPortalRoleForKey = (portalKey = '') => {
+  const normalizedPortalRole = normalizeRole(portalKey);
+  if (normalizedPortalRole === 'retired') return 'retired_employee';
+  return normalizedPortalRole;
+};
+
+export const resolvePortalViewRole = ({ userRole, portalKey } = {}) => {
+  const normalizedUserRole = normalizeRole(userRole);
+  if (!normalizedUserRole) return null;
+
+  if (isAdminAccessRole(normalizedUserRole)) {
+    return getPortalRoleForKey(portalKey) || normalizedUserRole;
+  }
+
+  return normalizedUserRole;
+};
+
+export const getPortalSwitchOptions = (userRole, activeRole = '') => {
+  const normalizedUserRole = normalizeRole(userRole);
+  if (!normalizedUserRole || !isAdminAccessRole(normalizedUserRole)) return [];
+
+  const normalizedActiveRole = normalizeRole(activeRole);
+  return ADMIN_PORTAL_SWITCH_ROLES
+    .map((role) => ({
+      role,
+      label: getRoleLabel(role),
+      path: getDashboardPathByRole(role),
+      isActive: role === normalizedActiveRole
+    }));
+};
+
 export const getDashboardPathByRole = (role) => {
   const normalizedRole = normalizeRole(role);
-  if (normalizedRole === 'super_admin') return '/portal/super-admin/dashboard';
-  if (normalizedRole === 'admin') return '/portal/admin/dashboard';
-  if (normalizedRole === 'hr') return '/portal/hr/dashboard';
-  if (normalizedRole === 'platform') return '/portal/platform/dashboard';
-  if (normalizedRole === 'audit') return '/portal/audit/dashboard';
-  if (normalizedRole === 'dataentry') return '/portal/dataentry/dashboard';
-  if (normalizedRole === 'support') return '/portal/support/dashboard';
-  if (normalizedRole === 'accounts') return '/portal/accounts/overview';
-  if (normalizedRole === 'sales') return '/portal/sales/overview';
-  if (normalizedRole === 'campus_connect') return '/portal/campus-connect/dashboard';
-  if (normalizedRole === 'retired_employee') return '/portal/student/companies';
-  return '/portal/student/companies';
+  return PORTAL_ROLE_METADATA[normalizedRole]?.dashboardPath || '/portal/student/companies';
 };
 
 export const getNotificationPathByRole = (role) => {
   const normalizedRole = normalizeRole(role);
-  if (normalizedRole === 'student' || normalizedRole === 'retired_employee') return '/portal/student/notifications';
-  if (normalizedRole === 'hr') return '/portal/hr/notifications';
-  if (normalizedRole === 'dataentry') return '/portal/dataentry/notifications';
-  if (normalizedRole === 'campus_connect') return '/portal/campus-connect/notifications';
-  return '';
+  return PORTAL_ROLE_METADATA[normalizedRole]?.notificationPath || '';
 };
 
 export const getDashboardPath = () => getDashboardPathByRole(getUserRole());
@@ -213,6 +329,10 @@ export const normalizeRedirectPath = (path, fallbackRole = '') => {
 
 export const isRedirectPathAllowedForRole = (path, role) => {
   if (!path) return true;
+
+  if (isAdminAccessRole(role)) {
+    return true;
+  }
 
   const normalizedRedirect = normalizeRedirectPath(path, role);
   if (!normalizedRedirect.startsWith('/portal/')) {

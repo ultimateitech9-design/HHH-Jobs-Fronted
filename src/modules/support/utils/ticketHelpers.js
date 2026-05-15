@@ -25,6 +25,8 @@ export const normalizeTicket = (ticket = {}) => ({
   updatedAt: ticket.updatedAt || ticket.updated_at || ''
 });
 
+export const getTicketDisplayId = (ticket = {}) => ticket.ticketNumber || ticket.ticket_number || ticket.id || '';
+
 export const filterTickets = (tickets = [], filters = {}) => {
   const search = String(filters.search || '').trim().toLowerCase();
   const status = String(filters.status || '').trim().toLowerCase();
@@ -32,7 +34,7 @@ export const filterTickets = (tickets = [], filters = {}) => {
   const category = String(filters.category || '').trim().toLowerCase();
 
   return tickets.filter((ticket) => {
-    const matchesSearch = !search || `${ticket.id} ${ticket.title} ${ticket.customer} ${ticket.assignedTo}`.toLowerCase().includes(search);
+    const matchesSearch = !search || `${getTicketDisplayId(ticket)} ${ticket.id} ${ticket.title} ${ticket.customer} ${ticket.assignedTo}`.toLowerCase().includes(search);
     const matchesStatus = !status || String(ticket.status || '').toLowerCase() === status;
     const matchesPriority = !priority || String(ticket.priority || '').toLowerCase() === priority;
     const matchesCategory = !category || String(ticket.category || '').toLowerCase() === category;

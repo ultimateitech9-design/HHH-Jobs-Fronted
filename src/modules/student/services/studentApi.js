@@ -714,6 +714,16 @@ export const getStudentApplications = async () =>
     extract: (payload) => payload?.applications || []
   });
 
+export const respondToApplicationOffer = async ({ applicationId, decision }) =>
+  strictRequest({
+    path: `/student/applications/${applicationId}/offer-response`,
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ decision })
+    },
+    extract: (payload) => payload?.application || payload
+  });
+
 export const getStudentSavedJobs = async () =>
   safeRequest({
     path: '/student/saved-jobs',

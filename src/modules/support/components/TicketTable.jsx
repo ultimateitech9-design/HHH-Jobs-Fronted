@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import DataTable from '../../../shared/components/DataTable';
 import { formatDateTime } from '../utils/formatDate';
+import { getTicketDisplayId } from '../utils/ticketHelpers';
 import TicketStatusBadge from './TicketStatusBadge';
 
 const TicketTable = ({ rows = [] }) => {
@@ -8,9 +9,9 @@ const TicketTable = ({ rows = [] }) => {
     {
       key: 'id',
       label: 'Ticket ID',
-      render: (value) => (
+      render: (value, row) => (
         <Link to={`/portal/support/ticket-details/${encodeURIComponent(value)}`} className="font-semibold text-brand-700 hover:text-brand-800">
-          {value}
+          {getTicketDisplayId(row)}
         </Link>
       )
     },

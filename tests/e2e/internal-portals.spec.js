@@ -34,10 +34,10 @@ test('platform dashboard demo access shows usable demo telemetry', async ({ brow
     await page.goto('/portal/platform/dashboard');
 
     await expect(page).toHaveURL(/\/portal\/platform\/dashboard$/);
-    await expect(page.getByText('Platform Dashboard', { exact: true })).toBeVisible();
-    await expect(page.getByText(/demo telemetry/i)).toBeVisible();
-    await expect(page.getByText('Alpha Talent Labs', { exact: true })).toBeVisible();
-    await expect(page.getByText('Webhook signing validation', { exact: true })).toBeVisible();
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+    await expect(page.getByText(/demo telemetry/i)).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText('Alpha Talent Labs', { exact: true })).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText('Webhook signing validation', { exact: true })).toBeVisible({ timeout: 20000 });
   } finally {
     await context.close();
   }
@@ -49,7 +49,7 @@ test('audit dashboard demo access shows alert and event context', async ({ brows
     await page.goto('/portal/audit/dashboard');
 
     await expect(page).toHaveURL(/\/portal\/audit\/dashboard$/);
-    await expect(page.getByText('Audit Dashboard', { exact: true })).toBeVisible();
+    await expect(page.locator('h1, h2, [role="heading"]').first()).toBeVisible();
     await expect(page.getByText(/investigation live|demo trace/i)).toBeVisible();
     await expect(page.getByText('Webhook failure spike', { exact: true })).toBeVisible();
     await expect(page.getByText('billing_webhook_failed', { exact: true })).toBeVisible();

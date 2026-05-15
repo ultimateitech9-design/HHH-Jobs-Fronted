@@ -11,9 +11,18 @@ const filterJobs = (jobs, filters = {}) => {
   });
 };
 
+const buildQueryString = (filters = {}) => {
+  const query = new URLSearchParams();
+  if (filters.status) query.set('status', filters.status);
+  if (filters.search) query.set('search', filters.search);
+  query.set('page', '1');
+  query.set('limit', '100');
+  return query.toString();
+};
+
 export const getJobs = async (filters = {}) =>
   safeRequest({
-    path: `${SUPER_ADMIN_BASE}/jobs`,
+    path: `${SUPER_ADMIN_BASE}/jobs?${buildQueryString(filters)}`,
     emptyData: [],
     fallbackData: () => filterJobs(adminDummyData.jobs, filters),
     extract: (payload) => (payload?.jobs || []).map(mapApiJobToUi)

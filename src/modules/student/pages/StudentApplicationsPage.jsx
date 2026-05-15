@@ -20,7 +20,7 @@ import {
   studentPrimaryButtonClassName,
   studentSecondaryButtonClassName
 } from '../components/StudentExperience';
-import { formatDateTime, getStudentApplications } from '../services/studentApi';
+import { formatDateTime, getStudentApplications, respondToApplicationOffer } from '../services/studentApi';
 import { getCurrentUser } from '../../../utils/auth';
 
 const STATUS_STAGES = [
@@ -58,6 +58,7 @@ const StudentApplicationsPage = () => {
   const currentUser = useMemo(() => getCurrentUser(), []);
   const [state, setState] = useState({ loading: true, error: '', isDemo: false, applications: [] });
   const [statusFilter, setStatusFilter] = useState('all');
+  const [offerActionState, setOfferActionState] = useState({ applicationId: '', decision: '', message: '', error: '' });
 
   useEffect(() => {
     let mounted = true;
@@ -120,10 +121,44 @@ const StudentApplicationsPage = () => {
 
   const userName = currentUser?.name || 'Student';
 
+  const handleOfferResponse = async (application, decision) => {
+    const applicationId = application?.id || application?._id;
+    if (!applicationId) return;
+
+    setOfferActionState({ applicationId, decision, message: '', error: '' });
+
+    try {
+      const updatedApplication = await respondToApplicationOffer({ applicationId, decision });
+      setState((prev) => ({
+        ...prev,
+        applications: prev.applications.map((item) => (
+          (item.id || item._id) === applicationId
+            ? { ...item, ...updatedApplication, job: item.job, sourceType: item.sourceType, currentRound: item.currentRound, collegeName: item.collegeName }
+            : item
+        ))
+      }));
+      setOfferActionState({
+        applicationId: '',
+        decision: '',
+        message: decision === 'accept' ? 'Offer accepted successfully.' : 'Offer rejected successfully.',
+        error: ''
+      });
+    } catch (error) {
+      setOfferActionState({
+        applicationId: '',
+        decision: '',
+        message: '',
+        error: error.message || 'Unable to update the offer right now.'
+      });
+    }
+  };
+
   return (
     <div className="space-y-6 pb-8">
       {state.isDemo ? <StudentNotice type="info" text="Demo mode is active, so sample application records are being shown." /> : null}
       {state.error ? <StudentNotice type="error" text={state.error} /> : null}
+      {offerActionState.message ? <StudentNotice type="success" text={offerActionState.message} /> : null}
+      {offerActionState.error ? <StudentNotice type="error" text={offerActionState.error} /> : null}
 
       <section className="grid gap-6 xl:grid-cols-[250px_minmax(0,1fr)_250px]">
         <aside className="space-y-5">
@@ -269,6 +304,8 @@ const StudentApplicationsPage = () => {
                   const isRejected = currentStatus === 'rejected';
                   const isWithdrawn = currentStatus === 'withdrawn';
                   const sourceType = String(app.sourceType || 'platform').toLowerCase();
+                  const canRespondToOffer = sourceType === 'platform' && currentStatus === 'offered';
+                  const isUpdatingOffer = offerActionState.applicationId === (app.id || app._id);
 
                   return (
                     <article
@@ -348,6 +385,33 @@ const StudentApplicationsPage = () => {
                             })}
                           </div>
                         </div>
+
+                        {canRespondToOffer ? (
+                          <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
+                            <div>
+                              <p className="text-sm font-bold text-emerald-800">You have received an offer for this role.</p>
+                              <p className="mt-1 text-sm text-emerald-700">Choose whether to accept it and move this application forward, or reject it to close the offer.</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleOfferResponse(app, 'accept')}
+                                disabled={isUpdatingOffer}
+                                className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {isUpdatingOffer && offerActionState.decision === 'accept' ? 'Accepting...' : 'Accept'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleOfferResponse(app, 'reject')}
+                                disabled={isUpdatingOffer}
+                                className="inline-flex items-center justify-center rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {isUpdatingOffer && offerActionState.decision === 'reject' ? 'Rejecting...' : 'Reject'}
+                              </button>
+                            </div>
+                          </div>
+                        ) : null}
 
                         {isRejected || isWithdrawn ? (
                           <div className="mt-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

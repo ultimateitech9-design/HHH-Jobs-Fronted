@@ -26,8 +26,8 @@ const DataEntryEntryTable = ({ rows = [] }) => {
       label: 'Actions',
       render: (_value, row) => (
         <div className="student-job-actions">
-          <Link to={`/portal/dataentry/edit-entry?entryId=${row.id}`} className="btn-link">Edit</Link>
-          <Link to={`/portal/dataentry/upload-images?entryId=${row.id}`} className="btn-link">Images</Link>
+          <Link to={`/portal/dataentry/add-job?entryId=${row.id}`} className="btn-link">Edit</Link>
+          <Link to={`/portal/dataentry/add-job?entryId=${row.id}`} className="btn-link">Images</Link>
         </div>
       )
     }

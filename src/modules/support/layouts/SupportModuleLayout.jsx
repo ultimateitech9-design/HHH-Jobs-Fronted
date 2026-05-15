@@ -14,7 +14,6 @@ import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLay
 const supportNavItems = [
   { to: '/portal/support/dashboard', label: 'Dashboard', icon: FiGrid },
   { to: '/portal/support/tickets', label: 'Tickets', icon: FiClipboard },
-  { to: '/portal/support/ticket-details', label: 'Ticket Details', icon: FiFileText },
   { to: '/portal/support/create-ticket', label: 'Create Ticket', icon: FiEdit3 },
   { to: '/portal/support/live-chat', label: 'Live Chat', icon: FiMessageCircle },
   { to: '/portal/support/faq', label: 'FAQ', icon: FiMessageSquare },

@@ -10,6 +10,7 @@ import { dashboardSectionActionClassName } from '../../../shared/components/dash
 import useSupportStats from '../hooks/useSupportStats';
 import useTickets from '../hooks/useTickets';
 import { formatDateTime } from '../utils/formatDate';
+import { getTicketDisplayId } from '../utils/ticketHelpers';
 
 const SupportDashboard = () => {
   const { stats, loading, error, isDemo } = useSupportStats();
@@ -176,7 +177,7 @@ const SupportDashboard = () => {
                     <div>
                       <p className="font-semibold text-slate-900">
                         <Link to={`/portal/support/ticket-details/${encodeURIComponent(ticket.id)}`} className="hover:text-brand-700">
-                          {ticket.title}
+                          {getTicketDisplayId(ticket)} • {ticket.title}
                         </Link>
                       </p>
                       <p className="mt-1 text-sm text-slate-500">{ticket.customer} • {ticket.category}</p>

@@ -8,6 +8,8 @@ import SalesChart from '../components/SalesChart';
 import { getSalesOverview, getSalesFunnel } from '../services/salesApi';
 import { formatCompactCurrency } from '../utils/currencyFormat';
 
+const clampPercent = (value) => Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+
 const SalesOverview = () => {
   const [state, setState] = useState({ loading: true, error: '', overview: null });
   const [funnel, setFunnel] = useState({ funnel: [], summary: { totalLeads: 0, convertedCount: 0, conversionRate: 0, totalRevenue: 0 } });
@@ -143,7 +145,10 @@ const SalesOverview = () => {
             ) : (
               <div className="space-y-3 py-2">
                 {funnel.funnel.map((stage) => {
-                  const pct = funnel.summary.totalLeads > 0 ? Math.round((stage.count / funnel.summary.totalLeads) * 100) : 0;
+                  const filledPct = funnel.summary.totalLeads > 0
+                    ? clampPercent((stage.count / funnel.summary.totalLeads) * 100)
+                    : 0;
+                  const emptyPct = clampPercent(100 - filledPct);
                   const stageColors = {
                     new: 'bg-blue-500',
                     contacted: 'bg-indigo-500',
@@ -157,12 +162,18 @@ const SalesOverview = () => {
                     <div key={stage.stage}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-bold text-primary">{stage.label}</span>
-                        <span className="text-sm font-bold text-navy">{stage.count} <span className="text-xs font-semibold text-slate-400">({pct}%)</span></span>
+                        <span className="text-sm font-bold text-navy">
+                          {stage.count} <span className="text-xs font-semibold text-slate-400">({filledPct}% filled)</span>
+                        </span>
+                      </div>
+                      <div className="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        <span>Filled {filledPct}%</span>
+                        <span>Empty {emptyPct}%</span>
                       </div>
                       <div className="h-3 w-full bg-neutral-100 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-700 ${barColor}`}
-                          style={{ width: `${pct}%` }}
+                          style={{ width: `${filledPct}%` }}
                         />
                       </div>
                     </div>

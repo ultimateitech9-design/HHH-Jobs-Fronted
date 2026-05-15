@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SupportHeader from '../components/SupportHeader';
 import { SUPPORT_CATEGORIES } from '../constants/supportCategories';
 import { TICKET_PRIORITY } from '../constants/ticketPriority';
 import { createTicket } from '../services/ticketApi';
+import { getTicketDisplayId } from '../utils/ticketHelpers';
 
 const initialDraft = {
   title: '',
@@ -14,6 +16,7 @@ const initialDraft = {
 };
 
 const CreateTicket = () => {
+  const navigate = useNavigate();
   const [draft, setDraft] = useState(initialDraft);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -34,7 +37,17 @@ const CreateTicket = () => {
       setError(response.error);
     } else {
       const saved = response.data;
-      setMessage(`Ticket ${saved?.ticketNumber || saved?.id || ''} created successfully.`);
+      const displayId = getTicketDisplayId(saved);
+      if (saved?.id) {
+        navigate(`/portal/support/ticket-details/${encodeURIComponent(saved.id)}`, {
+          replace: true,
+          state: {
+            successMessage: `Ticket ${displayId || saved.id} created successfully.`
+          }
+        });
+        return;
+      }
+      setMessage(`Ticket ${displayId || saved?.id || ''} created successfully.`);
       setDraft(initialDraft);
     }
     setSaving(false);

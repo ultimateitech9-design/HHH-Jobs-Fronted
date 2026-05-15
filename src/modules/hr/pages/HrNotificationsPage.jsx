@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import SectionHeader from '../../../shared/components/SectionHeader';
 import useNotificationStore from '../../../core/notifications/notificationStore';
 import {
+  deleteNotificationRequest,
   fetchNotifications,
   markAllNotificationsReadRequest,
   markNotificationReadRequest
@@ -18,6 +19,7 @@ const HrNotificationsPage = () => {
   const setLoading = useNotificationStore((state) => state.setLoading);
   const markNotificationReadLocally = useNotificationStore((state) => state.markNotificationReadLocally);
   const markAllNotificationsReadLocally = useNotificationStore((state) => state.markAllNotificationsReadLocally);
+  const removeNotificationLocally = useNotificationStore((state) => state.removeNotificationLocally);
   const upsertNotification = useNotificationStore((state) => state.upsertNotification);
 
   const [filter, setFilter] = useState('all');
@@ -90,6 +92,20 @@ const HrNotificationsPage = () => {
     } catch (error) {
       replaceNotifications(previousNotifications);
       setMessage(error.message || 'Unable to mark all read.');
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    setMessage('');
+    const previousNotifications = [...notifications];
+    removeNotificationLocally(notificationId);
+
+    try {
+      await deleteNotificationRequest(notificationId);
+      setMessage('Notification deleted.');
+    } catch (error) {
+      replaceNotifications(previousNotifications);
+      setMessage(error.message || 'Unable to delete notification.');
     }
   };
 
@@ -178,6 +194,13 @@ const HrNotificationsPage = () => {
                 ) : (
                   <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-400">Read</span>
                 )}
+                <button
+                  type="button"
+                  className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                  onClick={() => handleDeleteNotification(notification.id)}
+                >
+                  Delete
+                </button>
               </div>
             </div>
           ))}

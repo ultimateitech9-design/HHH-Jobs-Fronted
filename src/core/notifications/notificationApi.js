@@ -19,7 +19,8 @@ export const NOTIFICATION_STREAM_EVENTS = {
   READY: 'ready',
   CREATED: 'notification.created',
   UPDATED: 'notification.updated',
-  BULK_READ: 'notification.bulk_read'
+  BULK_READ: 'notification.bulk_read',
+  DELETED: 'notification.deleted'
 };
 
 const parseJson = async (response) => {
@@ -117,6 +118,20 @@ export const markAllNotificationsReadRequest = async () => {
   }
 
   return payload || {};
+};
+
+export const deleteNotificationRequest = async (notificationId) => {
+  const response = await apiFetch(`/notifications/${notificationId}`, {
+    method: 'DELETE',
+    body: JSON.stringify({})
+  });
+  const payload = await parseJson(response);
+
+  if (!response.ok) {
+    throw new Error(payload?.message || `Request failed with status ${response.status}`);
+  }
+
+  return payload?.notificationId || notificationId;
 };
 
 export const openNotificationsStream = async ({ signal, onEvent, onOpen }) => {

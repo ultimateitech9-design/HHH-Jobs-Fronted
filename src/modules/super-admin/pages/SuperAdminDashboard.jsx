@@ -114,7 +114,7 @@ const SuperAdminDashboard = () => {
           subtitle: `${user.company} · ${user.role}`,
           meta: user.email,
           profile: [
-            ['User ID', user.id],
+            ['User ID', user.displayId || user.id],
             ['Email', user.email],
             ['Company', user.company],
             ['Role', user.role],
@@ -141,7 +141,7 @@ const SuperAdminDashboard = () => {
           subtitle: `${user.company} · Data Entry`,
           meta: user.email,
           profile: [
-            ['User ID', user.id],
+            ['User ID', user.displayId || user.id],
             ['Email', user.email],
             ['Status', user.status],
             ['Verified', user.verified ? 'Yes' : 'No'],
@@ -245,7 +245,7 @@ const SuperAdminDashboard = () => {
           subtitle: `${user.company} · Student`,
           meta: user.email,
           profile: [
-            ['User ID', user.id],
+            ['User ID', user.displayId || user.id],
             ['Email', user.email],
             ['Status', user.status],
             ['Verified', user.verified ? 'Yes' : 'No'],

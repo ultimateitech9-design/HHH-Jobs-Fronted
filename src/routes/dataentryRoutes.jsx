@@ -27,6 +27,8 @@ const dataentryRoutes = [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: 'dashboard', element: <DataEntryDashboard /> },
       { path: 'add-job', element: <AddJob /> },
+      { path: 'edit-entry', element: <AddJob /> },
+      { path: 'upload-images', element: <AddJob /> },
       { path: 'records', element: <DataEntryRecords /> },
       { path: 'manage-entries', element: <ManageEntries /> },
       { path: 'drafts', element: <DraftEntries /> },

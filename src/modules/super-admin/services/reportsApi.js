@@ -9,6 +9,8 @@ import {
   mapApiUserToUi
 } from './mappers';
 
+const isCampusConnectUser = (user = {}) => String(user?.role || '').toLowerCase() === 'campus_connect';
+
 const buildDashboardFallback = () => ({
   stats: adminDummyData.dashboardStats,
   users: adminDummyData.users,
@@ -29,9 +31,10 @@ export const getSuperAdminDashboard = async () =>
     fallbackData: buildDashboardFallback,
     extract: (payload) => {
       const dashboard = payload?.dashboard || payload || {};
+      const users = (dashboard.users || []).map(mapApiUserToUi).filter((user) => !isCampusConnectUser(user));
       return {
         ...dashboard,
-        users: (dashboard.users || []).map(mapApiUserToUi),
+        users,
         jobs: (dashboard.jobs || []).map(mapApiJobToUi),
         applications: (dashboard.applications || []).map(mapApiApplicationToUi),
         payments: (dashboard.payments || []).map(mapApiPaymentToUi),

@@ -1,4 +1,5 @@
 import TicketStatusBadge from './TicketStatusBadge';
+import { getTicketDisplayId } from '../utils/ticketHelpers';
 
 const TicketCard = ({ ticket }) => {
   return (
@@ -6,7 +7,7 @@ const TicketCard = ({ ticket }) => {
       <div className="dash-card-head">
         <div>
           <h3>{ticket.title}</h3>
-          <p>{ticket.customer} | {ticket.id}</p>
+          <p>{ticket.customer} | {getTicketDisplayId(ticket)}</p>
         </div>
         <TicketStatusBadge value={ticket.status} />
       </div>

@@ -260,27 +260,27 @@ test.describe('SuperAdmin Portal E2E', () => {
 
   test('superadmin can view users', async ({ page }) => {
     await page.goto('/portal/super-admin/users');
-    await expect(page.getByText('Super Test User')).toBeVisible();
+    await expect(page.getByText('Super Test User').first()).toBeVisible();
   });
 
   test('superadmin can view companies', async ({ page }) => {
     await page.goto('/portal/super-admin/companies');
-    await expect(page.getByText('Super Test Company')).toBeVisible();
+    await expect(page.getByText('Super Test Company').first()).toBeVisible();
   });
 
   test('superadmin can view jobs', async ({ page }) => {
     await page.goto('/portal/super-admin/jobs');
-    await expect(page.getByText('Super Test Job')).toBeVisible();
+    await expect(page.getByText('Super Test Job').first()).toBeVisible();
   });
 
   test('superadmin can view applications', async ({ page }) => {
     await page.goto('/portal/super-admin/applications');
-    await expect(page.getByText('SA Candidate')).toBeVisible();
+    await expect(page.getByText('SA Candidate').first()).toBeVisible();
   });
 
   test('superadmin can view payments', async ({ page }) => {
     await page.goto('/portal/super-admin/payments');
-    await expect(page.getByText('Super Test Company')).toBeVisible();
+    await expect(page.getByText('Super Test Company').first()).toBeVisible();
     await expect(page.getByText(/500/).first()).toBeVisible();
   });
 });

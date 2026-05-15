@@ -73,8 +73,10 @@ export const getTickets = async () =>
 export const getTicketDetails = async (ticketId) =>
   safeRequest({
     path: `${SUPPORT_BASE}/tickets/${ticketId}`,
-    emptyData: {},
-    fallbackData: normalizeTicket(supportDummyData.tickets.find((ticket) => ticket.id === ticketId) || supportDummyData.tickets[0] || {}),
+    emptyData: null,
+    fallbackData: normalizeTicket(
+      supportDummyData.tickets.find((ticket) => ticket.id === ticketId || ticket.ticketNumber === ticketId) || supportDummyData.tickets[0] || {}
+    ),
     extract: (payload) => normalizeTicket(payload?.ticket || payload || {})
   });
 

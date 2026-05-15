@@ -127,6 +127,11 @@ const NotificationRuntime = () => {
 
       if (event === NOTIFICATION_STREAM_EVENTS.BULK_READ) {
         store.markAllNotificationsReadLocally(data?.notificationIds || [], data?.readAt || new Date().toISOString());
+        return;
+      }
+
+      if (event === NOTIFICATION_STREAM_EVENTS.DELETED && data?.notificationId) {
+        store.removeNotificationLocally(data.notificationId);
       }
     };
 

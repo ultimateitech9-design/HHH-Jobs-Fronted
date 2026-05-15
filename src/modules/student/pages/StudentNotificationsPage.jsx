@@ -9,11 +9,13 @@ import {
   FiCheckCircle,
   FiClock,
   FiFileText,
+  FiTrash2,
   FiTrendingUp,
   FiUser
 } from 'react-icons/fi';
 import useNotificationStore from '../../../core/notifications/notificationStore';
 import {
+  deleteNotificationRequest,
   fetchNotifications,
   markAllNotificationsReadRequest,
   markNotificationReadRequest
@@ -154,6 +156,7 @@ const StudentNotificationsPage = () => {
   const setLoading = useNotificationStore((state) => state.setLoading);
   const markNotificationReadLocally = useNotificationStore((state) => state.markNotificationReadLocally);
   const markAllNotificationsReadLocally = useNotificationStore((state) => state.markAllNotificationsReadLocally);
+  const removeNotificationLocally = useNotificationStore((state) => state.removeNotificationLocally);
   const upsertNotification = useNotificationStore((state) => state.upsertNotification);
 
   const [filter, setFilter] = useState('all');
@@ -251,6 +254,22 @@ const StudentNotificationsPage = () => {
     } catch (error) {
       replaceNotifications(previousNotifications);
       setMessage(error.message || 'Unable to mark all as read.');
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    setMessage('');
+    const previousNotifications = [...notifications];
+    removeNotificationLocally(notificationId);
+    setExpandedNotifications((current) => current.filter((id) => id !== notificationId));
+
+    try {
+      await deleteNotificationRequest(notificationId);
+      setMessage('Notification removed from your inbox.');
+      window.setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      replaceNotifications(previousNotifications);
+      setMessage(error.message || 'Unable to remove notification.');
     }
   };
 
@@ -495,6 +514,15 @@ const StudentNotificationsPage = () => {
                               Open update
                             </Link>
                           ) : null}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteNotification(notification.id)}
+                            className={studentGhostButtonClassName}
+                          >
+                            <FiTrash2 size={15} />
+                            Delete
+                          </button>
                         </div>
                       </div>
                     </article>

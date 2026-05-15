@@ -136,7 +136,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               transition={{ duration: 0.55, delay: 0.52 }}
               className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-nowrap"
             >
-              <Link to="/portal/student/jobs">
+              <Link to="/jobs">
                 <motion.span
                   whileHover={{ scale: 1.04, y: -2 }}
                   whileTap={{ scale: 0.96 }}

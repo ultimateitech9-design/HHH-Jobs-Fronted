@@ -72,6 +72,54 @@ const emptyOverview = {
   revenueTrend: []
 };
 
+const SALES_FUNNEL_STAGE_ALIASES = Object.freeze({
+  new: 'new',
+  'new leads': 'new',
+  contacted: 'contacted',
+  qualified: 'qualified',
+  proposal: 'proposal',
+  converted: 'converted',
+  won: 'converted',
+  lost: 'lost'
+});
+
+const toTitleCase = (value) =>
+  String(value || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+const normalizeFunnelStage = (entry = {}) => {
+  const rawStage = String(entry.stage || entry.label || '').trim();
+  const normalizedKey = rawStage.toLowerCase();
+  const stage = SALES_FUNNEL_STAGE_ALIASES[normalizedKey] || normalizedKey || 'new';
+  const defaultLabel = stage === 'new'
+    ? 'New'
+    : stage === 'converted'
+      ? 'Converted'
+      : toTitleCase(stage);
+
+  return {
+    stage,
+    label: entry.label || defaultLabel,
+    count: Number(entry.count || 0)
+  };
+};
+
+const buildFunnelSummary = (funnel = [], fallbackRevenue = 0) => {
+  const totalLeads = funnel.reduce((sum, stage) => sum + Number(stage.count || 0), 0);
+  const convertedCount = funnel.find((stage) => stage.stage === 'converted')?.count || 0;
+
+  return {
+    totalLeads,
+    convertedCount,
+    conversionRate: totalLeads > 0 ? Math.round((convertedCount / totalLeads) * 100) : 0,
+    totalRevenue: Number(fallbackRevenue || 0)
+  };
+};
+
 export const getSalesOverview = async () =>
   safeRequest({
     path: `${SALES_BASE}/overview`,
@@ -121,17 +169,26 @@ export const getSalesFunnel = async () =>
   safeRequest({
     path: `${SALES_BASE}/funnel`,
     emptyData: { funnel: [], summary: { totalLeads: 0, convertedCount: 0, conversionRate: 0, totalRevenue: 0 } },
-    fallbackData: () => ({
-      funnel: salesDummyData.reports?.conversion || [],
-      summary: {
-        totalLeads: salesDummyData.overview?.stats?.openLeads || 0,
-        convertedCount: salesDummyData.overview?.stats?.convertedLeads || 0,
-        conversionRate: 53,
-        totalRevenue: salesDummyData.overview?.stats?.totalRevenue || 0
-      }
-    }),
-    extract: (payload) => ({
-      funnel: payload?.funnel || [],
-      summary: payload?.summary || { totalLeads: 0, convertedCount: 0, conversionRate: 0, totalRevenue: 0 }
-    })
+    fallbackData: () => {
+      const funnel = (salesDummyData.reports?.conversion || []).map(normalizeFunnelStage);
+      return {
+        funnel,
+        summary: buildFunnelSummary(funnel, salesDummyData.overview?.stats?.totalRevenue || 0)
+      };
+    },
+    extract: (payload) => {
+      const funnel = (payload?.funnel || []).map(normalizeFunnelStage);
+      const summary = payload?.summary || {};
+      const fallbackSummary = buildFunnelSummary(funnel, summary.totalRevenue);
+
+      return {
+        funnel,
+        summary: {
+          totalLeads: Number(summary.totalLeads ?? fallbackSummary.totalLeads),
+          convertedCount: Number(summary.convertedCount ?? fallbackSummary.convertedCount),
+          conversionRate: Number(summary.conversionRate ?? fallbackSummary.conversionRate),
+          totalRevenue: Number(summary.totalRevenue ?? fallbackSummary.totalRevenue)
+        }
+      };
+    }
   });

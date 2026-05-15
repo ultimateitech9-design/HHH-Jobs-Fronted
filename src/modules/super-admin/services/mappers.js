@@ -1,4 +1,5 @@
 import { PERMISSIONS } from '../constants/permissions';
+import { getManagementDisplayId } from '../../../utils/managedUsers';
 
 const firstRelation = (value) => {
   if (Array.isArray(value)) return value[0] || null;
@@ -8,7 +9,7 @@ const firstRelation = (value) => {
 const normalizeUserStatus = (user = {}) => {
   const rawStatus = String(user.status || '').toLowerCase();
 
-  if (rawStatus === 'blocked' || rawStatus === 'banned') return 'blocked';
+  if (rawStatus === 'blocked' || rawStatus === 'banned') return rawStatus;
   if (user.role === 'hr' && user.is_hr_approved === false) return 'pending';
 
   return rawStatus || 'active';
@@ -23,6 +24,7 @@ const mapJobStage = (value) => {
 
 export const mapApiUserToUi = (user = {}) => ({
   id: user.id,
+  displayId: getManagementDisplayId(user.id, user.role),
   name: user.name || '-',
   email: user.email || '-',
   role: user.role || 'student',

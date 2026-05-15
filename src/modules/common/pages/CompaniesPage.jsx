@@ -1,113 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FiBriefcase,
-  FiMapPin,
   FiSearch,
-  FiShield,
-  FiStar
+  FiShield
 } from 'react-icons/fi';
 
 import useAuthStore from '../../../core/auth/authStore';
 import { getCompanyEntryIntent } from '../utils/publicAccess';
 import { getPublicCompanies } from '../services/companyDirectoryApi';
-
-const formatCount = (value) => Number(value || 0).toLocaleString();
-
-const getInitials = (name = '') =>
-  String(name || '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('') || 'CO';
-
-const CompanyCard = ({ company, isAuthenticated, onOpenCompany }) => {
-  const headline = company.headline || 'Hiring on HHH Jobs';
-  const entryIntent = getCompanyEntryIntent({
-    companySlug: company.slug,
-    isAuthenticated,
-    totalJobs: company.totalJobs
-  });
-
-  const handleOpen = () => onOpenCompany(entryIntent);
-  const handleKeyDown = (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleOpen();
-    }
-  };
-
-  return (
-    <article
-      role="link"
-      tabIndex={0}
-      onClick={handleOpen}
-      onKeyDown={handleKeyDown}
-      className="group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/70 p-4 shadow-[0_4px_16px_rgba(15,23,42,0.03)] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-200/60 hover:bg-white hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-brand-400"
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/60 to-slate-50/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
-      
-      <div className="relative z-10 flex items-start gap-3">
-        <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] border border-slate-100 bg-white p-1.5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-transform duration-300 group-hover:scale-[1.03]">
-          {company.logoUrl ? (
-            <img
-              src={company.logoUrl}
-              alt={company.name}
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              className="h-full w-full object-contain"
-            />
-          ) : (
-            <span className="text-[11px] font-black tracking-wider text-slate-700">
-              {getInitials(company.name)}
-            </span>
-          )}
-        </div>
-        
-        <div className="min-w-0 flex-1 pt-0.5">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="truncate font-heading text-[15px] font-black text-slate-800 transition-colors group-hover:text-brand-600">
-              {company.name}
-            </h3>
-            {company.premium && (
-              <div className="shrink-0 rounded-full bg-gradient-to-r from-amber-100 to-amber-50 px-1.5 py-0.5 border border-amber-200/50" title="Premium Employer">
-                <FiStar size={10} className="fill-amber-400 text-amber-400 inline-block -mt-0.5" />
-              </div>
-            )}
-          </div>
-          <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500">
-            {headline}
-          </p>
-        </div>
-      </div>
-
-      <div className="relative z-10 mt-4 flex flex-col gap-1.5 border-t border-slate-100/80 pt-3.5">
-        <div className="flex items-center gap-2 text-[11px] font-medium text-slate-600">
-          <FiBriefcase className="shrink-0 text-slate-400" size={13} />
-          <span className="truncate">{[company.industry, company.companySize].filter(Boolean).join(' • ')}</span>
-        </div>
-        <div className="flex items-center gap-2 text-[11px] font-medium text-slate-600">
-          <FiMapPin className="shrink-0 text-slate-400" size={13} />
-          <span className="truncate">{company.location || 'Multi-city hiring'}</span>
-        </div>
-      </div>
-
-      {company.categories?.length > 0 && (
-        <div className="relative z-10 mt-3.5 flex flex-wrap gap-1.5">
-          {company.categories.slice(0, 3).map((category) => (
-            <span
-              key={`${company.id}-${category}`}
-              className="rounded-md bg-slate-50 px-2 py-0.5 text-[9.5px] font-semibold text-slate-500 border border-slate-100/80 transition-colors group-hover:bg-brand-50 group-hover:text-brand-600 group-hover:border-brand-100"
-            >
-              {category}
-            </span>
-          ))}
-        </div>
-      )}
-    </article>
-  );
-};
+import CompanyDirectoryCard from '../components/CompanyDirectoryCard';
 
 const CompaniesPage = () => {
   const navigate = useNavigate();
@@ -163,7 +64,13 @@ const CompaniesPage = () => {
   }, [directoryState.companies, search]);
 
 
-  const handleOpenCompany = (entryIntent) => {
+  const handleOpenCompany = (company) => {
+    const entryIntent = getCompanyEntryIntent({
+      companySlug: company.slug,
+      isAuthenticated,
+      totalJobs: company.totalJobs
+    });
+
     if (!entryIntent?.to) return;
     navigate(entryIntent.to, entryIntent.state ? { state: entryIntent.state } : undefined);
   };
@@ -226,11 +133,13 @@ const CompaniesPage = () => {
             {filteredCompanies.length > 0 ? (
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredCompanies.map((company) => (
-                  <CompanyCard
-                    key={company.id}
+                  <CompanyDirectoryCard
+                    key={company.id || company.slug}
                     company={company}
-                    isAuthenticated={isAuthenticated}
                     onOpenCompany={handleOpenCompany}
+                    primaryLabel={isAuthenticated ? 'Open company' : 'Login to Unlock'}
+                    secondaryTo="/jobs"
+                    secondaryLabel="Browse jobs"
                   />
                 ))}
               </div>

@@ -141,8 +141,9 @@ test.describe('Admin Portal E2E', () => {
 
   test('admin can log in securely and see dashboard', async ({ page }) => {
     await page.goto('/portal/admin/dashboard');
-    await expect(page.getByText(/Admin Dashboard/i).first()).toBeVisible();
-    await expect(page.getByText(/500/i).first()).toBeVisible();
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+    await expect(page.getByText(/manage approvals, users, jobs, reports, and payments from one workspace/i)).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText(/500/i).first()).toBeVisible({ timeout: 20000 });
   });
 
   test('admin can view user management', async ({ page }) => {

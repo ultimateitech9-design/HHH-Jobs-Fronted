@@ -48,12 +48,15 @@ const SPEECH_RECOGNITION =
     : null;
 
 const defaultWhiteboard = { lines: [], updatedAt: null };
+const defaultCodeEditorContent = '// Add prompts or coding questions here.\nfunction solve(input) {\n  return input;\n}\n';
 const defaultRtcConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' }
   ]
 };
+
+const serializeWorkspaceValue = (value) => JSON.stringify(value ?? null);
 
 const formatDateTime = (value) => {
   if (!value) return '-';
@@ -122,7 +125,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const [noShowReason, setNoShowReason] = useState('');
   const [whiteboardData, setWhiteboardData] = useState(defaultWhiteboard);
   const [codeEditorLanguage, setCodeEditorLanguage] = useState('javascript');
-  const [codeEditorContent, setCodeEditorContent] = useState('// Add prompts or coding questions here.\nfunction solve(input) {\n  return input;\n}\n');
+  const [codeEditorContent, setCodeEditorContent] = useState(defaultCodeEditorContent);
   const [codeRunState, setCodeRunState] = useState({
     status: 'idle',
     output: '',
@@ -147,6 +150,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
   const workspacePaneRef = useRef(null);
   const mainStageContainerRef = useRef(null);
   const previewStageRef = useRef(null);
@@ -173,6 +177,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const sidebarResizeStateRef = useRef(null);
   const previewDragStateRef = useRef(null);
   const codeRunnerRef = useRef(null);
+  const lastSyncedWhiteboardRef = useRef(serializeWorkspaceValue(defaultWhiteboard));
+  const lastSyncedCodeLanguageRef = useRef('javascript');
+  const lastSyncedCodeContentRef = useRef(defaultCodeEditorContent);
 
   const payload = roomState.payload;
   const interview = payload?.interview || null;
@@ -354,15 +361,29 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       worker.postMessage({ source });
     });
 
+  const playMediaElement = (element) => {
+    if (!element || typeof element.play !== 'function') return;
+    const playAttempt = element.play();
+    if (playAttempt && typeof playAttempt.catch === 'function') {
+      playAttempt.catch(() => {});
+    }
+  };
+
   const syncLocalVideo = (stream) => {
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = stream || null;
+      playMediaElement(localVideoRef.current);
     }
   };
 
   const syncRemoteVideo = (stream) => {
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = stream || null;
+      playMediaElement(remoteVideoRef.current);
+    }
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.srcObject = stream || null;
+      playMediaElement(remoteAudioRef.current);
     }
   };
 
@@ -370,6 +391,17 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     setRoomState({ loading: false, error: '', payload: nextPayload });
     const nextInterview = nextPayload?.interview || {};
     const nextPermissions = nextPayload?.permissions || {};
+    const nextWhiteboardData = nextInterview.whiteboard_data || defaultWhiteboard;
+    const nextCodeEditorLanguage = nextInterview.code_editor_language || 'javascript';
+    const nextCodeEditorContent = nextInterview.code_editor_content || defaultCodeEditorContent;
+    const previousWhiteboardSnapshot = lastSyncedWhiteboardRef.current;
+    const previousCodeLanguage = lastSyncedCodeLanguageRef.current;
+    const previousCodeContent = lastSyncedCodeContentRef.current;
+
+    lastSyncedWhiteboardRef.current = serializeWorkspaceValue(nextWhiteboardData);
+    lastSyncedCodeLanguageRef.current = nextCodeEditorLanguage;
+    lastSyncedCodeContentRef.current = nextCodeEditorContent;
+
     const serverSegments = mergeUniqueSegments([], nextInterview.transcript_segments || []);
     setTranscriptSegments((current) => {
       if (!didHydrateRef.current || !nextPermissions.canManage) {
@@ -384,14 +416,20 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       setRating(Number(nextInterview.rating || 4));
       setNoShowCandidate(Boolean(nextInterview.no_show_candidate));
       setNoShowReason(nextInterview.no_show_reason || '');
-      setWhiteboardData(nextInterview.whiteboard_data || defaultWhiteboard);
-      setCodeEditorLanguage(nextInterview.code_editor_language || 'javascript');
-      setCodeEditorContent(nextInterview.code_editor_content || '// Add prompts or coding questions here.\nfunction solve(input) {\n  return input;\n}\n');
+      setWhiteboardData(nextWhiteboardData);
+      setCodeEditorLanguage(nextCodeEditorLanguage);
+      setCodeEditorContent(nextCodeEditorContent);
       didHydrateRef.current = true;
-    } else if (!nextPermissions.canManage) {
-      setWhiteboardData(nextInterview.whiteboard_data || defaultWhiteboard);
-      setCodeEditorLanguage(nextInterview.code_editor_language || 'javascript');
-      setCodeEditorContent(nextInterview.code_editor_content || '');
+    } else {
+      if (!nextPermissions.canManage || serializeWorkspaceValue(whiteboardData) === previousWhiteboardSnapshot) {
+        setWhiteboardData(nextWhiteboardData);
+      }
+      if (!nextPermissions.canManage || codeEditorLanguage === previousCodeLanguage) {
+        setCodeEditorLanguage(nextCodeEditorLanguage);
+      }
+      if (!nextPermissions.canManage || codeEditorContent === previousCodeContent) {
+        setCodeEditorContent(nextCodeEditorContent);
+      }
     }
   };
 
@@ -837,6 +875,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       return;
     }
 
+    if (type === 'workspace-sync' && payloadBody.kind === 'workspace-updated') {
+      await loadRoom({ hydrateDrafts: false });
+      return;
+    }
+
     if (type === 'reconnect' && isManager && localStreamRef.current) {
       await maybeCreateOffer();
     }
@@ -1010,6 +1053,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   }, [isMicOn]);
 
   useEffect(() => {
+    syncLocalVideo(localStreamRef.current);
+    syncRemoteVideo(remoteStreamRef.current);
+  }, [activeRoomTab, isLocalPrimaryStage, remoteStreamReady]);
+
+  useEffect(() => {
     if (!whiteboardCanvasRef.current) return;
     const canvas = whiteboardCanvasRef.current;
     const context = canvas.getContext('2d');
@@ -1059,6 +1107,14 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         setIsSavingWorkspace(true);
         const response = await updateInterviewWorkspace(interviewId, updatePayload);
         applyPayload(response, { hydrateDrafts: false });
+        sendInterviewSignal(interviewId, {
+          signalType: 'workspace-sync',
+          payload: {
+            kind: 'workspace-updated',
+            updatedAt: new Date().toISOString(),
+            actor: isManager ? 'hr' : 'candidate'
+          }
+        }).catch(() => {});
       } catch (error) {
         pendingTranscriptSegmentsRef.current = transcriptAppend.concat(pendingTranscriptSegmentsRef.current);
       } finally {
@@ -1287,6 +1343,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
       {roomState.error && (
         <div className="flex items-center gap-2 border-b border-red-200 bg-red-50 px-4 py-2 text-[12px] font-medium text-red-700">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />{roomState.error}

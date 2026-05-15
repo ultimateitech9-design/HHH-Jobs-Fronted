@@ -27,7 +27,7 @@ const hrNavItems = [
   { to: '/portal/hr/campus-connections', label: 'Campus Connections', icon: FiLink },
   { to: '/portal/hr/campus-connections/activity/sent', label: 'Campus Activity', icon: FiClock },
   { to: '/portal/hr/campus-drives', label: 'Campus Drives', icon: FiBook },
-  { to: '/portal/hr/notifications', label: 'Hired', icon: FiBell },
+  { to: '/portal/hr/notifications', label: 'Notifications', icon: FiBell },
   { to: '/portal/hr/analytics', label: 'Reports', icon: FiFileText },
   { to: '/portal/hr/employee-verification', label: 'Employee Verification', icon: FiCheckSquare },
   { to: '/portal/hr/profile', label: 'Company Profile', icon: FaBuilding }

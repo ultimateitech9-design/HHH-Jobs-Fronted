@@ -9,12 +9,14 @@ import {
   FiClock,
   FiFileText,
   FiLink,
+  FiTrash2,
   FiTrendingUp,
   FiUsers
 } from 'react-icons/fi';
 import SectionHeader from '../../../shared/components/SectionHeader';
 import useNotificationStore from '../../../core/notifications/notificationStore';
 import {
+  deleteNotificationRequest,
   fetchNotifications,
   markAllNotificationsReadRequest,
   markNotificationReadRequest
@@ -270,6 +272,7 @@ const CampusNotificationsPage = () => {
   const setLoading = useNotificationStore((state) => state.setLoading);
   const markNotificationReadLocally = useNotificationStore((state) => state.markNotificationReadLocally);
   const markAllNotificationsReadLocally = useNotificationStore((state) => state.markAllNotificationsReadLocally);
+  const removeNotificationLocally = useNotificationStore((state) => state.removeNotificationLocally);
   const upsertNotification = useNotificationStore((state) => state.upsertNotification);
 
   const [pageError, setPageError] = useState('');
@@ -432,6 +435,21 @@ const CampusNotificationsPage = () => {
     } catch (error) {
       replaceNotifications(previousNotifications);
       setMessage(error.message || 'Unable to mark all notifications as read.');
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    setMessage('');
+    const previousNotifications = [...notifications];
+    removeNotificationLocally(notificationId);
+
+    try {
+      await deleteNotificationRequest(notificationId);
+      setMessage('Campus notification deleted.');
+      window.setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      replaceNotifications(previousNotifications);
+      setMessage(error.message || 'Unable to delete notification.');
     }
   };
 
@@ -602,6 +620,14 @@ const CampusNotificationsPage = () => {
                         {actions.map((action) => (
                           <ActionLink key={`${notification.id}-${action.label}`} action={action} />
                         ))}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteNotification(notification.id)}
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <FiTrash2 size={14} />
+                          Delete
+                        </button>
                       </div>
                     </div>
                   </article>

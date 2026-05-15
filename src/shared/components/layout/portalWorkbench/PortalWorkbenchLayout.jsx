@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getCurrentUser } from '../../../../utils/auth';
+import {
+  getCurrentUser,
+  getNotificationPathByRole,
+  getPortalSwitchOptions,
+  getProfilePathByRole,
+  resolvePortalViewRole
+} from '../../../../utils/auth';
 import useAuthStore from '../../../../core/auth/authStore';
 import PortalWorkbenchHeader from './PortalWorkbenchHeader';
 import PortalWorkbenchMobileDrawer from './PortalWorkbenchMobileDrawer';
@@ -60,17 +66,23 @@ const PortalWorkbenchLayout = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const flattenedNavItems = useMemo(() => flattenNavItems(navItems), [navItems]);
+  const activePortalRole = useMemo(
+    () => resolvePortalViewRole({ userRole: user?.role, portalKey }),
+    [portalKey, user?.role]
+  );
+  const roleSwitchOptions = useMemo(
+    () => getPortalSwitchOptions(user?.role, activePortalRole),
+    [activePortalRole, user?.role]
+  );
 
   const activeItem = useMemo(
     () => flattenedNavItems.find((item) => pathMatches(location.pathname, item.to)) || flattenedNavItems[0] || navItems[0],
     [flattenedNavItems, location.pathname, navItems]
   );
+  const showProfileShortcut = ['student', 'retired_employee'].includes(String(user?.role || '').trim().toLowerCase());
 
-  const profilePath = user?.role === 'hr'
-    ? '/portal/hr/profile'
-    : user?.role === 'student' || user?.role === 'retired_employee'
-      ? '/portal/student/profile'
-      : getFirstNavPath(navItems);
+  const profilePath = getProfilePathByRole(activePortalRole) || getFirstNavPath(navItems);
+  const notificationPath = getNotificationPathByRole(activePortalRole);
   const resolvedBrandPath = brandPath || profilePath || getFirstNavPath(navItems);
 
   const avatarLetter = String(user?.name || user?.email || 'U').trim().slice(0, 1).toUpperCase();
@@ -137,7 +149,10 @@ const PortalWorkbenchLayout = ({
           headerNavItems={headerNavItems}
           headerSearchPlaceholder={headerSearchPlaceholder}
           headerVariant={headerVariant}
+          notificationPath={notificationPath}
           profilePath={profilePath}
+          roleSwitchOptions={roleSwitchOptions}
+          showProfileShortcut={showProfileShortcut}
           searchPlaceholder={support?.searchPlaceholder}
           subtitle={subtitle}
           support={support}
@@ -180,7 +195,10 @@ const PortalWorkbenchLayout = ({
               headerNavItems={headerNavItems}
               headerSearchPlaceholder={headerSearchPlaceholder}
               headerVariant={headerVariant}
+              notificationPath={notificationPath}
               profilePath={profilePath}
+              roleSwitchOptions={roleSwitchOptions}
+              showProfileShortcut={showProfileShortcut}
               searchPlaceholder={support?.searchPlaceholder}
               subtitle={subtitle}
               support={support}

@@ -8,6 +8,7 @@ const tinyPng = Buffer.from(
 const companiesApiPattern = /^https?:\/\/[^/]+\/companies(?:\?.*)?$/i;
 const externalJobsApiPattern = /^https?:\/\/[^/]+\/external-jobs(?:\/[^?#]+)?(?:\?.*)?$/i;
 const jobsApiPattern = /^https?:\/\/[^/]+\/jobs(?:\/[^?#]+)?(?:\?.*)?$/i;
+const uploadResumeApiPattern = /^https?:\/\/[^/]+\/student\/upload\/resume(?:\?.*)?$/i;
 
 const matchesPath = (value, path) => {
   try {
@@ -416,33 +417,37 @@ test.describe('Student Portal E2E', () => {
 
     await page.getByRole('link', { name: /browse jobs/i }).first().click();
     await expect(page).toHaveURL(/\/portal\/student\/jobs$/);
-    await expect(page.getByRole('heading', { name: /search and apply jobs/i })).toBeVisible();
+    await expect(page.getByText('Search and Apply Jobs', { exact: true })).toBeVisible();
   });
 
   test('profile resume import saves profile-ready data', async ({ page }) => {
     await page.goto('/portal/student/profile?section=resume');
-    await expect(page.getByRole('heading', { name: 'Resume', exact: true })).toBeVisible();
+    await page.locator('#resume').scrollIntoViewIfNeeded();
+    await expect(page.locator('#resume').getByRole('heading', { name: 'Resume', exact: true })).toBeVisible();
 
-    await page.getByRole('textbox', { name: /resume text/i }).fill(
-      'Mock Student\nFrontend Developer\nstudent@example.com\nSkills\nReact, TypeScript'
-    );
     const resumeImport = page.waitForResponse((response) => matchesPath(response.url(), '/student/profile/import-resume'));
+    const resumeUpload = page.waitForResponse((response) => uploadResumeApiPattern.test(response.url()));
     const importedProfileSave = page.waitForResponse(
       (response) => matchesPath(response.url(), '/student/profile') && response.request().method() === 'PUT'
     );
-    await page.getByRole('button', { name: /import from text/i }).click();
+    await page.locator('input[type="file"]').nth(1).setInputFiles({
+      name: 'resume.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('Mock Student\nFrontend Developer\nstudent@example.com\nSkills\nReact, TypeScript')
+    });
     await resumeImport;
+    await resumeUpload;
     await importedProfileSave;
 
-    await expect(page.getByText(/resume ready/i)).toBeVisible();
-    await expect(page.getByRole('textbox', { name: /resume text/i })).toHaveValue('Imported resume text');
-    await expect(page.locator('input[placeholder="Course or degree"]').first()).toHaveValue('B.Tech Computer Science');
-    await expect(page.getByRole('textbox', { name: /add a recruiter-friendly profile headline/i })).toHaveValue('Frontend Developer');
+    await expect(page.getByText(/resume ready/i).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /download resume text/i })).toBeVisible();
+    await expect(page.getByText('B.Tech Computer Science')).toBeVisible();
+    await expect(page.getByText('Frontend Developer').first()).toBeVisible();
   });
 
   test('profile supports avatar upload and education entry edits', async ({ page }) => {
     await page.goto('/portal/student/profile?section=resume');
-    await expect(page.getByRole('button', { name: /upload photo/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /update profile photo/i })).toBeVisible();
 
     const avatarUpdate = page.waitForResponse(
       (response) => matchesPath(response.url(), '/student/profile') && response.request().method() === 'PUT'
@@ -453,15 +458,22 @@ test.describe('Student Portal E2E', () => {
       buffer: tinyPng
     });
     await avatarUpdate;
-    await expect(page.getByRole('button', { name: /preview profile photo/i })).toBeVisible();
+    await expect(page.getByAltText('Profile avatar')).toBeVisible();
 
     await page.getByRole('button', { name: 'Add education', exact: true }).click();
-    await page.locator('input[placeholder="Course or degree"]').nth(1).fill('MBA');
-    await page.locator('input[placeholder="Institute name"]').nth(1).fill('Demo Business School');
-    await page.locator('input[placeholder="Start year"]').nth(1).fill('2026');
-    await page.locator('input[placeholder="End year"]').nth(1).fill('2028');
-    await expect(page.locator('input[placeholder="Course or degree"]').nth(1)).toHaveValue('MBA');
-    await expect(page.locator('input[placeholder="Institute name"]').nth(1)).toHaveValue('Demo Business School');
+    await expect(page.getByRole('heading', { name: 'Education', exact: true }).last()).toBeVisible();
+    await page.getByLabel(/University\/Institute/i).fill('Demo Business School');
+    await page.getByLabel(/^Course/i).fill('MBA');
+    await page.getByLabel(/Specialization/i).fill('Business Administration');
+    await page.getByPlaceholder('Starting year').fill('2026');
+    await page.getByPlaceholder('Ending year').fill('2028');
+    const educationSave = page.waitForResponse(
+      (response) => matchesPath(response.url(), '/student/profile') && response.request().method() === 'PUT'
+    );
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await educationSave;
+    await expect(page.getByText(/education updated/i)).toBeVisible();
+    await expect(page.getByText('Demo Business School')).toBeVisible();
   });
 
   test('jobs apply failure points students to resume section', async ({ page }) => {
@@ -496,10 +508,10 @@ test.describe('Student Portal E2E', () => {
     await expect(page.getByRole('heading', { name: /frontend developer/i })).toBeVisible();
 
     await page.goto('/portal/student/ats');
-    await expect(page.getByRole('heading', { name: /build your ats test/i })).toBeVisible();
-    await page.getByRole('button', { name: /run ats check/i }).click();
+    await expect(page.getByRole('heading', { name: /resume ats analyzer/i })).toBeVisible();
+    await page.getByRole('button', { name: /analyze ats fit/i }).click();
 
-    await expect(page.getByText(/ats check completed successfully/i)).toBeVisible();
+    await expect(page.getByText(/ats check completed with job-specific ai analysis/i)).toBeVisible();
     await expect(page.getByText('82%').first()).toBeVisible();
     await expect(page.getByText('Redux')).toBeVisible();
   });

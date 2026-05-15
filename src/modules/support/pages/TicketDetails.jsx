@@ -1,14 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { FiAlertTriangle, FiLock, FiX, FiClock } from 'react-icons/fi';
 import SupportHeader from '../components/SupportHeader';
 import TicketReplyBox from '../components/TicketReplyBox';
 import TicketStatusBadge from '../components/TicketStatusBadge';
 import { formatDateTime } from '../utils/formatDate';
 import { getTicketDetails, replyToTicket, escalateTicket, addInternalNote, updateTicket } from '../services/ticketApi';
+import { getTicketDisplayId } from '../utils/ticketHelpers';
 
 const TicketDetails = () => {
   const { ticketId: ticketIdParam } = useParams();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [ticket, setTicket] = useState(null);
   const [reply, setReply] = useState('');
@@ -25,6 +27,7 @@ const TicketDetails = () => {
   const [internalNotes, setInternalNotes] = useState([]);
   const [assignedTo, setAssignedTo] = useState('');
   const ticketId = ticketIdParam || searchParams.get('ticketId') || searchParams.get('id') || '';
+  const successMessage = String(location.state?.successMessage || '').trim();
 
   const slaDeadline = useMemo(() => {
     if (!ticket?.createdAt) return null;
@@ -35,19 +38,32 @@ const TicketDetails = () => {
   const slaHoursLeft = slaDeadline ? Math.max(0, Math.round((slaDeadline - new Date()) / (60 * 60 * 1000))) : null;
 
   useEffect(() => {
+    if (!ticketId) {
+      setTicket(null);
+      setAssignedTo('');
+      setInternalNotes([]);
+      setError('');
+      setLoading(false);
+      return undefined;
+    }
+
+    let active = true;
+
     const load = async () => {
       setLoading(true);
       const response = await getTicketDetails(ticketId);
+      if (!active) return;
       const data = response.data || null;
       setTicket(data);
       setAssignedTo(data?.assignedTo || '');
-      if (data?.replies) {
-        setInternalNotes(data.replies.filter(r => r.isInternal));
-      }
+      setInternalNotes(Array.isArray(data?.replies) ? data.replies.filter((item) => item.isInternal) : []);
       setError(response.error || '');
       setLoading(false);
     };
     load();
+    return () => {
+      active = false;
+    };
   }, [ticketId]);
 
   const handleReply = async () => {
@@ -156,7 +172,8 @@ const TicketDetails = () => {
       )}
 
       {error ? <p className="form-error">{error}</p> : null}
-      {!loading && !ticketId ? <p className="module-note">No ticket ID was provided.</p> : null}
+      {successMessage ? <p className="form-success">{successMessage}</p> : null}
+      {!loading && !ticketId ? <p className="module-note">Open a ticket from the queue to view its full details.</p> : null}
       {loading ? <p className="module-note">Loading ticket details...</p> : null}
 
       {!loading && ticket ? (
@@ -205,7 +222,7 @@ const TicketDetails = () => {
               <button type="button" className="btn-secondary" onClick={() => handleTicketUpdate({ assignedTo })}>Save Assignee</button>
             </div>
             <div className="dash-list">
-              <li><strong>Ticket ID</strong><span>{ticket.id}</span></li>
+              <li><strong>Ticket ID</strong><span>{getTicketDisplayId(ticket)}</span></li>
               <li><strong>Customer</strong><span>{ticket.customer}</span></li>
               <li><strong>Category</strong><span>{ticket.category}</span></li>
               <li><strong>Priority</strong><span><TicketStatusBadge value={ticket.priority} /></span></li>

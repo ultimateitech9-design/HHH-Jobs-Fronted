@@ -39,7 +39,7 @@ const useUsers = () => {
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const search = String(filters.search || '').toLowerCase();
-      const matchesSearch = !search || [user.name, user.email, user.company, user.id].some((value) => String(value || '').toLowerCase().includes(search));
+      const matchesSearch = !search || [user.name, user.email, user.company, user.id, user.displayId].some((value) => String(value || '').toLowerCase().includes(search));
       const matchesRole = !filters.role || user.role === filters.role;
       const matchesStatus = !filters.status || user.status === filters.status;
       return matchesSearch && matchesRole && matchesStatus;

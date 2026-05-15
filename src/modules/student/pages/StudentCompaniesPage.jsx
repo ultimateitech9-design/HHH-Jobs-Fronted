@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  FiArrowRight,
   FiFilter,
   FiLayers,
-  FiMapPin,
   FiSearch,
-  FiStar
 } from 'react-icons/fi';
 import {
   StudentEmptyState,
@@ -16,6 +13,7 @@ import {
 } from '../components/StudentExperience';
 import { getPublicCompanies } from '../../common/services/companyDirectoryApi';
 import { getCompanyEntryIntent } from '../../common/utils/publicAccess';
+import CompanyDirectoryCard from '../../common/components/CompanyDirectoryCard';
 
 const FILTER_OPTIONS = [
   { key: 'all', label: 'All companies' },
@@ -23,20 +21,6 @@ const FILTER_OPTIONS = [
   { key: 'portal', label: 'Portal employers' },
   { key: 'live-feed', label: 'Live feed' }
 ];
-
-const companyPrimaryActionClassName =
-  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-brand-500 via-brand-500 to-warning-400 px-3.5 py-2 text-[12px] font-black text-white shadow-[0_12px_22px_rgba(229,155,23,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_28px_rgba(229,155,23,0.24)]';
-
-const companySecondaryActionClassName =
-  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700';
-
-const getInitials = (name = '') =>
-  String(name || '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('') || 'CO';
 
 const StudentCompaniesPage = () => {
   const navigate = useNavigate();
@@ -180,87 +164,14 @@ const StudentCompaniesPage = () => {
             ) : filteredCompanies.length > 0 ? (
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredCompanies.map((company) => (
-                  <article
+                  <CompanyDirectoryCard
                     key={company.id || company.slug}
-                    className="flex h-full min-w-0 flex-col rounded-[1rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-3 shadow-[0_10px_20px_rgba(15,23,42,0.05)]"
-                  >
-                    <div className="flex items-start justify-between gap-2.5">
-                      <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                        {company.logoUrl ? (
-                          <img
-                            src={company.logoUrl}
-                            alt={company.name}
-                            loading="lazy"
-                            referrerPolicy="no-referrer"
-                            className="h-10 w-10 shrink-0 rounded-xl border border-slate-200 bg-white object-contain p-1.5"
-                          />
-                        ) : (
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-sm font-black text-brand-700">
-                            {getInitials(company.name)}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <h3 className="truncate text-base font-bold text-navy">{company.name}</h3>
-                          <p className="mt-0.5 line-clamp-2 text-[12px] leading-4 text-slate-500">
-                            {company.headline || company.industry || 'Hiring on HHH Jobs'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {company.premium ? (
-                        <span className="inline-flex w-fit shrink-0 items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-700">
-                          <FiStar size={10} />
-                          Premium
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <div className="mt-2.5 grid grid-cols-2 gap-2">
-                      <div className="rounded-[0.8rem] border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-sm text-slate-600">
-                        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Open roles</p>
-                        <p className="mt-1 text-lg font-bold text-navy">{Number(company.totalJobs || 0)}</p>
-                      </div>
-                      <div className="rounded-[0.8rem] border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-sm text-slate-600">
-                        <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-                          <FiMapPin size={11} />
-                          Location
-                        </p>
-                        <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-4 text-slate-800">{company.location || 'Multi-city hiring'}</p>
-                      </div>
-                    </div>
-
-                    <p className="mt-2.5 line-clamp-2 text-[12px] leading-4 text-slate-600">
-                      {company.description || 'Open this company to see its available roles and hiring page.'}
-                    </p>
-
-                    {company.categories?.length ? (
-                      <div className="mt-2.5 flex flex-wrap gap-1.5">
-                        {company.categories.slice(0, 2).map((category) => (
-                          <span
-                            key={`${company.id || company.slug}-${category}`}
-                            className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600"
-                          >
-                            {category}
-                          </span>
-                        ))}
-                        {company.categories.length > 2 ? (
-                          <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-400">
-                            +{company.categories.length - 2}
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : null}
-
-                    <div className="mt-auto flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap">
-                      <button type="button" className={`${companyPrimaryActionClassName} w-full sm:w-auto`} onClick={() => openCompany(company)}>
-                        Open company
-                        <FiArrowRight size={13} />
-                      </button>
-                      <Link to="/portal/student/jobs" className={`${companySecondaryActionClassName} w-full sm:w-auto`}>
-                        Browse jobs
-                      </Link>
-                    </div>
-                  </article>
+                    company={company}
+                    onOpenCompany={openCompany}
+                    primaryLabel="Open company"
+                    secondaryTo="/portal/student/jobs"
+                    secondaryLabel="Browse jobs"
+                  />
                 ))}
               </div>
             ) : (

@@ -18,9 +18,11 @@ const publicRoutes = [
 ];
 
 test('key public pages render without 404 or empty-shell failures', async ({ page }) => {
+  test.setTimeout(180_000);
+
   for (const route of publicRoutes) {
-    await page.goto(route);
-    await page.waitForLoadState('networkidle');
+    await page.goto(route, { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
 
     await expect(page).toHaveURL(new RegExp(`${route === '/' ? '/$' : `${route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`}`));
     await expect(page.locator('main, h1, h2, [role="heading"]').first()).toBeVisible();

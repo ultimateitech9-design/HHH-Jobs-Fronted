@@ -11,7 +11,9 @@ import {
   FiTrash2, 
   FiPlus, 
   FiKey, 
-  FiChevronDown 
+  FiChevronDown,
+  FiEye,
+  FiEyeOff
 } from 'react-icons/fi';
 import {
   formatDateTime,
@@ -24,7 +26,8 @@ import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/p
 import {
   createManagedAccount,
   deleteManagedAccount,
-  getManagedAccounts
+  getManagedAccounts,
+  getManagementDisplayId
 } from '../../../utils/managedUsers';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,6 +38,33 @@ const initialFilters = {
   hrClearance: 'all',
   search: ''
 };
+
+const ADMIN_USER_ROLE_OPTIONS = [
+  { value: 'all', label: 'All Roles' },
+  { value: 'admin', label: 'Management' },
+  { value: 'hr', label: 'Company HR' },
+  { value: 'student', label: 'Student / Seeker' },
+  { value: 'retired_employee', label: 'Retired Employee' },
+  { value: 'support', label: 'Support' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'accounts', label: 'Accounts' },
+  { value: 'dataentry', label: 'Data Entry' },
+  { value: 'platform', label: 'Platform Ops' },
+  { value: 'audit', label: 'Audit Desk' },
+  { value: 'campus_connect', label: 'Campus Connect' },
+  { value: 'company_admin', label: 'Company Admin' }
+];
+
+const ADMIN_MANAGED_ROLE_OPTIONS = [
+  { value: 'admin', label: 'Management' },
+  { value: 'platform', label: 'Platform Ops' },
+  { value: 'audit', label: 'Audit Desk' },
+  { value: 'dataentry', label: 'Data Entry' },
+  { value: 'support', label: 'Support' },
+  { value: 'accounts', label: 'Accounts' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'campus_connect', label: 'Campus Connect' }
+];
 
 const toApiFilters = (filters) => ({
   role: filters.role === 'all' ? '' : filters.role,
@@ -60,12 +90,13 @@ const AdminUsersPage = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [busyAction, setBusyAction] = useState('');
+  const [showAuthKey, setShowAuthKey] = useState(false);
   const [accountForm, setAccountForm] = useState({
     name: '',
     phone: '',
     email: '',
     password: '',
-    role: 'dataentry',
+    role: 'admin',
     department: 'Operations'
   });
   const normalizedAccountEmail = String(accountForm.email || '').trim().toLowerCase();
@@ -141,10 +172,10 @@ const AdminUsersPage = () => {
         phone: '',
         email: '',
         password: '',
-        role: 'dataentry',
+        role: 'admin',
         department: 'Operations'
       });
-      setMessage(`${created.name} account created for ${created.role}. Login will open ${getDashboardPathByRole(created.role)}.`);
+      setMessage(`${created.name} account ${getManagementDisplayId(created.id, created.role)} created for ${created.role}. Login will open ${getDashboardPathByRole(created.role)}.`);
       setTimeout(() => setMessage(''), 4000);
     } catch (actionError) {
       setError(String(actionError.message || 'Unable to create managed account.'));
@@ -214,6 +245,17 @@ const AdminUsersPage = () => {
       return filters.hrClearance === 'verified' ? Boolean(user.is_hr_approved) : !user.is_hr_approved;
     });
   }, [users, filters.hrClearance]);
+
+  const securitySearchSuggestions = useMemo(() => {
+    const values = new Set();
+    users.forEach((user) => {
+      [user.name, user.email, user.role, user.status]
+        .map((value) => String(value || '').trim())
+        .filter(Boolean)
+        .forEach((value) => values.add(value));
+    });
+    return Array.from(values).sort((left, right) => left.localeCompare(right)).slice(0, 30);
+  }, [users]);
 
   const applyLocalPatch = (userId, patch) => {
     setUsers((current) => current.map((user) => (user.id === userId ? { ...user, ...patch } : user)));
@@ -347,19 +389,30 @@ const AdminUsersPage = () => {
                 </div>
                 <div className="space-y-1.5 col-span-2 sm:col-span-1">
                   <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Auth Key</label>
-                  <input
-                    type="password"
-                    value={accountForm.password}
-                    placeholder="Strong auth key"
-                    onChange={(e) => {
-                      setAccountForm({ ...accountForm, password: e.target.value });
-                      if (error) setError('');
-                    }}
-                    autoComplete="new-password"
-                    minLength={8}
-                    aria-invalid={Boolean(authKeyPolicyError)}
-                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-sm font-medium focus:ring-2 focus:ring-brand-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showAuthKey ? 'text' : 'password'}
+                      value={accountForm.password}
+                      placeholder="Strong auth key"
+                      onChange={(e) => {
+                        setAccountForm({ ...accountForm, password: e.target.value });
+                        if (error) setError('');
+                      }}
+                      autoComplete="new-password"
+                      minLength={8}
+                      aria-invalid={Boolean(authKeyPolicyError)}
+                      className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 pr-10 text-sm font-medium focus:ring-2 focus:ring-brand-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAuthKey((current) => !current)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-700"
+                      aria-label={showAuthKey ? 'Hide password' : 'Show password'}
+                      title={showAuthKey ? 'Hide password' : 'Show password'}
+                    >
+                      {showAuthKey ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                    </button>
+                  </div>
                   <p className={`text-[11px] font-semibold ${authKeyPolicyError ? 'text-rose-600' : 'text-neutral-500'}`}>{authKeyValidationMessage}</p>
                 </div>
               </div>
@@ -373,10 +426,9 @@ const AdminUsersPage = () => {
                       onChange={(e) => setAccountForm({ ...accountForm, role: e.target.value })}
                       className="w-full appearance-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-500"
                     >
-                      <option value="dataentry">Data Entry</option>
-                      <option value="support">Support</option>
-                      <option value="accounts">Accounts</option>
-                      <option value="sales">Sales</option>
+                      {ADMIN_MANAGED_ROLE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
                     </select>
                     <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
                   </div>
@@ -433,6 +485,9 @@ const AdminUsersPage = () => {
                       <td className="p-3 pl-5 align-middle">
                         <div className="text-sm font-bold text-primary">{acc.name}</div>
                         <div className="font-medium text-neutral-500 text-xs">{acc.email}</div>
+                        <div className="mt-1 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                          ID {getManagementDisplayId(acc.id, acc.role)}
+                        </div>
                       </td>
                       <td className="p-3">
                         <span className="inline-block rounded-md border border-brand-100 bg-brand-50 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-brand-700">
@@ -478,10 +533,9 @@ const AdminUsersPage = () => {
                   onChange={(e) => setFilters({ ...filters, role: e.target.value })}
                   className="w-full appearance-none rounded-xl border border-neutral-200 bg-white py-2 pl-3 pr-8 text-sm font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500 sm:min-w-[145px]"
                 >
-                  <option value="all">All Roles</option>
-                  <option value="admin">System Admin</option>
-                  <option value="hr">Company HR</option>
-                  <option value="student">Student/Seeker</option>
+                  {ADMIN_USER_ROLE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
                 <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
               </div>
@@ -520,8 +574,15 @@ const AdminUsersPage = () => {
                   placeholder="Search by name or email"
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   onKeyDown={(e) => e.key === 'Enter' && loadUsers(filters)}
+                  list="admin-security-user-suggestions"
+                  autoComplete="off"
                   className="w-full rounded-xl border border-neutral-200 bg-white py-2 pl-9 pr-3 text-sm font-medium shadow-sm focus:ring-2 focus:ring-brand-500"
                 />
+                <datalist id="admin-security-user-suggestions">
+                  {securitySearchSuggestions.map((suggestion) => (
+                    <option key={suggestion} value={suggestion} />
+                  ))}
+                </datalist>
               </div>
 
               <button 
@@ -590,7 +651,7 @@ const AdminUsersPage = () => {
                         )}
                       </td>
                       <td className="p-3 pr-5 align-middle">
-                        <div className="flex flex-nowrap items-center justify-end gap-2 whitespace-nowrap opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                        <div className="flex flex-nowrap items-center justify-end gap-2 whitespace-nowrap opacity-100 transition-opacity md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto">
                           {/* HR Verification Toggle */}
                           {isHr && (
                             <button

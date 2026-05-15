@@ -26,6 +26,7 @@ import {
 
 const FEED_PAGE_LIMIT = 50;
 const JOBS_PER_PAGE = 12;
+const MAX_BACKGROUND_FEED_PAGES = 6;
 
 const makeDefaultFilters = () => ({
   search: '',
@@ -123,30 +124,28 @@ const fetchAllPages = async (fetcher, filters = {}) => {
     return { jobs: firstJobs, error: '' };
   }
 
-  const responses = await Promise.all(
-    Array.from({ length: totalPages - 1 }, (_, index) =>
-      fetcher({
-        ...filters,
-        page: index + 2,
-        limit: FEED_PAGE_LIMIT
-      })
-    )
-  );
+  const pagesToLoad = Math.min(totalPages, MAX_BACKGROUND_FEED_PAGES);
+  const collectedJobs = [...firstJobs];
+  let partialLoadError = '';
 
-  const failedResponse = responses.find((response) => response.error);
-  if (failedResponse) {
-    return {
-      jobs: firstJobs,
-      error: failedResponse.error || 'Unable to load all jobs.'
-    };
+  for (let page = 2; page <= pagesToLoad; page += 1) {
+    const response = await fetcher({
+      ...filters,
+      page,
+      limit: FEED_PAGE_LIMIT
+    });
+
+    if (response.error) {
+      partialLoadError = response.error || 'Unable to load all jobs.';
+      break;
+    }
+
+    collectedJobs.push(...(response.data?.jobs || []));
   }
 
   return {
-    jobs: [
-      ...firstJobs,
-      ...responses.flatMap((response) => response.data?.jobs || [])
-    ],
-    error: ''
+    jobs: collectedJobs,
+    error: partialLoadError
   };
 };
 

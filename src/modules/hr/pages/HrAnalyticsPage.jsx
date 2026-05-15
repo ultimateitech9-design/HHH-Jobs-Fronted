@@ -81,7 +81,7 @@ const HrAnalyticsPage = () => {
     rejected: 0,
     hired: 0
   };
-  const maxPipeline = Math.max(1, ...Object.values(pipeline).map((value) => Number(value || 0)));
+  const totalPipeline = Math.max(0, Object.values(pipeline).reduce((sum, value) => sum + Number(value || 0), 0));
 
   const stageColors = {
     applied: 'bg-blue-500',
@@ -115,18 +115,19 @@ const HrAnalyticsPage = () => {
 
         <div className="space-y-2.5">
           {Object.entries(pipeline).map(([stage, count]) => {
-            const width = Math.max(2, Math.round((Number(count || 0) / maxPipeline) * 100));
+            const numericCount = Number(count || 0);
+            const percentage = totalPipeline > 0 ? Math.round((numericCount / totalPipeline) * 100) : 0;
 
             return (
               <div key={stage} className="space-y-0.5">
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="font-medium capitalize text-slate-600">{stage}</span>
-                  <span className="font-semibold text-navy tabular-nums">{count}</span>
+                  <span className="font-semibold text-navy tabular-nums">{numericCount} ({percentage}%)</span>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${stageColors[stage] || 'bg-slate-400'}`}
-                    style={{ width: Number(count || 0) > 0 ? `${width}%` : '0%' }}
+                    style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
                   />
                 </div>
               </div>
@@ -139,4 +140,3 @@ const HrAnalyticsPage = () => {
 };
 
 export default HrAnalyticsPage;
-

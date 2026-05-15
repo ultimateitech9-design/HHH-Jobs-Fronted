@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
+import { PORTAL_ACCESS } from './portalAccess';
 
 const StudentModuleLayout = lazy(() => import('../modules/student/components/StudentModuleLayout'));
 const StudentCompaniesPage = lazy(() => import('../modules/student/pages/StudentCompaniesPage'));
@@ -24,7 +25,7 @@ const studentRoutes = [
   {
     path: 'portal/student',
     element: (
-      <RoleProtectedRoute roles={['student', 'retired_employee']}>
+      <RoleProtectedRoute roles={PORTAL_ACCESS.student}>
         <StudentModuleLayout />
       </RoleProtectedRoute>
     ),

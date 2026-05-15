@@ -5,6 +5,8 @@ import {
   filterDeletedUsers,
   findManagedAccountByEmail,
   getManagedAccounts,
+  getManagementDisplayId,
+  isManagedAccountId,
   markUserDeleted
 } from '../../../utils/managedUsers';
 import { mapApiUserToUi } from './mappers';
@@ -54,7 +56,7 @@ export const safeRequest = async ({ path, options, emptyData, fallbackData, extr
 const filterUsers = (users, filters = {}) => {
   return users.filter((user) => {
     const search = String(filters.search || '').toLowerCase();
-    const matchesSearch = !search || [user.name, user.email, user.company, user.id].some((value) => String(value || '').toLowerCase().includes(search));
+    const matchesSearch = !search || [user.name, user.email, user.company, user.id, user.displayId].some((value) => String(value || '').toLowerCase().includes(search));
     const matchesRole = !filters.role || user.role === filters.role;
     const matchesStatus = !filters.status || user.status === filters.status;
     return matchesSearch && matchesRole && matchesStatus;
@@ -63,6 +65,7 @@ const filterUsers = (users, filters = {}) => {
 
 const mapManagedAccountToUser = (account) => ({
   id: account.id,
+  displayId: getManagementDisplayId(account.id, account.role),
   name: account.name,
   email: account.email,
   role: account.role,
@@ -116,7 +119,7 @@ export const createAdminUser = async (payload) => {
 };
 
 export const deleteUser = async (userId) => {
-  if (String(userId).startsWith('managed-')) {
+  if (isManagedAccountId(userId)) {
     return deleteManagedAccount(userId);
   }
 

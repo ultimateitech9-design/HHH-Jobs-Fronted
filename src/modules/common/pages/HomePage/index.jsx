@@ -74,6 +74,13 @@ const matchesCategory = (job = {}, category = null) => {
   );
 };
 
+const scrollToJobsSection = () => {
+  const jobsSection = document.getElementById('jobs');
+  if (jobsSection) {
+    jobsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
+
 const DeferredSection = ({ children, minHeight = 220, rootMargin = '260px 0px' }) => {
   const sectionRef = useRef(null);
   const [shouldRender, setShouldRender] = useState(false);
@@ -229,33 +236,42 @@ const HomePage = () => {
     return filteredJobs.slice(0, JOBS_PER_PAGE);
   }, [filteredJobs]);
 
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    const jobsSection = document.getElementById('jobs');
-    if (jobsSection) {
-      jobsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const handleFiltersChange = (nextFilters) => {
+    if (
+      selectedCategory
+      && (
+        nextFilters.keyword !== filters.keyword
+        || nextFilters.location !== filters.location
+        || nextFilters.experience !== filters.experience
+      )
+    ) {
+      setSelectedCategory(null);
     }
+
+    setFilters(nextFilters);
   };
 
-  const handleCategorySelect = (searchTerm, category) => {
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    scrollToJobsSection();
+  };
+
+  const handleCategorySelect = (_searchTerm, category) => {
     setSelectedCategory(category);
-    setFilters((current) => ({ ...current, keyword: searchTerm }));
-    const jobsSection = document.getElementById('jobs');
-    if (jobsSection) {
-      jobsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    setFilters((current) => ({ ...current, keyword: '' }));
+    scrollToJobsSection();
   };
 
   const handleBrowseAll = () => {
     setSelectedCategory(null);
     setFilters((current) => ({ ...current, keyword: '' }));
-    const jobsSection = document.getElementById('jobs');
-    if (jobsSection) jobsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollToJobsSection();
   };
 
   const handleKeywordChipClick = (keyword) => {
     setSelectedCategory(null);
     setFilters((current) => ({ ...current, keyword }));
+    scrollToJobsSection();
   };
 
   return (
@@ -263,7 +279,7 @@ const HomePage = () => {
       <div data-reveal style={{ '--jg-reveal-delay': '0ms' }}>
         <HeroSection
           filters={filters}
-          onFiltersChange={setFilters}
+          onFiltersChange={handleFiltersChange}
           onSearch={handleSearchSubmit}
           onKeywordChipClick={handleKeywordChipClick}
         />

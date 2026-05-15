@@ -68,17 +68,26 @@ const getJobExcerpt = (job = {}) => {
   return excerpt.length > 150 ? `${excerpt.slice(0, 147).trimEnd()}...` : excerpt;
 };
 
-const getJobHref = (job = {}) => {
+const buildPublicJobsPath = (job = {}) => {
+  const params = new URLSearchParams();
+  if (job.sourceKey) params.set('source', job.sourceKey);
+  if (job.jobTitle) params.set('search', job.jobTitle);
+  if (job.companyName) params.set('company', job.companyName);
+  if (job.jobLocation) params.set('location', job.jobLocation);
+  return `/jobs${params.toString() ? `?${params.toString()}` : ''}`;
+};
+
+const getJobHref = (job = {}, isAuthenticated = false) => {
   if (job.sourceType === 'external') {
-    const params = new URLSearchParams();
-    if (job.sourceKey) params.set('source', job.sourceKey);
-    if (job.jobTitle) params.set('search', job.jobTitle);
-    const query = params.toString();
-    return `/portal/student/global-jobs${query ? `?${query}` : ''}`;
+    return buildPublicJobsPath(job);
   }
 
   const jobId = job.id || job._id;
-  return jobId && !job.isFallback ? `/portal/student/jobs/${jobId}` : '/portal/student/jobs';
+  if (isAuthenticated && jobId && !job.isFallback) {
+    return `/portal/student/jobs/${jobId}`;
+  }
+
+  return buildPublicJobsPath(job);
 };
 
 export function FeaturedJobs({
@@ -91,6 +100,8 @@ export function FeaturedJobs({
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
   const [savedJobIds, setSavedJobIds] = useState(new Set());
   const [saveMessage, setSaveMessage] = useState('');
+  const jobsIndexPath = '/jobs';
+  const isStudentViewer = currentUser?.role === 'student' || currentUser?.role === 'retired_employee';
 
   useEffect(() => {
     const syncUser = () => setCurrentUser(getCurrentUser());
@@ -137,7 +148,7 @@ export function FeaturedJobs({
     const jobId = job?.id || job?._id;
 
     if (!currentUser) {
-      navigate(`/login?redirect=${encodeURIComponent(getJobHref(job))}`);
+      navigate(`/login?redirect=${encodeURIComponent(getJobHref(job, false))}`);
       return;
     }
 
@@ -171,7 +182,7 @@ export function FeaturedJobs({
               Featured <span className="gradient-text">Opportunities</span>
             </h2>
           </div>
-          <Link to="/portal/student/jobs" className="inline-flex">
+          <Link to={jobsIndexPath} className="inline-flex">
             <span className="inline-flex items-center gap-2 text-sm font-medium text-brand-700 transition-transform hover:translate-x-1">
               View all jobs <ArrowRight className="h-4 w-4" />
             </span>
@@ -259,7 +270,7 @@ export function FeaturedJobs({
                       <span className="text-[10.5px] text-slate-500">
                         {job.sourceType === 'external' ? 'Live-feed role' : job.isFallback ? 'Verified fallback role' : 'Recently updated'}
                       </span>
-                      <Link to={getJobHref(job)}>
+                      <Link to={getJobHref(job, isStudentViewer)}>
                         <span className="inline-flex items-center gap-1 text-[12px] font-medium text-brand-700 transition-transform hover:translate-x-1">
                           Apply Now <ArrowRight className="h-3 w-3" />
                         </span>
@@ -287,7 +298,7 @@ export function FeaturedJobs({
             Refresh roles
           </button>
           <div className="h-1 w-1 rounded-full bg-slate-300"></div>
-          <Link to="/portal/student/jobs" className="text-sm font-semibold text-brand-700 hover:underline">
+          <Link to={jobsIndexPath} className="text-sm font-semibold text-brand-700 hover:underline">
             Explore all jobs
           </Link>
         </div>
