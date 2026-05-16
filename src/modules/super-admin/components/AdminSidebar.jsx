@@ -1,6 +1,7 @@
 import {
   FiActivity,
   FiBarChart2,
+  FiBookOpen,
   FiBriefcase,
   FiCreditCard,
   FiFileText,
@@ -15,6 +16,7 @@ export const superAdminNavItems = [
   { to: '/portal/super-admin/dashboard', label: 'Dashboard', icon: FiBarChart2 },
   { to: '/portal/super-admin/users', label: 'Users', icon: FiUsers },
   { to: '/portal/super-admin/companies', label: 'Companies', icon: FiHome },
+  { to: '/portal/super-admin/campuses', label: 'Campuses', icon: FiBookOpen },
   { to: '/portal/super-admin/jobs', label: 'Jobs', icon: FiBriefcase },
   { to: '/portal/super-admin/applications', label: 'Applications', icon: FiFileText },
   { to: '/portal/super-admin/payments', label: 'Payments', icon: FiCreditCard },

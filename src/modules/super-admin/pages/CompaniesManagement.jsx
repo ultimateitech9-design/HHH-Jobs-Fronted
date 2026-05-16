@@ -1,12 +1,32 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AdminHeader from '../components/AdminHeader';
 import CompaniesTable from '../components/CompaniesTable';
 import DashboardStatsCards from '../components/DashboardStatsCards';
 import FilterBar from '../components/FilterBar';
+import Pagination from '../components/Pagination';
 import useCompanies from '../hooks/useCompanies';
+
+const PAGE_SIZE = 8;
 
 const CompaniesManagement = () => {
   const { companies, filteredCompanies, filters, setFilters, loading, error, isDemo } = useCompanies();
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters.search, filters.status]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredCompanies.length / PAGE_SIZE));
+  const paginatedCompanies = useMemo(
+    () => filteredCompanies.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredCompanies, page]
+  );
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const cards = useMemo(() => [
     { label: 'Total Companies', value: String(companies.length), helper: `${companies.filter((item) => item.status === 'active').length} active accounts`, tone: 'info' },
@@ -28,7 +48,8 @@ const CompaniesManagement = () => {
           fields={[{ key: 'status', label: 'Status', options: ['active', 'pending', 'inactive'].map((status) => ({ value: status, label: status })) }]}
         />
         {loading ? <p className="module-note">Loading companies...</p> : null}
-        <CompaniesTable rows={filteredCompanies} />
+        <CompaniesTable rows={paginatedCompanies} />
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </section>
     </div>
   );

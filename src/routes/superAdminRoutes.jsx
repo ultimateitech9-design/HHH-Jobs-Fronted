@@ -7,6 +7,7 @@ const SuperAdminLayout = lazy(() => import('../modules/super-admin/layouts/Super
 const SuperAdminDashboard = lazy(() => import('../modules/super-admin/pages/SuperAdminDashboard'));
 const UsersManagement = lazy(() => import('../modules/super-admin/pages/UsersManagement'));
 const CompaniesManagement = lazy(() => import('../modules/super-admin/pages/CompaniesManagement'));
+const CampusesManagement = lazy(() => import('../modules/super-admin/pages/CampusesManagement'));
 const JobsManagement = lazy(() => import('../modules/super-admin/pages/JobsManagement'));
 const ApplicationsManagement = lazy(() => import('../modules/super-admin/pages/ApplicationsManagement'));
 const PaymentsManagement = lazy(() => import('../modules/super-admin/pages/PaymentsManagement'));
@@ -30,6 +31,7 @@ const superAdminRoutes = [
       { path: 'dashboard', element: <SuperAdminDashboard /> },
       { path: 'users', element: <UsersManagement /> },
       { path: 'companies', element: <CompaniesManagement /> },
+      { path: 'campuses', element: <CampusesManagement /> },
       { path: 'jobs', element: <JobsManagement /> },
       { path: 'applications', element: <ApplicationsManagement /> },
       { path: 'payments', element: <PaymentsManagement /> },

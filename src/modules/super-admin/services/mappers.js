@@ -57,6 +57,40 @@ export const mapApiCompanyToUi = (company = {}) => {
   };
 };
 
+export const mapApiCampusToUi = (campus = {}) => {
+  const owner = firstRelation(campus.users);
+  const acceptedConnections = Number(campus.connectedCompanies ?? campus.connected_companies ?? 0);
+  const pendingConnections = Number(campus.pendingRequests ?? campus.pending_requests ?? 0);
+  const ownerStatus = String(owner?.status || campus.ownerStatus || '').toLowerCase();
+
+  const status = campus.status
+    || (ownerStatus && ownerStatus !== 'active'
+      ? 'inactive'
+      : acceptedConnections > 0
+        ? 'active'
+        : pendingConnections > 0
+          ? 'pending'
+          : 'inactive');
+
+  return {
+    id: campus.id,
+    name: campus.name || 'Campus Partner',
+    city: campus.city || '-',
+    state: campus.state || '',
+    affiliation: campus.affiliation || '-',
+    totalPool: Number(campus.totalPool ?? campus.total_pool ?? 0),
+    placedStudents: Number(campus.placedStudents ?? campus.placed_students ?? 0),
+    connectedCompanies: acceptedConnections,
+    pendingRequests: pendingConnections,
+    activeDrives: Number(campus.activeDrives ?? campus.active_drives ?? 0),
+    status,
+    joinedAt: campus.joinedAt || campus.joined_at || campus.created_at || null,
+    ownerName: owner?.name || campus.ownerName || '-',
+    ownerEmail: owner?.email || campus.ownerEmail || '-',
+    lastActiveAt: owner?.last_login_at || campus.lastActiveAt || null
+  };
+};
+
 export const mapApiJobToUi = (job = {}) => ({
   id: job.id,
   title: job.title || job.job_title || '-',

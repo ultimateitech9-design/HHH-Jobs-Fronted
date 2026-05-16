@@ -34,6 +34,12 @@ export const adminDummyData = {
     { id: 'COM-103', name: 'Prime Skill Labs', plan: 'Subscription Plus', industry: 'Education', jobs: 17, recruiters: 4, applications: 402, status: 'active', health: 'healthy', owner: 'Devika Jain', renewedAt: isoDaysAgo(21, 11) },
     { id: 'COM-104', name: 'Rural Talent Mission', plan: 'Government Program', industry: 'Public Sector', jobs: 9, recruiters: 3, applications: 126, status: 'inactive', health: 'degraded', owner: 'Sonia Dabas', renewedAt: isoDaysAgo(95, 15) }
   ],
+  campuses: [
+    { id: 'CAMP-101', name: 'Vikrant Institute of Technology', city: 'Indore', state: 'Madhya Pradesh', affiliation: 'RGPV', totalPool: 1240, placedStudents: 418, connectedCompanies: 28, activeDrives: 6, status: 'active', joinedAt: isoDaysAgo(120, 10) },
+    { id: 'CAMP-102', name: 'Mangalmay Group of Institutions', city: 'Greater Noida', state: 'Uttar Pradesh', affiliation: 'AKTU', totalPool: 980, placedStudents: 301, connectedCompanies: 19, activeDrives: 4, status: 'active', joinedAt: isoDaysAgo(160, 11) },
+    { id: 'CAMP-103', name: 'Shivani Engineering College', city: 'Jaipur', state: 'Rajasthan', affiliation: 'RTU', totalPool: 640, placedStudents: 146, connectedCompanies: 8, activeDrives: 2, status: 'pending', joinedAt: isoDaysAgo(45, 12) },
+    { id: 'CAMP-104', name: 'National Commerce Campus', city: 'Lucknow', state: 'Uttar Pradesh', affiliation: 'LU', totalPool: 420, placedStudents: 88, connectedCompanies: 0, activeDrives: 0, status: 'inactive', joinedAt: isoDaysAgo(18, 9) }
+  ],
   jobs: [
     { id: 'JOB-501', title: 'Civil Site Engineer', company: 'Metro Build Infra', location: 'Gurugram', category: 'Engineering', status: 'open', approvalStatus: 'approved', applications: 132, createdAt: isoDaysAgo(4, 9) },
     { id: 'JOB-502', title: 'Senior Recruiter', company: 'Zenith Careers', location: 'Noida', category: 'Recruitment', status: 'pending', approvalStatus: 'pending', applications: 22, createdAt: isoDaysAgo(2, 12) },
