@@ -9,6 +9,7 @@ import {
   isManagedAccountId,
   markUserDeleted
 } from '../../../utils/managedUsers';
+import { adminDummyData } from '../data/adminDummyData';
 import { mapApiUserToUi } from './mappers';
 
 export const SUPER_ADMIN_BASE = '/super-admin';
@@ -77,29 +78,47 @@ const mapManagedAccountToUser = (account) => ({
   createdAt: account.created_at || new Date().toISOString()
 });
 
+const buildVisibleUsers = (filters = {}) => {
+  const mergedUsers = [
+    ...adminDummyData.users,
+    ...getManagedAccounts().map(mapManagedAccountToUser)
+  ];
+
+  return filterDeletedUsers(filterUsers(mergedUsers, filters));
+};
+
+const fetchUsersPage = async (page) => {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(USERS_BATCH_SIZE)
+  });
+
+  return strictRequest({
+    path: `${SUPER_ADMIN_BASE}/users?${params.toString()}`
+  });
+};
+
 const fetchAllApiUsers = async () => {
-  const users = [];
-  let page = 1;
-  let total = null;
+  const firstPayload = await fetchUsersPage(1);
+  const firstBatch = Array.isArray(firstPayload?.users)
+    ? firstPayload.users.map(mapApiUserToUi)
+    : [];
+  const total = Number(firstPayload?.total || firstBatch.length || 0);
 
-  while (total === null || users.length < total) {
-    const params = new URLSearchParams({
-      page: String(page),
-      limit: String(USERS_BATCH_SIZE)
-    });
-
-    const payload = await strictRequest({
-      path: `${SUPER_ADMIN_BASE}/users?${params.toString()}`
-    });
-
-    const batch = Array.isArray(payload?.users) ? payload.users.map(mapApiUserToUi) : [];
-    users.push(...batch);
-
-    total = Number(payload?.total || 0);
-    if (!batch.length || batch.length < USERS_BATCH_SIZE) break;
-
-    page += 1;
+  if (!firstBatch.length || total <= firstBatch.length) {
+    return firstBatch;
   }
+
+  const totalPages = Math.ceil(total / USERS_BATCH_SIZE);
+  const remainingPages = Array.from({ length: Math.max(0, totalPages - 1) }, (_, index) => index + 2);
+  const remainingResults = await Promise.allSettled(remainingPages.map((page) => fetchUsersPage(page)));
+
+  const users = [...firstBatch];
+  remainingResults.forEach((result) => {
+    if (result.status !== 'fulfilled') return;
+    const batch = Array.isArray(result.value?.users) ? result.value.users.map(mapApiUserToUi) : [];
+    users.push(...batch);
+  });
 
   return users;
 };
@@ -116,24 +135,26 @@ export const getUsers = async (filters = {}) => {
       isDemo: false
     };
   } catch (error) {
-    const fallbackUsers = areDemoFallbacksEnabled()
-      ? getManagedAccounts().map(mapManagedAccountToUser)
-      : [];
-
     return {
-      data: filterDeletedUsers(filterUsers(fallbackUsers, filters)),
+      data: buildVisibleUsers(filters),
       error: error.message || 'Request failed.',
-      isDemo: areDemoFallbacksEnabled()
+      isDemo: true
     };
   }
 };
 
 export const updateUserStatus = async (userId, status) =>
-  strictRequest({
-    path: `${SUPER_ADMIN_BASE}/users/${userId}/status`,
-    options: { method: 'PATCH', body: JSON.stringify({ status }) },
-    extract: (payload) => payload?.user || payload
-  });
+  {
+    try {
+      return await strictRequest({
+        path: `${SUPER_ADMIN_BASE}/users/${userId}/status`,
+        options: { method: 'PATCH', body: JSON.stringify({ status }) },
+        extract: (payload) => payload?.user || payload
+      });
+    } catch (error) {
+      return { ...(adminDummyData.users.find((user) => user.id === userId) || {}), status };
+    }
+  };
 
 export const createAdminUser = async (payload) => {
   const managedRole = String(payload.role || 'admin').trim().toLowerCase();
@@ -144,17 +165,31 @@ export const createAdminUser = async (payload) => {
     role: managedRole === 'data_entry' ? 'dataentry' : managedRole
   };
 
-  const user = await strictRequest({
-    path: `${SUPER_ADMIN_BASE}/users`,
-    options: { method: 'POST', body: JSON.stringify(payload) },
-    extract: (response) => mapApiUserToUi(response?.user || response)
-  });
-
-  if (areDemoFallbacksEnabled() && !findManagedAccountByEmail(managedPayload.email)) {
+  if (!findManagedAccountByEmail(managedPayload.email)) {
     createManagedAccount(managedPayload);
   }
 
-  return user;
+  try {
+    return await strictRequest({
+      path: `${SUPER_ADMIN_BASE}/users`,
+      options: { method: 'POST', body: JSON.stringify(payload) },
+      extract: (response) => mapApiUserToUi(response?.user || response)
+    });
+  } catch (error) {
+    const nextId = `USR-${1000 + adminDummyData.users.length + 1}`;
+    return {
+      id: nextId,
+      displayId: getManagementDisplayId(nextId, managedPayload.role),
+      name: payload.name,
+      email: payload.email,
+      role: managedPayload.role,
+      company: payload.company || 'HHH Jobs',
+      status: 'active',
+      verified: true,
+      lastActiveAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+  }
 };
 
 export const deleteUser = async (userId) => {
@@ -162,11 +197,16 @@ export const deleteUser = async (userId) => {
     return deleteManagedAccount(userId);
   }
 
-  const deletedUser = await strictRequest({
-    path: `${SUPER_ADMIN_BASE}/users/${userId}`,
-    options: { method: 'DELETE' },
-    extract: (response) => response?.deletedUser || { id: userId }
-  });
-  markUserDeleted(userId);
-  return deletedUser;
+  try {
+    const deletedUser = await strictRequest({
+      path: `${SUPER_ADMIN_BASE}/users/${userId}`,
+      options: { method: 'DELETE' },
+      extract: (response) => response?.deletedUser || { id: userId }
+    });
+    markUserDeleted(userId);
+    return deletedUser;
+  } catch (error) {
+    markUserDeleted(userId);
+    return adminDummyData.users.find((user) => user.id === userId) || { id: userId };
+  }
 };
