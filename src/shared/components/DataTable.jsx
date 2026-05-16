@@ -1,8 +1,30 @@
-const DataTable = ({ columns = [], rows = [] }) => {
+const DataTable = ({
+  columns = [],
+  rows = [],
+  compact = false,
+  fitOnDesktop = false
+}) => {
   const explicitTableWidth = columns.reduce((total, column) => (
     total + (typeof column.width === 'number' ? column.width : 0)
   ), 0);
   const tableMinWidth = `${explicitTableWidth || Math.max(760, columns.length * 150)}px`;
+  const desktopTableStyle = fitOnDesktop ? undefined : { minWidth: tableMinWidth };
+  const desktopTableClassName = fitOnDesktop ? 'table-auto' : 'table-fixed';
+  const headerCellClassName = compact
+    ? 'px-3 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-500'
+    : 'px-4 py-3 text-left text-[11px] font-bold uppercase tracking-normal text-slate-500';
+  const bodyCellClassName = compact
+    ? 'px-3 py-2.5 align-middle text-[12.5px] leading-5 text-slate-700'
+    : 'px-4 py-3 align-middle text-sm text-slate-700';
+  const mobileCardClassName = compact
+    ? 'rounded-2xl border border-slate-200 bg-white p-3 shadow-sm'
+    : 'rounded-2xl border border-slate-200 bg-white p-3 shadow-sm';
+  const mobileLabelClassName = compact
+    ? 'block text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-400'
+    : 'block text-[11px] font-bold uppercase text-slate-400';
+  const mobileValueClassName = compact
+    ? 'mt-1 min-w-0 break-words text-[12.5px] font-semibold leading-5 text-slate-800 [overflow-wrap:anywhere]'
+    : 'mt-1 min-w-0 break-words text-sm font-semibold text-slate-800 [overflow-wrap:anywhere]';
   const getRowKey = (row, index) => row.id || row.key || index;
   const getColumnWidth = (column) => {
     if (typeof column.width === 'number') return `${column.width}px`;
@@ -20,7 +42,7 @@ const DataTable = ({ columns = [], rows = [] }) => {
     <div className="w-full max-w-full">
       <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:block">
         <div className="max-w-full overflow-x-auto">
-          <table className="w-full table-fixed divide-y divide-slate-200" style={{ minWidth: tableMinWidth }}>
+          <table className={`w-full divide-y divide-slate-200 ${desktopTableClassName}`} style={desktopTableStyle}>
             <colgroup>
               {columns.map((column) => (
                 <col key={`${column.key}-col`} style={getColumnWidth(column) ? { width: getColumnWidth(column) } : undefined} />
@@ -31,7 +53,7 @@ const DataTable = ({ columns = [], rows = [] }) => {
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    className={`px-4 py-3 text-left text-[11px] font-bold uppercase tracking-normal text-slate-500 ${column.stickyRight ? 'sticky right-0 z-20 bg-slate-50 shadow-[-10px_0_18px_rgba(15,23,42,0.08)]' : ''}`}
+                    className={`text-left ${headerCellClassName} ${column.stickyRight ? 'sticky right-0 z-20 bg-slate-50 shadow-[-10px_0_18px_rgba(15,23,42,0.08)]' : ''}`}
                   >
                     {column.label}
                   </th>
@@ -51,7 +73,7 @@ const DataTable = ({ columns = [], rows = [] }) => {
                     {columns.map((column) => (
                       <td
                         key={`${column.key}-${getRowKey(row, index)}`}
-                        className={`px-4 py-3 align-middle text-sm text-slate-700 ${column.stickyRight ? 'sticky right-0 z-10 bg-white shadow-[-10px_0_18px_rgba(15,23,42,0.08)] group-hover:bg-slate-50' : ''}`}
+                        className={`${bodyCellClassName} ${column.stickyRight ? 'sticky right-0 z-10 bg-white shadow-[-10px_0_18px_rgba(15,23,42,0.08)] group-hover:bg-slate-50' : ''}`}
                       >
                         <div className={`min-w-0 break-words [overflow-wrap:anywhere] ${column.cellClassName || ''}`}>
                           {renderCellValue(column, row)}
@@ -73,12 +95,12 @@ const DataTable = ({ columns = [], rows = [] }) => {
           </div>
         ) : (
           rows.map((row, index) => (
-            <article key={getRowKey(row, index)} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <article key={getRowKey(row, index)} className={mobileCardClassName}>
               <div className="grid gap-2">
                 {columns.map((column) => (
                   <div key={`${column.key}-${getRowKey(row, index)}-card`} className={column.key === 'actions' ? 'border-t border-slate-100 pt-2' : ''}>
-                    <span className="block text-[11px] font-bold uppercase text-slate-400">{column.label}</span>
-                    <div className={`mt-1 min-w-0 break-words text-sm font-semibold text-slate-800 [overflow-wrap:anywhere] ${column.cellClassName || ''}`}>
+                    <span className={mobileLabelClassName}>{column.label}</span>
+                    <div className={`${mobileValueClassName} ${column.cellClassName || ''}`}>
                       {renderCellValue(column, row)}
                     </div>
                   </div>
