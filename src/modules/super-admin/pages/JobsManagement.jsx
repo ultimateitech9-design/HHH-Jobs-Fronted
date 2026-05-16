@@ -1,15 +1,35 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AdminHeader from '../components/AdminHeader';
 import ConfirmModal from '../components/ConfirmModal';
 import DashboardStatsCards from '../components/DashboardStatsCards';
 import FilterBar from '../components/FilterBar';
 import JobsTable from '../components/JobsTable';
+import Pagination from '../components/Pagination';
 import useJobs from '../hooks/useJobs';
 import { updateJobStatus } from '../services/jobsApi';
+
+const PAGE_SIZE = 10;
 
 const JobsManagement = () => {
   const { jobs, setJobs, filteredJobs, filters, setFilters, loading, error, isDemo } = useJobs();
   const [targetJob, setTargetJob] = useState(null);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters.search, filters.status]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
+  const paginatedJobs = useMemo(
+    () => filteredJobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredJobs, page]
+  );
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const cards = useMemo(() => [
     { label: 'Live Jobs', value: String(jobs.filter((job) => job.status === 'open').length), helper: 'Visible in the marketplace', tone: 'success' },
@@ -37,10 +57,10 @@ const JobsManagement = () => {
           filters={filters}
           onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))}
           fields={[{ key: 'status', label: 'Status', options: ['open', 'pending', 'closed', 'approved', 'rejected'].map((status) => ({ value: status, label: status })) }]}
-          actions={filteredJobs[0] ? <button type="button" className="btn-secondary" onClick={() => setTargetJob(filteredJobs[0])}>Toggle first visible job</button> : null}
         />
         {loading ? <p className="module-note">Loading jobs...</p> : null}
-        <JobsTable rows={filteredJobs} />
+        <JobsTable rows={paginatedJobs} />
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </section>
       <ConfirmModal
         open={Boolean(targetJob)}
