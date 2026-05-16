@@ -3,87 +3,186 @@ import DataTable from '../../../shared/components/DataTable';
 import AdminHeader from '../components/AdminHeader';
 import DashboardStatsCards from '../components/DashboardStatsCards';
 import FilterBar from '../components/FilterBar';
+import Pagination from '../components/Pagination';
 import StatusBadge from '../components/StatusBadge';
 import { getSystemLogs } from '../services/reportsApi';
 import { formatDateTime } from '../utils/formatDate';
 
+const PAGE_SIZE = 10;
+const INITIAL_FILTERS = { search: '', level: '', actorRole: '' };
+const HIDDEN_ACTOR_ROLES = new Set(['student', 'hr', 'retired_employee', 'system']);
+
+const formatOptionLabel = (value = '') => String(value || '')
+  .split('_')
+  .filter(Boolean)
+  .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+  .join(' ');
+
+const shortenValue = (value = '', visible = 18) => {
+  const text = String(value || '').trim();
+  if (!text) return '-';
+  if (text.length <= visible) return text;
+  return `${text.slice(0, visible)}...`;
+};
+
+const buildDetailsPreview = (value = '') => {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '-';
+  return shortenValue(text, 72);
+};
+
+const renderCompactText = (value, className = '') => (
+  <span
+    title={value || ''}
+    className={`block truncate ${className}`.trim()}
+  >
+    {value || '-'}
+  </span>
+);
+
 const SystemLogs = () => {
   const [logs, setLogs] = useState([]);
-  const [filters, setFilters] = useState({ search: '', level: '', actorRole: '' });
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [pagination, setPagination] = useState({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
+  const [summary, setSummary] = useState({ totalEvents: 0, criticalEvents: 0, warningEvents: 0, managementActions: 0 });
+  const [actorRoleOptions, setActorRoleOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      const response = await getSystemLogs();
-      setLogs(response.data || []);
+      setLoading(true);
+
+      const response = await getSystemLogs({
+        filters,
+        page: pagination.page,
+        limit: PAGE_SIZE
+      });
+
+      setLogs(response.data?.logs || []);
+      setSummary(response.data?.summary || { totalEvents: 0, criticalEvents: 0, warningEvents: 0, managementActions: 0 });
+      setActorRoleOptions(response.data?.actorRoles || []);
+      setPagination(response.data?.pagination || { page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
       setError(response.error || '');
       setIsDemo(Boolean(response.isDemo));
       setLoading(false);
     };
+
     load();
-  }, []);
-
-  const filteredLogs = useMemo(() => {
-    return logs.filter((item) => {
-      const search = String(filters.search || '').toLowerCase();
-      const matchesSearch = !search || [
-        item.id,
-        item.module,
-        item.actor,
-        item.actorId,
-        item.action,
-        item.details
-      ].some((value) => String(value || '').toLowerCase().includes(search));
-      const matchesLevel = !filters.level || item.level === filters.level;
-      const normalizedActorRole = String(item.actorRole || (String(item.actor || '').includes('admin') ? 'admin' : 'system')).toLowerCase();
-      const matchesActorRole = !filters.actorRole || normalizedActorRole === filters.actorRole;
-      return matchesSearch && matchesLevel && matchesActorRole;
-    });
-  }, [filters, logs]);
-
-  const adminLogs = useMemo(() => {
-    return logs.filter((item) => String(item.actorRole || '').toLowerCase() === 'admin' || String(item.actor || '').toLowerCase().includes('admin'));
-  }, [logs]);
+  }, [filters, pagination.page]);
 
   const cards = useMemo(() => [
-    { label: 'Admin Actions', value: String(adminLogs.length), helper: 'Admin account activity visible to super admin', tone: 'info' },
-    { label: 'Critical Events', value: String(logs.filter((item) => item.level === 'critical').length), helper: 'Immediate action required', tone: 'danger' },
-    { label: 'Warnings', value: String(logs.filter((item) => item.level === 'warning').length), helper: 'Needs follow-up review', tone: 'warning' },
-    { label: 'Operational Events', value: String(logs.length), helper: 'Recent logged activity', tone: 'default' }
-  ], [adminLogs.length, logs]);
+    { label: 'Management Actions', value: String(summary.managementActions || 0), helper: 'Admin, support, sales, accounts, HR, and other dashboard activity', tone: 'info' },
+    { label: 'Critical Events', value: String(summary.criticalEvents || 0), helper: 'Immediate action required', tone: 'danger' },
+    { label: 'Warnings', value: String(summary.warningEvents || 0), helper: 'Needs follow-up review', tone: 'warning' },
+    { label: 'Operational Events', value: String(summary.totalEvents || 0), helper: 'Current filtered log volume', tone: 'default' }
+  ], [summary]);
 
   const columns = [
-    { key: 'id', label: 'Log ID' },
-    { key: 'actorId', label: 'Actor ID' },
-    { key: 'module', label: 'Module' },
-    { key: 'actor', label: 'Actor' },
-    { key: 'actorRole', label: 'Actor Role', render: (value) => <StatusBadge value={value || 'system'} /> },
-    { key: 'action', label: 'Action' },
-    { key: 'level', label: 'Level', render: (value) => <StatusBadge value={value} /> },
-    { key: 'createdAt', label: 'Time', render: (value) => formatDateTime(value) },
-    { key: 'details', label: 'Details' }
+    {
+      key: 'id',
+      label: 'Log ID',
+      width: 148,
+      cellClassName: 'font-mono text-[11.5px] text-slate-500',
+      render: (value) => renderCompactText(shortenValue(value, 16), 'font-mono')
+    },
+    {
+      key: 'actorId',
+      label: 'Actor ID',
+      width: 148,
+      cellClassName: 'font-mono text-[11.5px] text-slate-500',
+      render: (value) => renderCompactText(shortenValue(value, 16), 'font-mono')
+    },
+    {
+      key: 'module',
+      label: 'Module',
+      width: 112,
+      cellClassName: 'text-[12px] font-semibold text-slate-600',
+      render: (value) => renderCompactText(formatOptionLabel(value) || '-')
+    },
+    {
+      key: 'actor',
+      label: 'Actor',
+      width: 164,
+      cellClassName: 'text-[12.5px] font-semibold text-slate-800',
+      render: (value) => renderCompactText(value || '-')
+    },
+    {
+      key: 'actorRole',
+      label: 'Role',
+      width: 108,
+      render: (value) => <StatusBadge value={value || 'system'} />
+    },
+    {
+      key: 'action',
+      label: 'Action',
+      width: 166,
+      cellClassName: 'text-[12px]',
+      render: (value) => (
+        <span
+          title={value || ''}
+          className="inline-flex max-w-full rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold tracking-[0.01em] text-slate-600"
+        >
+          <span className="truncate">{formatOptionLabel(value) || '-'}</span>
+        </span>
+      )
+    },
+    {
+      key: 'level',
+      label: 'Level',
+      width: 88,
+      render: (value) => <StatusBadge value={value} />
+    },
+    {
+      key: 'createdAt',
+      label: 'Time',
+      width: 156,
+      cellClassName: 'text-[12px] text-slate-500',
+      render: (value) => {
+        const formatted = formatDateTime(value);
+        if (!formatted) return '-';
+        const [datePart, timePart] = String(formatted).split(',');
+        return (
+          <div className="min-w-[122px] whitespace-nowrap leading-4.5 text-slate-500">
+            <div className="font-medium text-slate-700">{datePart || '-'}</div>
+            <div className="mt-1 text-[11px]">{timePart?.trim() || ''}</div>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'details',
+      label: 'Details',
+      width: 320,
+      cellClassName: 'text-[11.5px] text-slate-500',
+      render: (value) => renderCompactText(buildDetailsPreview(value), 'font-mono text-[11px] text-slate-500')
+    }
   ];
 
   return (
     <div className="module-page module-page--admin">
-      <AdminHeader title="System Logs" subtitle="Review system incidents, policy signals, webhook failures, and trust-related platform activity." />
+      <AdminHeader title="System Logs" subtitle="Review platform activity across super admin, admin, support, sales, accounts, HR, campus, and system workflows." />
       {isDemo ? <p className="module-note">Demo log data is shown because super admin log endpoints are not connected yet.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
-      <section className="panel-card">
+      <section className="panel-card min-w-0">
         <FilterBar
           filters={filters}
-          onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))}
+          onChange={(key, value) => {
+            setFilters((current) => ({ ...current, [key]: value }));
+            setPagination((current) => ({ ...current, page: 1 }));
+          }}
           fields={[
             {
               key: 'actorRole',
               label: 'Actor Role',
-              options: [
-                { value: 'admin', label: 'Admin' },
-                { value: 'system', label: 'System' }
-              ]
+              options: actorRoleOptions
+                .filter((value) => !HIDDEN_ACTOR_ROLES.has(value))
+                .map((value) => ({
+                  value,
+                  label: formatOptionLabel(value)
+                }))
             },
             {
               key: 'level',
@@ -95,18 +194,14 @@ const SystemLogs = () => {
               ]
             }
           ]}
-          actions={(
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setFilters((current) => ({ ...current, actorRole: current.actorRole === 'admin' ? '' : 'admin' }))}
-            >
-              {filters.actorRole === 'admin' ? 'Show All Logs' : 'Show Admin Logs Only'}
-            </button>
-          )}
         />
         {loading ? <p className="module-note">Loading system logs...</p> : null}
-        <DataTable columns={columns} rows={filteredLogs} />
+        <DataTable columns={columns} rows={logs} compact />
+        <Pagination
+          page={pagination.page || 1}
+          totalPages={pagination.totalPages || 1}
+          onChange={(nextPage) => setPagination((current) => ({ ...current, page: nextPage }))}
+        />
       </section>
     </div>
   );

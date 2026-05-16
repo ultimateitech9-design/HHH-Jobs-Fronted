@@ -6,6 +6,7 @@ import useNotificationStore from '../../../../core/notifications/notificationSto
 import PortalNotificationsDrawer from './PortalNotificationsDrawer';
 
 const PortalWorkbenchHeader = ({
+  activePortalRole,
   avatarLetter,
   avatarUrl,
   headerBadge,
@@ -35,52 +36,57 @@ const PortalWorkbenchHeader = ({
   const unreadCount = notifications.filter((notification) => !notification.is_read).length;
   const isStudentMarketplaceHeader = headerVariant === 'student-marketplace';
   const showRoleSwitcher = roleSwitchOptions.length > 1;
+  const useLogoutOnlyMenu = ['admin', 'super_admin'].includes(String(activePortalRole || '').trim().toLowerCase());
 
   const renderProfileMenu = () => (
-    <div className="absolute right-0 top-full z-30 mt-3 w-64 rounded-[1.25rem] border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
-      <div className="rounded-[1rem] bg-[#f7f5ef] px-3 py-3">
-        <p className="truncate text-sm font-semibold text-slate-900">{user?.name || 'Profile'}</p>
-        <p className="truncate text-xs text-slate-500">{user?.email || profilePath}</p>
-      </div>
-      {showRoleSwitcher ? (
-        <div className="mt-2 rounded-[1rem] border border-slate-200 bg-slate-50 px-2 py-2">
-          <p className="px-1 pb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Switch Dashboard</p>
-          <div className="space-y-1">
-            {roleSwitchOptions.map((option) => (
-              <Link
-                key={option.role}
-                to={option.path}
-                onClick={() => setProfileMenuOpen(false)}
-                className={`flex items-center justify-between rounded-[0.85rem] px-3 py-2 text-sm font-semibold transition ${
-                  option.isActive
-                    ? 'bg-white text-brand-700 shadow-sm ring-1 ring-brand-100'
-                    : 'text-slate-700 hover:bg-white hover:text-navy'
-                }`}
-              >
-                <span>{option.label}</span>
-                {option.isActive ? <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-500">Live</span> : null}
-              </Link>
-            ))}
+    <div className={`absolute right-0 top-full z-30 mt-3 rounded-[1.25rem] border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)] ${useLogoutOnlyMenu ? 'w-44' : 'w-64'}`.trim()}>
+      {useLogoutOnlyMenu ? null : (
+        <>
+          <div className="rounded-[1rem] bg-[#f7f5ef] px-3 py-3">
+            <p className="truncate text-sm font-semibold text-slate-900">{user?.name || 'Profile'}</p>
+            <p className="truncate text-xs text-slate-500">{user?.email || profilePath}</p>
           </div>
-        </div>
-      ) : null}
-      {showProfileShortcut ? (
-        <Link
-          to={profilePath || '/'}
-          onClick={() => setProfileMenuOpen(false)}
-          className="mt-2 flex items-center gap-2 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-navy"
-        >
-          <User className="h-4 w-4" />
-          <span>My profile</span>
-        </Link>
-      ) : null}
+          {showRoleSwitcher ? (
+            <div className="mt-2 rounded-[1rem] border border-slate-200 bg-slate-50 px-2 py-2">
+              <p className="px-1 pb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Switch Dashboard</p>
+              <div className="space-y-1">
+                {roleSwitchOptions.map((option) => (
+                  <Link
+                    key={option.role}
+                    to={option.path}
+                    onClick={() => setProfileMenuOpen(false)}
+                    className={`flex items-center justify-between rounded-[0.85rem] px-3 py-2 text-sm font-semibold transition ${
+                      option.isActive
+                        ? 'bg-white text-brand-700 shadow-sm ring-1 ring-brand-100'
+                        : 'text-slate-700 hover:bg-white hover:text-navy'
+                    }`}
+                  >
+                    <span>{option.label}</span>
+                    {option.isActive ? <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-500">Live</span> : null}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {showProfileShortcut ? (
+            <Link
+              to={profilePath || '/'}
+              onClick={() => setProfileMenuOpen(false)}
+              className="mt-2 flex items-center gap-2 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-navy"
+            >
+              <User className="h-4 w-4" />
+              <span>My profile</span>
+            </Link>
+          ) : null}
+        </>
+      )}
       <button
         type="button"
         onClick={() => {
           setProfileMenuOpen(false);
           onLogout?.();
         }}
-        className="flex w-full items-center gap-2 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+        className={`flex w-full items-center gap-2 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 ${useLogoutOnlyMenu ? '' : 'mt-2'}`.trim()}
       >
         <LogOut className="h-4 w-4" />
         <span>Log out</span>

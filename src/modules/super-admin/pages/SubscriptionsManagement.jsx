@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminHeader from '../components/AdminHeader';
 import DashboardStatsCards from '../components/DashboardStatsCards';
+import Pagination from '../components/Pagination';
 import PaymentsTable from '../components/PaymentsTable';
 import { getSubscriptions } from '../services/paymentsApi';
 import { formatCurrency } from '../utils/currencyFormat';
+
+const PAGE_SIZE = 10;
 
 const SubscriptionsManagement = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState(false);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const load = async () => {
@@ -40,6 +44,18 @@ const SubscriptionsManagement = () => {
     createdAt: subscription.renewalDate
   }));
 
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const paginatedRows = useMemo(
+    () => rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [rows, page]
+  );
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
   return (
     <div className="module-page module-page--admin">
       <AdminHeader title="Subscriptions Management" subtitle="Track recurring plans, renewal pressure, seat utilization, and monthly committed revenue." />
@@ -48,7 +64,8 @@ const SubscriptionsManagement = () => {
       <DashboardStatsCards cards={cards} />
       <section className="panel-card">
         {loading ? <p className="module-note">Loading subscriptions...</p> : null}
-        <PaymentsTable rows={rows} />
+        <PaymentsTable rows={paginatedRows} />
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </section>
     </div>
   );

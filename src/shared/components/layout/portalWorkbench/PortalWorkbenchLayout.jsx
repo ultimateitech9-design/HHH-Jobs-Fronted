@@ -143,6 +143,7 @@ const PortalWorkbenchLayout = ({
 
       {fullWidthHeader ? (
         <PortalWorkbenchHeader
+          activePortalRole={activePortalRole}
           avatarLetter={avatarLetter}
           avatarUrl={avatarUrl}
           headerBadge={headerBadge}
@@ -189,6 +190,7 @@ const PortalWorkbenchLayout = ({
         <div className={`flex flex-col ${isInterviewRoomRoute ? 'h-full min-h-0' : 'min-h-screen'}`}>
           {fullWidthHeader ? null : (
             <PortalWorkbenchHeader
+              activePortalRole={activePortalRole}
               avatarLetter={avatarLetter}
               avatarUrl={avatarUrl}
               headerBadge={headerBadge}
