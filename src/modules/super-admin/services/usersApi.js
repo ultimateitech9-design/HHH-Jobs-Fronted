@@ -12,6 +12,7 @@ import {
 import { mapApiUserToUi } from './mappers';
 
 export const SUPER_ADMIN_BASE = '/super-admin';
+const USERS_BATCH_SIZE = 100;
 
 export const clone = (value) => {
   if (value === null || value === undefined) return value;
@@ -76,18 +77,56 @@ const mapManagedAccountToUser = (account) => ({
   createdAt: account.created_at || new Date().toISOString()
 });
 
-export const getUsers = async (filters = {}) =>
-  safeRequest({
-    path: `${SUPER_ADMIN_BASE}/users`,
-    emptyData: [],
-    extract: (payload) => {
-      const apiUsers = Array.isArray(payload?.users) ? payload.users.map(mapApiUserToUi) : [];
-      const managedUsers = areDemoFallbacksEnabled()
-        ? getManagedAccounts().map(mapManagedAccountToUser)
-        : [];
-      return filterDeletedUsers(filterUsers([...apiUsers, ...managedUsers], filters));
-    }
-  });
+const fetchAllApiUsers = async () => {
+  const users = [];
+  let page = 1;
+  let total = null;
+
+  while (total === null || users.length < total) {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(USERS_BATCH_SIZE)
+    });
+
+    const payload = await strictRequest({
+      path: `${SUPER_ADMIN_BASE}/users?${params.toString()}`
+    });
+
+    const batch = Array.isArray(payload?.users) ? payload.users.map(mapApiUserToUi) : [];
+    users.push(...batch);
+
+    total = Number(payload?.total || 0);
+    if (!batch.length || batch.length < USERS_BATCH_SIZE) break;
+
+    page += 1;
+  }
+
+  return users;
+};
+
+export const getUsers = async (filters = {}) => {
+  try {
+    const apiUsers = await fetchAllApiUsers();
+    const managedUsers = areDemoFallbacksEnabled()
+      ? getManagedAccounts().map(mapManagedAccountToUser)
+      : [];
+    return {
+      data: filterDeletedUsers(filterUsers([...apiUsers, ...managedUsers], filters)),
+      error: '',
+      isDemo: false
+    };
+  } catch (error) {
+    const fallbackUsers = areDemoFallbacksEnabled()
+      ? getManagedAccounts().map(mapManagedAccountToUser)
+      : [];
+
+    return {
+      data: filterDeletedUsers(filterUsers(fallbackUsers, filters)),
+      error: error.message || 'Request failed.',
+      isDemo: areDemoFallbacksEnabled()
+    };
+  }
+};
 
 export const updateUserStatus = async (userId, status) =>
   strictRequest({
