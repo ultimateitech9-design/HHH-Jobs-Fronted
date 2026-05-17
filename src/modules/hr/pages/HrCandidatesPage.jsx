@@ -240,9 +240,9 @@ export default function HrCandidatesPage() {
   };
 
   return (
-    <div className="space-y-4 pb-10 text-slate-700">
+    <div className="admin-ops-page text-slate-700">
       {!access.hasPaidAccess ? (
-        <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-sm">
           <div className="flex items-center gap-2 text-[13px] font-medium text-amber-800">
             <FiAlertCircle size={16} className="shrink-0" />
             <span>Blurred previews — upgrade to unlock full profiles &amp; direct outreach.</span>
@@ -268,7 +268,7 @@ export default function HrCandidatesPage() {
         audienceRole="hr"
       />
 
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{error}</div> : null}
+      {error ? <div className="admin-ops-alert admin-ops-alert--error text-sm">{error}</div> : null}
 
       <section className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className={`${panelClass} space-y-4 lg:sticky lg:top-24 lg:self-start`}>
@@ -376,7 +376,7 @@ export default function HrCandidatesPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-500">
+              <div className="admin-ops-pagination rounded-2xl border border-slate-200 bg-slate-50 text-[13px] text-slate-500">
                 <span>
                   Showing <strong className="text-navy">{candidates.length}</strong> of <strong className="text-navy">{pagination.total || summary.total}</strong> candidates
                 </span>
@@ -407,7 +407,7 @@ export default function HrCandidatesPage() {
                 ))}
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <div className="admin-ops-pagination rounded-2xl border border-slate-200 bg-white">
                 <button
                   type="button"
                   disabled={loading || pagination.page <= 1}

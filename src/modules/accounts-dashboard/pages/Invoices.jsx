@@ -50,21 +50,29 @@ const Invoices = () => {
       {error ? <p className="form-error">{error}</p> : null}
       <RevenueCards cards={cards} />
 
-      <section className="panel-card">
-        <div className="student-inline-controls">
-          <label>
-            Status
-            <select value={status} onChange={(event) => setStatus(event.target.value)}>
-              <option value="all">All</option>
-              <option value="paid">Paid</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-            </select>
-          </label>
+      <section className="admin-ops-panel">
+        <div className="admin-ops-panel-header">
+          <div>
+            <h2 className="admin-ops-panel-title">Invoice control desk</h2>
+            <p className="admin-ops-panel-note">Review invoice state, collection pressure, and enterprise billing output from one register.</p>
+          </div>
         </div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">
+          <div className="student-inline-controls">
+            <label>
+              Status
+              <select value={status} onChange={(event) => setStatus(event.target.value)}>
+                <option value="all">All</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+              </select>
+            </label>
+          </div>
 
-        {loading ? <p className="module-note">Loading invoices...</p> : null}
-        <InvoiceTable rows={visibleInvoices} />
+          {loading ? <p className="module-note">Loading invoices...</p> : null}
+          <InvoiceTable rows={visibleInvoices} />
+        </div>
       </section>
     </div>
   );

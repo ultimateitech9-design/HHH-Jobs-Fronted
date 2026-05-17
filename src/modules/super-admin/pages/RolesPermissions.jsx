@@ -53,8 +53,8 @@ const RolesPermissions = () => {
 
   return (
     <div className="module-page module-page--admin">
-      <AdminHeader title="Roles & Permissions" subtitle="Define which roles can manage users, jobs, payments, reports, settings, and support operations." />
-      {isDemo ? <p className="module-note">Demo role data is shown because super admin permission endpoints are not connected yet.</p> : null}
+      <AdminHeader title="Roles & Permissions" subtitle="Configure access rights across all modules." />
+      {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
       <section className="panel-card">

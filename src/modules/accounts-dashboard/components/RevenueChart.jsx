@@ -4,17 +4,21 @@ const RevenueChart = ({ points = [] }) => {
   const maxValue = points.reduce((highest, item) => Math.max(highest, Number(item.revenue || 0), Number(item.expenses || 0)), 0) || 1;
 
   return (
-    <div className="panel-card">
-      <div className="section-header">
+    <div className="admin-ops-panel">
+      <div className="admin-ops-panel-header">
         <div>
-          <p className="section-eyebrow">Revenue Trend</p>
-          <h2 className="section-title">Monthly Collections vs Spend</h2>
-          <p className="section-subtitle">Commercial performance for the HHH Jobs portal accounts flow.</p>
+          <h2 className="admin-ops-panel-title">Monthly collections vs spend</h2>
+          <p className="admin-ops-panel-note">Commercial performance for the HHH Jobs portal accounts flow.</p>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gap: '1rem' }}>
-        {points.map((point) => (
+      <div className="px-4 py-4 sm:px-5 sm:py-5" style={{ display: 'grid', gap: '1rem' }}>
+        {points.length === 0 ? (
+          <div className="admin-ops-empty-state">
+            <p className="admin-ops-empty-state__title">No revenue trend available</p>
+            <p className="admin-ops-empty-state__copy">Once finance reporting data is available, monthly collections and spend comparisons will appear here.</p>
+          </div>
+        ) : points.map((point) => (
           <div key={point.month} style={{ display: 'grid', gap: '0.45rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', fontWeight: 600 }}>
               <span>{point.month}</span>

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
 import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
-import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
 import RevenueChart from '../components/RevenueChart';
 import SalesChart from '../components/SalesChart';
 import { getSalesOverview, getSalesFunnel } from '../services/salesApi';
@@ -40,57 +39,84 @@ const SalesOverview = () => {
     ];
   }, [state.overview]);
 
-  const heroMetrics = useMemo(() => {
-    const stats = state.overview?.stats || {};
-    return [
-      { label: 'Sales agents', value: String(stats.salesAgents || 0), helper: 'Active team coverage' },
-      { label: 'Average order', value: formatCompactCurrency(stats.averageOrderValue || 0), helper: 'Deal size benchmark' },
-      { label: 'Refunds', value: String(stats.refunds || 0), helper: 'Current reversal pressure' },
-      { label: 'Converted leads', value: String(stats.convertedLeads || 0), helper: 'Won from active pipeline' }
-    ];
-  }, [state.overview]);
+  const quickActions = useMemo(() => ([
+    {
+      to: '/portal/sales/leads',
+      title: 'Lead Pipeline',
+      description: 'Qualify new demand and move proposals toward conversion.',
+      tone: 'brand',
+      ctaLabel: 'Open leads'
+    },
+    {
+      to: '/portal/sales/orders',
+      title: 'Orders',
+      description: 'Track sales orders, ownership, and payment-linked movement.',
+      tone: 'info',
+      ctaLabel: 'Open orders'
+    },
+    {
+      to: '/portal/sales/customers',
+      title: 'Customers',
+      description: 'Track active customers, renewals, and expansion potential.',
+      tone: 'success',
+      ctaLabel: 'Open customers'
+    },
+    {
+      to: '/portal/sales/team',
+      title: 'Sales Team',
+      description: 'Review team coverage, performance, and ownership balance.',
+      tone: 'accent',
+      ctaLabel: 'Open team'
+    },
+    {
+      to: '/portal/sales/products',
+      title: 'Products',
+      description: 'Inspect product performance and commercial package demand.',
+      tone: 'neutral',
+      ctaLabel: 'Open products'
+    },
+    {
+      to: '/portal/sales/coupons',
+      title: 'Coupons',
+      description: 'Track offer codes and discount-driven commercial activity.',
+      tone: 'warning',
+      ctaLabel: 'Open coupons'
+    },
+    {
+      to: '/portal/sales/refunds',
+      title: 'Refunds',
+      description: 'Monitor refund exposure and reversal movement.',
+      tone: 'warning',
+      ctaLabel: 'Open refunds'
+    },
+    {
+      to: '/portal/sales/reports',
+      title: 'Reports',
+      description: 'Review performance summaries and campaign effectiveness.',
+      tone: 'brand',
+      ctaLabel: 'Open reports'
+    }
+  ]), []);
 
   return (
     <div className="space-y-3 pb-2">
       {state.error ? <p className="form-error">{state.error}</p> : null}
-      <PortalDashboardHero
-        tone="sales"
-        eyebrow="Sales Overview"
-        badge="Commercial live"
-        title="Revenue momentum, target pacing, and lead conversion in one sales workspace"
-        description="Track commercial performance across HHH Jobs with revenue trends, lead flow, order volume, and customer activity aligned in one dashboard."
-        chips={['Lead flow', 'Revenue pacing', 'Order health']}
-        primaryAction={{ to: '/portal/sales/leads', label: 'Open Leads' }}
-        secondaryAction={{ to: '/portal/sales/orders', label: 'Review Orders' }}
-        metrics={heroMetrics}
-      />
       {state.loading ? <p className="module-note">Loading sales overview...</p> : null}
       {!state.loading && state.overview ? (
         <>
           <DashboardMetricCards cards={cards} />
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <DashboardQuickActionCard
-              to="/portal/sales/leads"
-              title="Lead Pipeline"
-              description="Qualify new demand and move proposals toward conversion."
-              tone="brand"
-              ctaLabel="Open leads"
-            />
-            <DashboardQuickActionCard
-              to="/portal/sales/customers"
-              title="Customers"
-              description="Track active customers, renewals, and expansion potential."
-              tone="info"
-              ctaLabel="Open customers"
-            />
-            <DashboardQuickActionCard
-              to="/portal/sales/reports"
-              title="Reports"
-              description="Review performance summaries and campaign effectiveness."
-              tone="success"
-              ctaLabel="Open reports"
-            />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {quickActions.map((action) => (
+              <DashboardQuickActionCard
+                key={action.title}
+                to={action.to}
+                title={action.title}
+                description={action.description}
+                tone={action.tone}
+                ctaLabel={action.ctaLabel}
+              />
+            ))}
           </div>
 
           <div className="split-grid">

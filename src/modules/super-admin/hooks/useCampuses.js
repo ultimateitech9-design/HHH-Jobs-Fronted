@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { getCampuses } from '../services/campusesApi';
+import rankedSearch from '../../../shared/utils/rankedSearch';
 
 const useCampuses = () => {
   const [campuses, setCampuses] = useState([]);
@@ -8,6 +9,7 @@ const useCampuses = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState(false);
+  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
 
   useEffect(() => {
     const load = async () => {
@@ -23,13 +25,17 @@ const useCampuses = () => {
   }, []);
 
   const filteredCampuses = useMemo(() => {
-    return campuses.filter((campus) => {
-      const search = String(filters.search || '').toLowerCase();
-      const matchesSearch = !search || [campus.name, campus.city, campus.state, campus.affiliation, campus.id].some((value) => String(value || '').toLowerCase().includes(search));
+    const statusFiltered = campuses.filter((campus) => {
       const matchesStatus = !filters.status || campus.status === filters.status;
-      return matchesSearch && matchesStatus;
+      return matchesStatus;
     });
-  }, [campuses, filters]);
+
+    if (!deferredSearch) {
+      return statusFiltered;
+    }
+
+    return rankedSearch(statusFiltered, deferredSearch, ['name', 'city', 'state', 'affiliation', 'id']);
+  }, [campuses, filters.status, deferredSearch]);
 
   return { campuses, summary, filteredCampuses, filters, setFilters, loading, error, isDemo };
 };

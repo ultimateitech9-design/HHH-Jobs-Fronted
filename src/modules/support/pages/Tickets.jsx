@@ -20,10 +20,18 @@ const Tickets = () => {
       {isDemo ? <p className="module-note">Demo support ticket data is displayed.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <SupportStatsCards cards={cards} />
-      <section className="panel-card">
-        <TicketFilterBar filters={filters} onChange={(field, value) => setFilters((current) => ({ ...current, [field]: value }))} />
-        {loading ? <p className="module-note">Loading tickets...</p> : null}
-        <TicketTable rows={filteredTickets} />
+      <section className="admin-ops-panel">
+        <div className="admin-ops-panel-header">
+          <div>
+            <h2 className="admin-ops-panel-title">Support queue workspace</h2>
+            <p className="admin-ops-panel-note">Triage tickets quickly by status, priority, category, and ownership.</p>
+          </div>
+        </div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">
+          <TicketFilterBar filters={filters} onChange={(field, value) => setFilters((current) => ({ ...current, [field]: value }))} />
+          {loading ? <p className="module-note">Loading tickets...</p> : null}
+          <TicketTable rows={filteredTickets} />
+        </div>
       </section>
     </div>
   );

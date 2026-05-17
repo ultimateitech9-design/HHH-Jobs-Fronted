@@ -5,7 +5,6 @@ import StatusPill from '../../../shared/components/StatusPill';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
 import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
-import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
 import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import useSupportStats from '../hooks/useSupportStats';
 import useTickets from '../hooks/useTickets';
@@ -23,16 +22,6 @@ const SupportDashboard = () => {
       { label: 'Resolved', value: String(data.resolvedTickets || 0), helper: `${data.avgResolutionHours || 0} hrs avg resolution`, tone: 'success', icon: FiClock },
       { label: 'Escalations', value: String(data.escalatedTickets || 0), helper: `${data.pendingTickets || 0} pending`, tone: 'warning', icon: FiAlertCircle },
       { label: 'Live Chat', value: String(data.liveChats || 0), helper: `${data.feedbackItems || 0} feedback items`, tone: 'default', icon: FiMessageCircle }
-    ];
-  }, [stats]);
-
-  const queueSignals = useMemo(() => {
-    const data = stats || {};
-    return [
-      { label: 'Open queue', value: String(data.openTickets || 0), helper: 'Active unresolved tickets' },
-      { label: 'Escalations', value: String(data.escalatedTickets || 0), helper: 'Priority desk workload' },
-      { label: 'Pending tickets', value: String(data.pendingTickets || 0), helper: 'Waiting on customer or team' },
-      { label: 'Avg resolution', value: `${data.avgResolutionHours || 0}h`, helper: 'Current service speed' }
     ];
   }, [stats]);
 
@@ -69,20 +58,67 @@ const SupportDashboard = () => {
     return bucket;
   }, [tickets]);
 
+  const quickActions = useMemo(() => ([
+    {
+      to: '/portal/support/tickets',
+      title: 'Tickets',
+      description: 'Open, assign, and resolve customer issues from the central queue.',
+      tone: 'brand',
+      ctaLabel: 'Open ticket desk'
+    },
+    {
+      to: '/portal/support/create-ticket',
+      title: 'Create Ticket',
+      description: 'Create a new support case directly from the dashboard when needed.',
+      tone: 'accent',
+      ctaLabel: 'Create ticket'
+    },
+    {
+      to: '/portal/support/live-chat',
+      title: 'Live Chat',
+      description: 'Handle real-time conversations before they become escalations.',
+      tone: 'info',
+      ctaLabel: 'Open live chat'
+    },
+    {
+      to: '/portal/support/faq',
+      title: 'FAQ',
+      description: 'Open common answers and customer-facing issue guidance.',
+      tone: 'neutral',
+      ctaLabel: 'Open FAQ'
+    },
+    {
+      to: '/portal/support/complaints',
+      title: 'Complaints',
+      description: 'Review complaint cases and sensitive escalations requiring oversight.',
+      tone: 'warning',
+      ctaLabel: 'Open complaints'
+    },
+    {
+      to: '/portal/support/feedback',
+      title: 'Feedback',
+      description: 'Check service feedback and recent customer sentiment inputs.',
+      tone: 'success',
+      ctaLabel: 'Open feedback'
+    },
+    {
+      to: '/portal/support/knowledge-base',
+      title: 'Knowledge Base',
+      description: 'Route common issues toward reusable answers and guides.',
+      tone: 'success',
+      ctaLabel: 'Open knowledge base'
+    },
+    {
+      to: '/portal/support/reports',
+      title: 'Reports',
+      description: 'Review queue performance, response time, and service reporting.',
+      tone: 'info',
+      ctaLabel: 'Open reports'
+    }
+  ]), []);
+
   return (
     <div className="space-y-3 pb-2">
-      <PortalDashboardHero
-        tone="support"
-        eyebrow="Support Dashboard"
-        badge={isDemo ? 'Demo desk' : 'Queue live'}
-        title="Support queue pressure, escalations, and response flow in one service desk view"
-        description="Track customer tickets, chat volume, escalation load, and response discipline so issues get triaged before they impact trust."
-        chips={['Ticket queue', 'Live support', 'Knowledge routing']}
-        primaryAction={{ to: '/portal/support/tickets', label: 'Open Ticket Queue' }}
-        secondaryAction={{ to: '/portal/support/live-chat', label: 'Open Live Chat' }}
-        metrics={queueSignals}
-      />
-
       {isDemo ? <p className="module-note">Demo support data is shown because backend support endpoints are not connected.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {ticketsError ? <p className="form-error">{ticketsError}</p> : null}
@@ -92,28 +128,17 @@ const SupportDashboard = () => {
         <>
           <DashboardMetricCards cards={cards} />
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <DashboardQuickActionCard
-              to="/portal/support/tickets"
-              title="Tickets"
-              description="Open, assign, and resolve customer issues from the central queue."
-              tone="brand"
-              ctaLabel="Open ticket desk"
-            />
-            <DashboardQuickActionCard
-              to="/portal/support/live-chat"
-              title="Live Chat"
-              description="Handle real-time conversations before they become escalations."
-              tone="info"
-              ctaLabel="Open live chat"
-            />
-            <DashboardQuickActionCard
-              to="/portal/support/knowledge-base"
-              title="Knowledge Base"
-              description="Route common issues toward reusable answers and guides."
-              tone="success"
-              ctaLabel="Open knowledge base"
-            />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {quickActions.map((action) => (
+              <DashboardQuickActionCard
+                key={action.title}
+                to={action.to}
+                title={action.title}
+                description={action.description}
+                tone={action.tone}
+                ctaLabel={action.ctaLabel}
+              />
+            ))}
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">

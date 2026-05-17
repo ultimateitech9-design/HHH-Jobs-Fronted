@@ -44,9 +44,17 @@ const Payouts = () => {
       {error ? <p className="form-error">{error}</p> : null}
       <RevenueCards cards={cards} />
 
-      <section className="panel-card">
-        {loading ? <p className="module-note">Loading payouts...</p> : null}
-        <PayoutTable rows={payouts} />
+      <section className="admin-ops-panel">
+        <div className="admin-ops-panel-header">
+          <div>
+            <h2 className="admin-ops-panel-title">Payout settlement queue</h2>
+            <p className="admin-ops-panel-note">Review beneficiary disbursements, payment methods, and outbound finance status.</p>
+          </div>
+        </div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">
+          {loading ? <p className="module-note">Loading payouts...</p> : null}
+          <PayoutTable rows={payouts} />
+        </div>
       </section>
     </div>
   );

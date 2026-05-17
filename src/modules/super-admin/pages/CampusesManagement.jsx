@@ -39,8 +39,8 @@ const CampusesManagement = () => {
 
   return (
     <div className="module-page module-page--admin">
-      <AdminHeader title="Campus Management" subtitle="Track campus partner activation, talent pool depth, campus-company links, and live placement activity." />
-      {isDemo ? <p className="module-note">Demo campus data is shown because super admin campus endpoints are not connected yet.</p> : null}
+      <AdminHeader title="Campus Management" subtitle="Track partner campuses, talent pools, and placement activity." />
+      {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
       <section className="panel-card">

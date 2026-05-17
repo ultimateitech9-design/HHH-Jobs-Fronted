@@ -37,8 +37,8 @@ const CompaniesManagement = () => {
 
   return (
     <div className="module-page module-page--admin">
-      <AdminHeader title="Companies Management" subtitle="Review employer account health, billing plans, usage depth, and platform access across all companies." />
-      {isDemo ? <p className="module-note">Demo company data is shown because super admin company endpoints are not connected yet.</p> : null}
+      <AdminHeader title="Companies Management" subtitle="Monitor company health, billing, and platform access." />
+      {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
       <section className="panel-card">

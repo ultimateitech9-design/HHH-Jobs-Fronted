@@ -1,35 +1,91 @@
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import rankedSearch from '../utils/rankedSearch';
+
 const DataTable = ({
   columns = [],
   rows = [],
   compact = false,
-  fitOnDesktop = false
+  fitOnDesktop = false,
+  searchable = false,
+  pagination = false,
+  itemsPerPage = 10,
+  searchPlaceholder = 'Search...',
 }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const normalizedSearchTerm = useMemo(() => String(searchTerm || '').trim(), [searchTerm]);
+  const deferredSearchTerm = useDeferredValue(normalizedSearchTerm);
+
+  const searchKeys = useMemo(
+    () => columns
+      .filter((column) => column.key !== 'actions' && column.key !== 'id')
+      .map((column) => column.key),
+    [columns]
+  );
+
+  const filteredRows = useMemo(() => {
+    if (!searchable || !deferredSearchTerm) return rows;
+
+    return rankedSearch(rows, deferredSearchTerm, searchKeys);
+  }, [rows, deferredSearchTerm, searchable, searchKeys]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / itemsPerPage));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedRows = useMemo(() => {
+    if (!pagination) return filteredRows;
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredRows.slice(start, start + itemsPerPage);
+  }, [filteredRows, currentPage, pagination, itemsPerPage]);
+
+  const displayRows = pagination ? paginatedRows : filteredRows;
+
   const explicitTableWidth = columns.reduce((total, column) => (
     total + (typeof column.width === 'number' ? column.width : 0)
   ), 0);
   const tableMinWidth = `${explicitTableWidth || Math.max(760, columns.length * 150)}px`;
   const desktopTableStyle = fitOnDesktop ? undefined : { minWidth: tableMinWidth };
   const desktopTableClassName = fitOnDesktop ? 'table-auto' : 'table-fixed';
+  
+  // Professional tight spacing and fonts
   const headerCellClassName = compact
-    ? 'px-3 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-500'
-    : 'px-4 py-3 text-left text-[11px] font-bold uppercase tracking-normal text-slate-500';
+    ? 'px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 font-sans'
+    : 'px-4 py-3 text-left text-[12px] font-bold uppercase tracking-wider text-slate-500 font-sans';
   const bodyCellClassName = compact
-    ? 'px-3 py-2.5 align-middle text-[12.5px] leading-5 text-slate-700'
-    : 'px-4 py-3 align-middle text-sm text-slate-700';
+    ? 'px-3 py-2.5 align-middle text-[13px] leading-relaxed text-slate-700 font-sans'
+    : 'px-4 py-3 align-middle text-[14px] leading-relaxed text-slate-700 font-sans';
+  
   const mobileCardClassName = compact
-    ? 'rounded-2xl border border-slate-200 bg-white p-3 shadow-sm'
-    : 'rounded-2xl border border-slate-200 bg-white p-3 shadow-sm';
+    ? 'rounded-xl border border-slate-200 bg-white p-3 shadow-sm font-sans transition-all hover:shadow-md'
+    : 'rounded-xl border border-slate-200 bg-white p-4 shadow-sm font-sans transition-all hover:shadow-md';
   const mobileLabelClassName = compact
-    ? 'block text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-400'
-    : 'block text-[11px] font-bold uppercase text-slate-400';
+    ? 'block text-[11px] font-semibold uppercase tracking-wider text-slate-400'
+    : 'block text-[12px] font-bold uppercase tracking-wider text-slate-400';
   const mobileValueClassName = compact
-    ? 'mt-1 min-w-0 break-words text-[12.5px] font-semibold leading-5 text-slate-800 [overflow-wrap:anywhere]'
-    : 'mt-1 min-w-0 break-words text-sm font-semibold text-slate-800 [overflow-wrap:anywhere]';
+    ? 'mt-1.5 min-w-0 break-words text-[13px] font-medium leading-relaxed text-slate-800 [overflow-wrap:anywhere]'
+    : 'mt-1.5 min-w-0 break-words text-[14px] font-medium leading-relaxed text-slate-800 [overflow-wrap:anywhere]';
+
   const getRowKey = (row, index) => row.id || row.key || index;
+  
   const getColumnWidth = (column) => {
     if (typeof column.width === 'number') return `${column.width}px`;
     return column.width || undefined;
   };
+
+  const getCellContentClassName = (column) => {
+    const wrappingClassName = column.wrap === false
+      ? 'whitespace-nowrap'
+      : 'break-words [overflow-wrap:anywhere]';
+
+    return `min-w-0 ${wrappingClassName} ${column.cellClassName || ''}`.trim();
+  };
+  
   const renderCellValue = (column, row) => {
     const value = typeof column.render === 'function'
       ? column.render(row[column.key], row)
@@ -39,8 +95,32 @@ const DataTable = ({
   };
 
   return (
-    <div className="w-full max-w-full">
-      <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:block">
+    <div className="w-full max-w-full space-y-4 font-sans">
+      
+      {/* Smart Search Bar */}
+      {searchable && (
+        <div className="mb-4 flex flex-col gap-3 rounded-[1.15rem] border border-slate-200/80 bg-slate-50/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:max-w-md">
+            <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1); // Reset page on search
+              }}
+              placeholder={searchPlaceholder}
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-[14px] font-medium text-slate-800 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+          <div className="text-[13px] text-slate-500 font-medium">
+            Showing <span className="font-semibold text-slate-800">{filteredRows.length}</span> results
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Table */}
+      <div className="hidden overflow-hidden rounded-[1.25rem] border border-slate-200/90 bg-white shadow-[0_16px_34px_rgba(15,23,42,0.06)] lg:block">
         <div className="max-w-full overflow-x-auto">
           <table className={`w-full divide-y divide-slate-200 ${desktopTableClassName}`} style={desktopTableStyle}>
             <colgroup>
@@ -48,34 +128,37 @@ const DataTable = ({
                 <col key={`${column.key}-col`} style={getColumnWidth(column) ? { width: getColumnWidth(column) } : undefined} />
               ))}
             </colgroup>
-            <thead className="bg-slate-50">
+            <thead className="bg-slate-50/80">
               <tr>
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    className={`text-left ${headerCellClassName} ${column.stickyRight ? 'sticky right-0 z-20 bg-slate-50 shadow-[-10px_0_18px_rgba(15,23,42,0.08)]' : ''}`}
+                    className={`text-left ${headerCellClassName} ${column.stickyRight ? 'sticky right-0 z-20 bg-slate-50 shadow-[-10px_0_18px_rgba(15,23,42,0.06)]' : ''}`}
                   >
                     {column.label}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.length === 0 ? (
+            <tbody className="divide-y divide-slate-100/80">
+              {displayRows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-slate-500 sm:px-5 sm:py-10">
-                    No records found.
+                  <td colSpan={columns.length} className="px-4 py-12 text-center text-[14px] text-slate-500">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <FiSearch className="text-slate-300" size={24} />
+                      <span>No records found.</span>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                rows.map((row, index) => (
-                  <tr key={getRowKey(row, index)} className="group transition-colors hover:bg-slate-50/80">
+                displayRows.map((row, index) => (
+                  <tr key={getRowKey(row, index)} className="group transition-colors hover:bg-slate-50/60">
                     {columns.map((column) => (
                       <td
                         key={`${column.key}-${getRowKey(row, index)}`}
-                        className={`${bodyCellClassName} ${column.stickyRight ? 'sticky right-0 z-10 bg-white shadow-[-10px_0_18px_rgba(15,23,42,0.08)] group-hover:bg-slate-50' : ''}`}
+                        className={`${bodyCellClassName} ${column.stickyRight ? 'sticky right-0 z-10 bg-white shadow-[-10px_0_18px_rgba(15,23,42,0.06)] group-hover:bg-slate-50' : ''}`}
                       >
-                        <div className={`min-w-0 break-words [overflow-wrap:anywhere] ${column.cellClassName || ''}`}>
+                        <div className={getCellContentClassName(column)}>
                           {renderCellValue(column, row)}
                         </div>
                       </td>
@@ -88,19 +171,23 @@ const DataTable = ({
         </div>
       </div>
 
+      {/* Mobile View */}
       <div className="grid gap-3 lg:hidden">
-        {rows.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">
-            No records found.
+        {displayRows.length === 0 ? (
+          <div className="rounded-[1.15rem] border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-[14px] text-slate-500 shadow-sm">
+            <div className="flex flex-col items-center justify-center gap-2">
+              <FiSearch className="text-slate-300" size={24} />
+              <span>No records found.</span>
+            </div>
           </div>
         ) : (
-          rows.map((row, index) => (
+          displayRows.map((row, index) => (
             <article key={getRowKey(row, index)} className={mobileCardClassName}>
-              <div className="grid gap-2">
+              <div className="grid gap-2.5">
                 {columns.map((column) => (
-                  <div key={`${column.key}-${getRowKey(row, index)}-card`} className={column.key === 'actions' ? 'border-t border-slate-100 pt-2' : ''}>
+                  <div key={`${column.key}-${getRowKey(row, index)}-card`} className={column.key === 'actions' ? 'border-t border-slate-100 pt-3 mt-1' : ''}>
                     <span className={mobileLabelClassName}>{column.label}</span>
-                    <div className={`${mobileValueClassName} ${column.cellClassName || ''}`}>
+                    <div className={`${mobileValueClassName} ${column.wrap === false ? 'whitespace-nowrap' : 'break-words [overflow-wrap:anywhere]'} ${column.cellClassName || ''}`.trim()}>
                       {renderCellValue(column, row)}
                     </div>
                   </div>
@@ -110,6 +197,34 @@ const DataTable = ({
           ))
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {pagination && totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between rounded-[1.05rem] border border-slate-200/80 bg-slate-50/70 px-4 py-3">
+          <div className="text-[13px] text-slate-500 font-medium hidden sm:block">
+            Page <span className="font-semibold text-slate-800">{currentPage}</span> of <span className="font-semibold text-slate-800">{totalPages}</span>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiChevronLeft size={16} /> Previous
+            </button>
+            <div className="text-[13px] text-slate-500 font-medium sm:hidden">
+              {currentPage} / {totalPages}
+            </div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next <FiChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

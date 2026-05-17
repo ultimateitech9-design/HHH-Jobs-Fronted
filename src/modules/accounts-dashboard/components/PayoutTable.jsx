@@ -26,7 +26,7 @@ const PayoutTable = ({ rows = [] }) => {
     }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} searchable pagination itemsPerPage={8} searchPlaceholder="Search payout ID, beneficiary, purpose, or method" />;
 };
 
 export default PayoutTable;

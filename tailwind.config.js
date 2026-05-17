@@ -127,9 +127,9 @@ export default {
         'gold-dark': '#ad7311',
       },
       fontFamily: {
-        heading: ['"Space Grotesk"', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        heading: ['Manrope', 'Inter', 'system-ui', 'sans-serif'],
+        body: ['Manrope', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Manrope', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       borderRadius: {

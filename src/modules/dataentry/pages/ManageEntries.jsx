@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import SectionHeader from '../../../shared/components/SectionHeader';
 import StatCard from '../../../shared/components/StatCard';
 import DataEntryEntryTable from '../components/DataEntryEntryTable';
 import { defaultEntryFilters, getDataEntryEntries } from '../services/dataentryApi';
@@ -35,12 +34,6 @@ const ManageEntries = () => {
 
   return (
     <div className="module-page module-page--dataentry">
-      <SectionHeader
-        eyebrow="Data Entry"
-        title="Manage Entries"
-        subtitle="Search and review draft, pending, approved, and rejected records from one operations table."
-      />
-
       {error ? <p className="form-error">{error}</p> : null}
 
       <div className="stats-grid">
@@ -49,42 +42,50 @@ const ManageEntries = () => {
         ))}
       </div>
 
-      <section className="panel-card">
-        <div className="student-inline-controls">
-          <label>
-            Type
-            <select value={filters.type} onChange={(event) => setFilters((current) => ({ ...current, type: event.target.value }))}>
-              <option value="">All</option>
-              <option value="job">Job</option>
-              <option value="property">Property</option>
-            </select>
-          </label>
-          <label>
-            Status
-            <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
-              <option value="">All</option>
-              <option value="draft">Draft</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </label>
-          <label>
-            Assigned To
-            <input value={filters.assignedTo} onChange={(event) => setFilters((current) => ({ ...current, assignedTo: event.target.value }))} />
-          </label>
-          <label className="full-width-control">
-            Search
-            <input value={filters.search} placeholder="Entry ID, title, company, candidate" onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))} />
-          </label>
-          <div className="student-job-actions">
-            <button type="button" className="btn-primary" onClick={() => loadEntries(filters)}>Apply</button>
-            <button type="button" className="btn-link" onClick={() => { setFilters(defaultEntryFilters); loadEntries(defaultEntryFilters); }}>Reset</button>
+      <section className="admin-ops-panel">
+        <div className="admin-ops-panel-header">
+          <div>
+            <h2 className="admin-ops-panel-title">Operations entry registry</h2>
+            <p className="admin-ops-panel-note">Review draft, pending, approved, and rejected records with faster filtering.</p>
           </div>
         </div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">
+          <div className="student-inline-controls">
+            <label>
+              Type
+              <select value={filters.type} onChange={(event) => setFilters((current) => ({ ...current, type: event.target.value }))}>
+                <option value="">All</option>
+                <option value="job">Job</option>
+                <option value="property">Property</option>
+              </select>
+            </label>
+            <label>
+              Status
+              <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
+                <option value="">All</option>
+                <option value="draft">Draft</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </label>
+            <label>
+              Assigned To
+              <input value={filters.assignedTo} onChange={(event) => setFilters((current) => ({ ...current, assignedTo: event.target.value }))} />
+            </label>
+            <label className="full-width-control">
+              Search
+              <input value={filters.search} placeholder="Entry ID, title, company, candidate" onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))} />
+            </label>
+            <div className="student-job-actions">
+              <button type="button" className="btn-primary" onClick={() => loadEntries(filters)}>Apply</button>
+              <button type="button" className="btn-link" onClick={() => { setFilters(defaultEntryFilters); loadEntries(defaultEntryFilters); }}>Reset</button>
+            </div>
+          </div>
 
-        {loading ? <p className="module-note">Loading entries...</p> : null}
-        <DataEntryEntryTable rows={entries} />
+          {loading ? <p className="module-note">Loading entries...</p> : null}
+          <DataEntryEntryTable rows={entries} />
+        </div>
       </section>
     </div>
   );

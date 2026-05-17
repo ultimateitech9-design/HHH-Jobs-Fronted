@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import DataTable from '../../../shared/components/DataTable';
 import { 
   FiUsers, 
   FiSearch, 
@@ -16,6 +17,7 @@ import {
   FiEyeOff
 } from 'react-icons/fi';
 import {
+  formatDateTime,
   getAdminUsers,
   updateAdminHrApproval,
   updateAdminUserStatus
@@ -30,7 +32,6 @@ import {
 } from '../../../utils/managedUsers';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const USERS_PAGE_SIZE = 10;
 
 const initialFilters = {
   role: 'all',
@@ -90,7 +91,6 @@ const AdminUsersPage = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [busyAction, setBusyAction] = useState('');
-  const [securityPage, setSecurityPage] = useState(1);
   const [showAuthKey, setShowAuthKey] = useState(false);
   const [accountForm, setAccountForm] = useState({
     name: '',
@@ -247,22 +247,6 @@ const AdminUsersPage = () => {
     });
   }, [users, filters.hrClearance]);
 
-  useEffect(() => {
-    setSecurityPage(1);
-  }, [filters.role, filters.status, filters.hrClearance, filters.search]);
-
-  const securityTotalPages = Math.max(1, Math.ceil(filteredSecurityUsers.length / USERS_PAGE_SIZE));
-  const paginatedSecurityUsers = useMemo(
-    () => filteredSecurityUsers.slice((securityPage - 1) * USERS_PAGE_SIZE, securityPage * USERS_PAGE_SIZE),
-    [filteredSecurityUsers, securityPage]
-  );
-
-  useEffect(() => {
-    if (securityPage > securityTotalPages) {
-      setSecurityPage(securityTotalPages);
-    }
-  }, [securityPage, securityTotalPages]);
-
   const securitySearchSuggestions = useMemo(() => {
     const values = new Set();
     users.forEach((user) => {
@@ -321,52 +305,52 @@ const AdminUsersPage = () => {
   };
 
   return (
-    <div className="admin-ops-page">
+    <div className="space-y-6 pb-8">
       
-      <header className="admin-ops-header">
+      <header className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
         <div>
-          <h1 className="admin-ops-title">
+          <h1 className="mb-1.5 flex items-center gap-3 text-2xl font-bold font-heading tracking-tight text-primary md:text-[2rem]">
             Identity & Access
           </h1>
-          <p className="admin-ops-subtitle">Manage platform users, HR verifications, and internal workforce accounts.</p>
+          <p className="text-base text-neutral-500">Manage platform users, HR verifications, and internal workforce accounts.</p>
         </div>
       </header>
 
       {error && (
-        <div className="admin-ops-alert admin-ops-alert--error animate-fade-in">
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600 shadow-sm animate-fade-in">
           <FiXCircle size={20} className="shrink-0" /> <span className="font-semibold">{error}</span>
         </div>
       )}
       {message && !error && (
-        <div className="admin-ops-alert admin-ops-alert--success animate-fade-in">
+        <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 shadow-sm animate-fade-in">
           <FiCheckCircle size={20} className="shrink-0" /> <span className="font-semibold">{message}</span>
         </div>
       )}
 
       {/* Stats Grid */}
-      <section className="admin-ops-stats">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((card) => (
-          <article key={card.label} className="admin-ops-stat-card">
-            <div className={`admin-ops-stat-card__icon ${card.bg}`}>
+          <article key={card.label} className="flex items-start gap-3 rounded-[1.5rem] border border-neutral-100 bg-white p-4 shadow-sm">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg ${card.bg}`}>
               {card.icon}
             </div>
             <div>
-              <h3 className="admin-ops-stat-card__value">{card.value}</h3>
-              <p className="admin-ops-stat-card__label">{card.label}</p>
-              <p className="admin-ops-stat-card__helper">{card.helper}</p>
+              <h3 className="mb-0.5 text-xl font-black text-primary">{card.value}</h3>
+              <p className="mb-0.5 text-xs font-bold text-neutral-600">{card.label}</p>
+              <p className="text-xs font-medium text-neutral-400">{card.helper}</p>
             </div>
           </article>
         ))}
       </section>
 
       {/* Internal Workforce Management */}
-      <section className="admin-ops-panel">
-        <div className="admin-ops-panel-header">
+      <section className="overflow-hidden rounded-[2rem] border border-neutral-100 bg-white shadow-sm">
+        <div className="flex flex-col items-start justify-between border-b border-neutral-100 bg-neutral-50/50 p-5 md:flex-row md:items-center md:p-6">
           <div>
-            <h2 className="admin-ops-panel-title">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-primary">
               <FiKey className="text-brand-500" /> Internal Workforce Accounts
             </h2>
-            <p className="admin-ops-panel-note">Provision access credentials for Data Entry, Accounts, and Support teams.</p>
+            <p className="mt-1 text-xs text-neutral-500 md:text-sm">Provision access credentials for Data Entry, Accounts, and Support teams.</p>
           </div>
         </div>
 
@@ -532,18 +516,18 @@ const AdminUsersPage = () => {
       </section>
 
       {/* Public Platform Users */}
-      <section className="admin-ops-panel min-h-[420px]">
-        <div className="admin-ops-panel-header">
+      <section className="flex min-h-[420px] flex-col overflow-hidden rounded-[2rem] border border-neutral-100 bg-white shadow-sm">
+        <div className="border-b border-neutral-100 bg-neutral-50/50 p-5 md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="admin-ops-panel-title">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-primary">
                 <FiUsers className="text-brand-500" /> Platform Security Database
               </h2>
-              <p className="admin-ops-panel-note">Audit trail of all public users (Students & Recruiters).</p>
+              <p className="mt-1 text-xs text-neutral-500 md:text-sm">Audit trail of all public users (Students & Recruiters).</p>
             </div>
 
             {/* Filters */}
-            <div className="admin-ops-filterbar">
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
               <div className="relative w-full sm:w-auto">
                 <select 
                   value={filters.role} 
@@ -588,7 +572,7 @@ const AdminUsersPage = () => {
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
                   value={filters.search}
-                  placeholder="Search by name, email, role, or status"
+                  placeholder="Search by name or email"
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   onKeyDown={(e) => e.key === 'Enter' && loadUsers(filters)}
                   list="admin-security-user-suggestions"
@@ -612,7 +596,7 @@ const AdminUsersPage = () => {
           </div>
         </div>
 
-        <div className="admin-ops-table-wrap custom-scrollbar">
+        <div className="relative flex-1 overflow-x-auto custom-scrollbar">
           {loading ? (
              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
                <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
@@ -637,7 +621,7 @@ const AdminUsersPage = () => {
                   </td>
                 </tr>
               ) : (
-                paginatedSecurityUsers.map((user) => {
+                filteredSecurityUsers.map((user) => {
                   const isHr = String(user.role).toLowerCase() === 'hr';
                   const isStatusBusy = busyAction === `status:${user.id}`;
                   const isApprovalBusy = busyAction === `approval:${user.id}`;
@@ -716,32 +700,6 @@ const AdminUsersPage = () => {
               )}
             </tbody>
           </table>
-        </div>
-        <div className="admin-ops-pagination">
-          <p className="text-xs font-semibold text-neutral-500">
-            Showing <span className="text-neutral-800">{paginatedSecurityUsers.length}</span> of <span className="text-neutral-800">{filteredSecurityUsers.length}</span> users
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSecurityPage((current) => Math.max(1, current - 1))}
-              disabled={securityPage <= 1}
-              className="btn-secondary"
-            >
-              Previous
-            </button>
-            <p className="text-xs font-semibold text-neutral-500">
-              Page <span className="text-neutral-800">{securityPage}</span> of <span className="text-neutral-800">{securityTotalPages}</span>
-            </p>
-            <button
-              type="button"
-              onClick={() => setSecurityPage((current) => Math.min(securityTotalPages, current + 1))}
-              disabled={securityPage >= securityTotalPages}
-              className="btn-secondary"
-            >
-              Next
-            </button>
-          </div>
         </div>
       </section>
 

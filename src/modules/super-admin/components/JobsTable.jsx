@@ -14,7 +14,7 @@ const JobsTable = ({ rows = [] }) => {
     { key: 'createdAt', label: 'Created', render: (value) => formatDate(value) }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} compact fitOnDesktop />;
 };
 
 export default JobsTable;

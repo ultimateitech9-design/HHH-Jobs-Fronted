@@ -4,6 +4,8 @@ import { FiCheck, FiLock, FiX, FiZap } from 'react-icons/fi';
 import { apiFetch } from '../../utils/api';
 import { getCurrentUser } from '../../utils/auth';
 import { hrStarterPricing } from '../config/pricingCatalog';
+import { formatTrialLabel } from '../constants/planConfig';
+import { openRazorpaySubscriptionCheckout, preloadRazorpayCheckout } from '../utils/razorpayCheckout';
 
 const tierNames = ['Free', 'Starter', 'Professional', 'Enterprise'];
 const tierColors = [
@@ -28,6 +30,27 @@ const formatPlanPrice = (plan = {}) => {
 const getRenewalPrice = (plan = {}) =>
   Number(plan?.meta?.trialRenewalPrice || (plan.slug === hrStarterPricing.slug ? hrStarterPricing.trialRenewalPrice : plan.price) || 0);
 
+const rolePlanNames = {
+  hr: 'HR',
+  student: 'Student',
+  campus_connect: 'Campus'
+};
+
+const safeParseJson = async (response) => {
+  try {
+    return await response.json();
+  } catch (error) {
+    return {};
+  }
+};
+
+const logUpgradePlanDebug = (label, payload) => {
+  if (!import.meta.env?.DEV) return;
+  console.groupCollapsed(`[UpgradePlanModal] ${label}`);
+  console.log(payload);
+  console.groupEnd();
+};
+
 const UpgradePlanModal = ({
   isOpen,
   onClose,
@@ -40,6 +63,7 @@ const UpgradePlanModal = ({
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState('');
+  const [checkoutMessage, setCheckoutMessage] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -60,9 +84,28 @@ const UpgradePlanModal = ({
     fetchPlans();
   }, [isOpen, audienceRole]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setCheckoutMessage('');
+  }, [isOpen, featureKey, audienceRole]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    preloadRazorpayCheckout().catch(() => {});
+  }, [isOpen]);
+
   const handleCheckout = useCallback(async (planSlug) => {
     setCheckoutLoading(planSlug);
+    setCheckoutMessage('');
     try {
+      logUpgradePlanDebug('checkout request', {
+        audienceRole,
+        featureKey,
+        planSlug,
+        provider: 'razorpay',
+        paymentStatus: 'pending'
+      });
+
       const response = await apiFetch('/pricing/role-plans/checkout', {
         method: 'POST',
         body: JSON.stringify({
@@ -73,20 +116,133 @@ const UpgradePlanModal = ({
         })
       });
 
-      const payload = await response.json();
+      const payload = await safeParseJson(response);
 
-      if (payload?.paymentSession?.short_url) {
-        window.open(payload.paymentSession.short_url, '_blank');
-      } else if (payload?.subscription) {
+      logUpgradePlanDebug('checkout response', {
+        ok: response.ok,
+        status: response.status,
+        payload
+      });
+
+      const paymentSession = payload?.paymentSession || {};
+      const localSubscriptionId = paymentSession.localSubscriptionId || paymentSession.local_subscription_id || '';
+      const shortUrl = paymentSession.shortUrl || paymentSession.short_url || '';
+      const subscriptionId =
+        paymentSession.subscriptionId
+        || paymentSession.subscription_id
+        || paymentSession.razorpaySubscriptionId
+        || paymentSession.razorpay_subscription_id
+        || '';
+      const razorpayKeyId =
+        paymentSession.keyId
+        || paymentSession.key_id
+        || paymentSession.razorpayKeyId
+        || paymentSession.razorpay_key_id
+        || '';
+      const hasSubscriptionSession = Boolean(subscriptionId);
+      const hasDirectCheckoutSession = Boolean(subscriptionId && razorpayKeyId);
+
+      logUpgradePlanDebug('normalized payment session', {
+        localSubscriptionId,
+        shortUrl,
+        subscriptionId,
+        razorpayKeyId,
+        hasSubscriptionSession,
+        hasDirectCheckoutSession
+      });
+
+      if (hasSubscriptionSession && !hasDirectCheckoutSession && shortUrl) {
+        window.location.assign(shortUrl);
+        return;
+      }
+
+      if (hasSubscriptionSession && !hasDirectCheckoutSession) {
+        throw new Error('Razorpay checkout session is incomplete. Missing key id for direct checkout.');
+      }
+
+      if (hasDirectCheckoutSession) {
+        logUpgradePlanDebug('using direct Razorpay checkout', {
+          subscriptionId,
+          razorpayKeyId
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error(payload?.message || payload?.error || 'Unable to start Razorpay checkout.');
+      }
+
+      if (payload?.alreadyAuthorized) {
         onClose?.();
         window.location.reload();
+        return;
       }
+
+      if (hasDirectCheckoutSession) {
+        const trialLabel = formatTrialLabel(audienceRole) || 'free trial';
+        const checkoutResult = await openRazorpaySubscriptionCheckout({
+          ...paymentSession,
+          name: `HHH Jobs ${rolePlanNames[audienceRole] || 'Premium'} Plan`,
+          description: `Start your ${trialLabel} now and enable Razorpay auto-pay for renewal.`
+        });
+
+        logUpgradePlanDebug('razorpay checkout result', checkoutResult);
+
+        if (checkoutResult.dismissed) {
+          setCheckoutMessage('Checkout was closed before auto-pay authorisation completed.');
+          return;
+        }
+
+        const verifyResponse = await apiFetch('/payments/role-subscriptions/verify', {
+          method: 'POST',
+          body: JSON.stringify({
+            localSubscriptionId,
+            razorpaySubscriptionId: checkoutResult.razorpaySubscriptionId,
+            razorpayPaymentId: checkoutResult.razorpayPaymentId,
+            razorpaySignature: checkoutResult.razorpaySignature,
+            audienceRole
+          })
+        });
+
+        const verifyPayload = await safeParseJson(verifyResponse);
+
+        logUpgradePlanDebug('verify response', {
+          ok: verifyResponse.ok,
+          status: verifyResponse.status,
+          payload: verifyPayload
+        });
+
+        if (!verifyResponse.ok) {
+          throw new Error(verifyPayload?.message || verifyPayload?.error || 'Unable to verify Razorpay auto-pay authorisation.');
+        }
+
+        onClose?.();
+        window.location.reload();
+        return;
+      }
+
+      if (shortUrl) {
+        window.location.assign(shortUrl);
+        return;
+      }
+
+      if (payload?.subscription || payload?.purchase?.status === 'paid') {
+        onClose?.();
+        window.location.reload();
+        return;
+      }
+
+      setCheckoutMessage(
+        payload?.fallbackReason
+        || payload?.message
+        || 'Plan request submitted successfully. Please wait for confirmation.'
+      );
     } catch (error) {
-      console.error('Checkout failed:', error);
+      logUpgradePlanDebug('checkout error', error);
+      setCheckoutMessage(String(error?.message || 'Checkout failed.'));
     } finally {
       setCheckoutLoading('');
     }
-  }, [onClose]);
+  }, [onClose, audienceRole, featureKey]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -217,6 +373,11 @@ const UpgradePlanModal = ({
 
         {/* Footer */}
         <div className="border-t border-slate-100 px-6 py-4">
+          {checkoutMessage ? (
+            <p className="mb-2 text-center text-xs font-semibold leading-5 text-brand-700">
+              {checkoutMessage}
+            </p>
+          ) : null}
           <p className="text-center text-xs text-slate-400">
             Plans are billed securely via Razorpay. Cancel anytime from your account settings.
           </p>

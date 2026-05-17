@@ -68,9 +68,17 @@ const Subscriptions = () => {
       {error ? <p className="form-error">{error}</p> : null}
       <RevenueCards cards={cards} />
 
-      <section className="panel-card">
-        {loading ? <p className="module-note">Loading subscriptions...</p> : null}
-        <DataTable columns={columns} rows={subscriptions} />
+      <section className="admin-ops-panel">
+        <div className="admin-ops-panel-header">
+          <div>
+            <h2 className="admin-ops-panel-title">Recurring billing registry</h2>
+            <p className="admin-ops-panel-note">Review employer plan health, renewal timing, and recurring contract value from one list.</p>
+          </div>
+        </div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">
+          {loading ? <p className="module-note">Loading subscriptions...</p> : null}
+          <DataTable columns={columns} rows={subscriptions} searchable pagination itemsPerPage={8} searchPlaceholder="Search company, plan, billing cycle, or status" />
+        </div>
       </section>
     </div>
   );

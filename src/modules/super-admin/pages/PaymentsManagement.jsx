@@ -1,19 +1,25 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import AdminHeader from '../components/AdminHeader';
 import ConfirmModal from '../components/ConfirmModal';
 import DashboardStatsCards from '../components/DashboardStatsCards';
 import FilterBar from '../components/FilterBar';
+import Pagination from '../components/Pagination';
 import PaymentsTable from '../components/PaymentsTable';
+import rankedSearch from '../../../shared/utils/rankedSearch';
 import { getPayments, updatePaymentStatus } from '../services/paymentsApi';
 import { formatCurrency } from '../utils/currencyFormat';
+
+const PAGE_SIZE = 10;
 
 const PaymentsManagement = () => {
   const [payments, setPayments] = useState([]);
   const [filters, setFilters] = useState({ search: '', status: '' });
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState(false);
   const [targetPayment, setTargetPayment] = useState(null);
+  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
 
   useEffect(() => {
     const load = async () => {
@@ -27,14 +33,34 @@ const PaymentsManagement = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    setPage(1);
+  }, [filters.search, filters.status]);
+
   const filteredPayments = useMemo(() => {
-    return payments.filter((payment) => {
-      const search = String(filters.search || '').toLowerCase();
-      const matchesSearch = !search || [payment.company, payment.item, payment.invoiceId, payment.id].some((value) => String(value || '').toLowerCase().includes(search));
+    const statusFiltered = payments.filter((payment) => {
       const matchesStatus = !filters.status || payment.status === filters.status;
-      return matchesSearch && matchesStatus;
+      return matchesStatus;
     });
-  }, [payments, filters]);
+
+    if (!deferredSearch) {
+      return statusFiltered;
+    }
+
+    return rankedSearch(statusFiltered, deferredSearch, ['id', 'invoiceId', 'company', 'item', 'method', 'status']);
+  }, [payments, filters.status, deferredSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPayments.length / PAGE_SIZE));
+  const paginatedPayments = useMemo(
+    () => filteredPayments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredPayments, page]
+  );
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const cards = useMemo(() => [
     { label: 'Collected Revenue', value: formatCurrency(payments.filter((item) => item.status === 'paid').reduce((sum, item) => sum + item.amount, 0)), helper: 'Successful settled items', tone: 'success' },
@@ -52,8 +78,8 @@ const PaymentsManagement = () => {
 
   return (
     <div className="module-page module-page--admin">
-      <AdminHeader title="Payments Management" subtitle="Monitor collections, payment failures, refund risk, and invoice-linked commercial activity." />
-      {isDemo ? <p className="module-note">Demo payment data is shown because super admin payment endpoints are not connected yet.</p> : null}
+      <AdminHeader title="Payments Management" subtitle="Monitor collections, failures, and refunds." />
+      {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
       <section className="panel-card">
@@ -61,10 +87,11 @@ const PaymentsManagement = () => {
           filters={filters}
           onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))}
           fields={[{ key: 'status', label: 'Status', options: ['paid', 'pending', 'failed', 'refunded', 'past_due'].map((status) => ({ value: status, label: status })) }]}
-          actions={filteredPayments[0] ? <button type="button" className="btn-secondary" onClick={() => setTargetPayment(filteredPayments[0])}>Mark first visible payment paid</button> : null}
+          actions={paginatedPayments[0] ? <button type="button" className="btn-secondary" onClick={() => setTargetPayment(paginatedPayments[0])}>Mark first visible payment paid</button> : null}
         />
         {loading ? <p className="module-note">Loading payments...</p> : null}
-        <PaymentsTable rows={filteredPayments} />
+        <PaymentsTable rows={paginatedPayments} />
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </section>
       <ConfirmModal
         open={Boolean(targetPayment)}

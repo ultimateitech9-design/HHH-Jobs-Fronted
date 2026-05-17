@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FiBriefcase, FiUsers, FiCalendar, FiTrendingUp, FiArrowRight, FiPlus, FiClock } from 'react-icons/fi';
 import StatusPill from '../../../shared/components/StatusPill';
 import FeatureGate from '../../../shared/components/FeatureGate';
+import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
 import {
   formatDateTime,
   getHrAnalytics,
@@ -150,6 +151,65 @@ const HrDashboardPage = () => {
     }));
   }, [analytics.pipeline, applicantHubRoute, totalInterviews, candidatePool]);
 
+  const quickActions = useMemo(() => ([
+    {
+      to: '/portal/hr/jobs?tab=post',
+      title: 'Post Job',
+      description: 'Create a new opening and push it into your hiring pipeline.',
+      tone: 'brand',
+      ctaLabel: 'Create job'
+    },
+    {
+      to: '/portal/hr/jobs',
+      title: 'Job Postings',
+      description: 'Manage open roles, activity, and applicant inflow from one place.',
+      tone: 'info',
+      ctaLabel: 'Open jobs'
+    },
+    {
+      to: '/portal/hr/candidates',
+      title: 'Candidate DB',
+      description: 'Search and review candidate profiles and shortlist-ready talent.',
+      tone: 'success',
+      ctaLabel: 'Open candidates'
+    },
+    {
+      to: '/portal/hr/interviews',
+      title: 'Interviews',
+      description: 'Schedule and manage interview rounds with current applicants.',
+      tone: 'warning',
+      ctaLabel: 'Open interviews'
+    },
+    {
+      to: '/portal/hr/campus-drives',
+      title: 'Campus Drives',
+      description: 'Track campus programs, drives, and university hiring touchpoints.',
+      tone: 'accent',
+      ctaLabel: 'Open drives'
+    },
+    {
+      to: '/portal/hr/analytics',
+      title: 'Reports',
+      description: 'Open hiring analytics, funnel movement, and performance summaries.',
+      tone: 'neutral',
+      ctaLabel: 'Open reports'
+    },
+    {
+      to: '/portal/hr/employee-verification',
+      title: 'Employee Verification',
+      description: 'Validate employee records and company-side verification steps.',
+      tone: 'info',
+      ctaLabel: 'Open verification'
+    },
+    {
+      to: '/portal/hr/profile',
+      title: 'Company Profile',
+      description: 'Update employer branding, profile data, and hiring-facing details.',
+      tone: 'brand',
+      ctaLabel: 'Open profile'
+    }
+  ]), []);
+
   const pipelineTotal = pipelineColumns.reduce((sum, col) => sum + col.count, 0) || 1;
   const stageColors = ['bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-amber-500', 'bg-emerald-500'];
   const stageTextColors = ['text-blue-600', 'text-indigo-600', 'text-violet-600', 'text-amber-600', 'text-emerald-600'];
@@ -157,7 +217,7 @@ const HrDashboardPage = () => {
   const firstName = (user?.name || user?.fullName || 'there').split(' ')[0];
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 pb-6">
       {state.error && (
         <div className="flex items-center gap-2.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] font-medium text-red-700">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
@@ -187,6 +247,19 @@ const HrDashboardPage = () => {
             <FiUsers size={14} /> Candidates
           </Link>
         </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {quickActions.map((action) => (
+          <DashboardQuickActionCard
+            key={action.title}
+            to={action.to}
+            title={action.title}
+            description={action.description}
+            tone={action.tone}
+            ctaLabel={action.ctaLabel}
+          />
+        ))}
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

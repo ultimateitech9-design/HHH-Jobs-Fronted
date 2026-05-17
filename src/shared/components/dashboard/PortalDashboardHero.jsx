@@ -27,37 +27,50 @@ const PortalDashboardHero = ({
   secondaryAction,
   metrics = [],
   aside,
-  compact = true
+  compact = true,
+  dense = false
 }) => {
   const gradientClass = toneClasses[tone] || toneClasses.brand;
   const sectionClass = compact
-    ? 'rounded-[1.25rem] px-3 py-3 sm:px-4 sm:py-4 lg:px-4.5 lg:py-4'
+    ? dense
+      ? 'rounded-[1.15rem] px-3 py-2.5 sm:px-3.5 sm:py-3 lg:px-4 lg:py-3.5'
+      : 'rounded-[1.25rem] px-3 py-3 sm:px-4 sm:py-4 lg:px-4.5 lg:py-4'
     : 'rounded-[2rem] px-5 py-5 sm:px-6 sm:py-6 lg:px-7 lg:py-7';
   const layoutClass = compact
-    ? 'grid gap-3 xl:grid-cols-[minmax(0,1.02fr)_minmax(260px,0.98fr)] xl:items-start'
+    ? dense
+      ? 'grid gap-2.5 xl:grid-cols-[minmax(0,1.05fr)_minmax(250px,0.95fr)] xl:items-start'
+      : 'grid gap-3 xl:grid-cols-[minmax(0,1.02fr)_minmax(260px,0.98fr)] xl:items-start'
     : 'grid gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.88fr)] xl:items-start';
   const titleClass = compact
-    ? 'mt-1.5 max-w-3xl text-balance break-words font-heading text-[1.35rem] font-bold leading-tight sm:text-[1.55rem] lg:text-[1.75rem]'
+    ? dense
+      ? 'mt-1 max-w-3xl text-balance break-words font-heading text-[1.2rem] font-bold leading-tight sm:text-[1.38rem] lg:text-[1.55rem]'
+      : 'mt-1.5 max-w-3xl text-balance break-words font-heading text-[1.35rem] font-bold leading-tight sm:text-[1.55rem] lg:text-[1.75rem]'
     : 'mt-3 max-w-3xl text-balance break-words font-heading text-[2rem] font-bold leading-tight lg:text-[2.7rem]';
   const descriptionClass = compact
-    ? 'mt-1.5 max-w-2xl text-[12px] leading-4.5 text-white/78 sm:text-[13px] sm:leading-5'
+    ? dense
+      ? 'mt-1 max-w-2xl text-[11px] leading-4 text-white/78 sm:text-[12px] sm:leading-4.5'
+      : 'mt-1.5 max-w-2xl text-[12px] leading-4.5 text-white/78 sm:text-[13px] sm:leading-5'
     : 'mt-3 max-w-2xl text-sm leading-6 text-white/78 md:text-base';
-  const chipsWrapClass = compact ? 'mt-2.5 flex flex-wrap gap-1.5' : 'mt-4 flex flex-wrap gap-2';
+  const chipsWrapClass = compact ? (dense ? 'mt-2 flex flex-wrap gap-1.5' : 'mt-2.5 flex flex-wrap gap-1.5') : 'mt-4 flex flex-wrap gap-2';
   const chipClass = compact
-    ? 'inline-flex rounded-full border border-white/18 bg-white/8 px-2 py-0.5 text-[9px] font-semibold leading-none text-white/88 sm:text-[10px]'
+    ? dense
+      ? 'inline-flex rounded-full border border-white/18 bg-white/8 px-2 py-0.5 text-[8.5px] font-semibold leading-none text-white/88 sm:text-[9px]'
+      : 'inline-flex rounded-full border border-white/18 bg-white/8 px-2 py-0.5 text-[9px] font-semibold leading-none text-white/88 sm:text-[10px]'
     : 'inline-flex rounded-full border border-white/18 bg-white/8 px-3 py-1 text-xs font-semibold text-white/88';
-  const actionsWrapClass = compact ? 'mt-3 flex flex-wrap gap-1.5' : 'mt-5 flex flex-wrap gap-3';
+  const actionsWrapClass = compact ? (dense ? 'mt-2.5 flex flex-wrap gap-1.5' : 'mt-3 flex flex-wrap gap-1.5') : 'mt-5 flex flex-wrap gap-3';
   const primaryActionClass = getDashboardHeroActionClassName({ variant: 'primary', compact });
   const secondaryActionClass = getDashboardHeroActionClassName({ variant: 'secondary', compact });
-  const metricsWrapClass = compact ? 'grid gap-2 grid-cols-2 xl:grid-cols-2' : 'grid gap-3 sm:grid-cols-2';
+  const metricsWrapClass = compact ? (dense ? 'grid gap-1.5 grid-cols-2 xl:grid-cols-2' : 'grid gap-2 grid-cols-2 xl:grid-cols-2') : 'grid gap-3 sm:grid-cols-2';
   const metricCardClass = compact
-    ? 'min-w-0 rounded-[0.9rem] border border-white/15 bg-slate-950/18 px-2.5 py-2.5 backdrop-blur-md'
+    ? dense
+      ? 'min-w-0 rounded-[0.8rem] border border-white/15 bg-slate-950/18 px-2.5 py-2 backdrop-blur-md'
+      : 'min-w-0 rounded-[0.9rem] border border-white/15 bg-slate-950/18 px-2.5 py-2.5 backdrop-blur-md'
     : 'rounded-[1.4rem] border border-white/15 bg-slate-950/18 px-4 py-4 backdrop-blur-md';
   const clickableMetricCardClass = compact
     ? `${metricCardClass} block transition duration-200 hover:-translate-y-0.5 hover:bg-slate-950/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70`
     : `${metricCardClass} block transition duration-200 hover:-translate-y-0.5 hover:bg-slate-950/24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70`;
-  const metricValueClass = compact ? 'mt-1 text-[1.2rem] font-black leading-none text-white sm:text-[1.35rem]' : 'mt-2 text-3xl font-black text-white';
-  const metricHelperClass = compact ? 'mt-1 text-[11px] leading-4 text-white/74' : 'mt-2 text-sm text-white/74';
+  const metricValueClass = compact ? (dense ? 'mt-0.5 text-[1.08rem] font-black leading-none text-white sm:text-[1.22rem]' : 'mt-1 text-[1.2rem] font-black leading-none text-white sm:text-[1.35rem]') : 'mt-2 text-3xl font-black text-white';
+  const metricHelperClass = compact ? (dense ? 'mt-0.5 text-[10px] leading-3.5 text-white/74' : 'mt-1 text-[11px] leading-4 text-white/74') : 'mt-2 text-sm text-white/74';
 
   return (
     <section className={`relative overflow-hidden bg-gradient-to-br text-white shadow-xl ${sectionClass} ${gradientClass}`}>
@@ -128,7 +141,7 @@ const PortalDashboardHero = ({
             metrics.map((metric) => {
               const cardContent = (
                 <>
-                  <p className="break-words text-[9px] font-bold uppercase tracking-[0.12em] text-white/58 sm:text-[10px] sm:tracking-[0.16em]">{metric.label}</p>
+                  <p className={`break-words font-bold uppercase text-white/58 ${dense ? 'text-[8px] tracking-[0.1em] sm:text-[9px] sm:tracking-[0.12em]' : 'text-[9px] tracking-[0.12em] sm:text-[10px] sm:tracking-[0.16em]'}`}>{metric.label}</p>
                   <p className={metricValueClass}>{metric.value}</p>
                   {metric.helper ? <p className={`${metricHelperClass} break-words`}>{metric.helper}</p> : null}
                 </>

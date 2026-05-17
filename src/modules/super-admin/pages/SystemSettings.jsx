@@ -55,8 +55,8 @@ const SystemSettings = () => {
 
   return (
     <div className="module-page module-page--admin">
-      <AdminHeader title="System Settings" subtitle="Control platform-wide feature switches, approval policy, support targets, and operational guardrails." />
-      {isDemo ? <p className="module-note">Demo settings are shown because super admin settings endpoints are not connected yet.</p> : null}
+      <AdminHeader title="System Settings" subtitle="Control platform-wide configuration and policies." />
+      {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {cards.length > 0 ? <DashboardStatsCards cards={cards} /> : null}
       <section className="panel-card">

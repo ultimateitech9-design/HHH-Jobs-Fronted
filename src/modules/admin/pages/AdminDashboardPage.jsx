@@ -8,8 +8,8 @@ import {
   FiUsers
 } from 'react-icons/fi';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
-import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
 import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import StatusPill from '../../../shared/components/StatusPill';
 import {
@@ -130,16 +130,6 @@ const AdminDashboardPage = () => {
     ];
   }, [state.analytics]);
 
-  const commandSignals = useMemo(() => {
-    const analytics = state.analytics || {};
-    return [
-      { label: 'HR pending', value: state.pendingHr.length, helper: 'Recruiter approvals waiting' },
-      { label: 'Jobs pending', value: state.pendingJobs.length, helper: 'Listings waiting for review' },
-      { label: 'Open reports', value: state.openReports.length, helper: 'Reports requiring action' },
-      { label: 'Blocked auth', value: analytics.blockedUsers || 0, helper: 'Accounts with access restrictions' }
-    ];
-  }, [state.analytics, state.pendingHr, state.pendingJobs, state.openReports]);
-
   const priorityItems = useMemo(() => (
     [
       {
@@ -163,6 +153,51 @@ const AdminDashboardPage = () => {
     ]
   ), [state.pendingHr, state.pendingJobs, state.openReports]);
 
+  const quickActions = useMemo(() => ([
+    {
+      to: '/portal/admin/users',
+      title: 'Users',
+      description: 'Open admin users and recruiter access control.',
+      tone: 'brand',
+      ctaLabel: 'Open users'
+    },
+    {
+      to: '/portal/admin/jobs',
+      title: 'Jobs',
+      description: 'Review job listings, approvals, and publishing flow.',
+      tone: 'success',
+      ctaLabel: 'Open jobs'
+    },
+    {
+      to: '/portal/admin/reports',
+      title: 'Reports',
+      description: 'Inspect user reports and moderation issues.',
+      tone: 'warning',
+      ctaLabel: 'Open reports'
+    },
+    {
+      to: '/portal/admin/applications',
+      title: 'Applications',
+      description: 'Track incoming applications and recruitment flow.',
+      tone: 'info',
+      ctaLabel: 'Open applications'
+    },
+    {
+      to: '/portal/admin/master-data',
+      title: 'Master Data',
+      description: 'Manage core records and operational data sets.',
+      tone: 'accent',
+      ctaLabel: 'Open data'
+    },
+    {
+      to: '/portal/admin/payments',
+      title: 'Payments',
+      description: 'Review payment activity and billing exceptions.',
+      tone: 'neutral',
+      ctaLabel: 'Open payments'
+    }
+  ]), []);
+
   return (
     <div className="relative overflow-hidden pb-3">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[410px] bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.14),transparent_40%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.88))]" />
@@ -180,21 +215,6 @@ const AdminDashboardPage = () => {
         </div>
       ) : null}
 
-      <div className="relative z-10">
-        <div className="pointer-events-none absolute inset-0 rounded-[1.5rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.10),transparent_34%,transparent_66%,rgba(255,255,255,0.06))]" />
-        <PortalDashboardHero
-          tone="admin"
-          eyebrow="Admin Dashboard"
-          badge="Admin workspace"
-          title="Admin approvals and review summary"
-          description="Review recruiters, pending listings, and reports from one clean dashboard."
-          chips={['Approvals', 'Listings', 'Reports']}
-          primaryAction={{ to: '/portal/admin/users', label: 'Review HR Queue' }}
-          secondaryAction={{ to: '/portal/admin/reports', label: 'Open Reports' }}
-          metrics={commandSignals}
-        />
-      </div>
-
       {state.loading ? <p className="module-note">Loading admin dashboard...</p> : null}
 
       {!state.loading ? (
@@ -207,6 +227,19 @@ const AdminDashboardPage = () => {
               </div>
             </div>
             <DashboardMetricCards cards={cards} className="gap-3" />
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {quickActions.map((action) => (
+              <DashboardQuickActionCard
+                key={action.title}
+                to={action.to}
+                title={action.title}
+                description={action.description}
+                tone={action.tone}
+                ctaLabel={action.ctaLabel}
+              />
+            ))}
           </div>
 
           <div className="mt-4 grid gap-3 xl:grid-cols-[1.1fr_0.9fr]">

@@ -162,8 +162,8 @@ const SystemLogs = () => {
 
   return (
     <div className="module-page module-page--admin">
-      <AdminHeader title="System Logs" subtitle="Review platform activity across super admin, admin, support, sales, accounts, HR, campus, and system workflows." />
-      {isDemo ? <p className="module-note">Demo log data is shown because super admin log endpoints are not connected yet.</p> : null}
+      <AdminHeader title="System Logs" subtitle="Review platform activity and critical events." />
+      {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
       <section className="panel-card min-w-0">
@@ -196,7 +196,7 @@ const SystemLogs = () => {
           ]}
         />
         {loading ? <p className="module-note">Loading system logs...</p> : null}
-        <DataTable columns={columns} rows={logs} compact />
+        <DataTable columns={columns} rows={logs} compact searchable searchPlaceholder="Search logs by actor, action, module, or details" />
         <Pagination
           page={pagination.page || 1}
           totalPages={pagination.totalPages || 1}

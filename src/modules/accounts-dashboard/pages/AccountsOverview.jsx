@@ -86,6 +86,65 @@ const AccountsOverview = () => {
     ];
   }, [state.overview]);
 
+  const quickActions = useMemo(() => ([
+    {
+      to: '/portal/accounts/transactions',
+      title: 'Transactions',
+      description: 'Recent collections and settlement movement.',
+      tone: 'brand',
+      ctaLabel: 'Open transactions'
+    },
+    {
+      to: '/portal/accounts/invoices',
+      title: 'Invoices',
+      description: 'Review invoice backlog, billed items, and payment follow-up.',
+      tone: 'info',
+      ctaLabel: 'Open invoices'
+    },
+    {
+      to: '/portal/accounts/subscriptions',
+      title: 'Subscriptions',
+      description: 'Monitor recurring billing and renewal health.',
+      tone: 'accent',
+      ctaLabel: 'Open subscriptions'
+    },
+    {
+      to: '/portal/accounts/expenses',
+      title: 'Expenses',
+      description: 'Track operational expenses and approved finance outflow.',
+      tone: 'neutral',
+      ctaLabel: 'Open expenses'
+    },
+    {
+      to: '/portal/accounts/payouts',
+      title: 'Payouts',
+      description: 'Review scheduled settlements and payout release flow.',
+      tone: 'success',
+      ctaLabel: 'Open payouts'
+    },
+    {
+      to: '/portal/accounts/refunds',
+      title: 'Refunds',
+      description: 'Watch refund exposure and reversals.',
+      tone: 'warning',
+      ctaLabel: 'Review refunds'
+    },
+    {
+      to: '/portal/accounts/reports',
+      title: 'Reports',
+      description: 'Open finance summaries and exports.',
+      tone: 'success',
+      ctaLabel: 'Open reports'
+    },
+    {
+      to: '/portal/accounts/payment-settings',
+      title: 'Payment Settings',
+      description: 'Manage gateways, settlement rules, and finance-side configuration.',
+      tone: 'brand',
+      ctaLabel: 'Open settings'
+    }
+  ]), []);
+
   return (
     <div className="space-y-3 pb-2">
       {state.error ? <p className="form-error">{state.error}</p> : null}
@@ -106,35 +165,17 @@ const AccountsOverview = () => {
         <>
           <DashboardMetricCards cards={cards} />
 
-          <div className="grid gap-4 md:grid-cols-4">
-            <DashboardQuickActionCard
-              to="/portal/accounts/transactions"
-              title="Transactions"
-              description="Recent collections and settlement movement."
-              tone="brand"
-              ctaLabel="Open transactions"
-            />
-            <DashboardQuickActionCard
-              to="/portal/accounts/subscriptions"
-              title="Subscriptions"
-              description="Monitor recurring billing and renewal health."
-              tone="accent"
-              ctaLabel="Open subscriptions"
-            />
-            <DashboardQuickActionCard
-              to="/portal/accounts/refunds"
-              title="Refunds"
-              description="Watch refund exposure and reversals."
-              tone="warning"
-              ctaLabel="Review refunds"
-            />
-            <DashboardQuickActionCard
-              to="/portal/accounts/reports"
-              title="Reports"
-              description="Open finance summaries and exports."
-              tone="success"
-              ctaLabel="Open reports"
-            />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {quickActions.map((action) => (
+              <DashboardQuickActionCard
+                key={action.title}
+                to={action.to}
+                title={action.title}
+                description={action.description}
+                tone={action.tone}
+                ctaLabel={action.ctaLabel}
+              />
+            ))}
           </div>
 
           <div className="split-grid">

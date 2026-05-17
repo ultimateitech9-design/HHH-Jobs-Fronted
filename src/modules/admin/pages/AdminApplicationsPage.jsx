@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { 
   FiFileText, 
   FiSearch, 
@@ -10,11 +10,14 @@ import {
   FiActivity
 } from 'react-icons/fi';
 import { formatDateTime, getAdminApplications } from '../services/adminApi';
+import rankedSearch from '../../../shared/utils/rankedSearch';
 
 const initialFilters = {
   status: 'all',
   search: ''
 };
+
+const PAGE_SIZE = 12;
 
 const statusToApi = (status) => (status === 'all' ? '' : status);
 
@@ -39,8 +42,10 @@ const getStatusBadge = (status) => {
 const AdminApplicationsPage = () => {
   const [applications, setApplications] = useState([]);
   const [filters, setFilters] = useState(initialFilters);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
 
   const loadApplications = async (nextStatus = filters.status) => {
     setLoading(true);
@@ -56,16 +61,29 @@ const AdminApplicationsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filteredApplications = useMemo(() => {
-    const search = String(filters.search || '').toLowerCase().trim();
-    if (!search) return applications;
+  useEffect(() => {
+    setPage(1);
+  }, [filters.search, filters.status]);
 
-    return applications.filter((application) =>
-      `${application.applicantEmail || ''} ${application.applicantId || ''} ${application.jobId || ''}`
-        .toLowerCase()
-        .includes(search)
-    );
-  }, [applications, filters.search]);
+  const filteredApplications = useMemo(() => {
+    if (!deferredSearch) {
+      return applications;
+    }
+
+    return rankedSearch(applications, deferredSearch, ['applicantEmail', 'applicantId', 'jobId', 'hrId', 'status', 'id']);
+  }, [applications, deferredSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / PAGE_SIZE));
+  const paginatedApplications = useMemo(
+    () => filteredApplications.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredApplications, page]
+  );
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const stats = useMemo(() => {
     const stageCount = (stage) => applications.filter((item) => item.status === stage).length;
@@ -110,9 +128,9 @@ const AdminApplicationsPage = () => {
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
-            Cross-Portal Monitoring
+            Applications Monitoring
           </h1>
-          <p className="text-neutral-500 text-lg">Observe candidate telemetrics and marketplace liquidity across all HR funnels.</p>
+          <p className="text-neutral-500 text-lg">Track applications across jobs with clear stage visibility.</p>
         </div>
       </header>
 
@@ -161,12 +179,12 @@ const AdminApplicationsPage = () => {
                   className="w-full pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm sm:min-w-[170px]"
                 >
                   <option value="all">All Stages</option>
-                  <option value="applied">Applied (Raw)</option>
+                  <option value="applied">Applied</option>
                   <option value="shortlisted">Shortlisted</option>
                   <option value="interviewed">Interviewed</option>
                   <option value="offered">Offered</option>
-                  <option value="hired">Hired (Closed)</option>
-                  <option value="rejected">Rejected (Dropped)</option>
+                  <option value="hired">Hired</option>
+                  <option value="rejected">Rejected</option>
                 </select>
                 <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
               </div>
@@ -175,7 +193,7 @@ const AdminApplicationsPage = () => {
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
                   value={filters.search}
-                  placeholder="Query vector by Email or UID..."
+                  placeholder="Search by email, applicant ID, job ID, or HR ID"
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   className="w-full pl-9 pr-3 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium text-sm shadow-sm"
                 />
@@ -204,22 +222,22 @@ const AdminApplicationsPage = () => {
               {filteredApplications.length === 0 ? (
                 <tr>
                   <td colSpan="4" className="p-12 text-center text-neutral-500 font-medium">
-                    No matching pipeline vectors found in the current timeframe.
+                    No matching applications found.
                   </td>
                 </tr>
               ) : (
-                filteredApplications.map((app) => (
+                paginatedApplications.map((app) => (
                   <tr key={app.id} className="hover:bg-neutral-50/50 transition-colors">
                     <td className="p-4 pl-6 align-top">
                       <div className="font-bold text-primary text-sm flex items-center gap-2">
-                        {app.applicantEmail || 'Confidential Data'}
+                        {app.applicantEmail || 'Not provided'}
                         {app.resumeUrl && (
                           <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:text-brand-700 transition-colors bg-brand-50 p-1 rounded-md" title="View Resume Attachment">
                             <FiExternalLink size={12} />
                           </a>
                         )}
                       </div>
-                      <div className="font-mono text-[10px] text-neutral-400 font-bold tracking-wider mt-1">UUID: {app.applicantId ? String(app.applicantId).slice(-10) : 'UNK'}</div>
+                      <div className="font-mono text-[10px] text-neutral-400 font-bold tracking-wider mt-1">ID: {app.applicantId ? String(app.applicantId).slice(-10) : 'NA'}</div>
                     </td>
                     
                     <td className="p-4 align-top">
@@ -241,10 +259,10 @@ const AdminApplicationsPage = () => {
                     
                     <td className="p-4 pr-6 align-top text-right">
                        <div className="font-bold text-primary text-xs mb-1">
-                         T-STAMP: {formatDateTime(app.statusUpdatedAt)}
+                         Updated: {formatDateTime(app.statusUpdatedAt)}
                        </div>
                        <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">
-                         INIT: {formatDateTime(app.createdAt)}
+                         Created: {formatDateTime(app.createdAt)}
                        </div>
                     </td>
                   </tr>
@@ -252,6 +270,30 @@ const AdminApplicationsPage = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t border-neutral-100 p-4 sm:px-6">
+          <p className="text-xs font-semibold text-neutral-500">
+            Page <span className="text-neutral-800">{page}</span> of <span className="text-neutral-800">{totalPages}</span>
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page <= 1}
+              className="btn-secondary"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              disabled={page >= totalPages}
+              className="btn-secondary"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </section>
 

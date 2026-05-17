@@ -263,10 +263,10 @@ export default function CampusDashboardPage() {
             </div>
           </div>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
-            {plans.map((plan) => (
+            {plans.map((plan, index) => (
               <button
                 type="button"
-                key={plan.slug}
+                key={`${plan.slug || plan.id || 'plan'}-${index}`}
                 onClick={() => setSelectedPlanSlug(plan.slug)}
                 className={`rounded-[1.25rem] border p-4 text-left transition ${selectedPlanSlug === plan.slug ? 'border-brand-500 bg-brand-50' : 'border-slate-200 bg-slate-50 hover:border-brand-200'}`}
               >
@@ -327,8 +327,8 @@ export default function CampusDashboardPage() {
             <p className="text-sm text-slate-400">No branch data yet. Import students to see stats.</p>
           ) : (
             <div className="space-y-3">
-              {stats.branchStats.map((b) => (
-                <div key={b.branch}>
+              {stats.branchStats.map((b, index) => (
+                <div key={`${b.branch || 'branch'}-${index}`}>
                   <div className="mb-1 flex items-center justify-between">
                     <span className="text-sm font-semibold text-slate-700">{b.branch}</span>
                     <span className="text-xs font-bold text-slate-500">{b.placed}/{b.total} placed ({b.rate}%)</span>
@@ -370,8 +370,8 @@ export default function CampusDashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {stats.recentDrives.map((drive) => (
-                <div key={drive.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+              {stats.recentDrives.map((drive, index) => (
+                <div key={`${drive.id || drive._id || drive.company_name || 'drive'}-${index}`} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                   <div>
                     <p className="text-sm font-bold text-slate-800">{drive.company_name}</p>
                     <p className="text-xs text-slate-500">{new Date(drive.drive_date).toDateString()}</p>
@@ -394,11 +394,11 @@ export default function CampusDashboardPage() {
       <div className="rounded-[1.75rem] border border-dashed border-brand-200 bg-brand-50 p-6">
         <h2 className="mb-4 text-base font-bold text-brand-800">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
-          {campusActions.map((action) => {
+          {campusActions.map((action, index) => {
             const unlocked = canUseFeature(action.featureKey);
             return (
             <button
-              key={action.to}
+              key={`${action.to || action.featureKey || 'action'}-${index}`}
               type="button"
               onClick={() => handleCampusAction(action)}
               className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-100"

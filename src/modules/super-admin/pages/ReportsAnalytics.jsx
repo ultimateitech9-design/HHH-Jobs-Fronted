@@ -33,18 +33,18 @@ const ReportsAnalytics = () => {
 
   return (
     <div className="module-page module-page--admin">
-      <AdminHeader title="Reports & Analytics" subtitle="Read adoption, revenue, and operating health trends to steer platform decisions." />
-      {isDemo ? <p className="module-note">Demo report data is shown because super admin analytics endpoints are not connected yet.</p> : null}
+      <AdminHeader title="Reports & Analytics" subtitle="Review revenue and platform health trends." />
+      {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {cards.length > 0 ? <DashboardStatsCards cards={cards} /> : null}
       <div className="split-grid">
         <section className="panel-card">
-          <AdminHeader eyebrow="Revenue" title="Revenue Trend" subtitle="Month-on-month collection movement." />
+          <AdminHeader eyebrow="Revenue" title="Revenue Trend" subtitle="Monthly collections." />
           {loading ? <p className="module-note">Loading analytics...</p> : null}
           {!loading ? <ReportsChart rows={reports?.revenueTrend || []} /> : null}
         </section>
         <section className="panel-card">
-          <AdminHeader eyebrow="Adoption" title="Platform Adoption Snapshot" subtitle="Topline scale across key marketplace entities." />
+          <AdminHeader eyebrow="Adoption" title="Platform Adoption" subtitle="Topline scale across key modules." />
           <ul className="dash-feed">
             {(reports?.adoption || []).map((item) => (
               <li key={item.label}>

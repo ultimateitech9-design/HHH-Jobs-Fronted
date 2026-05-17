@@ -65,30 +65,36 @@ const Leads = () => {
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="module-note">{message}</p> : null}
       <SalesStatCards cards={cards} />
-      <section className="panel-card">
-        {canSync ? (
-          <div className="mb-4 flex justify-end">
+      <section className="admin-ops-panel">
+        <div className="admin-ops-panel-header">
+          <div>
+            <h2 className="admin-ops-panel-title">Commercial lead pipeline</h2>
+            <p className="admin-ops-panel-note">Review audience mix, stage progression, and onboarding readiness from one list.</p>
+          </div>
+          {canSync ? (
             <button type="button" onClick={handleSync} className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 transition hover:bg-brand-100">
               Sync Commercial Leads
             </button>
-          </div>
-        ) : null}
-        <FilterBar
-          filters={[
-            { key: 'stage', label: 'Stage', type: 'select', options: [{ value: '', label: 'All' }, { value: 'new', label: 'New' }, { value: 'qualified', label: 'Qualified' }, { value: 'proposal', label: 'Proposal' }] },
-            { key: 'targetRole', label: 'Audience', type: 'select', options: [{ value: '', label: 'All' }, { value: 'hr', label: 'HR' }, { value: 'campus_connect', label: 'Campus Connect' }, { value: 'student', label: 'Student' }] },
-            { key: 'onboardingStatus', label: 'Onboarding', type: 'select', options: [{ value: '', label: 'All' }, { value: 'prospect', label: 'Prospect' }, { value: 'negotiation', label: 'Negotiation' }, { value: 'active', label: 'Active' }, { value: 'onboarding', label: 'Onboarding' }] },
-            { key: 'search', label: 'Search', type: 'text', placeholder: 'Company, contact, email', fullWidth: true }
-          ]}
-          values={filters}
-          onChange={(key, value) => {
-            const nextFilters = { ...filters, [key]: value };
-            setFilters(nextFilters);
-            loadLeads(nextFilters);
-          }}
-        />
-        {loading ? <p className="module-note">Loading leads...</p> : null}
-        <LeadTable rows={rows} />
+          ) : null}
+        </div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">
+          <FilterBar
+            filters={[
+              { key: 'stage', label: 'Stage', type: 'select', options: [{ value: '', label: 'All' }, { value: 'new', label: 'New' }, { value: 'qualified', label: 'Qualified' }, { value: 'proposal', label: 'Proposal' }] },
+              { key: 'targetRole', label: 'Audience', type: 'select', options: [{ value: '', label: 'All' }, { value: 'hr', label: 'HR' }, { value: 'campus_connect', label: 'Campus Connect' }, { value: 'student', label: 'Student' }] },
+              { key: 'onboardingStatus', label: 'Onboarding', type: 'select', options: [{ value: '', label: 'All' }, { value: 'prospect', label: 'Prospect' }, { value: 'negotiation', label: 'Negotiation' }, { value: 'active', label: 'Active' }, { value: 'onboarding', label: 'Onboarding' }] },
+              { key: 'search', label: 'Search', type: 'text', placeholder: 'Company, contact, email', fullWidth: true }
+            ]}
+            values={filters}
+            onChange={(key, value) => {
+              const nextFilters = { ...filters, [key]: value };
+              setFilters(nextFilters);
+              loadLeads(nextFilters);
+            }}
+          />
+          {loading ? <p className="module-note">Loading leads...</p> : null}
+          <LeadTable rows={rows} />
+        </div>
       </section>
     </div>
   );

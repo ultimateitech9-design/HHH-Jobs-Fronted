@@ -6,7 +6,7 @@ const SuperAdminLayout = () => {
     <PortalWorkbenchLayout
       portalKey="super-admin"
       portalLabel="Super Admin"
-      subtitle="Full platform control over users, companies, jobs, billing, support, reporting, permissions, and system policies."
+      subtitle="Full platform control for users, companies, jobs, billing, support, reporting, and system policies."
       navItems={superAdminNavItems}
     />
   );

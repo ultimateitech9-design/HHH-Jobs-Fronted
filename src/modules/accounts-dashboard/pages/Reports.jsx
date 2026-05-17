@@ -65,10 +65,17 @@ const Reports = () => {
       <div className="split-grid">
         <RevenueChart points={report.revenue || []} />
 
-        <section className="panel-card">
-          <SectionHeader eyebrow="Performance" title="Category Performance" />
-          {loading ? <p className="module-note">Loading reports...</p> : null}
-          <DataTable columns={columns} rows={report.categoryPerformance || []} />
+        <section className="admin-ops-panel">
+          <div className="admin-ops-panel-header">
+            <div>
+              <h2 className="admin-ops-panel-title">Category performance</h2>
+              <p className="admin-ops-panel-note">Compare business-line contribution and operational health across revenue categories.</p>
+            </div>
+          </div>
+          <div className="px-4 py-4 sm:px-5 sm:py-5">
+            {loading ? <p className="module-note">Loading reports...</p> : null}
+            <DataTable columns={columns} rows={report.categoryPerformance || []} searchable pagination itemsPerPage={6} searchPlaceholder="Search metric, value, or health" />
+          </div>
         </section>
       </div>
     </div>

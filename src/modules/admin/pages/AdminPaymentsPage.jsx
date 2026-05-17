@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { 
   FiDollarSign, 
   FiSearch, 
@@ -26,12 +26,15 @@ import {
   updateAdminRolePlanPurchaseStatus,
   updateAdminRolePricingPlan
 } from '../services/adminApi';
+import rankedSearch from '../../../shared/utils/rankedSearch';
 import { TRIAL_DAYS } from '../../../shared/constants/planConfig';
 
 const initialFilters = {
   status: 'all',
   search: ''
 };
+
+const PAGE_SIZE = 12;
 
 const emptyDraft = {
   status: 'pending',
@@ -76,6 +79,7 @@ const AdminPaymentsPage = () => {
   const [coupons, setCoupons] = useState([]);
   const [couponDraft, setCouponDraft] = useState(emptyCouponDraft);
   const [filters, setFilters] = useState(initialFilters);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingPurchases, setLoadingPurchases] = useState(true);
   const [loadingCommercial, setLoadingCommercial] = useState(true);
@@ -86,6 +90,7 @@ const AdminPaymentsPage = () => {
   const [savingCoupon, setSavingCoupon] = useState(false);
   const [editPaymentId, setEditPaymentId] = useState('');
   const [draft, setDraft] = useState(emptyDraft);
+  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
 
   const loadPayments = async (nextStatus = filters.status) => {
     setLoading(true);
@@ -138,14 +143,29 @@ const AdminPaymentsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filteredPayments = useMemo(() => {
-    const search = String(filters.search || '').toLowerCase().trim();
-    if (!search) return payments;
+  useEffect(() => {
+    setPage(1);
+  }, [filters.search, filters.status]);
 
-    return payments.filter((payment) =>
-      `${payment.job_id || ''} ${payment.hr_id || ''} ${payment.reference_id || ''}`.toLowerCase().includes(search)
-    );
-  }, [payments, filters.search]);
+  const filteredPayments = useMemo(() => {
+    if (!deferredSearch) {
+      return payments;
+    }
+
+    return rankedSearch(payments, deferredSearch, ['id', 'job_id', 'hr_id', 'reference_id', 'provider', 'status', 'currency']);
+  }, [payments, deferredSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPayments.length / PAGE_SIZE));
+  const paginatedPayments = useMemo(
+    () => filteredPayments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredPayments, page]
+  );
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const stats = useMemo(() => {
     const paid = payments.filter((payment) => payment.status === 'paid');
@@ -351,9 +371,9 @@ const AdminPaymentsPage = () => {
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
-            Financial Ledger
+            Payments & Billing
           </h1>
-          <p className="text-neutral-500 text-lg">Verify incoming HR payments, reconcile subscription purchases, and issue refunds.</p>
+          <p className="text-neutral-500 text-lg">Review collections, plan purchases, and reconciliation actions.</p>
         </div>
       </header>
 
@@ -773,7 +793,7 @@ const AdminPaymentsPage = () => {
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
                   value={filters.search}
-                  placeholder="Search ledger by HR ID or TXN..."
+                  placeholder="Search by payment ID, HR ID, job ID, or reference"
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   className="w-full pl-9 pr-3 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium text-sm shadow-sm"
                 />
@@ -803,11 +823,11 @@ const AdminPaymentsPage = () => {
               {filteredPayments.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="p-12 text-center text-neutral-500 font-medium">
-                    No transactions match the current query window.
+                    No transactions matched the selected filters.
                   </td>
                 </tr>
               ) : (
-                filteredPayments.map((payment) => (
+                paginatedPayments.map((payment) => (
                   <tr key={payment.id} className="hover:bg-neutral-50/50 transition-colors">
                     <td className="p-4 pl-6 align-top">
                       <div className="font-mono text-primary text-sm font-bold bg-neutral-100 px-2 py-1 rounded inline-block mb-1 border border-neutral-200">
@@ -860,6 +880,30 @@ const AdminPaymentsPage = () => {
               )}
              </tbody>
           </table>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t border-neutral-100 p-4 sm:px-6">
+          <p className="text-xs font-semibold text-neutral-500">
+            Page <span className="text-neutral-800">{page}</span> of <span className="text-neutral-800">{totalPages}</span>
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page <= 1}
+              className="btn-secondary"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              disabled={page >= totalPages}
+              className="btn-secondary"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </section>
 

@@ -115,21 +115,35 @@ const Expenses = () => {
       {message ? <p className="form-success">{message}</p> : null}
       <RevenueCards cards={cards} />
 
-      <section className="panel-card">
-        <SectionHeader eyebrow="Add Expense" title="Create Expense Entry" />
-        <ExpenseForm
-          draft={draft}
-          saving={saving}
-          onChange={handleDraftChange}
-          onSubmit={handleSubmit}
-          onReset={() => setDraft(initialDraft)}
-        />
+      <section className="admin-ops-panel">
+        <div className="admin-ops-panel-header">
+          <div>
+            <h2 className="admin-ops-panel-title">Create expense entry</h2>
+            <p className="admin-ops-panel-note">Record operational spend with department, category, amount, and approval state.</p>
+          </div>
+        </div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">
+          <ExpenseForm
+            draft={draft}
+            saving={saving}
+            onChange={handleDraftChange}
+            onSubmit={handleSubmit}
+            onReset={() => setDraft(initialDraft)}
+          />
+        </div>
       </section>
 
-      <section className="panel-card">
-        <SectionHeader eyebrow="Expense Register" title="Recorded Spend" />
-        {loading ? <p className="module-note">Loading expenses...</p> : null}
-        <DataTable columns={columns} rows={expenses} />
+      <section className="admin-ops-panel">
+        <div className="admin-ops-panel-header">
+          <div>
+            <h2 className="admin-ops-panel-title">Expense register</h2>
+            <p className="admin-ops-panel-note">Audit spend lines by department, category, approval state, and spend date.</p>
+          </div>
+        </div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">
+          {loading ? <p className="module-note">Loading expenses...</p> : null}
+          <DataTable columns={columns} rows={expenses} searchable pagination itemsPerPage={8} searchPlaceholder="Search expense, category, department, note, or status" />
+        </div>
       </section>
     </div>
   );

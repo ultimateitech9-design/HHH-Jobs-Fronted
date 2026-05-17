@@ -56,31 +56,39 @@ const Transactions = () => {
       {error ? <p className="form-error">{error}</p> : null}
       <RevenueCards cards={cards} />
 
-      <section className="panel-card">
-        <div className="student-inline-controls">
-          <label>
-            Status
-            <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
-              <option value="all">All</option>
-              <option value="paid">Paid</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-              <option value="refunded">Refunded</option>
-            </select>
-          </label>
-
-          <label className="full-width-control">
-            Search
-            <input
-              value={filters.search}
-              placeholder="Transaction ID, reference, company, email"
-              onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-            />
-          </label>
+      <section className="admin-ops-panel">
+        <div className="admin-ops-panel-header">
+          <div>
+            <h2 className="admin-ops-panel-title">Collections ledger</h2>
+            <p className="admin-ops-panel-note">Filter payment flow by transaction state and review the current collections book.</p>
+          </div>
         </div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">
+          <div className="student-inline-controls">
+            <label>
+              Status
+              <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
+                <option value="all">All</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
+              </select>
+            </label>
 
-        {loading ? <p className="module-note">Loading transactions...</p> : null}
-        <TransactionTable rows={filteredTransactions} />
+            <label className="full-width-control">
+              Search
+              <input
+                value={filters.search}
+                placeholder="Transaction ID, reference, company, email"
+                onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
+              />
+            </label>
+          </div>
+
+          {loading ? <p className="module-note">Loading transactions...</p> : null}
+          <TransactionTable rows={filteredTransactions} />
+        </div>
       </section>
     </div>
   );

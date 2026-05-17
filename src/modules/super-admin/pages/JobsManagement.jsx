@@ -48,8 +48,8 @@ const JobsManagement = () => {
 
   return (
     <div className="module-page module-page--admin">
-      <AdminHeader title="Jobs Management" subtitle="Moderate publishing state, freeze risky listings, and keep job quality aligned with portal policy." />
-      {isDemo ? <p className="module-note">Demo job data is shown because super admin job endpoints are not connected yet.</p> : null}
+      <AdminHeader title="Jobs Management" subtitle="Review publishing status, approvals, and listing quality." />
+      {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
       <section className="panel-card">

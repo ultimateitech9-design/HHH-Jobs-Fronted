@@ -30,7 +30,7 @@ const InvoiceTable = ({ rows = [] }) => {
     }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} searchable pagination itemsPerPage={8} searchPlaceholder="Search invoice number, account, category, or status" />;
 };
 
 export default InvoiceTable;

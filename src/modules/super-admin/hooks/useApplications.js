@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { getApplications } from '../services/applicationsApi';
+import rankedSearch from '../../../shared/utils/rankedSearch';
 
 const useApplications = () => {
   const [applications, setApplications] = useState([]);
@@ -7,6 +8,7 @@ const useApplications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState(false);
+  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
 
   useEffect(() => {
     const load = async () => {
@@ -21,13 +23,17 @@ const useApplications = () => {
   }, []);
 
   const filteredApplications = useMemo(() => {
-    return applications.filter((application) => {
-      const search = String(filters.search || '').toLowerCase();
-      const matchesSearch = !search || [application.candidate, application.jobTitle, application.company, application.id].some((value) => String(value || '').toLowerCase().includes(search));
+    const stageFiltered = applications.filter((application) => {
       const matchesStage = !filters.stage || application.stage === filters.stage;
-      return matchesSearch && matchesStage;
+      return matchesStage;
     });
-  }, [applications, filters]);
+
+    if (!deferredSearch) {
+      return stageFiltered;
+    }
+
+    return rankedSearch(stageFiltered, deferredSearch, ['candidate', 'jobTitle', 'company', 'id']);
+  }, [applications, filters.stage, deferredSearch]);
 
   return { applications, filteredApplications, filters, setFilters, loading, error, isDemo };
 };

@@ -49,17 +49,25 @@ const Orders = () => {
       />
       {error ? <p className="form-error">{error}</p> : null}
       <SalesStatCards cards={cards} />
-      <section className="panel-card">
-        <FilterBar
-          filters={[
-            { key: 'status', label: 'Status', type: 'select', options: [{ value: '', label: 'All' }, { value: 'paid', label: 'Paid' }, { value: 'processing', label: 'Processing' }, { value: 'cancelled', label: 'Cancelled' }] },
-            { key: 'search', label: 'Search', type: 'text', placeholder: 'Order ID, customer, product', fullWidth: true }
-          ]}
-          values={filters}
-          onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))}
-        />
-        {loading ? <p className="module-note">Loading orders...</p> : null}
-        <OrderTable rows={rows} />
+      <section className="admin-ops-panel">
+        <div className="admin-ops-panel-header">
+          <div>
+            <h2 className="admin-ops-panel-title">Order registry</h2>
+            <p className="admin-ops-panel-note">Track payment progress, customer demand, and booked revenue from one list.</p>
+          </div>
+        </div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">
+          <FilterBar
+            filters={[
+              { key: 'status', label: 'Status', type: 'select', options: [{ value: '', label: 'All' }, { value: 'paid', label: 'Paid' }, { value: 'processing', label: 'Processing' }, { value: 'cancelled', label: 'Cancelled' }] },
+              { key: 'search', label: 'Search', type: 'text', placeholder: 'Order ID, customer, product', fullWidth: true }
+            ]}
+            values={filters}
+            onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))}
+          />
+          {loading ? <p className="module-note">Loading orders...</p> : null}
+          <OrderTable rows={rows} />
+        </div>
       </section>
     </div>
   );

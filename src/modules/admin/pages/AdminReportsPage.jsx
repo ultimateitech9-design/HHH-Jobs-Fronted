@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { 
   FiFlag, 
   FiSearch, 
@@ -14,11 +14,14 @@ import {
   FiSend
 } from 'react-icons/fi';
 import { formatDateTime, getAdminReports, updateAdminReport } from '../services/adminApi';
+import rankedSearch from '../../../shared/utils/rankedSearch';
 
 const initialFilters = {
   status: 'all',
   search: ''
 };
+
+const PAGE_SIZE = 8;
 
 const statusToApi = (status) => (status === 'all' ? '' : status);
 
@@ -46,6 +49,8 @@ const AdminReportsPage = () => {
   const [message, setMessage] = useState('');
   const [busyAction, setBusyAction] = useState('');
   const [reportDrafts, setReportDrafts] = useState({});
+  const [page, setPage] = useState(1);
+  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
 
   const loadReports = async (nextStatus = filters.status) => {
     setLoading(true);
@@ -61,16 +66,27 @@ const AdminReportsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filteredReports = useMemo(() => {
-    const search = String(filters.search || '').toLowerCase().trim();
-    if (!search) return reports;
+  useEffect(() => {
+    setPage(1);
+  }, [filters.search, filters.status]);
 
-    return reports.filter((report) =>
-      `${report.targetType || ''} ${report.targetId || ''} ${report.reason || ''} ${report.details || ''}`
-        .toLowerCase()
-        .includes(search)
-    );
-  }, [reports, filters.search]);
+  const filteredReports = useMemo(() => {
+    if (!deferredSearch) return reports;
+
+    return rankedSearch(reports, deferredSearch, ['targetType', 'targetId', 'reason', 'details', 'status', 'id']);
+  }, [reports, deferredSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredReports.length / PAGE_SIZE));
+  const paginatedReports = useMemo(
+    () => filteredReports.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredReports, page]
+  );
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const stats = useMemo(() => {
     const open = reports.filter((item) => item.status === 'open').length;
@@ -170,56 +186,56 @@ const AdminReportsPage = () => {
   };
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="admin-ops-page">
       
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <header className="admin-ops-header">
         <div>
-          <h1 className="text-3xl font-bold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
+          <h1 className="admin-ops-title">
             Moderation Support
           </h1>
-          <p className="text-neutral-500 text-lg">Review community flags, investigate violations, and enforce ecosystem rules.</p>
+          <p className="admin-ops-subtitle">Review community flags, investigate violations, and enforce ecosystem rules.</p>
         </div>
       </header>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 border border-red-200 shadow-sm animate-fade-in">
+        <div className="admin-ops-alert admin-ops-alert--error animate-fade-in">
           <FiXCircle size={20} className="shrink-0" /> <span className="font-semibold">{error}</span>
         </div>
       )}
       {message && !error && (
-        <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl flex items-center gap-3 border border-emerald-200 shadow-sm animate-fade-in">
+        <div className="admin-ops-alert admin-ops-alert--success animate-fade-in">
           <FiCheckCircle size={20} className="shrink-0" /> <span className="font-semibold">{message}</span>
         </div>
       )}
 
       {/* Stats Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <section className="admin-ops-stats">
         {stats.map((card) => (
-          <article key={card.label} className="bg-white rounded-[2rem] p-6 border border-neutral-100 shadow-sm flex items-start gap-4">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 ${card.bg}`}>
+          <article key={card.label} className="admin-ops-stat-card">
+            <div className={`admin-ops-stat-card__icon ${card.bg}`}>
               {card.icon}
             </div>
             <div>
-              <h3 className="text-2xl font-black text-primary mb-1">{card.value}</h3>
-              <p className="text-sm font-bold text-neutral-600 mb-0.5">{card.label}</p>
-              <p className="text-xs font-medium text-neutral-400">{card.helper}</p>
+              <h3 className="admin-ops-stat-card__value">{card.value}</h3>
+              <p className="admin-ops-stat-card__label">{card.label}</p>
+              <p className="admin-ops-stat-card__helper">{card.helper}</p>
             </div>
           </article>
         ))}
       </section>
 
       {/* Trust & Safety Table */}
-      <section className="bg-white rounded-[2.5rem] border border-neutral-100 shadow-sm overflow-hidden flex flex-col min-h-[600px]">
-        <div className="p-6 md:p-8 border-b border-neutral-100 bg-neutral-50/50">
-          <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
+      <section className="admin-ops-panel min-h-[600px]">
+        <div className="admin-ops-panel-header">
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 w-full">
             <div>
-              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+              <h2 className="admin-ops-panel-title">
                 <FiFlag className="text-brand-500" /> Trust & Safety Inbox
               </h2>
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="admin-ops-filterbar">
               <div className="relative">
                 <select 
                   value={filters.status} 
@@ -252,7 +268,7 @@ const AdminReportsPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-x-auto custom-scrollbar relative">
+        <div className="admin-ops-table-wrap custom-scrollbar">
           {loading ? (
              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
                <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
@@ -276,7 +292,7 @@ const AdminReportsPage = () => {
                   </td>
                 </tr>
               ) : (
-                filteredReports.map((report) => {
+                paginatedReports.map((report) => {
                   const draft = getDraft(report);
                   const isBusy = busyAction === report.id;
                   
@@ -389,6 +405,32 @@ const AdminReportsPage = () => {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="admin-ops-pagination">
+          <p className="text-xs font-semibold text-neutral-500">
+            Showing <span className="text-neutral-800">{paginatedReports.length}</span> of <span className="text-neutral-800">{filteredReports.length}</span> reports
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page <= 1}
+              className="btn-secondary"
+            >
+              Previous
+            </button>
+            <p className="text-xs font-semibold text-neutral-500">
+              Page <span className="text-neutral-800">{page}</span> of <span className="text-neutral-800">{totalPages}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              disabled={page >= totalPages}
+              className="btn-secondary"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </section>
 

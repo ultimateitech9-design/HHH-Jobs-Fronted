@@ -37,8 +37,8 @@ const ApplicationsManagement = () => {
 
   return (
     <div className="module-page module-page--admin">
-      <AdminHeader title="Applications Management" subtitle="Track candidate progression, conversion quality, and cross-company hiring pipeline performance." />
-      {isDemo ? <p className="module-note">Demo application data is shown because super admin application endpoints are not connected yet.</p> : null}
+      <AdminHeader title="Applications Management" subtitle="Track pipeline stages and hiring conversion." />
+      {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
       <section className="panel-card">

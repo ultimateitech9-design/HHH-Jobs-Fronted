@@ -27,7 +27,7 @@ const TransactionTable = ({ rows = [] }) => {
     }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} pagination itemsPerPage={8} />;
 };
 
 export default TransactionTable;

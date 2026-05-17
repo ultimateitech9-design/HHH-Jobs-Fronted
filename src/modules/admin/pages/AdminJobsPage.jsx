@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { 
   FiBriefcase, 
   FiSearch, 
@@ -22,12 +22,15 @@ import {
   updateAdminJobApproval,
   updateAdminJobStatus
 } from '../services/adminApi';
+import rankedSearch from '../../../shared/utils/rankedSearch';
 
 const initialFilters = {
   status: 'all',
   approvalStatus: 'all',
   search: ''
 };
+
+const PAGE_SIZE = 12;
 
 const statusFilterToApi = (status) => (status === 'all' ? '' : status);
 
@@ -51,11 +54,13 @@ const getStatusBadge = (status) => {
 const AdminJobsPage = () => {
   const [jobs, setJobs] = useState([]);
   const [filters, setFilters] = useState(initialFilters);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [busyAction, setBusyAction] = useState('');
   const [approvalDrafts, setApprovalDrafts] = useState({});
+  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
 
   const loadJobs = async (nextStatus = filters.status) => {
     setLoading(true);
@@ -71,16 +76,36 @@ const AdminJobsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    setPage(1);
+  }, [filters.search, filters.status, filters.approvalStatus]);
+
   const filteredJobs = useMemo(() => {
     const approvalStatus = filters.approvalStatus === 'all' ? '' : filters.approvalStatus;
-    const search = String(filters.search || '').toLowerCase().trim();
 
-    return jobs.filter((job) => {
+    const approvalFiltered = jobs.filter((job) => {
       const matchesApproval = !approvalStatus || String(job.approvalStatus || '').toLowerCase() === approvalStatus;
-      const matchesSearch = !search || `${job.jobTitle || ''} ${job.companyName || ''}`.toLowerCase().includes(search);
-      return matchesApproval && matchesSearch;
+      return matchesApproval;
     });
-  }, [jobs, filters]);
+
+    if (!deferredSearch) {
+      return approvalFiltered;
+    }
+
+    return rankedSearch(approvalFiltered, deferredSearch, ['jobTitle', 'companyName', 'jobLocation', 'id', '_id', 'approvalStatus', 'status']);
+  }, [jobs, filters.approvalStatus, deferredSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
+  const paginatedJobs = useMemo(
+    () => filteredJobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredJobs, page]
+  );
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const stats = useMemo(() => {
     const open = jobs.filter((job) => String(job.status || '').toLowerCase() === 'open').length;
@@ -221,56 +246,56 @@ const AdminJobsPage = () => {
   };
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="admin-ops-page">
       
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <header className="admin-ops-header">
         <div>
-          <h1 className="text-3xl font-bold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
-            Oversight & Moderation
+          <h1 className="admin-ops-title">
+            Jobs Moderation
           </h1>
-          <p className="text-neutral-500 text-lg">Control lifecycle, compliance clearance, and retention of all platform job postings.</p>
+          <p className="admin-ops-subtitle">Review job visibility, approval status, and listing quality.</p>
         </div>
       </header>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 border border-red-200 shadow-sm animate-fade-in">
+        <div className="admin-ops-alert admin-ops-alert--error animate-fade-in">
           <FiXCircle size={20} className="shrink-0" /> <span className="font-semibold">{error}</span>
         </div>
       )}
       {message && !error && (
-        <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl flex items-center gap-3 border border-emerald-200 shadow-sm animate-fade-in">
+        <div className="admin-ops-alert admin-ops-alert--success animate-fade-in">
           <FiCheckCircle size={20} className="shrink-0" /> <span className="font-semibold">{message}</span>
         </div>
       )}
 
       {/* Stats Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <section className="admin-ops-stats">
         {stats.map((card) => (
-          <article key={card.label} className="bg-white rounded-[2rem] p-6 border border-neutral-100 shadow-sm flex items-start gap-4">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 ${card.bg}`}>
+          <article key={card.label} className="admin-ops-stat-card">
+            <div className={`admin-ops-stat-card__icon ${card.bg}`}>
               {card.icon}
             </div>
             <div>
-              <h3 className="text-2xl font-black text-primary mb-1">{card.value}</h3>
-              <p className="text-sm font-bold text-neutral-600 mb-0.5">{card.label}</p>
-              <p className="text-xs font-medium text-neutral-400">{card.helper}</p>
+              <h3 className="admin-ops-stat-card__value">{card.value}</h3>
+              <p className="admin-ops-stat-card__label">{card.label}</p>
+              <p className="admin-ops-stat-card__helper">{card.helper}</p>
             </div>
           </article>
         ))}
       </section>
 
       {/* Job Registry Table */}
-      <section className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm overflow-hidden flex flex-col min-h-[520px] md:rounded-[2.5rem] md:min-h-[600px]">
-        <div className="border-b border-neutral-100 bg-neutral-50/50 p-4 sm:p-6 md:p-8">
-          <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
+      <section className="admin-ops-panel min-h-[520px] md:min-h-[600px]">
+        <div className="admin-ops-panel-header">
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 w-full">
             <div>
-              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+              <h2 className="admin-ops-panel-title">
                 <FiBriefcase className="text-brand-500" /> Posting Registry
               </h2>
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+            <div className="admin-ops-filterbar">
               <div className="relative w-full sm:w-auto">
                 <select 
                   value={filters.status} 
@@ -282,7 +307,7 @@ const AdminJobsPage = () => {
                   className="w-full pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm sm:min-w-[170px]"
                 >
                   <option value="all">All Visibility</option>
-                  <option value="open">Live (Open)</option>
+                  <option value="open">Open</option>
                   <option value="closed">Closed</option>
                   <option value="deleted">Soft Deleted</option>
                 </select>
@@ -295,7 +320,7 @@ const AdminJobsPage = () => {
                   onChange={(e) => setFilters({ ...filters, approvalStatus: e.target.value })}
                   className="w-full pl-3 pr-8 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-sm text-neutral-700 appearance-none shadow-sm sm:min-w-[190px]"
                 >
-                  <option value="all">All Clearance Tracker</option>
+                  <option value="all">All Approval Status</option>
                   <option value="pending">Needs Approval</option>
                   <option value="approved">Approved</option>
                   <option value="rejected">Rejected</option>
@@ -307,7 +332,7 @@ const AdminJobsPage = () => {
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
                   value={filters.search}
-                  placeholder="Search role or organization..."
+                  placeholder="Search by title, company, location, or status"
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   className="w-full pl-9 pr-3 py-2.5 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium text-sm shadow-sm"
                 />
@@ -316,7 +341,7 @@ const AdminJobsPage = () => {
           </div>
         </div>
 
-        <div className="relative min-h-0 flex-1 overflow-auto custom-scrollbar">
+        <div className="admin-ops-table-wrap custom-scrollbar">
           {loading ? (
              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
                <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
@@ -337,11 +362,11 @@ const AdminJobsPage = () => {
               {filteredJobs.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="p-12 text-center text-neutral-500 font-medium">
-                    No postings matched current operational filters.
+                    No jobs matched the current filters.
                   </td>
                 </tr>
               ) : (
-                filteredJobs.map((job) => {
+                paginatedJobs.map((job) => {
                   const jobId = job.id || job._id;
                   const draft = getApprovalDraft(job);
                   const isStatusBusy = busyAction === `status:${jobId}`;
@@ -408,7 +433,7 @@ const AdminJobsPage = () => {
                         <div className="space-y-2">
                            <div className="flex items-center gap-2">
                              <select
-                               className={`flex-1 py-1 px-2 border rounded-md text-xs font-bold uppercase tracking-wide appearance-none focus:outline-none focus:ring-1 focus:ring-brand-500 ${
+                              className={`flex-1 py-1 px-2 border rounded-md text-xs font-bold uppercase tracking-wide appearance-none focus:outline-none focus:ring-1 focus:ring-brand-500 ${
                                  draft.approvalStatus === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                                  draft.approvalStatus === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
                                  'bg-amber-50 text-amber-700 border-amber-200'
@@ -430,13 +455,12 @@ const AdminJobsPage = () => {
                                <FiCheck size={14} />
                              </button>
                            </div>
-                           
-                           <input
-                             className="w-full py-1.5 px-3 bg-white border border-brand-200 rounded-md text-xs font-medium placeholder-brand-300 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                             placeholder="Internal compliance note..."
-                             value={draft.approvalNote}
-                             onChange={(e) => updateApprovalDraft(jobId, 'approvalNote', e.target.value)}
-                           />
+                          <input
+                            className="w-full py-1.5 px-3 bg-white border border-brand-200 rounded-md text-xs font-medium placeholder-brand-300 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                            placeholder="Approval note"
+                            value={draft.approvalNote}
+                            onChange={(e) => updateApprovalDraft(jobId, 'approvalNote', e.target.value)}
+                          />
                         </div>
                       </td>
                       
@@ -465,6 +489,30 @@ const AdminJobsPage = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="admin-ops-pagination">
+          <p className="text-xs font-semibold text-neutral-500">
+            Page <span className="text-neutral-800">{page}</span> of <span className="text-neutral-800">{totalPages}</span>
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page <= 1}
+              className="btn-secondary"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              disabled={page >= totalPages}
+              className="btn-secondary"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </section>
 

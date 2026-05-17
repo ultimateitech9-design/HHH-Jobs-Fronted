@@ -24,7 +24,7 @@ const AdminModuleLayout = () => {
     <PortalWorkbenchLayout
       portalKey="admin"
       portalLabel="Admin Console"
-      subtitle="Manage approvals, users, jobs, reports, and payments from one workspace."
+      subtitle="Manage users, jobs, reports, approvals, and payments from one workspace."
       navItems={adminNavItems}
     />
   );

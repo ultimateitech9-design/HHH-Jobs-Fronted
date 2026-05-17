@@ -3,6 +3,7 @@ const statusTone = {
   approved: 'status-pill--success',
   shortlisted: 'status-pill--success',
   open: 'status-pill--info',
+  processing: 'status-pill--info',
   read: 'status-pill--info',
   unread: 'status-pill--warning',
   scheduled: 'status-pill--warning',
@@ -18,6 +19,7 @@ const statusTone = {
   healthy: 'status-pill--success',
   degraded: 'status-pill--warning',
   offline: 'status-pill--danger',
+  past_due: 'status-pill--warning',
   paid: 'status-pill--success',
   failed: 'status-pill--danger',
   refunded: 'status-pill--info',
@@ -41,11 +43,16 @@ const statusTone = {
   default: 'status-pill--default'
 };
 
+const formatStatusLabel = (value) => String(value || '')
+  .toLowerCase()
+  .replaceAll('_', ' ');
+
 const StatusPill = ({ value }) => {
   const key = String(value || '').toLowerCase();
   const tone = statusTone[key] || statusTone.default;
+  const label = formatStatusLabel(value || 'default');
 
-  return <span className={`status-pill ${tone}`}>{value}</span>;
+  return <span className={`status-pill ${tone}`}>{label}</span>;
 };
 
 export default StatusPill;

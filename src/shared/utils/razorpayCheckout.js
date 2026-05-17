@@ -31,19 +31,38 @@ const loadRazorpayScript = () => {
   return razorpayScriptPromise;
 };
 
+const normalizeRazorpaySession = (session = {}) => ({
+  ...session,
+  keyId: session.keyId || session.key_id || session.razorpayKeyId || session.razorpay_key_id || '',
+  subscriptionId: session.subscriptionId || session.subscription_id || session.razorpaySubscriptionId || session.razorpay_subscription_id || '',
+  localSubscriptionId: session.localSubscriptionId || session.local_subscription_id || '',
+  shortUrl: session.shortUrl || session.short_url || ''
+});
+
+export const preloadRazorpayCheckout = () => loadRazorpayScript();
+
 export const openRazorpaySubscriptionCheckout = async (session = {}) => {
+  const normalizedSession = normalizeRazorpaySession(session);
+  if (!normalizedSession.keyId) {
+    throw new Error('Razorpay key is missing from checkout session.');
+  }
+
+  if (!normalizedSession.subscriptionId) {
+    throw new Error('Razorpay subscription id is missing from checkout session.');
+  }
+
   const Razorpay = await loadRazorpayScript();
 
   return new Promise((resolve, reject) => {
     try {
       const checkout = new Razorpay({
-        key: session.keyId,
-        subscription_id: session.subscriptionId,
-        name: session.name || 'HHH Jobs',
-        description: session.description || 'Enable auto-pay after your trial period.',
-        image: session.image || '/hhh-job-logo.png',
-        prefill: session.prefill || {},
-        notes: session.notes || {},
+        key: normalizedSession.keyId,
+        subscription_id: normalizedSession.subscriptionId,
+        name: normalizedSession.name || 'HHH Jobs',
+        description: normalizedSession.description || 'Enable auto-pay after your trial period.',
+        image: normalizedSession.image || '/hhh-job-logo.png',
+        prefill: normalizedSession.prefill || {},
+        notes: normalizedSession.notes || {},
         theme: { color: '#2563eb' },
         modal: {
           ondismiss: () => resolve({ dismissed: true })

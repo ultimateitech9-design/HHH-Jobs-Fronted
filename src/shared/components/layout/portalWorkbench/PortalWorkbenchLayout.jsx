@@ -92,7 +92,7 @@ const PortalWorkbenchLayout = ({
   const isStudentWorkbench = portalKey === 'student';
   const mainPaddingClass = isStudentWorkbench
     ? 'px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4'
-    : `px-3 py-3 sm:px-4 sm:py-4 md:px-5 ${isCompactViewportRoute ? 'md:py-3' : 'md:py-5'}`;
+    : `px-3 py-2 sm:px-4 sm:py-3 md:px-5 ${isCompactViewportRoute ? 'md:py-2.5' : 'md:py-3.5'}`;
   const effectiveMainPaddingClass = isInterviewRoomRoute ? 'px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-3' : mainPaddingClass;
 
   useEffect(() => {

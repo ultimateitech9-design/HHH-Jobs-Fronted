@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { getUsers } from '../services/usersApi';
+import rankedSearch from '../../../shared/utils/rankedSearch';
 
 const useUsers = () => {
   const [users, setUsers] = useState([]);
@@ -7,6 +8,7 @@ const useUsers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState(false);
+  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
 
   useEffect(() => {
     const load = async () => {
@@ -37,14 +39,18 @@ const useUsers = () => {
   }, []);
 
   const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const search = String(filters.search || '').toLowerCase();
-      const matchesSearch = !search || [user.name, user.email, user.company, user.id, user.displayId].some((value) => String(value || '').toLowerCase().includes(search));
+    const roleFiltered = users.filter((user) => {
       const matchesRole = !filters.role || user.role === filters.role;
       const matchesStatus = !filters.status || user.status === filters.status;
-      return matchesSearch && matchesRole && matchesStatus;
+      return matchesRole && matchesStatus;
     });
-  }, [users, filters]);
+
+    if (!deferredSearch) {
+      return roleFiltered;
+    }
+
+    return rankedSearch(roleFiltered, deferredSearch, ['name', 'email', 'company', 'id', 'displayId']);
+  }, [users, filters.role, filters.status, deferredSearch]);
 
   return { users, setUsers, filteredUsers, filters, setFilters, loading, error, isDemo };
 };

@@ -5,7 +5,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import ReportsChart from '../components/ReportsChart';
 import StatusBadge from '../components/StatusBadge';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
-import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
+import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
 import { getDashboardWorkspaceButtonClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import useDashboardStats from '../hooks/useDashboardStats';
 import { formatCurrency } from '../utils/currencyFormat';
@@ -23,16 +23,6 @@ const SuperAdminDashboard = () => {
       { label: 'Active Companies', value: String(stats.activeCompanies || 0), helper: `${stats.activeSubscriptions || 0} active subscriptions`, tone: 'success' },
       { label: 'Live Jobs', value: String(stats.liveJobs || 0), helper: `${stats.totalApplications || 0} applications received`, tone: 'default' },
       { label: 'Monthly Revenue', value: formatCurrency(stats.monthlyRevenue || 0), helper: `${stats.openSupportTickets || 0} support tickets open`, tone: 'warning' }
-    ];
-  }, [dashboard]);
-
-  const commandSignals = useMemo(() => {
-    const stats = dashboard?.stats || {};
-    return [
-      { label: 'Critical logs', value: stats.criticalLogs || 0 },
-      { label: 'Duplicate accounts', value: stats.duplicateAccounts || 0 },
-      { label: 'Support queue', value: stats.openSupportTickets || 0 },
-      { label: 'Revenue this month', value: formatCurrency(stats.monthlyRevenue || 0) }
     ];
   }, [dashboard]);
 
@@ -260,6 +250,65 @@ const SuperAdminDashboard = () => {
   const activeWorkspace = workspaceSnapshots.find((item) => item.key === selectedWorkspace) || workspaceSnapshots[0];
   const activeRecord = activeWorkspace?.records.find((record) => record.id === selectedRecordId) || activeWorkspace?.records[0] || null;
 
+  const quickActions = useMemo(() => ([
+    {
+      to: '/portal/super-admin/users',
+      title: 'Users',
+      description: 'Manage user IDs, roles, and account lifecycle from one place.',
+      tone: 'brand',
+      ctaLabel: 'Open users'
+    },
+    {
+      to: '/portal/super-admin/companies',
+      title: 'Companies',
+      description: 'Review company profiles, access, and activity coverage.',
+      tone: 'info',
+      ctaLabel: 'Open companies'
+    },
+    {
+      to: '/portal/super-admin/jobs',
+      title: 'Jobs',
+      description: 'Monitor listings, approval status, and live publishing health.',
+      tone: 'success',
+      ctaLabel: 'Open jobs'
+    },
+    {
+      to: '/portal/super-admin/payments',
+      title: 'Payments',
+      description: 'Track payment flow, billing issues, and transaction states.',
+      tone: 'warning',
+      ctaLabel: 'Open payments'
+    },
+    {
+      to: '/portal/super-admin/support-tickets',
+      title: 'Support Tickets',
+      description: 'Inspect escalations, ticket pressure, and service workload.',
+      tone: 'accent',
+      ctaLabel: 'Open support'
+    },
+    {
+      to: '/portal/super-admin/roles-permissions',
+      title: 'Roles & Permissions',
+      description: 'Control access levels and operational permissions across portals.',
+      tone: 'neutral',
+      ctaLabel: 'Open roles'
+    },
+    {
+      to: '/portal/super-admin/subscriptions',
+      title: 'Subscriptions',
+      description: 'Review active plans, billing continuity, and renewal coverage.',
+      tone: 'info',
+      ctaLabel: 'Open subscriptions'
+    },
+    {
+      to: '/portal/super-admin/system-settings',
+      title: 'System Settings',
+      description: 'Open platform configuration, controls, and policy settings.',
+      tone: 'brand',
+      ctaLabel: 'Open settings'
+    }
+  ]), []);
+
   useEffect(() => {
     if (!activeWorkspace) return;
     setSelectedRecordId(activeWorkspace.records[0]?.id || '');
@@ -268,27 +317,23 @@ const SuperAdminDashboard = () => {
   return (
     <div className="space-y-3 pb-2">
       {error ? <p className="form-error">{error}</p> : null}
-      <PortalDashboardHero
-        tone="superAdmin"
-        eyebrow="Super Admin Dashboard"
-        badge="Global control"
-        title="One workspace to monitor growth, risk, revenue, trust, and operations"
-        description="Super admin can control users, employers, jobs, applications, payments, subscriptions, support load, permissions, and system configuration from this module."
-        chips={['Platform health', 'Governance', 'Revenue risk']}
-        primaryAction={{ to: '/portal/super-admin/users', label: 'Open Users Control' }}
-        secondaryAction={{ to: '/portal/super-admin/system-settings', label: 'Review System Settings' }}
-        metrics={commandSignals.map((signal) => ({
-          label: signal.label,
-          value: signal.value,
-          helper: 'Cross-role command signal'
-        }))}
-      />
-
       {loading ? <p className="module-note">Loading super admin dashboard...</p> : null}
 
       {!loading && dashboard ? (
         <>
           <DashboardMetricCards cards={cards} />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {quickActions.map((action) => (
+              <DashboardQuickActionCard
+                key={action.title}
+                to={action.to}
+                title={action.title}
+                description={action.description}
+                tone={action.tone}
+                ctaLabel={action.ctaLabel}
+              />
+            ))}
+          </div>
           <div className="split-grid">
             <section className="panel-card">
               <AdminHeader eyebrow="Revenue Trend" title="Platform Revenue Movement" subtitle="Monthly top-line collections and refund pressure." />
@@ -300,7 +345,7 @@ const SuperAdminDashboard = () => {
             <AdminHeader
               eyebrow="Cross-Role Access"
               title="Monitor any operational dashboard"
-              subtitle="Dashboard button sirf data view kholega. Kisi record par click karne se uska full detail aur profile yahin show hoga."
+              subtitle="Switch workspaces and open full record details from this panel."
             />
             <div className="student-job-actions">
               {workspaceSnapshots.map((workspace) => (
@@ -414,3 +459,4 @@ const SuperAdminDashboard = () => {
 };
 
 export default SuperAdminDashboard;
+

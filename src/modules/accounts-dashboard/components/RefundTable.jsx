@@ -30,7 +30,7 @@ const RefundTable = ({ rows = [] }) => {
     }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} searchable pagination itemsPerPage={8} searchPlaceholder="Search refund ID, account, reason, or status" />;
 };
 
 export default RefundTable;

@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import {
   FiBriefcase,
@@ -95,11 +95,12 @@ const getStatusColor = (status) => {
 
 const HrJobsPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('jobs'); // 'jobs', 'post', 'billing'
   const [billingSubTab, setBillingSubTab] = useState('subscription'); // 'subscription', 'credits', 'history'
 
   const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -648,11 +649,11 @@ const HrJobsPage = () => {
   };
 
   return (
-    <div className="space-y-8 pb-10">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="admin-ops-page">
+      <header className="admin-ops-header">
         <div>
-          <h1 className="font-heading text-xl font-bold tracking-tight text-slate-900">Job Postings</h1>
-          <p className="mt-0.5 text-sm text-neutral-500">Manage your active jobs, post new roles, and oversee billing.</p>
+          <h1 className="admin-ops-title">Job Postings</h1>
+          <p className="admin-ops-subtitle">Manage your active jobs, post new roles, and oversee billing.</p>
         </div>
         <div className="flex bg-neutral-100 rounded-xl p-1 shrink-0 overflow-x-auto hide-scrollbar">
           {[
@@ -672,12 +673,12 @@ const HrJobsPage = () => {
       </header>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 border border-red-200 shadow-sm animate-fade-in">
+        <div className="admin-ops-alert admin-ops-alert--error animate-fade-in">
           <FiXCircle size={20} className="shrink-0" /> <span className="font-semibold">{error}</span>
         </div>
       )}
       {message && !error && (
-        <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl flex items-center gap-3 border border-emerald-200 shadow-sm animate-fade-in">
+        <div className="admin-ops-alert admin-ops-alert--success animate-fade-in">
           <FiCheckCircle size={20} className="shrink-0" /> <span className="font-semibold">{message}</span>
         </div>
       )}
@@ -685,7 +686,7 @@ const HrJobsPage = () => {
       {/* JOBS TAB */}
       {activeTab === 'jobs' && (
         <div className="space-y-6 animate-fade-in">
-          <div className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="admin-ops-panel-header rounded-[1.5rem] border border-neutral-100 bg-white shadow-sm">
             <div className="flex items-center gap-3">
               <span className="font-bold text-primary">Filter By Status:</span>
               <div className="flex bg-neutral-50 rounded-lg p-1">
@@ -707,57 +708,66 @@ const HrJobsPage = () => {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[1, 2, 3, 4].map(i => <div key={i} className="h-64 bg-white rounded-3xl animate-pulse border border-neutral-100"></div>)}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+              {[1, 2, 3, 4].map(i => <div key={i} className="h-56 bg-white rounded-[1.6rem] animate-pulse border border-neutral-100"></div>)}
             </div>
           ) : filteredJobs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredJobs.map(job => (
-                <div key={job.id || job._id} className="bg-white rounded-3xl p-6 shadow-sm border border-neutral-100 hover:shadow-md transition-all flex flex-col group relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-brand-50 rounded-bl-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <article
+                  key={job.id || job._id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(`/portal/hr/jobs/${job.id || job._id}/applicants`)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      navigate(`/portal/hr/jobs/${job.id || job._id}/applicants`);
+                    }
+                  }}
+                  className="bg-white rounded-[1.35rem] p-3.5 shadow-sm border border-neutral-100 hover:shadow-md transition-all flex flex-col group relative overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60"
+                >
+                  <div className="absolute top-0 right-0 h-16 w-16 bg-brand-50 rounded-bl-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-                  <div className="flex justify-between items-start mb-4 relative z-10">
-                    <div>
-                      <h3 className="text-lg font-bold text-primary leading-tight mb-1 group-hover:text-brand-600 transition-colors">{job.jobTitle}</h3>
-                      <p className="text-sm font-medium text-neutral-500">{job.companyName}</p>
+                  <div className="relative z-10 mb-2.5 flex items-start justify-between gap-2.5">
+                    <div className="min-w-0 pr-1">
+                      <h3 className="mb-0.5 line-clamp-2 text-[15px] font-bold leading-[1.25] text-primary transition-colors group-hover:text-brand-600">{job.jobTitle}</h3>
+                      <p className="truncate text-[12px] font-medium text-neutral-500">{job.companyName}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getStatusColor(job.status || 'open')}`}>
+                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] ${getStatusColor(job.status || 'open')}`}>
                       {job.status || 'open'}
                     </span>
                   </div>
 
-                  <div className="space-y-2 mb-6 text-sm text-neutral-600 relative z-10 font-medium">
-                    <div className="flex items-center gap-2"><FiMapPin className="text-neutral-400" /> {job.jobLocation || 'Remote'}</div>
-                    <div className="flex items-center gap-2"><FiBriefcase className="text-neutral-400" /> {job.experienceLevel || 'Any Experience'} &bull; {job.employmentType || 'Full-Time'}</div>
-                    <div className="flex items-center gap-2"><FiClock className="text-neutral-400" /> Valid till: {formatDateTime(job.validTill).split(' ')[0]}</div>
+                  <div className="relative z-10 mb-3.5 space-y-1.5 text-[12px] font-medium text-neutral-600">
+                    <div className="flex items-center gap-1.5 truncate"><FiMapPin className="shrink-0 text-neutral-400" size={11} /> <span className="truncate">{job.jobLocation || 'Remote'}</span></div>
+                    <div className="flex items-center gap-1.5"><FiBriefcase className="shrink-0 text-neutral-400" size={11} /> <span className="truncate">{job.experienceLevel || 'Any Experience'} &bull; {job.employmentType || 'Full-Time'}</span></div>
+                    <div className="flex items-center gap-1.5"><FiClock className="shrink-0 text-neutral-400" size={11} /> <span>Valid till: {formatDateTime(job.validTill).split(' ')[0]}</span></div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-6 border-y border-neutral-100 py-4 relative z-10">
+                  <div className="relative z-10 mb-3.5 grid grid-cols-2 gap-2 border-y border-neutral-100 py-2.5">
                     <div className="text-center">
-                      <div className="flex items-center justify-center gap-1 text-brand-600 font-bold mb-1"><FiUsers /> {job.applicationsCount || 0}</div>
-                      <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Applicants</div>
+                      <div className="mb-0.5 flex items-center justify-center gap-1 text-[12px] font-bold text-brand-600"><FiUsers size={11} /> {job.applicationsCount || 0}</div>
+                      <div className="text-[8px] font-bold uppercase tracking-[0.16em] text-neutral-400">Applicants</div>
                     </div>
                     <div className="text-center border-l border-neutral-100">
-                      <div className="flex items-center justify-center gap-1 text-indigo-600 font-bold mb-1"><FiEye /> {job.viewsCount || 0}</div>
-                      <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Views</div>
+                      <div className="mb-0.5 flex items-center justify-center gap-1 text-[12px] font-bold text-indigo-600"><FiEye size={11} /> {job.viewsCount || 0}</div>
+                      <div className="text-[8px] font-bold uppercase tracking-[0.16em] text-neutral-400">Views</div>
                     </div>
                   </div>
 
-                  <div className="mt-auto relative z-10 flex flex-wrap gap-2 justify-between">
-                    <Link to={`/portal/hr/jobs/${job.id || job._id}/applicants`} className="flex-1 text-center py-2 bg-brand-50 text-brand-600 hover:bg-brand-600 hover:text-white font-bold rounded-xl transition-colors text-xs">
-                      View Applicants
-                    </Link>
-                    <div className="flex gap-1 border border-neutral-200 rounded-xl p-1 shrink-0 bg-neutral-50">
-                      <button onClick={() => startEdit(job)} title="Edit Job" className="p-1.5 text-neutral-500 hover:text-brand-600 rounded-lg hover:bg-white transition-colors"><FiEdit2 size={14} /></button>
+                  <div className="relative z-10 mt-auto flex items-center justify-end gap-1.5">
+                    <div className="flex shrink-0 gap-0.5 rounded-lg border border-neutral-200 bg-neutral-50 p-0.5">
+                      <button onClick={(event) => { event.stopPropagation(); startEdit(job); }} title="Edit Job" className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-white hover:text-brand-600"><FiEdit2 size={12} /></button>
                       {String(job.status).toLowerCase() !== 'closed' ? (
-                        <button onClick={() => handleCloseJob(job.id || job._id)} title="Close Job" className="p-1.5 text-neutral-500 hover:text-amber-600 rounded-lg hover:bg-white transition-colors"><FiXCircle size={14} /></button>
+                        <button onClick={(event) => { event.stopPropagation(); handleCloseJob(job.id || job._id); }} title="Close Job" className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-white hover:text-amber-600"><FiXCircle size={12} /></button>
                       ) : (
-                        <button onClick={() => handleReopenJob(job.id || job._id)} title="Re-open Job" className="p-1.5 text-neutral-500 hover:text-emerald-600 rounded-lg hover:bg-white transition-colors"><FiCheckCircle size={14} /></button>
+                        <button onClick={(event) => { event.stopPropagation(); handleReopenJob(job.id || job._id); }} title="Re-open Job" className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-white hover:text-emerald-600"><FiCheckCircle size={12} /></button>
                       )}
-                      <button onClick={() => handleDeleteJob(job.id || job._id)} title="Delete Job" className="p-1.5 text-neutral-500 hover:text-red-600 rounded-lg hover:bg-white transition-colors"><FiTrash2 size={14} /></button>
+                      <button onClick={(event) => { event.stopPropagation(); handleDeleteJob(job.id || job._id); }} title="Delete Job" className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-white hover:text-red-600"><FiTrash2 size={12} /></button>
                     </div>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           ) : (

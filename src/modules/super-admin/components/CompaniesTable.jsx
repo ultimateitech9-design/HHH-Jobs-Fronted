@@ -14,7 +14,7 @@ const CompaniesTable = ({ rows = [] }) => {
     { key: 'renewedAt', label: 'Renewed', render: (value) => formatDate(value) }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} compact fitOnDesktop />;
 };
 
 export default CompaniesTable;

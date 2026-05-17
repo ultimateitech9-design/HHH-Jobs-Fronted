@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { FiEye, FiEyeOff, FiSearch } from 'react-icons/fi';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { FiEye, FiEyeOff, FiPlus, FiSearch, FiX } from 'react-icons/fi';
 import AdminHeader from '../components/AdminHeader';
 import ConfirmModal from '../components/ConfirmModal';
 import DashboardStatsCards from '../components/DashboardStatsCards';
@@ -19,7 +20,7 @@ const INITIAL_ADMIN_FORM = {
   role: 'admin'
 };
 
-const CreateUserForm = ({ existingEmails, onCreate }) => {
+const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
   const [adminForm, setAdminForm] = useState(INITIAL_ADMIN_FORM);
   const [formError, setFormError] = useState('');
   const [savingAdmin, setSavingAdmin] = useState(false);
@@ -66,6 +67,8 @@ const CreateUserForm = ({ existingEmails, onCreate }) => {
     try {
       await onCreate({ name, email, company, password, role });
       setAdminForm(INITIAL_ADMIN_FORM);
+      setFormError('');
+      onSuccess?.();
     } catch (createError) {
       setFormError(createError.message || 'Unable to create user ID.');
     } finally {
@@ -140,12 +143,70 @@ const CreateUserForm = ({ existingEmails, onCreate }) => {
       </label>
       {formError ? <p className="form-error">{formError}</p> : null}
       <div className="student-job-actions">
+        {onCancel ? (
+          <button type="button" className="btn-secondary w-full sm:w-auto" onClick={onCancel} disabled={savingAdmin}>
+            Cancel
+          </button>
+        ) : null}
         <button type="submit" className="btn-primary w-full sm:w-auto" disabled={savingAdmin}>
           {savingAdmin ? 'Creating User...' : `Create ${USER_ROLE_LABELS[adminForm.role] || 'User'} ID`}
         </button>
       </div>
     </form>
   );
+};
+
+const CreateUserModal = ({ open, onClose, existingEmails, onCreate }) => {
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return createPortal((
+    <div className="fixed inset-0 z-[120] bg-slate-900/45 px-4 py-6 backdrop-blur-sm" role="presentation" onMouseDown={onClose}>
+      <div className="mx-auto flex h-full max-w-5xl items-start justify-center overflow-y-auto">
+        <div className="w-full rounded-[28px] border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-label="Create user ID" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
+            <div>
+              <h3 className="text-lg font-bold text-navy">Create User ID</h3>
+              <p className="mt-1 text-sm text-slate-500">Create new operational accounts with assigned role access.</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+              aria-label="Close create user dialog"
+            >
+              <FiX size={16} />
+            </button>
+          </div>
+          <div className="px-5 py-5 sm:px-6">
+            <CreateUserForm existingEmails={existingEmails} onCreate={onCreate} onCancel={onClose} onSuccess={onClose} />
+          </div>
+        </div>
+      </div>
+    </div>
+  ), document.body);
 };
 
 const UsersManagement = () => {
@@ -156,6 +217,7 @@ const UsersManagement = () => {
   const [actionError, setActionError] = useState('');
   const [statusBusyId, setStatusBusyId] = useState('');
   const [deletingAdmin, setDeletingAdmin] = useState(null);
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState(filters);
   const pageSize = 5;
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
@@ -229,22 +291,20 @@ const UsersManagement = () => {
 
   return (
     <div className="module-page module-page--admin min-w-0">
-      <AdminHeader title="Users Management" subtitle="Control account lifecycle, role visibility, verification state, and risk response across the portal." />
-      {isDemo ? <p className="module-note">Demo user data is shown because super admin user endpoints are not connected yet.</p> : null}
+      <AdminHeader
+        title="Users Management"
+        subtitle="Manage user lifecycle, roles, and access status."
+        action={(
+          <button type="button" className="btn-primary inline-flex items-center gap-2" onClick={() => setIsCreateUserOpen(true)}>
+            <FiPlus size={14} /> Create User ID
+          </button>
+        )}
+      />
+      {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {actionError ? <p className="form-error">{actionError}</p> : null}
       {formMessage ? <p className="module-note">{formMessage}</p> : null}
-      <p className="module-note">Super admin can review and remove Admin, HR, Student, and Super Admin IDs from this panel.</p>
       <DashboardStatsCards cards={cards} />
-      <section className="panel-card min-w-0">
-        <div className="panel-card__header">
-          <div>
-            <h3>Create User ID</h3>
-            <p className="module-note">Super admin can create operational IDs here. The generated email and password will open the assigned dashboard directly.</p>
-          </div>
-        </div>
-        <CreateUserForm existingEmails={existingEmails} onCreate={handleCreateAdmin} />
-      </section>
       <section className="panel-card min-w-0">
         <FilterBar
           filters={draftFilters}
@@ -255,6 +315,13 @@ const UsersManagement = () => {
           ]}
           actions={(
             <>
+              <button
+                type="button"
+                className="btn-secondary inline-flex items-center gap-2"
+                onClick={() => setIsCreateUserOpen(true)}
+              >
+                <FiPlus size={14} /> Create User ID
+              </button>
               <button
                 type="button"
                 className="btn-secondary"
@@ -294,6 +361,12 @@ const UsersManagement = () => {
         confirmLabel={`Mark ${pendingStatusAction?.status || 'user'}`}
         onConfirm={confirmStatusAction}
         onClose={() => setPendingStatusAction(null)}
+      />
+      <CreateUserModal
+        open={isCreateUserOpen}
+        onClose={() => setIsCreateUserOpen(false)}
+        existingEmails={existingEmails}
+        onCreate={handleCreateAdmin}
       />
     </div>
   );

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { getCompanies } from '../services/companiesApi';
+import rankedSearch from '../../../shared/utils/rankedSearch';
 
 const useCompanies = () => {
   const [companies, setCompanies] = useState([]);
@@ -7,6 +8,7 @@ const useCompanies = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState(false);
+  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
 
   useEffect(() => {
     const load = async () => {
@@ -21,13 +23,17 @@ const useCompanies = () => {
   }, []);
 
   const filteredCompanies = useMemo(() => {
-    return companies.filter((company) => {
-      const search = String(filters.search || '').toLowerCase();
-      const matchesSearch = !search || [company.name, company.plan, company.owner, company.id].some((value) => String(value || '').toLowerCase().includes(search));
+    const statusFiltered = companies.filter((company) => {
       const matchesStatus = !filters.status || company.status === filters.status;
-      return matchesSearch && matchesStatus;
+      return matchesStatus;
     });
-  }, [companies, filters]);
+
+    if (!deferredSearch) {
+      return statusFiltered;
+    }
+
+    return rankedSearch(statusFiltered, deferredSearch, ['name', 'plan', 'owner', 'id']);
+  }, [companies, filters.status, deferredSearch]);
 
   return { companies, filteredCompanies, filters, setFilters, loading, error, isDemo };
 };
