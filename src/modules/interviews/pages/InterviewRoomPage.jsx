@@ -1106,6 +1106,36 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     return !signalCandidateId || !currentCandidateId || signalCandidateId === currentCandidateId;
   };
 
+  const markRoomParticipantOnline = (candidateId, isOnline = true) => {
+    const normalizedCandidateId = String(candidateId || '').trim();
+    if (!normalizedCandidateId) return;
+
+    setRoomState((current) => {
+      const currentPayload = current.payload;
+      const participants = Array.isArray(currentPayload?.roomParticipants)
+        ? currentPayload.roomParticipants
+        : [];
+
+      if (participants.length === 0) return current;
+
+      return {
+        ...current,
+        payload: {
+          ...currentPayload,
+          roomParticipants: participants.map((participant) =>
+            participant.candidateId === normalizedCandidateId
+              ? {
+                  ...participant,
+                  isOnline,
+                  lastSeenAt: new Date().toISOString()
+                }
+              : participant
+          )
+        }
+      };
+    });
+  };
+
   const handleSignal = async (signal) => {
     const type = signal?.signal_type;
     const payloadBody = signal?.payload || {};
@@ -1203,6 +1233,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
 
     if (type === 'presence' && isManager && signalSessionId) {
+      markRoomParticipantOnline(payloadBody.candidateId, true);
       if (!isSignalForCurrentParticipant(payloadBody)) return;
       if (!localStreamRef.current) {
         pendingPresenceRequestRef.current = true;
@@ -1225,7 +1256,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   };
 
   const handleReconnect = async () => {
-    await startLocalMedia({ createOffer: isManager });
+    destroyPeerConnection();
+    setConnectionState('connecting');
+    await startLocalMedia({ createOffer: isManager, announcePresence: true });
 
     if (isManager) {
       await maybeCreateOffer({ iceRestart: true });
@@ -1786,8 +1819,8 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <audio ref={bindRemoteAudioRef} autoPlay playsInline className="hidden" />
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-xl border border-slate-200 bg-white">
+      <audio ref={bindRemoteAudioRef} autoPlay className="hidden" />
       {roomState.error && (
         <div className="flex items-center gap-2 border-b border-red-200 bg-red-50 px-4 py-2 text-[12px] font-medium text-red-700">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />{roomState.error}
@@ -1869,7 +1902,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       </div>
 
       {/* Main content: Tabs + Sidebar */}
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-[620px] flex-1">
         {/* Left: Tabbed workspace */}
         <div ref={workspacePaneRef} className="flex min-w-0 flex-1 flex-col">
           {/* Tab bar */}
@@ -1886,12 +1919,12 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
           </div>
 
           {/* Tab content */}
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden bg-slate-50 p-4">
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-slate-50 p-4">
             {activeRoomTab !== 'video' && (
               <div className="grid shrink-0 gap-3 lg:grid-cols-2">
                 <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-950">
                   <div className="relative aspect-video max-h-[180px]">
-                    <video ref={bindRemoteVideoRef(compactRemoteVideoRef)} autoPlay playsInline className="absolute inset-0 h-full w-full object-cover" />
+                    <video ref={bindRemoteVideoRef(compactRemoteVideoRef)} autoPlay playsInline className="absolute inset-0 h-full w-full object-contain" />
                     {!remoteStreamReady && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-slate-400">
                         <FiUsers size={18} />
@@ -1905,7 +1938,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                 </div>
                 <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-950">
                   <div className="relative aspect-video max-h-[180px]">
-                    <video ref={bindLocalVideoRef(compactLocalVideoRef)} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+                    <video ref={bindLocalVideoRef(compactLocalVideoRef)} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-contain" />
                     {!localStreamRef.current && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-slate-400">
                         <FiVideoOff size={18} />
@@ -1925,9 +1958,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                 <div ref={mainStageContainerRef} className="relative">
                   <div className="relative aspect-video overflow-hidden rounded-[24px] border border-slate-200 bg-slate-950 shadow-[0_22px_54px_rgba(15,23,42,0.18)]">
                     {isLocalPrimaryStage ? (
-                      <video ref={bindLocalVideoRef(localVideoRef)} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+                      <video ref={bindLocalVideoRef(localVideoRef)} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-contain" />
                     ) : (
-                      <video ref={bindRemoteVideoRef(remoteVideoRef)} autoPlay playsInline className="absolute inset-0 h-full w-full object-cover" />
+                      <video ref={bindRemoteVideoRef(remoteVideoRef)} autoPlay playsInline className="absolute inset-0 h-full w-full object-contain" />
                     )}
 
                     {isLocalPrimaryStage ? (
@@ -1963,9 +1996,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                   >
                     <div className="relative aspect-video overflow-hidden rounded-[18px] border border-white/20 bg-slate-900 shadow-[0_20px_42px_rgba(15,23,42,0.34)] ring-1 ring-black/10 backdrop-blur-sm">
                       {isLocalPrimaryStage ? (
-                        <video ref={bindRemoteVideoRef(remoteVideoRef)} autoPlay playsInline className="absolute inset-0 h-full w-full object-cover" />
+                        <video ref={bindRemoteVideoRef(remoteVideoRef)} autoPlay playsInline className="absolute inset-0 h-full w-full object-contain" />
                       ) : (
-                        <video ref={bindLocalVideoRef(localVideoRef)} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+                        <video ref={bindLocalVideoRef(localVideoRef)} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-contain" />
                       )}
 
                       {isLocalPrimaryStage ? (
@@ -2250,6 +2283,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                     <div className="mt-2 space-y-1.5">
                       {roomParticipants.map((participant) => {
                         const isActiveParticipant = participant.candidateId === currentCandidateId;
+                        const isOnlineParticipant = Boolean(participant.isOnline);
                         return (
                           <Link
                             key={participant.interviewId || participant.candidateId}
@@ -2261,7 +2295,16 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                             }`}
                           >
                             <span className="truncate">{participant.name || 'Candidate'}</span>
-                            <span className="ml-2 shrink-0 text-[9px] uppercase tracking-wide">{isActiveParticipant ? 'Live' : 'Open'}</span>
+                            <span
+                              className={`ml-2 inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[8px] uppercase tracking-wide ${
+                                isOnlineParticipant
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : 'bg-slate-100 text-slate-500'
+                              }`}
+                            >
+                              <span className={`h-1.5 w-1.5 rounded-full ${isOnlineParticipant ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                              {isActiveParticipant ? 'Selected' : (isOnlineParticipant ? 'Online' : 'Open')}
+                            </span>
                           </Link>
                         );
                       })}
