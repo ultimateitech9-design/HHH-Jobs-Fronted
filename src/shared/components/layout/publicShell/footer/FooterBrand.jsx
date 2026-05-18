@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { FiPhone } from 'react-icons/fi';
+import { HHH_JOBS_MASTER_CONTACT_NUMBERS } from '../../../../constants/contactInfo';
 
 const FooterBrand = () => {
   return (
@@ -20,6 +22,20 @@ const FooterBrand = () => {
       <p className="max-w-md text-sm leading-6 text-white/68">
         Trusted hiring for freshers, professionals, recruiters, and retired talent, all in one place.
       </p>
+
+      <div className="mt-4 flex flex-col gap-1.5 text-sm text-white/78">
+        <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-gold">
+          <FiPhone className="h-3.5 w-3.5" />
+          Master Contact
+        </span>
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {HHH_JOBS_MASTER_CONTACT_NUMBERS.map((phone) => (
+            <a key={phone.value} href={phone.href} className="font-semibold transition-colors hover:text-gold">
+              {phone.label}
+            </a>
+          ))}
+        </div>
+      </div>
 
       <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
         <Link

@@ -1,4 +1,5 @@
 import { BLOG_BASE_URL } from '../../../shared/utils/externalLinks.js';
+import { HHH_JOBS_MASTER_CONTACT_NUMBERS } from '../../../shared/constants/contactInfo.js';
 
 export const FOOTER_LINK_COLUMNS = [
   {
@@ -340,7 +341,7 @@ export const FOOTER_PAGE_CONTENT = {
       {
         heading: 'Support Requests',
         body:
-          'Use the support route for account access issues, application problems, platform errors, or any urgent help related to using HHH Jobs.'
+          `Use the support route for account access issues, application problems, platform errors, or urgent help related to using HHH Jobs. You can also call ${HHH_JOBS_MASTER_CONTACT_NUMBERS.map((phone) => phone.label).join(' or ')}.`
       },
       {
         heading: 'Business & Partnerships',

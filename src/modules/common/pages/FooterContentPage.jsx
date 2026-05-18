@@ -3,6 +3,7 @@ import FooterAboutTemplate from '../components/footerPages/FooterAboutTemplate';
 import FooterContactTemplate from '../components/footerPages/FooterContactTemplate';
 import FooterGenericTemplate from '../components/footerPages/FooterGenericTemplate';
 import FooterReportIssueTemplate from '../components/footerPages/FooterReportIssueTemplate';
+import { HHH_JOBS_MASTER_CONTACT_NUMBERS, HHH_JOBS_SUPPORT_EMAIL } from '../../../shared/constants/contactInfo';
 
 const FALLBACK_PAGE = {
   title: 'Information Page',
@@ -12,7 +13,7 @@ const FALLBACK_PAGE = {
     {
       heading: 'Need assistance?',
       body:
-        'Please explore related footer links below or contact support@hhh-jobs.com if you need immediate help.'
+        `Please explore related footer links below, email ${HHH_JOBS_SUPPORT_EMAIL}, or call ${HHH_JOBS_MASTER_CONTACT_NUMBERS.map((phone) => phone.label).join(' / ')} if you need immediate help.`
     }
   ]
 };

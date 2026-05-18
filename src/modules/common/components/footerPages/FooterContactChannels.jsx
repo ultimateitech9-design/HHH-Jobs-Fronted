@@ -1,5 +1,9 @@
-import { FiBriefcase, FiHeadphones, FiInfo, FiMail } from 'react-icons/fi';
+import { FiBriefcase, FiHeadphones, FiInfo, FiMail, FiPhone } from 'react-icons/fi';
 import AnimatedSection from '../../../../shared/components/AnimatedSection';
+import {
+  HHH_JOBS_MASTER_CONTACT_NUMBERS,
+  HHH_JOBS_SUPPORT_EMAIL
+} from '../../../../shared/constants/contactInfo';
 
 const businessRegions = [
   { region: 'India', email: 'sales@hhh-jobs.com' },
@@ -13,7 +17,7 @@ const FooterContactChannels = () => {
     <AnimatedSection>
       <div className="flex h-full flex-col justify-between gap-8 rounded-[2rem] border border-slate-200/60 bg-white/60 p-6 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl sm:p-8">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-brand-700">Direct Email Channels</p>
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-brand-700">Direct Contact Channels</p>
           <h2 className="mt-3 font-heading text-[2rem] font-bold leading-tight text-navy">
             Reach out to the right team
           </h2>
@@ -30,9 +34,30 @@ const FooterContactChannels = () => {
             <div>
               <p className="text-sm font-bold text-navy">Support Requests</p>
               <p className="mt-0.5 text-[11px] font-medium text-slate-500">General help & account issues</p>
-              <a href="mailto:support@hhh-jobs.com" className="mt-2 inline-flex text-sm font-semibold text-brand-600 hover:text-brand-700">
-                support@hhh-jobs.com
+              <a href={`mailto:${HHH_JOBS_SUPPORT_EMAIL}`} className="mt-2 inline-flex text-sm font-semibold text-brand-600 hover:text-brand-700">
+                {HHH_JOBS_SUPPORT_EMAIL}
               </a>
+            </div>
+          </div>
+
+          <div className="group flex items-start gap-4 rounded-[1.25rem] border border-slate-100 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-100 group-hover:text-emerald-700">
+              <FiPhone size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-navy">Master Contact Numbers</p>
+              <p className="mt-0.5 text-[11px] font-medium text-slate-500">HHH Jobs support, sales, and general queries</p>
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                {HHH_JOBS_MASTER_CONTACT_NUMBERS.map((phone) => (
+                  <a
+                    key={phone.value}
+                    href={phone.href}
+                    className="inline-flex text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+                  >
+                    {phone.label}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
 
