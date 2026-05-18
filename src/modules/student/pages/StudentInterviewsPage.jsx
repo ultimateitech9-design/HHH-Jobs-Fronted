@@ -102,62 +102,71 @@ const StudentInterviewsPage = () => {
         subtitle="No Zoom links needed. Each card opens the in-app room with recruiter notes, coding panel, and whiteboard support."
       >
         {state.loading ? (
-          <div className="grid gap-5 md:grid-cols-2">
-            {[1, 2, 3, 4].map((item) => (
-              <div key={item} className="h-72 animate-pulse rounded-[2rem] bg-slate-100" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            {[1, 2, 3, 4, 5].map((item) => (
+              <div key={item} className="h-56 animate-pulse rounded-[1.25rem] bg-slate-100" />
             ))}
           </div>
         ) : state.interviews.length > 0 ? (
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {state.interviews.map((interview) => (
-              <article key={interview.id} className="rounded-[1.85rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 shadow-[0_16px_34px_rgba(15,23,42,0.06)]">
-                <div className="flex h-full flex-col gap-5">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] ${statusBadgeClassName(interview.status)}`}>
+              <article key={interview.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-3.5 shadow-[0_10px_24px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_18px_34px_rgba(15,23,42,0.09)]">
+                <div className="flex h-full min-h-[238px] flex-col">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`inline-flex min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${statusBadgeClassName(interview.status)}`}>
                       <FiClock size={12} />
-                      {interview.status || 'Scheduled'}
+                      <span className="truncate">{interview.status || 'Scheduled'}</span>
                     </span>
-                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
+                    <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
                       {interview.room_status || 'scheduled'}
                     </span>
                   </div>
 
-                  <div>
-                    <h2 className="text-2xl font-bold text-navy">{interview.title || interview.job_title || 'Interview room'}</h2>
-                    <p className="mt-1 text-sm font-semibold text-slate-500">
+                  <div className="mt-4 min-w-0">
+                    <h2 className="line-clamp-2 min-h-[48px] text-[1.05rem] font-bold leading-6 text-navy">{interview.title || interview.job_title || 'Interview room'}</h2>
+                    <p className="mt-1 truncate text-xs font-semibold text-slate-500">
                       {interview.company_name || 'Hiring team'} • {interview.round_label || 'Interview'}
                     </p>
                   </div>
 
-                  <div className="grid gap-3">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600">
-                      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                  <div className="mt-4 space-y-2 text-xs">
+                    <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                      <span className="mt-0.5 shrink-0 text-slate-400">
                         <FiCalendar size={13} />
-                        Scheduled time
-                      </p>
-                      <p className="mt-2 font-semibold text-slate-800">{formatDateTime(interview.scheduled_at || interview.scheduledAt)}</p>
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-black uppercase tracking-[0.12em] text-slate-400">Time</p>
+                        <p className="mt-1 truncate font-semibold text-slate-800">{formatDateTime(interview.scheduled_at || interview.scheduledAt)}</p>
+                      </div>
                     </div>
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600">
-                      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                    <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                      <span className="mt-0.5 shrink-0 text-slate-400">
                         <FiVideo size={13} />
-                        Room features
-                      </p>
-                      <p className="mt-2 font-semibold text-slate-800">Video, transcript, whiteboard, Monaco editor</p>
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-black uppercase tracking-[0.12em] text-slate-400">Tools</p>
+                        <p className="mt-1 truncate font-semibold text-slate-800">Video, code, whiteboard</p>
+                      </div>
                     </div>
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600">
-                      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                    <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                      <span className="mt-0.5 shrink-0 text-slate-400">
                         <FiCheckCircle size={13} />
-                        Consent and recording
-                      </p>
-                      <p className="mt-2 font-semibold text-slate-800">
-                        {interview.candidate_consent_required
-                          ? (interview.candidate_recording_consent ? 'Consent already saved' : 'Consent required before recording')
-                          : 'Recording is optional for this room'}
-                      </p>
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-black uppercase tracking-[0.12em] text-slate-400">Recording</p>
+                        <p className="mt-1 truncate font-semibold text-slate-800">
+                          {interview.candidate_consent_required
+                            ? (interview.candidate_recording_consent ? 'Consent saved' : 'Consent required')
+                            : 'Optional'}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <Link to={`/portal/student/interviews/${interview.room_interview_id || interview.id}/room`} className={`${studentPrimaryButtonClassName} mt-auto`}>
+                  <Link
+                    to={`/portal/student/interviews/${interview.room_interview_id || interview.id}/room`}
+                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand-500 to-warning-400 px-3 py-2.5 text-xs font-black text-white shadow-[0_10px_20px_rgba(229,155,23,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_28px_rgba(229,155,23,0.28)]"
+                  >
                     <FiMonitor size={15} />
                     Join interview room
                   </Link>
