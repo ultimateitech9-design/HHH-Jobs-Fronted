@@ -130,6 +130,11 @@ const NotificationRuntime = () => {
         return;
       }
 
+      if (event === NOTIFICATION_STREAM_EVENTS.BULK_DELETED) {
+        store.removeNotificationsLocally(data?.notificationIds || []);
+        return;
+      }
+
       if (event === NOTIFICATION_STREAM_EVENTS.DELETED && data?.notificationId) {
         store.removeNotificationLocally(data.notificationId);
       }

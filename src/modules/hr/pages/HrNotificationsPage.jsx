@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import SectionHeader from '../../../shared/components/SectionHeader';
 import useNotificationStore from '../../../core/notifications/notificationStore';
 import {
+  deleteAllNotificationsRequest,
   deleteNotificationRequest,
   fetchNotifications,
   markAllNotificationsReadRequest,
@@ -20,6 +21,7 @@ const HrNotificationsPage = () => {
   const markNotificationReadLocally = useNotificationStore((state) => state.markNotificationReadLocally);
   const markAllNotificationsReadLocally = useNotificationStore((state) => state.markAllNotificationsReadLocally);
   const removeNotificationLocally = useNotificationStore((state) => state.removeNotificationLocally);
+  const removeNotificationsLocally = useNotificationStore((state) => state.removeNotificationsLocally);
   const upsertNotification = useNotificationStore((state) => state.upsertNotification);
 
   const [filter, setFilter] = useState('all');
@@ -109,6 +111,22 @@ const HrNotificationsPage = () => {
     }
   };
 
+  const handleClearAll = async () => {
+    if (notifications.length === 0) return;
+
+    setMessage('');
+    const previousNotifications = [...notifications];
+    removeNotificationsLocally();
+
+    try {
+      await deleteAllNotificationsRequest();
+      setMessage('All notifications cleared.');
+    } catch (error) {
+      replaceNotifications(previousNotifications);
+      setMessage(error.message || 'Unable to clear notifications.');
+    }
+  };
+
   const unreadCount = notifications.filter((item) => !item.is_read).length;
 
   return (
@@ -148,13 +166,23 @@ const HrNotificationsPage = () => {
             ))}
           </div>
 
-          <button
-            type="button"
-            className="text-[12px] font-semibold text-slate-500 transition hover:text-brand-600"
-            onClick={handleMarkAllRead}
-          >
-            Mark all as read
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="text-[12px] font-semibold text-slate-500 transition hover:text-brand-600"
+              onClick={handleMarkAllRead}
+            >
+              Mark all as read
+            </button>
+            <button
+              type="button"
+              className="text-[12px] font-semibold text-red-500 transition hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={handleClearAll}
+              disabled={notifications.length === 0}
+            >
+              Clear all
+            </button>
+          </div>
         </div>
 
         {loading && !hydrated ? <p className="py-6 text-center text-[13px] text-slate-400">Loading notifications...</p> : null}

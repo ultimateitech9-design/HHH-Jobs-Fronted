@@ -1,9 +1,14 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, BriefcaseBusiness, X } from 'lucide-react';
+import { Bell, BriefcaseBusiness, Trash2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { markAllNotificationsReadRequest, markNotificationReadRequest } from '../../../../core/notifications/notificationApi';
+import {
+  deleteAllNotificationsRequest,
+  deleteNotificationRequest,
+  markAllNotificationsReadRequest,
+  markNotificationReadRequest
+} from '../../../../core/notifications/notificationApi';
 import useNotificationStore from '../../../../core/notifications/notificationStore';
 
 const JOB_NOTIFICATION_KEYWORDS = [
@@ -84,8 +89,12 @@ const PortalNotificationsDrawer = ({
   notificationPath = '',
   notifications = []
 }) => {
+  const [clearing, setClearing] = useState(false);
   const markAllNotificationsReadLocally = useNotificationStore((state) => state.markAllNotificationsReadLocally);
   const markNotificationReadLocally = useNotificationStore((state) => state.markNotificationReadLocally);
+  const removeNotificationLocally = useNotificationStore((state) => state.removeNotificationLocally);
+  const removeNotificationsLocally = useNotificationStore((state) => state.removeNotificationsLocally);
+  const replaceNotifications = useNotificationStore((state) => state.replaceNotifications);
 
   const jobNotifications = useMemo(() => {
     const filtered = notifications.filter(isJobRelatedNotification);
@@ -106,6 +115,33 @@ const PortalNotificationsDrawer = ({
     markAllNotificationsReadRequest().catch(() => {});
     return undefined;
   }, [jobNotifications, markAllNotificationsReadLocally, open]);
+
+  const handleClearNotification = (notificationId) => {
+    if (!notificationId) return;
+
+    const previousNotifications = [...notifications];
+    removeNotificationLocally(notificationId);
+
+    deleteNotificationRequest(notificationId).catch(() => {
+      replaceNotifications(previousNotifications);
+    });
+  };
+
+  const handleClearAll = async () => {
+    if (clearing || notifications.length === 0) return;
+
+    const previousNotifications = [...notifications];
+    setClearing(true);
+    removeNotificationsLocally();
+
+    try {
+      await deleteAllNotificationsRequest();
+    } catch (_error) {
+      replaceNotifications(previousNotifications);
+    } finally {
+      setClearing(false);
+    }
+  };
 
   if (typeof document === 'undefined') return null;
 
@@ -135,14 +171,28 @@ const PortalNotificationsDrawer = ({
                 <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-brand-600">Alerts</p>
                 <h2 className="mt-1 font-heading text-[1.7rem] font-bold text-slate-950">Notifications</h2>
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                aria-label="Close notifications drawer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {notifications.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleClearAll}
+                    disabled={clearing}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-brand-700 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-label="Clear all notifications"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    {clearing ? 'Clearing' : 'Clear all'}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                  aria-label="Close notifications drawer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/55">
@@ -181,7 +231,7 @@ const PortalNotificationsDrawer = ({
                                       </span>
                                     </div>
                                     <p className="mt-1.5 text-sm leading-5 text-slate-600">{message}</p>
-                                    <div className="mt-3 flex items-center gap-2">
+                                    <div className="mt-3 flex flex-wrap items-center gap-2">
                                       {!notification.is_read ? (
                                         <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
                                           New alert
@@ -205,6 +255,18 @@ const PortalNotificationsDrawer = ({
                                         >
                                           Open
                                         </Link>
+                                      ) : null}
+                                      {notification.id ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleClearNotification(notification.id)}
+                                          className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 transition-colors hover:text-red-600"
+                                          aria-label="Clear notification"
+                                          title="Clear notification"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                          Clear
+                                        </button>
                                       ) : null}
                                     </div>
                                   </div>

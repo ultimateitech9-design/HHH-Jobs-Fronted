@@ -44,6 +44,11 @@ const markNotificationsRead = (notifications = [], targetIds = [], readAt = new 
 const removeNotification = (notifications = [], notificationId) =>
   notifications.filter((notification) => notification.id !== notificationId);
 
+const removeNotifications = (notifications = [], notificationIds = []) => {
+  const targetSet = new Set(notificationIds);
+  return notifications.filter((notification) => !targetSet.has(notification.id));
+};
+
 const useNotificationStore = create((set) => ({
   notifications: [],
   loading: false,
@@ -85,6 +90,13 @@ const useNotificationStore = create((set) => ({
   removeNotificationLocally: (notificationId) => set((state) => ({
     ...state,
     notifications: removeNotification(state.notifications, notificationId)
+  })),
+
+  removeNotificationsLocally: (notificationIds = []) => set((state) => ({
+    ...state,
+    notifications: notificationIds.length > 0
+      ? removeNotifications(state.notifications, notificationIds)
+      : []
   })),
 
   markAllNotificationsReadLocally: (notificationIds = [], readAt = new Date().toISOString()) => set((state) => ({

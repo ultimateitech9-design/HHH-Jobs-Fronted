@@ -15,6 +15,7 @@ import {
 } from 'react-icons/fi';
 import useNotificationStore from '../../../core/notifications/notificationStore';
 import {
+  deleteAllNotificationsRequest,
   deleteNotificationRequest,
   fetchNotifications,
   markAllNotificationsReadRequest,
@@ -157,6 +158,7 @@ const StudentNotificationsPage = () => {
   const markNotificationReadLocally = useNotificationStore((state) => state.markNotificationReadLocally);
   const markAllNotificationsReadLocally = useNotificationStore((state) => state.markAllNotificationsReadLocally);
   const removeNotificationLocally = useNotificationStore((state) => state.removeNotificationLocally);
+  const removeNotificationsLocally = useNotificationStore((state) => state.removeNotificationsLocally);
   const upsertNotification = useNotificationStore((state) => state.upsertNotification);
 
   const [filter, setFilter] = useState('all');
@@ -273,6 +275,24 @@ const StudentNotificationsPage = () => {
     }
   };
 
+  const handleClearAll = async () => {
+    if (notifications.length === 0) return;
+
+    setMessage('');
+    const previousNotifications = [...notifications];
+    removeNotificationsLocally();
+    setExpandedNotifications([]);
+
+    try {
+      await deleteAllNotificationsRequest();
+      setMessage('All notifications cleared.');
+      window.setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      replaceNotifications(previousNotifications);
+      setMessage(error.message || 'Unable to clear notifications.');
+    }
+  };
+
   return (
     <div className="space-y-6 pb-8">
       {activeError ? <StudentNotice type="error" text={activeError} /> : null}
@@ -360,12 +380,20 @@ const StudentNotificationsPage = () => {
                 </p>
               </div>
 
-              {unreadCount > 0 ? (
-                <button type="button" onClick={handleMarkAllRead} className={studentGhostButtonClassName}>
-                  <FiCheck size={15} />
-                  Mark all as read
-                </button>
-              ) : null}
+              <div className="flex flex-wrap gap-2">
+                {unreadCount > 0 ? (
+                  <button type="button" onClick={handleMarkAllRead} className={studentGhostButtonClassName}>
+                    <FiCheck size={15} />
+                    Mark all as read
+                  </button>
+                ) : null}
+                {notifications.length > 0 ? (
+                  <button type="button" onClick={handleClearAll} className={studentGhostButtonClassName}>
+                    <FiTrash2 size={15} />
+                    Clear all
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div className="mt-5 grid gap-2.5 md:grid-cols-3">

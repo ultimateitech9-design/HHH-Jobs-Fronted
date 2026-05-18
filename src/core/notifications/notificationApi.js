@@ -20,6 +20,7 @@ export const NOTIFICATION_STREAM_EVENTS = {
   CREATED: 'notification.created',
   UPDATED: 'notification.updated',
   BULK_READ: 'notification.bulk_read',
+  BULK_DELETED: 'notification.bulk_deleted',
   DELETED: 'notification.deleted'
 };
 
@@ -132,6 +133,20 @@ export const deleteNotificationRequest = async (notificationId) => {
   }
 
   return payload?.notificationId || notificationId;
+};
+
+export const deleteAllNotificationsRequest = async () => {
+  const response = await apiFetch('/notifications', {
+    method: 'DELETE',
+    body: JSON.stringify({})
+  });
+  const payload = await parseJson(response);
+
+  if (!response.ok) {
+    throw new Error(payload?.message || `Request failed with status ${response.status}`);
+  }
+
+  return payload?.notificationIds || [];
 };
 
 export const openNotificationsStream = async ({ signal, onEvent, onOpen }) => {
