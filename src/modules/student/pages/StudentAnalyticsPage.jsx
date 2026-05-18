@@ -18,6 +18,7 @@ import { getStudentAnalytics } from '../services/studentApi';
 const stageLabelMap = {
   applied: 'Applied',
   shortlisted: 'Shortlisted',
+  interview_scheduled: 'Interview Scheduled',
   interviewed: 'Interviewed',
   offered: 'Offered',
   rejected: 'Rejected',
@@ -27,6 +28,7 @@ const stageLabelMap = {
 const stageToneMap = {
   applied: 'from-slate-900 to-slate-700',
   shortlisted: 'from-brand-500 to-amber-400',
+  interview_scheduled: 'from-amber-500 to-yellow-400',
   interviewed: 'from-sky-600 to-secondary-500',
   offered: 'from-emerald-600 to-emerald-400',
   rejected: 'from-rose-500 to-red-400',
@@ -61,6 +63,7 @@ const StudentAnalyticsPage = () => {
   const pipeline = state.analytics?.pipeline || {
     applied: 0,
     shortlisted: 0,
+    interview_scheduled: 0,
     interviewed: 0,
     offered: 0,
     rejected: 0,
@@ -72,7 +75,7 @@ const StudentAnalyticsPage = () => {
   const insights = useMemo(() => {
     const totalApplications = Number(state.analytics?.totalApplications || 0);
     const shortlisted = Number(pipeline.shortlisted || 0);
-    const interviewed = Number(pipeline.interviewed || 0);
+    const interviewed = Number(pipeline.interview_scheduled || 0) + Number(pipeline.interviewed || 0);
     const hired = Number(pipeline.hired || 0);
     const atsChecks = Number(state.analytics?.atsChecks || 0);
     const shortlistRate = totalApplications ? Math.round((shortlisted / totalApplications) * 100) : 0;
@@ -88,7 +91,7 @@ const StudentAnalyticsPage = () => {
       interviewRate,
       hireRate
     };
-  }, [pipeline.hired, pipeline.interviewed, pipeline.shortlisted, state.analytics?.atsChecks, state.analytics?.totalApplications]);
+  }, [pipeline.hired, pipeline.interview_scheduled, pipeline.interviewed, pipeline.shortlisted, state.analytics?.atsChecks, state.analytics?.totalApplications]);
 
   const topStats = [
     {

@@ -110,6 +110,7 @@ const StudentJobDetailsPage = () => {
 
   const applicationStatusLabel = useMemo(() => {
     if (!applicationStatus) return 'Applied';
+    if (applicationStatus === 'interview_scheduled') return 'Interview Scheduled';
     return applicationStatus.charAt(0).toUpperCase() + applicationStatus.slice(1);
   }, [applicationStatus]);
 
@@ -117,6 +118,8 @@ const StudentJobDetailsPage = () => {
     switch (applicationStatus) {
       case 'shortlisted':
         return 'border-indigo-200 bg-indigo-50 text-indigo-700';
+      case 'interview_scheduled':
+        return 'border-amber-200 bg-amber-50 text-amber-700';
       case 'interviewed':
         return 'border-violet-200 bg-violet-50 text-violet-700';
       case 'offered':

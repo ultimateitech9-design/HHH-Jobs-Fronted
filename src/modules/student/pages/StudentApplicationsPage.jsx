@@ -26,6 +26,7 @@ import { getCurrentUser } from '../../../utils/auth';
 const STATUS_STAGES = [
   { id: 'applied', label: 'Applied' },
   { id: 'shortlisted', label: 'Shortlisted' },
+  { id: 'interview_scheduled', label: 'Interview Scheduled' },
   { id: 'interviewed', label: 'Interviewed' },
   { id: 'offered', label: 'Offered' },
   { id: 'hired', label: 'Hired' }
@@ -44,13 +45,14 @@ const getStatusLabel = (status = '') => {
   if (!normalized) return 'Unknown';
   if (normalized === 'selected') return 'Selected';
   if (normalized === 'withdrawn') return 'Withdrawn';
+  if (normalized === 'interview_scheduled') return 'Interview Scheduled';
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 };
 
 const QUICK_LINKS = [
   { label: 'My home', icon: FiUser, to: '/portal/student/home' },
   { label: 'Jobs', icon: FiBriefcase, to: '/portal/student/jobs' },
-  { label: 'Applications', icon: FiFileText, to: '/portal/student/applications' },
+  { label: 'My Applications', icon: FiFileText, to: '/portal/student/applications' },
   { label: 'Interviews', icon: FiCalendar, to: '/portal/student/interviews' }
 ];
 
@@ -91,7 +93,7 @@ const StudentApplicationsPage = () => {
   const counts = useMemo(() => {
     const total = state.applications.length;
     const shortlisted = state.applications.filter((item) => String(item.status || '').toLowerCase() === 'shortlisted').length;
-    const interviews = state.applications.filter((item) => String(item.status || '').toLowerCase() === 'interviewed').length;
+    const interviews = state.applications.filter((item) => ['interview_scheduled', 'interviewed'].includes(String(item.status || '').toLowerCase())).length;
     const rejected = state.applications.filter((item) => String(item.status || '').toLowerCase() === 'rejected').length;
     const offers = state.applications.filter((item) => ['offered', 'selected', 'hired'].includes(String(item.status || '').toLowerCase())).length;
 
@@ -103,6 +105,7 @@ const StudentApplicationsPage = () => {
     switch (normalized) {
       case 'applied': return 'border-blue-200 bg-blue-50 text-blue-700';
       case 'shortlisted': return 'border-indigo-200 bg-indigo-50 text-indigo-700';
+      case 'interview_scheduled': return 'border-amber-200 bg-amber-50 text-amber-700';
       case 'interviewed': return 'border-violet-200 bg-violet-50 text-violet-700';
       case 'offered': return 'border-emerald-200 bg-emerald-50 text-emerald-700';
       case 'hired': return 'border-teal-200 bg-teal-50 text-teal-700';
@@ -209,7 +212,7 @@ const StudentApplicationsPage = () => {
                   key={item.label}
                   to={item.to}
                   className={`flex items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold ${
-                    item.label === 'Applications' ? 'bg-slate-100 text-navy' : 'text-slate-700 hover:bg-slate-50'
+                    item.to === '/portal/student/applications' ? 'bg-slate-100 text-navy' : 'text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   <item.icon />
@@ -285,7 +288,7 @@ const StudentApplicationsPage = () => {
 
           <StudentSurfaceCard
             eyebrow="Live pipeline"
-            title={statusFilter === 'all' ? 'All applications' : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} applications`}
+            title={statusFilter === 'all' ? 'All applications' : `${getStatusLabel(statusFilter)} applications`}
             subtitle="Every card shows movement, current stage, and the next best context in one place."
           >
             {state.loading ? (
@@ -363,7 +366,7 @@ const StudentApplicationsPage = () => {
                             style={{ width: isRejected || isWithdrawn ? 'calc(100% - 2.5rem)' : `calc(${(progressIndex / (STATUS_STAGES.length - 1)) * 100}% - 0.25rem)` }}
                           />
 
-                          <div className="relative z-10 grid gap-5 md:grid-cols-5">
+                          <div className="relative z-10 grid gap-5 md:grid-cols-6">
                             {STATUS_STAGES.map((stage, index) => {
                               const isActive = !isRejected && !isWithdrawn && progressIndex >= index;
                               const isCurrent = !isRejected && !isWithdrawn && progressIndex === index;
@@ -462,7 +465,7 @@ const StudentApplicationsPage = () => {
               {[
                 { label: 'Applied', value: state.applications.filter((item) => String(item.status || '').toLowerCase() === 'applied').length },
                 { label: 'Shortlisted', value: counts.shortlisted },
-                { label: 'Interviewed', value: counts.interviews },
+                { label: 'Interview Stage', value: counts.interviews },
                 { label: 'Rejected', value: counts.rejected }
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
@@ -484,7 +487,7 @@ const StudentApplicationsPage = () => {
                 Use rejected roles to refine resume keywords and ATS fit.
               </div>
               <div className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                Move interviewed roles into prep mode from the interviews page.
+                Move scheduled interviews into prep mode from the interviews page.
               </div>
             </div>
 

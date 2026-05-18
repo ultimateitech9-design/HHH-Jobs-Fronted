@@ -38,6 +38,7 @@ const HrAnalyticsPage = () => {
       pipeline: {
         applied: 0,
         shortlisted: 0,
+        interview_scheduled: 0,
         interviewed: 0,
         offered: 0,
         rejected: 0,
@@ -76,6 +77,7 @@ const HrAnalyticsPage = () => {
   const pipeline = state.analytics?.pipeline || {
     applied: 0,
     shortlisted: 0,
+    interview_scheduled: 0,
     interviewed: 0,
     offered: 0,
     rejected: 0,
@@ -86,6 +88,7 @@ const HrAnalyticsPage = () => {
   const stageColors = {
     applied: 'bg-blue-500',
     shortlisted: 'bg-amber-500',
+    interview_scheduled: 'bg-yellow-500',
     interviewed: 'bg-brand-500',
     offered: 'bg-emerald-500',
     rejected: 'bg-red-400',

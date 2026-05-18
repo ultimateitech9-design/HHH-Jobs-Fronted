@@ -463,6 +463,7 @@ export const getStudentDashboardOverview = async () => {
       pipeline: {
         applied: 0,
         shortlisted: 0,
+        interview_scheduled: 0,
         interviewed: 0,
         offered: 0,
         rejected: 0,
@@ -495,6 +496,7 @@ export const getStudentDashboardOverview = async () => {
       pipeline: result.data?.pipeline || {
         applied: 0,
         shortlisted: 0,
+        interview_scheduled: 0,
         interviewed: 0,
         offered: 0,
         rejected: 0,
@@ -841,6 +843,7 @@ export const getStudentAnalytics = async () =>
       pipeline: {
         applied: 0,
         shortlisted: 0,
+        interview_scheduled: 0,
         interviewed: 0,
         offered: 0,
         rejected: 0,

@@ -40,7 +40,7 @@ const NOTIFICATION_FILTERS = [
 const QUICK_LINKS = [
   { label: 'My home', icon: FiUser, to: '/portal/student/home' },
   { label: 'Jobs', icon: FiBriefcase, to: '/portal/student/jobs' },
-  { label: 'Applications', icon: FiFileText, to: '/portal/student/applications' },
+  { label: 'My Applications', icon: FiFileText, to: '/portal/student/applications' },
   { label: 'Interviews', icon: FiCalendar, to: '/portal/student/interviews' }
 ];
 

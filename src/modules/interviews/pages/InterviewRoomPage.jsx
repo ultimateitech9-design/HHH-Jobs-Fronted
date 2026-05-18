@@ -185,6 +185,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const activeSignalSessionRef = useRef('');
   const lastPresenceSignalAtRef = useRef(0);
   const lastReconnectAttemptAtRef = useRef(0);
+  const offerInFlightRef = useRef(false);
   const sidebarResizeStateRef = useRef(null);
   const previewDragStateRef = useRef(null);
   const codeRunnerRef = useRef(null);
@@ -513,6 +514,8 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         peerConnectionRef.current.ontrack = null;
         peerConnectionRef.current.onicecandidate = null;
         peerConnectionRef.current.onconnectionstatechange = null;
+        peerConnectionRef.current.oniceconnectionstatechange = null;
+        peerConnectionRef.current.onnegotiationneeded = null;
         peerConnectionRef.current.close();
       } catch (error) {
         // no-op
@@ -641,12 +644,35 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     const peerConnection = new RTCPeerConnection(rtcConfig);
 
+    const requestReconnect = (reason) => {
+      if (!localStreamRef.current) return;
+      const now = Date.now();
+      if (now - lastReconnectAttemptAtRef.current < 2500) return;
+      lastReconnectAttemptAtRef.current = now;
+
+      if (isManager) {
+        maybeCreateOffer({ iceRestart: true }).catch(() => {});
+        return;
+      }
+
+      sendInterviewSignal(interviewId, {
+        signalType: 'reconnect',
+        payload: {
+          requestedBy: 'candidate',
+          reason,
+          sessionId: activeSignalSessionRef.current || '',
+          sentAt: new Date().toISOString()
+        }
+      }).catch(() => {});
+    };
+
     peerConnection.ontrack = (event) => {
       const [stream] = event.streams;
       if (stream) {
         remoteStreamRef.current = stream;
         syncRemoteVideo(stream);
         setRemoteStreamReady(true);
+        setConnectionState((current) => (['new', 'connecting'].includes(current) ? 'connected' : current));
       }
     };
 
@@ -668,25 +694,21 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       const nextState = peerConnection.connectionState || 'new';
       setConnectionState(nextState);
 
-      if (['failed', 'disconnected'].includes(nextState) && localStreamRef.current) {
-        const now = Date.now();
-        if (now - lastReconnectAttemptAtRef.current < 2500) return;
-        lastReconnectAttemptAtRef.current = now;
-
-        if (isManager) {
-          maybeCreateOffer({ iceRestart: true }).catch(() => {});
-        } else {
-          sendInterviewSignal(interviewId, {
-            signalType: 'reconnect',
-            payload: {
-              requestedBy: 'candidate',
-              reason: nextState,
-              sessionId: activeSignalSessionRef.current || '',
-              sentAt: new Date().toISOString()
-            }
-          }).catch(() => {});
-        }
+      if (['failed', 'disconnected'].includes(nextState)) {
+        requestReconnect(nextState);
       }
+    };
+
+    peerConnection.oniceconnectionstatechange = () => {
+      const nextState = peerConnection.iceConnectionState || '';
+      if (['failed', 'disconnected'].includes(nextState)) {
+        requestReconnect(`ice-${nextState}`);
+      }
+    };
+
+    peerConnection.onnegotiationneeded = () => {
+      if (!isManager || !localStreamRef.current) return;
+      maybeCreateOffer().catch(() => {});
     };
 
     if (localStreamRef.current) {
@@ -717,19 +739,27 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
   const maybeCreateOffer = async ({ iceRestart = false } = {}) => {
     if (!isManager || !localStreamRef.current) return;
+    if (offerInFlightRef.current) return;
 
     const peerConnection = ensurePeerConnection();
-    const sessionId = createSignalSessionId();
-    activeSignalSessionRef.current = sessionId;
-    const offer = await peerConnection.createOffer({ iceRestart });
-    await peerConnection.setLocalDescription(offer);
-    await sendInterviewSignal(interviewId, {
-      signalType: 'offer',
-      payload: {
-        sdp: peerConnection.localDescription || offer,
-        sessionId
-      }
-    });
+    if (peerConnection.signalingState !== 'stable') return;
+
+    offerInFlightRef.current = true;
+    try {
+      const sessionId = createSignalSessionId();
+      activeSignalSessionRef.current = sessionId;
+      const offer = await peerConnection.createOffer({ iceRestart });
+      await peerConnection.setLocalDescription(offer);
+      await sendInterviewSignal(interviewId, {
+        signalType: 'offer',
+        payload: {
+          sdp: peerConnection.localDescription || offer,
+          sessionId
+        }
+      });
+    } finally {
+      offerInFlightRef.current = false;
+    }
   };
 
   const startSpeechRecognition = () => {
@@ -1183,7 +1213,10 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   useEffect(() => {
     if (!payload?.permissions?.canJoin) return undefined;
 
-    const signalInterval = setInterval(async () => {
+    let polling = false;
+    const pollSignals = async () => {
+      if (polling) return;
+      polling = true;
       try {
         const signals = await getInterviewSignals(interviewId, signalCursorRef.current);
         for (const signal of signals) {
@@ -1191,8 +1224,13 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         }
       } catch (error) {
         // Ignore temporary polling failures.
+      } finally {
+        polling = false;
       }
-    }, SIGNAL_POLL_INTERVAL_MS);
+    };
+
+    pollSignals();
+    const signalInterval = setInterval(pollSignals, SIGNAL_POLL_INTERVAL_MS);
 
     return () => {
       clearInterval(signalInterval);
@@ -1338,7 +1376,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         const hasNewerLocalCodeEdits = localCodeEditVersionRef.current !== submittedCodeEditVersion;
         applyPayload(response, {
           hydrateDrafts: false,
-          preserveLocalCode: hasNewerLocalCodeEdits
+          preserveLocalCode: true
         });
         if (!hasNewerLocalCodeEdits) {
           lastSyncedCodeLanguageRef.current = submittedCodeEditorLanguage;

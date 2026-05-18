@@ -27,7 +27,7 @@ import {
   updateApplicationStatus
 } from '../services/hrApi';
 
-const APPLICATION_STATUS_OPTIONS = ['applied', 'shortlisted', 'interviewed', 'offered', 'rejected', 'hired'];
+const APPLICATION_STATUS_OPTIONS = ['applied', 'shortlisted', 'interview_scheduled', 'interviewed', 'offered', 'rejected', 'hired'];
 
 const defaultInterviewDraft = {
   scheduledAt: '',
@@ -42,12 +42,19 @@ const getStatusColor = (status) => {
   switch (s) {
     case 'applied': return 'bg-blue-100 text-blue-700 border-blue-200';
     case 'shortlisted': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+    case 'interview_scheduled': return 'bg-amber-100 text-amber-700 border-amber-200';
     case 'interviewed': return 'bg-purple-100 text-purple-700 border-purple-200';
     case 'offered': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
     case 'hired': return 'bg-teal-100 text-teal-700 border-teal-200';
     case 'rejected': return 'bg-red-100 text-red-700 border-red-200';
     default: return 'bg-neutral-100 text-neutral-700 border-neutral-200';
   }
+};
+
+const getStatusLabel = (status = '') => {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized === 'interview_scheduled') return 'Interview Scheduled';
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 };
 
 const getApplicationId = (application = {}) => application.id || application._id || '';
@@ -172,9 +179,14 @@ const HrJobApplicantsPage = () => {
       }));
       showMessage('Interview scheduled successfully.');
 
-      if (statusDrafts[applicationId] !== 'interviewed' && statusDrafts[applicationId] !== 'hired' && statusDrafts[applicationId] !== 'offered') {
-        setStatusDrafts(prev => ({ ...prev, [applicationId]: 'interviewed' }));
-        updateStatus(applicationId);
+      if (!['interview_scheduled', 'interviewed', 'hired', 'offered'].includes(statusDrafts[applicationId])) {
+        setStatusDrafts((prev) => ({ ...prev, [applicationId]: 'interview_scheduled' }));
+        setState((current) => ({
+          ...current,
+          applicants: current.applicants.map((item) =>
+            item.id === applicationId ? { ...item, status: 'interview_scheduled' } : item
+          )
+        }));
       }
     } catch (error) {
       showMessage(String(error.message || 'Unable to schedule interview.'));
@@ -403,7 +415,7 @@ const HrJobApplicantsPage = () => {
                         <h4 className={`font-bold truncate ${isActive ? 'text-brand-700' : 'text-primary'}`}>{name}</h4>
                         <div className="mt-1 flex items-center justify-between">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${getStatusColor(app.status)}`}>
-                            {app.status || 'Applied'}
+                            {getStatusLabel(app.status || 'applied')}
                           </span>
                           <span className="text-xs text-neutral-400 font-bold">
                             {new Date(app.createdAt || new Date()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
@@ -483,7 +495,7 @@ const HrJobApplicantsPage = () => {
                             className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-primary capitalize"
                           >
                             {APPLICATION_STATUS_OPTIONS.map((status) => (
-                              <option key={status} value={status}>{status}</option>
+                              <option key={status} value={status}>{getStatusLabel(status)}</option>
                             ))}
                           </select>
                         </div>

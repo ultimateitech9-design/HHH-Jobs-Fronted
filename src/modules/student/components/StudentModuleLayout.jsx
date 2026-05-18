@@ -31,7 +31,7 @@ const studentDashboardNavItems = [
       { to: '/portal/student/global-jobs', label: 'Global Jobs', icon: FiGlobe }
     ]
   },
-  { to: '/portal/student/applications', label: 'Applications', icon: FiFileText },
+  { to: '/portal/student/applications', label: 'My Applications', icon: FiFileText },
   { to: '/portal/student/saved-jobs', label: 'Saved Jobs', icon: FiBookmark },
   { to: '/portal/student/auto-apply', label: 'Auto Apply', icon: FiZap },
   { to: '/portal/student/interviews', label: 'Interviews', icon: FiCalendar },
@@ -45,6 +45,7 @@ const studentHomeNavItems = [
 
 const studentHeaderNavItems = [
   { label: 'Jobs', to: '/portal/student/jobs' },
+  { label: 'My Applications', to: '/portal/student/applications' },
   { label: 'Companies', to: '/portal/student/companies' },
   { label: 'Campus Connect', to: '/portal/student/campus-connect' },
   { label: 'ATS', to: '/portal/student/ats' },

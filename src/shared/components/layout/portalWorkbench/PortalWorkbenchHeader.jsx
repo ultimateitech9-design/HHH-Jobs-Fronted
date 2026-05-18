@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bell, ChevronDown, LogOut, Menu, Search, User } from 'lucide-react';
+import { Bell, ChevronDown, FileText, LogOut, Menu, Search, User } from 'lucide-react';
 import useAuthStore from '../../../../core/auth/authStore';
 import useNotificationStore from '../../../../core/notifications/notificationStore';
 import PortalNotificationsDrawer from './PortalNotificationsDrawer';
@@ -40,6 +40,7 @@ const PortalWorkbenchHeader = ({
   const showRoleSwitcher = roleSwitchOptions.length > 1;
   const useLogoutOnlyMenu = ['admin', 'super_admin'].includes(String(activePortalRole || '').trim().toLowerCase());
   const showHeaderTitleBlock = !COMPACT_HEADER_ROLES.includes(String(activePortalRole || '').trim().toLowerCase());
+  const showStudentApplicationsShortcut = ['student', 'retired_employee'].includes(String(activePortalRole || '').trim().toLowerCase());
 
   const renderProfileMenu = () => (
     <div className={`absolute right-0 top-full z-30 mt-3 rounded-[1.25rem] border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)] ${useLogoutOnlyMenu ? 'w-44' : 'w-64'}`.trim()}>
@@ -79,6 +80,16 @@ const PortalWorkbenchHeader = ({
             >
               <User className="h-4 w-4" />
               <span>My profile</span>
+            </Link>
+          ) : null}
+          {showStudentApplicationsShortcut ? (
+            <Link
+              to="/portal/student/applications"
+              onClick={() => setProfileMenuOpen(false)}
+              className="mt-1 flex items-center gap-2 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-navy"
+            >
+              <FileText className="h-4 w-4" />
+              <span>My Applications</span>
             </Link>
           ) : null}
         </>

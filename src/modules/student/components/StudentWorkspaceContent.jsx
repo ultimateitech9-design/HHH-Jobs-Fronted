@@ -108,7 +108,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
   const menuItems = [
     { label: 'My home', icon: FiUser, active: true, to: '/portal/student/home' },
     { label: 'Jobs', icon: FiBriefcase, active: false, to: '/portal/student/jobs' },
-    { label: 'Applications', icon: FiFileText, active: false, to: '/portal/student/applications' },
+    { label: 'My Applications', icon: FiFileText, active: false, to: '/portal/student/applications' },
     { label: 'Interviews', icon: FiTrendingUp, active: false, to: '/portal/student/interviews' }
   ];
 
@@ -276,7 +276,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
           {[
             { label: 'Applied', count: overview.pipeline?.applied || 0 },
             { label: 'Shortlisted', count: overview.pipeline?.shortlisted || 0 },
-            { label: 'Interviewed', count: overview.pipeline?.interviewed || 0 },
+            { label: 'Interview Stage', count: Number(overview.pipeline?.interview_scheduled || 0) + Number(overview.pipeline?.interviewed || 0) },
             { label: 'Offered', count: overview.pipeline?.offered || 0 },
             { label: 'Hired', count: overview.pipeline?.hired || 0 },
             { label: 'Rejected', count: overview.pipeline?.rejected || 0 }
