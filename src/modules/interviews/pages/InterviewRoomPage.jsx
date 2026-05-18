@@ -108,9 +108,13 @@ const CODE_RUN_TIMEOUT_MS = 3000;
 const SIGNAL_LOOKBACK_MS = 15000;
 const SIGNAL_POLL_INTERVAL_MS = 500;
 const LIVE_CODE_SYNC_DEBOUNCE_MS = 180;
+const SIGNAL_CURSOR_OVERLAP_MS = 2000;
+const MAX_TRACKED_SIGNAL_IDS = 500;
 
 const createSignalSessionId = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+const isWorkspaceTab = (tab) => ['video', 'code', 'whiteboard', 'transcript'].includes(String(tab || ''));
 
 const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const navigate = useNavigate();
@@ -193,6 +197,10 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const latestCodeEditorLanguageRef = useRef('javascript');
   const latestCodeEditorContentRef = useRef(defaultCodeEditorContent);
   const localCodeEditVersionRef = useRef(0);
+  const lastLocalCodeEditAtRef = useRef(0);
+  const activeRoomTabRef = useRef('video');
+  const pendingWorkspaceSyncRef = useRef({});
+  const processedSignalIdsRef = useRef(new Set());
   const lastSyncedWhiteboardRef = useRef(serializeWorkspaceValue(defaultWhiteboard));
   const lastSyncedCodeLanguageRef = useRef('javascript');
   const lastSyncedCodeContentRef = useRef(defaultCodeEditorContent);
@@ -203,6 +211,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const job = payload?.job || {};
   const candidate = payload?.candidate || {};
   const hr = payload?.hr || {};
+  const roomParticipants = Array.isArray(payload?.roomParticipants) ? payload.roomParticipants : [];
   const rtcConfig = payload?.rtcConfig || defaultRtcConfig;
 
   const returnPath = portalRole === 'student' ? '/portal/student/interviews' : '/portal/hr/interviews';
@@ -216,6 +225,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const aiAllowed = Boolean(interview?.candidate_ai_consent);
   const isManager = Boolean(permissions?.canManage);
   const isCandidateViewer = Boolean(permissions?.isCandidateViewer);
+  const localActor = isManager ? 'hr' : 'candidate';
+  const currentCandidateId = candidate?.id || '';
+  const videoRecipientId = isManager ? currentCandidateId : (hr?.id || '');
   const participantLabel = isManager ? 'Recruiter' : 'Candidate';
   const remoteParticipantLabel = isManager ? 'Candidate' : 'Recruiter';
   const isLocalPrimaryStage = isStageSwapped;
@@ -421,6 +433,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   };
 
   const applyRemoteWorkspaceSnapshot = (workspace = {}, { preserveLocalCode = false } = {}) => {
+    if (isWorkspaceTab(workspace.activeRoomTab)) {
+      activeRoomTabRef.current = workspace.activeRoomTab;
+      setActiveRoomTab(workspace.activeRoomTab);
+    }
+
     if (workspace.whiteboardData && typeof workspace.whiteboardData === 'object') {
       lastSyncedWhiteboardRef.current = serializeWorkspaceValue(workspace.whiteboardData);
       setWhiteboardData(workspace.whiteboardData);
@@ -546,11 +563,13 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const broadcastMediaState = (nextVideoSource, sharingScreen) =>
     sendInterviewSignal(interviewId, {
       signalType: 'workspace-sync',
+      recipientId: videoRecipientId || null,
       payload: {
         kind: 'media-state',
         videoSource: nextVideoSource,
         sharingScreen,
-        actor: isManager ? 'hr' : 'candidate'
+        actor: localActor,
+        candidateId: currentCandidateId
       }
     }).catch(() => {});
 
@@ -560,14 +579,18 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       payload: {
         kind,
         updatedAt: new Date().toISOString(),
-        actor: isManager ? 'hr' : 'candidate',
+        actor: localActor,
+        candidateId: currentCandidateId,
+        clientId: `${localActor}-${currentCandidateId || hr?.id || 'participant'}`,
         workspace
       }
     }).catch(() => {});
 
-  const queueLiveCodeSync = ({ language, content }) => {
-    latestCodeEditorLanguageRef.current = language;
-    latestCodeEditorContentRef.current = content;
+  const queueLiveWorkspaceSync = (workspace) => {
+    pendingWorkspaceSyncRef.current = {
+      ...pendingWorkspaceSyncRef.current,
+      ...workspace
+    };
 
     if (liveWorkspaceSyncTimerRef.current) {
       window.clearTimeout(liveWorkspaceSyncTimerRef.current);
@@ -575,16 +598,36 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     liveWorkspaceSyncTimerRef.current = window.setTimeout(() => {
       liveWorkspaceSyncTimerRef.current = null;
-      sendWorkspaceSignal('workspace-live', {
-        codeEditorLanguage: latestCodeEditorLanguageRef.current,
-        codeEditorContent: latestCodeEditorContentRef.current
-      });
+      const workspacePatch = pendingWorkspaceSyncRef.current;
+      pendingWorkspaceSyncRef.current = {};
+      sendWorkspaceSignal('workspace-live', workspacePatch);
     }, LIVE_CODE_SYNC_DEBOUNCE_MS);
+  };
+
+  const queueLiveCodeSync = ({ language, content }) => {
+    latestCodeEditorLanguageRef.current = language;
+    latestCodeEditorContentRef.current = content;
+
+    queueLiveWorkspaceSync({
+      activeRoomTab: 'code',
+      codeEditorLanguage: latestCodeEditorLanguageRef.current,
+      codeEditorContent: latestCodeEditorContentRef.current
+    });
+  };
+
+  const handleRoomTabChange = (nextTab, { broadcast = true } = {}) => {
+    if (!isWorkspaceTab(nextTab)) return;
+    activeRoomTabRef.current = nextTab;
+    setActiveRoomTab(nextTab);
+    if (broadcast) {
+      sendWorkspaceSignal('workspace-focus', { activeRoomTab: nextTab });
+    }
   };
 
   const handleCodeLanguageChange = (nextLanguage) => {
     const normalizedLanguage = String(nextLanguage || 'javascript').trim() || 'javascript';
     localCodeEditVersionRef.current += 1;
+    lastLocalCodeEditAtRef.current = Date.now();
     setCodeEditorLanguage(normalizedLanguage);
     setWorkspaceVersion((value) => value + 1);
     queueLiveCodeSync({
@@ -604,6 +647,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const handleCodeEditorChange = (value) => {
     const nextContent = value || '';
     localCodeEditVersionRef.current += 1;
+    lastLocalCodeEditAtRef.current = Date.now();
     setCodeEditorContent(nextContent);
     setWorkspaceVersion((count) => count + 1);
     queueLiveCodeSync({
@@ -657,9 +701,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
       sendInterviewSignal(interviewId, {
         signalType: 'reconnect',
+        recipientId: videoRecipientId || null,
         payload: {
           requestedBy: 'candidate',
           reason,
+          candidateId: currentCandidateId,
           sessionId: activeSignalSessionRef.current || '',
           sentAt: new Date().toISOString()
         }
@@ -682,8 +728,10 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         if (!sessionId) return;
         sendInterviewSignal(interviewId, {
           signalType: 'ice-candidate',
+          recipientId: videoRecipientId || null,
           payload: {
             candidate: event.candidate.toJSON(),
+            candidateId: currentCandidateId,
             sessionId
           }
         }).catch(() => {});
@@ -728,9 +776,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     sendInterviewSignal(interviewId, {
       signalType: 'presence',
+      recipientId: videoRecipientId || null,
       payload: {
-        actor: isManager ? 'hr' : 'candidate',
+        actor: localActor,
         reason,
+        candidateId: currentCandidateId,
         sessionId: createSignalSessionId(),
         sentAt: new Date().toISOString()
       }
@@ -750,13 +800,15 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       activeSignalSessionRef.current = sessionId;
       const offer = await peerConnection.createOffer({ iceRestart });
       await peerConnection.setLocalDescription(offer);
-      await sendInterviewSignal(interviewId, {
-        signalType: 'offer',
-        payload: {
-          sdp: peerConnection.localDescription || offer,
-          sessionId
-        }
-      });
+    await sendInterviewSignal(interviewId, {
+      signalType: 'offer',
+      recipientId: videoRecipientId || null,
+      payload: {
+        sdp: peerConnection.localDescription || offer,
+        candidateId: currentCandidateId,
+        sessionId
+      }
+    });
     } finally {
       offerInFlightRef.current = false;
     }
@@ -1019,6 +1071,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     });
   };
 
+  const isSignalForCurrentParticipant = (payloadBody = {}) => {
+    const signalCandidateId = String(payloadBody.candidateId || '').trim();
+    return !signalCandidateId || !currentCandidateId || signalCandidateId === currentCandidateId;
+  };
+
   const handleSignal = async (signal) => {
     const type = signal?.signal_type;
     const payloadBody = signal?.payload || {};
@@ -1029,6 +1086,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
 
     if (type === 'offer') {
+      if (!isSignalForCurrentParticipant(payloadBody)) return;
       if (!signalSessionId) return;
       if (activeSignalSessionRef.current && activeSignalSessionRef.current !== signalSessionId) {
         destroyPeerConnection();
@@ -1043,8 +1101,10 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       await peerConnection.setLocalDescription(answer);
       await sendInterviewSignal(interviewId, {
         signalType: 'answer',
+        recipientId: videoRecipientId || null,
         payload: {
           sdp: peerConnection.localDescription || answer,
+          candidateId: currentCandidateId,
           sessionId: signalSessionId
         }
       });
@@ -1052,6 +1112,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
 
     if (type === 'answer' && peerConnectionRef.current) {
+      if (!isSignalForCurrentParticipant(payloadBody)) return;
       if (!signalSessionId || signalSessionId !== activeSignalSessionRef.current) return;
       await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(payloadBody.sdp));
       remoteDescriptionReadyRef.current = true;
@@ -1060,6 +1121,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
 
     if (type === 'ice-candidate' && payloadBody.candidate) {
+      if (!isSignalForCurrentParticipant(payloadBody)) return;
       if (!signalSessionId || signalSessionId !== activeSignalSessionRef.current) return;
       if (!peerConnectionRef.current || !remoteDescriptionReadyRef.current) {
         pendingIceCandidatesRef.current.push(payloadBody.candidate);
@@ -1075,19 +1137,21 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
 
     if (type === 'workspace-sync' && payloadBody.kind === 'media-state') {
+      if (!isSignalForCurrentParticipant(payloadBody)) return;
       setRemoteVideoSource(payloadBody.videoSource === 'screen' ? 'screen' : 'camera');
       return;
     }
 
     if (
       type === 'workspace-sync'
-      && ['workspace-live', 'workspace-updated'].includes(payloadBody.kind)
+      && ['workspace-live', 'workspace-updated', 'workspace-focus'].includes(payloadBody.kind)
     ) {
       if (payloadBody.workspace && typeof payloadBody.workspace === 'object') {
         const actor = String(payloadBody.actor || '').toLowerCase();
+        const hasRecentLocalCodeEdits = Date.now() - lastLocalCodeEditAtRef.current < 1200;
         const preserveLocalCode =
-          !isManager
-          && actor !== 'candidate'
+          actor !== localActor
+          && hasRecentLocalCodeEdits
           && (
             payloadBody.workspace.codeEditorLanguage !== undefined
             || payloadBody.workspace.codeEditorContent !== undefined
@@ -1105,11 +1169,13 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
 
     if (type === 'presence' && isManager && localStreamRef.current && signalSessionId) {
+      if (!isSignalForCurrentParticipant(payloadBody)) return;
       await maybeCreateOffer({ iceRestart: true });
       return;
     }
 
     if (type === 'reconnect') {
+      if (!isSignalForCurrentParticipant(payloadBody)) return;
       if (isManager && localStreamRef.current) {
         await maybeCreateOffer({ iceRestart: true });
         return;
@@ -1130,13 +1196,37 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     sendPresenceSignal('reconnect-request');
     await sendInterviewSignal(interviewId, {
       signalType: 'reconnect',
+      recipientId: videoRecipientId || null,
       payload: {
         requestedBy: 'candidate',
         reason: 'manual',
+        candidateId: currentCandidateId,
         sessionId: activeSignalSessionRef.current || '',
         sentAt: new Date().toISOString()
       }
     });
+  };
+
+  const getSignalPollCursor = () => {
+    if (!signalCursorRef.current) return '';
+    const cursorTime = new Date(signalCursorRef.current).getTime();
+    if (Number.isNaN(cursorTime)) return signalCursorRef.current;
+    return new Date(Math.max(0, cursorTime - SIGNAL_CURSOR_OVERLAP_MS)).toISOString();
+  };
+
+  const rememberSignalForProcessing = (signal) => {
+    const signalKey = String(signal?.id || `${signal?.sender_id || 'sender'}-${signal?.created_at || ''}-${signal?.signal_type || ''}`);
+    if (!signalKey.trim()) return true;
+
+    const seenSignals = processedSignalIdsRef.current;
+    if (seenSignals.has(signalKey)) return false;
+
+    seenSignals.add(signalKey);
+    if (seenSignals.size > MAX_TRACKED_SIGNAL_IDS) {
+      const oldestKey = seenSignals.values().next().value;
+      if (oldestKey) seenSignals.delete(oldestKey);
+    }
+    return true;
   };
 
   const handleEndInterview = async () => {
@@ -1218,8 +1308,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       if (polling) return;
       polling = true;
       try {
-        const signals = await getInterviewSignals(interviewId, signalCursorRef.current);
+        const signals = await getInterviewSignals(interviewId, getSignalPollCursor());
         for (const signal of signals) {
+          if (!rememberSignalForProcessing(signal)) continue;
           await handleSignal(signal);
         }
       } catch (error) {
@@ -1317,6 +1408,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   }, [isMicOn]);
 
   useEffect(() => {
+    activeRoomTabRef.current = activeRoomTab;
     syncLocalVideo(localStreamRef.current);
     syncRemoteVideo(remoteStreamRef.current);
   }, [activeRoomTab, isLocalPrimaryStage, remoteStreamReady]);
@@ -1706,7 +1798,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
             {ROOM_TABS.map((tab) => {
               const Icon = tab.icon;
               return (
-                <button key={tab.key} type="button" onClick={() => setActiveRoomTab(tab.key)} className={`inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-[11px] font-semibold transition ${activeRoomTab === tab.key ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+                <button key={tab.key} type="button" onClick={() => handleRoomTabChange(tab.key)} className={`inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-[11px] font-semibold transition ${activeRoomTab === tab.key ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
                   <Icon size={12} /> {tab.label}
                 </button>
               );
@@ -1944,7 +2036,12 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
               <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
                 <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
                   <span className="text-[11px] font-semibold text-slate-700">Whiteboard</span>
-                  <button type="button" onClick={() => { setWhiteboardData({ lines: [], updatedAt: new Date().toISOString() }); setWorkspaceVersion((v) => v + 1); }} className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-50">
+                  <button type="button" onClick={() => {
+                    const nextWhiteboard = { lines: [], updatedAt: new Date().toISOString() };
+                    setWhiteboardData(nextWhiteboard);
+                    setWorkspaceVersion((v) => v + 1);
+                    sendWorkspaceSignal('workspace-live', { activeRoomTab: 'whiteboard', whiteboardData: nextWhiteboard });
+                  }} className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-50">
                     Clear
                   </button>
                 </div>
@@ -1955,23 +2052,36 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                   className="h-[calc(100vh-280px)] w-full touch-none bg-slate-50"
                   onPointerDown={(event) => {
                     const rect = event.currentTarget.getBoundingClientRect();
-                    const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+                    const point = {
+                      x: ((event.clientX - rect.left) * event.currentTarget.width) / Math.max(1, rect.width),
+                      y: ((event.clientY - rect.top) * event.currentTarget.height) / Math.max(1, rect.height)
+                    };
                     drawingRef.current = { active: true, currentLine: { id: `line-${Date.now()}`, color: '#2563eb', width: 3, points: [point] } };
                     event.currentTarget.setPointerCapture?.(event.pointerId);
                   }}
                   onPointerMove={(event) => {
                     if (!drawingRef.current.active || !drawingRef.current.currentLine) return;
                     const rect = event.currentTarget.getBoundingClientRect();
-                    const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+                    const point = {
+                      x: ((event.clientX - rect.left) * event.currentTarget.width) / Math.max(1, rect.width),
+                      y: ((event.clientY - rect.top) * event.currentTarget.height) / Math.max(1, rect.height)
+                    };
                     drawingRef.current.currentLine.points.push(point);
                     const activeLine = drawingRef.current.currentLine;
                     if (!activeLine) return;
-                    setWhiteboardData((current) => ({
-                      lines: [...(current?.lines || []).filter((line) => line && line.id !== activeLine.id), activeLine],
-                      updatedAt: new Date().toISOString()
-                    }));
+                    setWhiteboardData((current) => {
+                      const nextWhiteboard = {
+                        lines: [...(current?.lines || []).filter((line) => line && line.id !== activeLine.id), activeLine],
+                        updatedAt: new Date().toISOString()
+                      };
+                      queueLiveWorkspaceSync({ activeRoomTab: 'whiteboard', whiteboardData: nextWhiteboard });
+                      return nextWhiteboard;
+                    });
                   }}
-                  onPointerUp={() => { drawingRef.current = { active: false, currentLine: null }; setWorkspaceVersion((v) => v + 1); }}
+                  onPointerUp={() => {
+                    drawingRef.current = { active: false, currentLine: null };
+                    setWorkspaceVersion((v) => v + 1);
+                  }}
                   onPointerLeave={() => { drawingRef.current = { active: false, currentLine: null }; }}
                 />
               </div>
@@ -2055,6 +2165,34 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
             {isManager ? (
               <>
+                {roomParticipants.length > 1 ? (
+                  <div className="border-b border-slate-100 px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Room students</p>
+                    <div className="mt-2 space-y-1.5">
+                      {roomParticipants.map((participant) => {
+                        const isActiveParticipant = participant.candidateId === currentCandidateId;
+                        return (
+                          <Link
+                            key={participant.interviewId || participant.candidateId}
+                            to={`/portal/${portalRole}/interviews/${participant.interviewId}/room`}
+                            className={`flex items-center justify-between rounded-md border px-2 py-1.5 text-[10px] font-semibold transition ${
+                              isActiveParticipant
+                                ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span className="truncate">{participant.name || 'Candidate'}</span>
+                            <span className="ml-2 shrink-0 text-[9px] uppercase tracking-wide">{isActiveParticipant ? 'Live' : 'Open'}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-[10px] leading-4 text-slate-500">
+                      Workspace is shared; video/signaling stays isolated to the selected student.
+                    </p>
+                  </div>
+                ) : null}
+
                 {/* Candidate */}
                 <div className="border-b border-slate-100 px-4 py-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Candidate</p>
