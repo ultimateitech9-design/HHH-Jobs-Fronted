@@ -46,7 +46,7 @@ test('admin dashboard smoke', async ({ browser }) => {
     await page.goto('/portal/admin/dashboard');
     await expect(page).toHaveURL(/\/portal\/admin\/dashboard$/);
     await expect(page.locator('h1, h2, [role="heading"]').first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: /admin approvals and review summary/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
     await expect(sidebar.getByRole('link', { name: 'Users', exact: true })).toBeVisible();
     await expect(sidebar.getByRole('link', { name: 'Jobs', exact: true })).toBeVisible();
     await expect(sidebar.getByRole('link', { name: 'Reports', exact: true })).toBeVisible();
@@ -100,7 +100,7 @@ test('hr dashboard smoke', async ({ browser }) => {
 
     await sidebar.getByRole('link', { name: 'Employee Verification', exact: true }).click();
     await expect(page).toHaveURL(/\/portal\/hr\/employee-verification$/);
-    await expect(page.getByRole('heading', { name: 'Employee Verification', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /employee verification/i })).toBeVisible();
 
     await sidebar.getByRole('link', { name: 'Company Profile', exact: true }).click();
     await expect(page).toHaveURL(/\/portal\/hr\/profile$/);
@@ -196,7 +196,7 @@ test('super admin dashboard smoke', async ({ browser }) => {
     await sidebar.getByRole('link', { name: 'Users', exact: true }).click();
     await expect(page).toHaveURL(/\/portal\/super-admin\/users$/);
     await expect(page.getByRole('heading', { name: /users management/i }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /create .* id/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /create .* id/i }).first()).toBeVisible();
 
     await sidebar.getByRole('link', { name: 'System Settings', exact: true }).click();
     await expect(page).toHaveURL(/\/portal\/super-admin\/system-settings$/);

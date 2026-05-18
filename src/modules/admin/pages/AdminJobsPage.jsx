@@ -251,7 +251,7 @@ const AdminJobsPage = () => {
       <header className="admin-ops-header">
         <div>
           <h1 className="admin-ops-title">
-            Jobs Moderation
+            Oversight &amp; Moderation
           </h1>
           <p className="admin-ops-subtitle">Review job visibility, approval status, and listing quality.</p>
         </div>

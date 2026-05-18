@@ -189,6 +189,14 @@ const DataEntryDashboard = () => {
 
   return (
     <div className="space-y-3 pb-2">
+      <div>
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Data Entry Workspace</p>
+        <h1 className="mt-1 text-2xl font-black tracking-tight text-navy sm:text-3xl">Data Entry Dashboard</h1>
+        <p className="mt-1 max-w-2xl text-sm font-semibold text-slate-500">
+          Candidate, company, and job entry operations in one command view.
+        </p>
+      </div>
+
       {state.isDemo ? <p className="module-note">Demo data is being shown because the data entry backend is not connected.</p> : null}
       {state.error ? <p className="form-error">{state.error}</p> : null}
 

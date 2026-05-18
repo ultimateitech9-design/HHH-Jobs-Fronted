@@ -204,6 +204,14 @@ const AdminDashboardPage = () => {
       <div className="pointer-events-none absolute right-0 top-24 -z-10 h-40 w-40 rounded-full bg-amber-100/55 blur-3xl" />
       <div className="pointer-events-none absolute left-10 top-64 -z-10 h-36 w-36 rounded-full bg-sky-100/45 blur-3xl" />
 
+      <div className="mb-4">
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Admin Console</p>
+        <h1 className="mt-1 text-2xl font-black tracking-tight text-navy sm:text-3xl">Admin Dashboard</h1>
+        <p className="mt-1 max-w-2xl text-sm font-semibold text-slate-500">
+          Manage approvals, users, jobs, reports, and payments from one workspace.
+        </p>
+      </div>
+
       {state.isDemo ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 font-semibold text-amber-700">
           Demo Mode: Showing placeholder admin data.

@@ -172,7 +172,7 @@ test.describe('Admin Portal E2E', () => {
 
   test('admin can view settings', async ({ page }) => {
     await page.goto('/portal/admin/settings');
-    await expect(page.getByText(/Settings/i).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /roles, security, otp, and pricing controls/i })).toBeVisible();
   });
 
   test('admin can view payments', async ({ page }) => {
