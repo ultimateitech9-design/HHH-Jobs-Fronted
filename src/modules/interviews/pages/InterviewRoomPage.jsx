@@ -191,6 +191,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const liveWorkspaceSyncTimerRef = useRef(null);
   const latestCodeEditorLanguageRef = useRef('javascript');
   const latestCodeEditorContentRef = useRef(defaultCodeEditorContent);
+  const localCodeEditVersionRef = useRef(0);
   const lastSyncedWhiteboardRef = useRef(serializeWorkspaceValue(defaultWhiteboard));
   const lastSyncedCodeLanguageRef = useRef('javascript');
   const lastSyncedCodeContentRef = useRef(defaultCodeEditorContent);
@@ -418,20 +419,20 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     syncVideoElement(element, remoteStreamRef.current);
   };
 
-  const applyRemoteWorkspaceSnapshot = (workspace = {}) => {
+  const applyRemoteWorkspaceSnapshot = (workspace = {}, { preserveLocalCode = false } = {}) => {
     if (workspace.whiteboardData && typeof workspace.whiteboardData === 'object') {
       lastSyncedWhiteboardRef.current = serializeWorkspaceValue(workspace.whiteboardData);
       setWhiteboardData(workspace.whiteboardData);
     }
 
-    if (workspace.codeEditorLanguage !== undefined) {
+    if (!preserveLocalCode && workspace.codeEditorLanguage !== undefined) {
       const nextLanguage = String(workspace.codeEditorLanguage || 'javascript').trim() || 'javascript';
       latestCodeEditorLanguageRef.current = nextLanguage;
       lastSyncedCodeLanguageRef.current = nextLanguage;
       setCodeEditorLanguage(nextLanguage);
     }
 
-    if (workspace.codeEditorContent !== undefined) {
+    if (!preserveLocalCode && workspace.codeEditorContent !== undefined) {
       const nextContent = String(workspace.codeEditorContent || '');
       latestCodeEditorContentRef.current = nextContent;
       lastSyncedCodeContentRef.current = nextContent;
@@ -443,7 +444,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
   };
 
-  const applyPayload = (nextPayload, { hydrateDrafts = false, forceWorkspace = false } = {}) => {
+  const applyPayload = (nextPayload, { hydrateDrafts = false, forceWorkspace = false, preserveLocalCode = false } = {}) => {
     setRoomState({ loading: false, error: '', payload: nextPayload });
     const nextInterview = nextPayload?.interview || {};
     const nextPermissions = nextPayload?.permissions || {};
@@ -482,11 +483,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       if (forceWorkspace || !nextPermissions.canManage || serializeWorkspaceValue(whiteboardData) === previousWhiteboardSnapshot) {
         setWhiteboardData(nextWhiteboardData);
       }
-      if (forceWorkspace || !nextPermissions.canManage || codeEditorLanguage === previousCodeLanguage) {
+      if (!preserveLocalCode && (forceWorkspace || !nextPermissions.canManage || codeEditorLanguage === previousCodeLanguage)) {
         setCodeEditorLanguage(nextCodeEditorLanguage);
         latestCodeEditorLanguageRef.current = nextCodeEditorLanguage;
       }
-      if (forceWorkspace || !nextPermissions.canManage || codeEditorContent === previousCodeContent) {
+      if (!preserveLocalCode && (forceWorkspace || !nextPermissions.canManage || codeEditorContent === previousCodeContent)) {
         setCodeEditorContent(nextCodeEditorContent);
         latestCodeEditorContentRef.current = nextCodeEditorContent;
       }
@@ -580,6 +581,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
   const handleCodeLanguageChange = (nextLanguage) => {
     const normalizedLanguage = String(nextLanguage || 'javascript').trim() || 'javascript';
+    localCodeEditVersionRef.current += 1;
     setCodeEditorLanguage(normalizedLanguage);
     setWorkspaceVersion((value) => value + 1);
     queueLiveCodeSync({
@@ -598,6 +600,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
   const handleCodeEditorChange = (value) => {
     const nextContent = value || '';
+    localCodeEditVersionRef.current += 1;
     setCodeEditorContent(nextContent);
     setWorkspaceVersion((count) => count + 1);
     queueLiveCodeSync({
@@ -1051,7 +1054,15 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       && ['workspace-live', 'workspace-updated'].includes(payloadBody.kind)
     ) {
       if (payloadBody.workspace && typeof payloadBody.workspace === 'object') {
-        applyRemoteWorkspaceSnapshot(payloadBody.workspace);
+        const actor = String(payloadBody.actor || '').toLowerCase();
+        const preserveLocalCode =
+          !isManager
+          && actor !== 'candidate'
+          && (
+            payloadBody.workspace.codeEditorLanguage !== undefined
+            || payloadBody.workspace.codeEditorContent !== undefined
+          );
+        applyRemoteWorkspaceSnapshot(payloadBody.workspace, { preserveLocalCode });
         return;
       }
 
@@ -1167,7 +1178,8 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     return () => clearTimeout(timer);
   }, [payload?.permissions?.canJoin, isStartingMedia, isManager]);
 
-  // Signal and room polling are intentionally tied to the current interview id.
+  // Live room updates flow through signals; avoid periodic room reloads because
+  // they remount editor/video surfaces and interrupt typing.
   useEffect(() => {
     if (!payload?.permissions?.canJoin) return undefined;
 
@@ -1182,13 +1194,8 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       }
     }, SIGNAL_POLL_INTERVAL_MS);
 
-    const roomInterval = setInterval(() => {
-      loadRoom({ hydrateDrafts: false }).catch(() => {});
-    }, 5000);
-
     return () => {
       clearInterval(signalInterval);
-      clearInterval(roomInterval);
     };
   }, [interviewId, payload?.permissions?.canJoin]);
 
@@ -1304,10 +1311,13 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     const timer = setTimeout(async () => {
       const transcriptAppend = pendingTranscriptSegmentsRef.current.splice(0);
+      const submittedCodeEditVersion = localCodeEditVersionRef.current;
+      const submittedCodeEditorLanguage = latestCodeEditorLanguageRef.current;
+      const submittedCodeEditorContent = latestCodeEditorContentRef.current;
       const updatePayload = {
         whiteboardData,
-        codeEditorLanguage,
-        codeEditorContent
+        codeEditorLanguage: submittedCodeEditorLanguage,
+        codeEditorContent: submittedCodeEditorContent
       };
 
       if (isManager) {
@@ -1325,11 +1335,19 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       try {
         setIsSavingWorkspace(true);
         const response = await updateInterviewWorkspace(interviewId, updatePayload);
-        applyPayload(response, { hydrateDrafts: false });
+        const hasNewerLocalCodeEdits = localCodeEditVersionRef.current !== submittedCodeEditVersion;
+        applyPayload(response, {
+          hydrateDrafts: false,
+          preserveLocalCode: hasNewerLocalCodeEdits
+        });
+        if (!hasNewerLocalCodeEdits) {
+          lastSyncedCodeLanguageRef.current = submittedCodeEditorLanguage;
+          lastSyncedCodeContentRef.current = submittedCodeEditorContent;
+        }
         sendWorkspaceSignal('workspace-updated', {
           whiteboardData,
-          codeEditorLanguage,
-          codeEditorContent,
+          codeEditorLanguage: submittedCodeEditorLanguage,
+          codeEditorContent: submittedCodeEditorContent,
           ...(isManager ? { liveNotes } : {})
         });
       } catch (error) {
