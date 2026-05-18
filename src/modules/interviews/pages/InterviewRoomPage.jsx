@@ -191,6 +191,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const lastPresenceSignalAtRef = useRef(0);
   const lastReconnectAttemptAtRef = useRef(0);
   const offerInFlightRef = useRef(false);
+  const pendingPresenceRequestRef = useRef(false);
+  const offerStartedAtRef = useRef(0);
+  const stuckResetAtRef = useRef(0);
   const sidebarResizeStateRef = useRef(null);
   const previewDragStateRef = useRef(null);
   const codeRunnerRef = useRef(null);
@@ -804,20 +807,33 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     if (offerInFlightRef.current) return;
 
     const peerConnection = ensurePeerConnection();
-    if (peerConnection.signalingState !== 'stable') return;
+    if (peerConnection.signalingState !== 'stable') {
+      const stuckMs = Date.now() - (offerStartedAtRef.current || 0);
+      if (peerConnection.signalingState === 'have-local-offer' && stuckMs > 8000) {
+        try {
+          peerConnection.setLocalDescription({ type: 'rollback' });
+        } catch (rollbackError) {
+          destroyPeerConnection();
+        }
+      } else {
+        return;
+      }
+    }
 
     offerInFlightRef.current = true;
+    offerStartedAtRef.current = Date.now();
     try {
+      const activePeer = ensurePeerConnection();
       const sessionId = createSignalSessionId();
       activeSignalSessionRef.current = sessionId;
-      const offer = await peerConnection.createOffer({ iceRestart });
-      await peerConnection.setLocalDescription(offer);
+      const offer = await activePeer.createOffer({ iceRestart });
+      await activePeer.setLocalDescription(offer);
       setConnectionState((current) => (current === 'connected' ? current : 'connecting'));
       await sendInterviewSignal(interviewId, {
         signalType: 'offer',
         recipientId: videoRecipientId,
         payload: {
-          sdp: peerConnection.localDescription || offer,
+          sdp: activePeer.localDescription || offer,
           candidateId: currentCandidateId,
           sessionId
         }
@@ -1186,8 +1202,13 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       return;
     }
 
-    if (type === 'presence' && isManager && localStreamRef.current && signalSessionId) {
+    if (type === 'presence' && isManager && signalSessionId) {
       if (!isSignalForCurrentParticipant(payloadBody)) return;
+      if (!localStreamRef.current) {
+        pendingPresenceRequestRef.current = true;
+        await startLocalMedia({ createOffer: true, announcePresence: false });
+        return;
+      }
       await maybeCreateOffer({ iceRestart: true });
       return;
     }
@@ -1355,6 +1376,16 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       if (remoteStreamRef.current && remoteStreamReady) return;
 
       if (isManager) {
+        const peerConnection = peerConnectionRef.current;
+        const stuckLong =
+          peerConnection
+          && peerConnection.signalingState !== 'stable'
+          && Date.now() - (offerStartedAtRef.current || 0) > 12000;
+        const cooledDown = Date.now() - (stuckResetAtRef.current || 0) > 15000;
+        if (stuckLong && cooledDown) {
+          stuckResetAtRef.current = Date.now();
+          destroyPeerConnection();
+        }
         maybeCreateOffer({ iceRestart: true }).catch(() => {});
         return;
       }
