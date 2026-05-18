@@ -110,6 +110,7 @@ const SIGNAL_POLL_INTERVAL_MS = 500;
 const LIVE_CODE_SYNC_DEBOUNCE_MS = 180;
 const SIGNAL_CURSOR_OVERLAP_MS = 2000;
 const MAX_TRACKED_SIGNAL_IDS = 500;
+const MEDIA_RETRY_INTERVAL_MS = 5000;
 
 const createSignalSessionId = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -228,6 +229,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const localActor = isManager ? 'hr' : 'candidate';
   const currentCandidateId = candidate?.id || '';
   const videoRecipientId = isManager ? currentCandidateId : (hr?.id || '');
+  const workspaceRecipientId = videoRecipientId;
   const participantLabel = isManager ? 'Recruiter' : 'Candidate';
   const remoteParticipantLabel = isManager ? 'Candidate' : 'Recruiter';
   const isLocalPrimaryStage = isStageSwapped;
@@ -561,9 +563,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   };
 
   const broadcastMediaState = (nextVideoSource, sharingScreen) =>
+    videoRecipientId
+      ?
     sendInterviewSignal(interviewId, {
       signalType: 'workspace-sync',
-      recipientId: videoRecipientId || null,
+      recipientId: videoRecipientId,
       payload: {
         kind: 'media-state',
         videoSource: nextVideoSource,
@@ -571,11 +575,15 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         actor: localActor,
         candidateId: currentCandidateId
       }
-    }).catch(() => {});
+    }).catch(() => {})
+      : Promise.resolve();
 
   const sendWorkspaceSignal = (kind, workspace) =>
+    workspaceRecipientId
+      ?
     sendInterviewSignal(interviewId, {
       signalType: 'workspace-sync',
+      recipientId: workspaceRecipientId,
       payload: {
         kind,
         updatedAt: new Date().toISOString(),
@@ -584,7 +592,8 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         clientId: `${localActor}-${currentCandidateId || hr?.id || 'participant'}`,
         workspace
       }
-    }).catch(() => {});
+    }).catch(() => {})
+      : Promise.resolve();
 
   const queueLiveWorkspaceSync = (workspace) => {
     pendingWorkspaceSyncRef.current = {
@@ -690,6 +699,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     const requestReconnect = (reason) => {
       if (!localStreamRef.current) return;
+      if (!videoRecipientId) return;
       const now = Date.now();
       if (now - lastReconnectAttemptAtRef.current < 2500) return;
       lastReconnectAttemptAtRef.current = now;
@@ -770,6 +780,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   };
 
   const sendPresenceSignal = (reason = 'ready') => {
+    if (!videoRecipientId) return;
     const now = Date.now();
     if (now - lastPresenceSignalAtRef.current < 1500) return;
     lastPresenceSignalAtRef.current = now;
@@ -789,6 +800,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
   const maybeCreateOffer = async ({ iceRestart = false } = {}) => {
     if (!isManager || !localStreamRef.current) return;
+    if (!videoRecipientId) return;
     if (offerInFlightRef.current) return;
 
     const peerConnection = ensurePeerConnection();
@@ -800,15 +812,16 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       activeSignalSessionRef.current = sessionId;
       const offer = await peerConnection.createOffer({ iceRestart });
       await peerConnection.setLocalDescription(offer);
-    await sendInterviewSignal(interviewId, {
-      signalType: 'offer',
-      recipientId: videoRecipientId || null,
-      payload: {
-        sdp: peerConnection.localDescription || offer,
-        candidateId: currentCandidateId,
-        sessionId
-      }
-    });
+      setConnectionState((current) => (current === 'connected' ? current : 'connecting'));
+      await sendInterviewSignal(interviewId, {
+        signalType: 'offer',
+        recipientId: videoRecipientId,
+        payload: {
+          sdp: peerConnection.localDescription || offer,
+          candidateId: currentCandidateId,
+          sessionId
+        }
+      });
     } finally {
       offerInFlightRef.current = false;
     }
@@ -877,6 +890,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       setIsCameraOn(true);
       setIsMicOn(true);
       setVideoSource('camera');
+      setConnectionState((current) => (current === 'connected' ? current : 'connecting'));
       syncLocalVideo(stream);
       ensurePeerConnection();
       if (announcePresence) sendPresenceSignal('media-ready');
@@ -1088,6 +1102,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     if (type === 'offer') {
       if (!isSignalForCurrentParticipant(payloadBody)) return;
       if (!signalSessionId) return;
+      setConnectionState('connecting');
       if (activeSignalSessionRef.current && activeSignalSessionRef.current !== signalSessionId) {
         destroyPeerConnection();
       }
@@ -1099,6 +1114,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       await flushPendingIceCandidates(peerConnection);
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
+      setConnectionState((current) => (current === 'connected' ? current : 'connecting'));
       await sendInterviewSignal(interviewId, {
         signalType: 'answer',
         recipientId: videoRecipientId || null,
@@ -1114,6 +1130,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     if (type === 'answer' && peerConnectionRef.current) {
       if (!isSignalForCurrentParticipant(payloadBody)) return;
       if (!signalSessionId || signalSessionId !== activeSignalSessionRef.current) return;
+      setConnectionState((current) => (current === 'connected' ? current : 'connecting'));
       await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(payloadBody.sdp));
       remoteDescriptionReadyRef.current = true;
       await flushPendingIceCandidates(peerConnectionRef.current);
@@ -1146,6 +1163,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       type === 'workspace-sync'
       && ['workspace-live', 'workspace-updated', 'workspace-focus'].includes(payloadBody.kind)
     ) {
+      if (!isSignalForCurrentParticipant(payloadBody)) return;
       if (payloadBody.workspace && typeof payloadBody.workspace === 'object') {
         const actor = String(payloadBody.actor || '').toLowerCase();
         const hasRecentLocalCodeEdits = Date.now() - lastLocalCodeEditAtRef.current < 1200;
@@ -1327,6 +1345,36 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       clearInterval(signalInterval);
     };
   }, [interviewId, payload?.permissions?.canJoin]);
+
+  useEffect(() => {
+    if (!payload?.permissions?.canJoin) return undefined;
+
+    const retryTimer = setInterval(() => {
+      if (!localStreamRef.current) return;
+      if (!videoRecipientId) return;
+      if (remoteStreamRef.current && remoteStreamReady) return;
+
+      if (isManager) {
+        maybeCreateOffer({ iceRestart: true }).catch(() => {});
+        return;
+      }
+
+      sendPresenceSignal('media-waiting');
+      sendInterviewSignal(interviewId, {
+        signalType: 'reconnect',
+        recipientId: videoRecipientId || null,
+        payload: {
+          requestedBy: 'candidate',
+          reason: 'media-waiting',
+          candidateId: currentCandidateId,
+          sessionId: activeSignalSessionRef.current || '',
+          sentAt: new Date().toISOString()
+        }
+      }).catch(() => {});
+    }, MEDIA_RETRY_INTERVAL_MS);
+
+    return () => clearInterval(retryTimer);
+  }, [interviewId, payload?.permissions?.canJoin, isManager, remoteStreamReady, videoRecipientId, currentCandidateId]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') return undefined;
