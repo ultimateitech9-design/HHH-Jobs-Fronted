@@ -158,6 +158,13 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const [sidebarWidth, setSidebarWidth] = useState(INTERVIEW_SIDEBAR_DEFAULT_WIDTH);
   const [isStageStacked, setIsStageStacked] = useState(false);
   const [previewPosition, setPreviewPosition] = useState(null);
+  const [activeInterviewId, setActiveInterviewId] = useState(interviewId);
+  const [isSwitchingCandidate, setIsSwitchingCandidate] = useState(false);
+  const [candidateControls, setCandidateControls] = useState({});
+  const [candidateTaskInput, setCandidateTaskInput] = useState('');
+  const [assignedTask, setAssignedTask] = useState(null);
+  const [forcedMutedByHr, setForcedMutedByHr] = useState(false);
+  const [hrControlNotice, setHrControlNotice] = useState('');
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -194,6 +201,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const pendingPresenceRequestRef = useRef(false);
   const offerStartedAtRef = useRef(0);
   const stuckResetAtRef = useRef(0);
+  const activeCandidateIdRef = useRef('');
   const sidebarResizeStateRef = useRef(null);
   const previewDragStateRef = useRef(null);
   const codeRunnerRef = useRef(null);
@@ -231,6 +239,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const isCandidateViewer = Boolean(permissions?.isCandidateViewer);
   const localActor = isManager ? 'hr' : 'candidate';
   const currentCandidateId = candidate?.id || '';
+  const roomApiInterviewId = activeInterviewId || interviewId;
   const videoRecipientId = isManager ? currentCandidateId : (hr?.id || '');
   const workspaceRecipientId = videoRecipientId;
   const participantLabel = isManager ? 'Recruiter' : 'Candidate';
@@ -517,9 +526,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
   };
 
-  const loadRoom = async ({ join = false, hydrateDrafts = false, forceWorkspace = false } = {}) => {
+  const loadRoom = async ({ join = false, hydrateDrafts = false, forceWorkspace = false, targetInterviewId = roomApiInterviewId } = {}) => {
     try {
-      const response = join ? await joinInterviewRoom(interviewId) : await getInterviewRoom(interviewId);
+      const response = join ? await joinInterviewRoom(targetInterviewId) : await getInterviewRoom(targetInterviewId);
       if (!isMountedRef.current) return;
       applyPayload(response, { hydrateDrafts, forceWorkspace });
     } catch (error) {
@@ -568,7 +577,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const broadcastMediaState = (nextVideoSource, sharingScreen) =>
     videoRecipientId
       ?
-    sendInterviewSignal(interviewId, {
+    sendInterviewSignal(roomApiInterviewId, {
       signalType: 'workspace-sync',
       recipientId: videoRecipientId,
       payload: {
@@ -584,7 +593,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const sendWorkspaceSignal = (kind, workspace) =>
     workspaceRecipientId
       ?
-    sendInterviewSignal(interviewId, {
+    sendInterviewSignal(roomApiInterviewId, {
       signalType: 'workspace-sync',
       recipientId: workspaceRecipientId,
       payload: {
@@ -712,7 +721,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         return;
       }
 
-      sendInterviewSignal(interviewId, {
+      sendInterviewSignal(roomApiInterviewId, {
         signalType: 'reconnect',
         recipientId: videoRecipientId || null,
         payload: {
@@ -739,7 +748,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       if (event.candidate) {
         const sessionId = activeSignalSessionRef.current;
         if (!sessionId) return;
-        sendInterviewSignal(interviewId, {
+        sendInterviewSignal(roomApiInterviewId, {
           signalType: 'ice-candidate',
           recipientId: videoRecipientId || null,
           payload: {
@@ -788,7 +797,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     if (now - lastPresenceSignalAtRef.current < 1500) return;
     lastPresenceSignalAtRef.current = now;
 
-    sendInterviewSignal(interviewId, {
+    sendInterviewSignal(roomApiInterviewId, {
       signalType: 'presence',
       recipientId: videoRecipientId || null,
       payload: {
@@ -829,7 +838,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       const offer = await activePeer.createOffer({ iceRestart });
       await activePeer.setLocalDescription(offer);
       setConnectionState((current) => (current === 'connected' ? current : 'connecting'));
-      await sendInterviewSignal(interviewId, {
+      await sendInterviewSignal(roomApiInterviewId, {
         signalType: 'offer',
         recipientId: videoRecipientId,
         payload: {
@@ -1041,7 +1050,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     try {
       setRecordingState((current) => ({ ...current, uploading: true, message: 'Uploading interview recording…' }));
-      const recording = await uploadInterviewRecording(interviewId, blob, `interview-${Date.now()}.webm`);
+      const recording = await uploadInterviewRecording(roomApiInterviewId, blob, `interview-${Date.now()}.webm`);
       setRecordingState({
         active: false,
         uploading: false,
@@ -1136,6 +1145,109 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     });
   };
 
+  const updateCandidateControlState = (candidateId, patch = {}) => {
+    const normalizedCandidateId = String(candidateId || '').trim();
+    if (!normalizedCandidateId) return;
+
+    setCandidateControls((current) => ({
+      ...current,
+      [normalizedCandidateId]: {
+        ...(current[normalizedCandidateId] || {}),
+        ...patch,
+        updatedAt: new Date().toISOString()
+      }
+    }));
+  };
+
+  const sendCandidateControl = async ({ candidateId, action, taskText = '', taskMode = '' }) => {
+    if (!isManager) return;
+    const targetCandidateId = String(candidateId || '').trim();
+    if (!targetCandidateId) return;
+
+    const controlPayload = {
+      kind: 'candidate-control',
+      actor: 'hr',
+      candidateId: targetCandidateId,
+      action,
+      taskText: String(taskText || '').trim(),
+      taskMode: String(taskMode || '').trim(),
+      sentAt: new Date().toISOString()
+    };
+
+    updateCandidateControlState(targetCandidateId, {
+      muted: action === 'mute' ? true : action === 'unmute' ? false : candidateControls[targetCandidateId]?.muted,
+      taskText: controlPayload.taskText || candidateControls[targetCandidateId]?.taskText || '',
+      taskMode: controlPayload.taskMode || candidateControls[targetCandidateId]?.taskMode || ''
+    });
+
+    await sendInterviewSignal(roomApiInterviewId, {
+      signalType: 'workspace-sync',
+      recipientId: targetCandidateId,
+      payload: controlPayload
+    });
+  };
+
+  const muteAllCandidates = async () => {
+    if (!isManager || roomParticipants.length === 0) return;
+    await Promise.all(roomParticipants
+      .filter((participant) => participant.candidateId)
+      .map((participant) => sendCandidateControl({
+        candidateId: participant.candidateId,
+        action: 'mute'
+      }).catch(() => null)));
+  };
+
+  const unmuteSelectedCandidate = async () => {
+    await sendCandidateControl({
+      candidateId: currentCandidateId,
+      action: 'unmute'
+    });
+  };
+
+  const assignTaskToSelectedCandidate = async (taskMode = 'custom') => {
+    const taskText = String(candidateTaskInput || '').trim();
+    if (!taskText) return;
+    await sendCandidateControl({
+      candidateId: currentCandidateId,
+      action: 'task',
+      taskText,
+      taskMode
+    });
+    setCandidateTaskInput('');
+  };
+
+  const assignPresetTaskToSelectedCandidate = async (taskText, taskMode) => {
+    const normalizedTaskText = String(taskText || '').trim();
+    if (!normalizedTaskText) return;
+    setCandidateTaskInput(normalizedTaskText);
+    await sendCandidateControl({
+      candidateId: currentCandidateId,
+      action: 'task',
+      taskText: normalizedTaskText,
+      taskMode
+    });
+    setCandidateTaskInput('');
+  };
+
+  const selectRoomParticipant = async (participant) => {
+    if (!participant?.interviewId || participant.interviewId === roomApiInterviewId) return;
+    setIsSwitchingCandidate(true);
+    setLocalMediaError('');
+    try {
+      const response = await getInterviewRoom(participant.interviewId);
+      setActiveInterviewId(participant.interviewId);
+      destroyPeerConnection();
+      setConnectionState('connecting');
+      setRemoteVideoSource('camera');
+      setAssignedTask(null);
+      applyPayload(response, { hydrateDrafts: true, forceWorkspace: true });
+    } catch (error) {
+      setRoomState((current) => ({ ...current, error: error.message || 'Unable to switch candidate.' }));
+    } finally {
+      setIsSwitchingCandidate(false);
+    }
+  };
+
   const handleSignal = async (signal) => {
     const type = signal?.signal_type;
     const payloadBody = signal?.payload || {};
@@ -1161,7 +1273,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
       setConnectionState((current) => (current === 'connected' ? current : 'connecting'));
-      await sendInterviewSignal(interviewId, {
+      await sendInterviewSignal(roomApiInterviewId, {
         signalType: 'answer',
         recipientId: videoRecipientId || null,
         payload: {
@@ -1202,6 +1314,54 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     if (type === 'workspace-sync' && payloadBody.kind === 'media-state') {
       if (!isSignalForCurrentParticipant(payloadBody)) return;
       setRemoteVideoSource(payloadBody.videoSource === 'screen' ? 'screen' : 'camera');
+      return;
+    }
+
+    if (type === 'workspace-sync' && payloadBody.kind === 'candidate-control') {
+      const controlCandidateId = String(payloadBody.candidateId || '').trim();
+      const action = String(payloadBody.action || '').trim().toLowerCase();
+      const taskText = String(payloadBody.taskText || '').trim();
+      const taskMode = String(payloadBody.taskMode || '').trim();
+
+      if (controlCandidateId) {
+        updateCandidateControlState(controlCandidateId, {
+          muted: action === 'mute' ? true : action === 'unmute' ? false : candidateControls[controlCandidateId]?.muted,
+          taskText: taskText || candidateControls[controlCandidateId]?.taskText || '',
+          taskMode: taskMode || candidateControls[controlCandidateId]?.taskMode || ''
+        });
+      }
+
+      if (isManager || !isSignalForCurrentParticipant(payloadBody)) return;
+
+      if (action === 'mute') {
+        setForcedMutedByHr(true);
+        setIsMicOn(false);
+        setHrControlNotice('Recruiter muted your microphone.');
+        return;
+      }
+
+      if (action === 'unmute') {
+        setForcedMutedByHr(false);
+        setIsMicOn(true);
+        setHrControlNotice('Recruiter allowed your microphone.');
+        return;
+      }
+
+      if (action === 'task' && taskText) {
+        setAssignedTask({
+          text: taskText,
+          mode: taskMode || 'custom',
+          createdAt: payloadBody.sentAt || new Date().toISOString()
+        });
+        setHrControlNotice('Recruiter assigned a task.');
+        if (taskMode === 'coding') {
+          handleRoomTabChange('code', { broadcast: false });
+        } else if (taskMode === 'whiteboard') {
+          handleRoomTabChange('whiteboard', { broadcast: false });
+        }
+        return;
+      }
+
       return;
     }
 
@@ -1266,7 +1426,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
 
     sendPresenceSignal('reconnect-request');
-    await sendInterviewSignal(interviewId, {
+    await sendInterviewSignal(roomApiInterviewId, {
       signalType: 'reconnect',
       recipientId: videoRecipientId || null,
       payload: {
@@ -1308,7 +1468,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     try {
       await stopSpeechRecognition();
       await stopCompositeRecording({ upload: true });
-      const response = await endInterviewRoom(interviewId, {
+      const response = await endInterviewRoom(roomApiInterviewId, {
         status: noShowCandidate ? 'no_show' : 'completed',
         rating,
         applicationStatus,
@@ -1328,7 +1488,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
   const handleRecordingDownload = async () => {
     try {
-      const recording = await getInterviewRecording(interviewId);
+      const recording = await getInterviewRecording(roomApiInterviewId);
       if (recording?.url) {
         window.open(recording.url, '_blank', 'noopener,noreferrer');
       }
@@ -1341,10 +1501,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   // peer connection, and leave-room cleanup stay coordinated.
   useEffect(() => {
     isMountedRef.current = true;
+    setActiveInterviewId(interviewId);
     signalCursorRef.current = new Date(Date.now() - SIGNAL_LOOKBACK_MS).toISOString();
     activeSignalSessionRef.current = '';
-    loadRoom({ hydrateDrafts: true })
-      .then(() => loadRoom({ join: true }))
+    loadRoom({ hydrateDrafts: true, targetInterviewId: interviewId })
+      .then(() => loadRoom({ join: true, targetInterviewId: interviewId }))
       .catch(() => {});
 
     return () => {
@@ -1380,7 +1541,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       if (polling) return;
       polling = true;
       try {
-        const signals = await getInterviewSignals(interviewId, getSignalPollCursor());
+        const signals = await getInterviewSignals(roomApiInterviewId, getSignalPollCursor());
         for (const signal of signals) {
           if (!rememberSignalForProcessing(signal)) continue;
           await handleSignal(signal);
@@ -1398,7 +1559,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     return () => {
       clearInterval(signalInterval);
     };
-  }, [interviewId, payload?.permissions?.canJoin]);
+  }, [roomApiInterviewId, payload?.permissions?.canJoin]);
 
   useEffect(() => {
     if (!payload?.permissions?.canJoin) return undefined;
@@ -1424,7 +1585,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       }
 
       sendPresenceSignal('media-waiting');
-      sendInterviewSignal(interviewId, {
+      sendInterviewSignal(roomApiInterviewId, {
         signalType: 'reconnect',
         recipientId: videoRecipientId || null,
         payload: {
@@ -1438,7 +1599,24 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }, MEDIA_RETRY_INTERVAL_MS);
 
     return () => clearInterval(retryTimer);
-  }, [interviewId, payload?.permissions?.canJoin, isManager, remoteStreamReady, videoRecipientId, currentCandidateId]);
+  }, [roomApiInterviewId, payload?.permissions?.canJoin, isManager, remoteStreamReady, videoRecipientId, currentCandidateId]);
+
+  useEffect(() => {
+    if (!isManager || !currentCandidateId) return;
+    if (activeCandidateIdRef.current === currentCandidateId) return;
+
+    const previousCandidateId = activeCandidateIdRef.current;
+    activeCandidateIdRef.current = currentCandidateId;
+    if (!previousCandidateId || !localStreamRef.current) return;
+
+    destroyPeerConnection();
+    setConnectionState('connecting');
+    const timer = setTimeout(() => {
+      maybeCreateOffer({ iceRestart: true }).catch(() => {});
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [isManager, currentCandidateId, roomApiInterviewId]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') return undefined;
@@ -1515,9 +1693,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   useEffect(() => {
     if (!localStreamRef.current) return;
     localStreamRef.current.getAudioTracks().forEach((track) => {
-      track.enabled = isMicOn;
+      track.enabled = isMicOn && !forcedMutedByHr;
     });
-  }, [isMicOn]);
+  }, [isMicOn, forcedMutedByHr]);
 
   useEffect(() => {
     activeRoomTabRef.current = activeRoomTab;
@@ -1576,7 +1754,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
       try {
         setIsSavingWorkspace(true);
-        const response = await updateInterviewWorkspace(interviewId, updatePayload);
+        const response = await updateInterviewWorkspace(roomApiInterviewId, updatePayload);
         const hasNewerLocalCodeEdits = localCodeEditVersionRef.current !== submittedCodeEditVersion;
         applyPayload(response, {
           hydrateDrafts: false,
@@ -1600,7 +1778,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }, 900);
 
     return () => clearTimeout(timer);
-  }, [workspaceVersion, isManager, interviewId]);
+  }, [workspaceVersion, isManager, roomApiInterviewId]);
 
   useEffect(() => {
     if (!isManager) return;
@@ -1714,7 +1892,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     });
 
     try {
-      const executionResult = await executeInterviewCodeRequest(interviewId, {
+      const executionResult = await executeInterviewCodeRequest(roomApiInterviewId, {
         language: codeEditorLanguage,
         source: codeEditorContent
       });
@@ -1863,8 +2041,28 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2">
           <p className="text-[12px] text-amber-800"><FiInfo size={12} className="mr-1 inline" />Recording and AI transcript require your consent.</p>
           <div className="flex gap-2">
-            <button type="button" onClick={() => updateInterviewConsent(interviewId, { recordingConsent: true, aiConsent: true }).then((r) => applyPayload(r, { hydrateDrafts: false })).catch((e) => setRoomState((c) => ({ ...c, error: e.message })))} className="rounded-md bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white">Allow</button>
-            <button type="button" onClick={() => updateInterviewConsent(interviewId, { recordingConsent: false, aiConsent: false }).then((r) => applyPayload(r, { hydrateDrafts: false })).catch((e) => setRoomState((c) => ({ ...c, error: e.message })))} className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-700">Decline</button>
+            <button type="button" onClick={() => updateInterviewConsent(roomApiInterviewId, { recordingConsent: true, aiConsent: true }).then((r) => applyPayload(r, { hydrateDrafts: false })).catch((e) => setRoomState((c) => ({ ...c, error: e.message })))} className="rounded-md bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white">Allow</button>
+            <button type="button" onClick={() => updateInterviewConsent(roomApiInterviewId, { recordingConsent: false, aiConsent: false }).then((r) => applyPayload(r, { hydrateDrafts: false })).catch((e) => setRoomState((c) => ({ ...c, error: e.message })))} className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-700">Decline</button>
+          </div>
+        </div>
+      )}
+
+      {isCandidateViewer && (assignedTask || hrControlNotice || forcedMutedByHr) && (
+        <div className="shrink-0 border-b border-indigo-100 bg-indigo-50 px-4 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-indigo-700">
+                {assignedTask ? 'Recruiter task' : 'Recruiter control'}
+              </p>
+              <p className="mt-0.5 text-[12px] font-semibold text-slate-900">
+                {assignedTask?.text || hrControlNotice || 'Your microphone is muted by the recruiter.'}
+              </p>
+            </div>
+            {assignedTask?.mode && (
+              <span className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-indigo-700">
+                {assignedTask.mode}
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -1875,9 +2073,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
           {isStartingMedia ? <FiRefreshCw size={11} className="animate-spin" /> : <FiPlay size={11} />}
           {localStreamRef.current ? 'Restart' : 'Start camera'}
         </button>
-        <button type="button" onClick={() => setIsMicOn((v) => !v)} className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-[11px] font-semibold transition ${isMicOn ? 'border-slate-200 bg-white text-slate-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
-          {isMicOn ? <FiMic size={11} /> : <FiMicOff size={11} />}
-          {isMicOn ? 'Mic on' : 'Muted'}
+        <button type="button" onClick={() => setIsMicOn((v) => !v)} disabled={forcedMutedByHr} className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${isMicOn && !forcedMutedByHr ? 'border-slate-200 bg-white text-slate-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+          {isMicOn && !forcedMutedByHr ? <FiMic size={11} /> : <FiMicOff size={11} />}
+          {forcedMutedByHr ? 'Muted by HR' : (isMicOn ? 'Mic on' : 'Muted')}
         </button>
         <button type="button" onClick={() => setIsCameraOn((v) => !v)} className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-[11px] font-semibold transition ${isCameraOn ? 'border-slate-200 bg-white text-slate-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
           {isCameraOn ? <FiVideo size={11} /> : <FiVideoOff size={11} />}
@@ -2279,38 +2477,81 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
               <>
                 {roomParticipants.length > 1 ? (
                   <div className="border-b border-slate-100 px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Room students</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Control room</p>
+                      {isSwitchingCandidate && <FiRefreshCw size={11} className="animate-spin text-indigo-500" />}
+                    </div>
                     <div className="mt-2 space-y-1.5">
                       {roomParticipants.map((participant) => {
                         const isActiveParticipant = participant.candidateId === currentCandidateId;
                         const isOnlineParticipant = Boolean(participant.isOnline);
+                        const controlState = candidateControls[participant.candidateId] || {};
                         return (
-                          <Link
+                          <button
+                            type="button"
                             key={participant.interviewId || participant.candidateId}
-                            to={`/portal/${portalRole}/interviews/${participant.interviewId}/room`}
-                            className={`flex items-center justify-between rounded-md border px-2 py-1.5 text-[10px] font-semibold transition ${
+                            onClick={() => selectRoomParticipant(participant)}
+                            className={`flex w-full items-center justify-between rounded-md border px-2 py-1.5 text-left text-[10px] font-semibold transition ${
                               isActiveParticipant
                                 ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
                                 : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                             }`}
                           >
-                            <span className="truncate">{participant.name || 'Candidate'}</span>
-                            <span
-                              className={`ml-2 inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[8px] uppercase tracking-wide ${
-                                isOnlineParticipant
-                                  ? 'bg-emerald-50 text-emerald-700'
-                                  : 'bg-slate-100 text-slate-500'
-                              }`}
-                            >
-                              <span className={`h-1.5 w-1.5 rounded-full ${isOnlineParticipant ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                              {isActiveParticipant ? 'Selected' : (isOnlineParticipant ? 'Online' : 'Open')}
+                            <span className="min-w-0">
+                              <span className="block truncate">{participant.name || 'Candidate'}</span>
+                              {controlState.taskText && (
+                                <span className="mt-0.5 block truncate text-[9px] font-medium text-slate-400">
+                                  Task: {controlState.taskText}
+                                </span>
+                              )}
                             </span>
-                          </Link>
+                            <span className="ml-2 flex shrink-0 items-center gap-1">
+                              {controlState.muted && <FiMicOff size={10} className="text-red-500" />}
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[8px] uppercase tracking-wide ${
+                                  isOnlineParticipant
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : 'bg-slate-100 text-slate-500'
+                                }`}
+                              >
+                                <span className={`h-1.5 w-1.5 rounded-full ${isOnlineParticipant ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                                {isActiveParticipant ? 'Selected' : (isOnlineParticipant ? 'Online' : 'Open')}
+                              </span>
+                            </span>
+                          </button>
                         );
                       })}
                     </div>
+                    <div className="mt-2 grid grid-cols-2 gap-1.5">
+                      <button type="button" onClick={muteAllCandidates} className="inline-flex items-center justify-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-[10px] font-semibold text-red-700 transition hover:bg-red-100">
+                        <FiMicOff size={10} /> Mute all
+                      </button>
+                      <button type="button" onClick={unmuteSelectedCandidate} disabled={!currentCandidateId} className="inline-flex items-center justify-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-[10px] font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50">
+                        <FiMic size={10} /> Unmute selected
+                      </button>
+                    </div>
+                    <div className="mt-2 space-y-1.5">
+                      <textarea
+                        rows={2}
+                        value={candidateTaskInput}
+                        onChange={(event) => setCandidateTaskInput(event.target.value)}
+                        className="w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-1 focus:ring-indigo-100"
+                        placeholder="Give selected candidate a task..."
+                      />
+                      <div className="grid grid-cols-3 gap-1">
+                        <button type="button" onClick={() => assignPresetTaskToSelectedCandidate('Please introduce yourself and summarize your latest project.', 'intro')} className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[9px] font-semibold text-slate-600 hover:bg-slate-50">
+                          Intro
+                        </button>
+                        <button type="button" onClick={() => assignPresetTaskToSelectedCandidate('Open the Code tab and solve the problem shared by the recruiter.', 'coding')} className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[9px] font-semibold text-slate-600 hover:bg-slate-50">
+                          Coding
+                        </button>
+                        <button type="button" onClick={() => assignTaskToSelectedCandidate('custom')} disabled={!candidateTaskInput.trim()} className="rounded-md bg-slate-900 px-1.5 py-1 text-[9px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50">
+                          Send
+                        </button>
+                      </div>
+                    </div>
                     <p className="mt-2 text-[10px] leading-4 text-slate-500">
-                      Workspace is shared; video/signaling stays isolated to the selected student.
+                      Select changes focus inside this tab; candidates can keep joining from their links.
                     </p>
                   </div>
                 ) : null}
