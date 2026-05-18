@@ -59,7 +59,7 @@ const Orders = () => {
         <div className="px-4 py-4 sm:px-5 sm:py-5">
           <FilterBar
             filters={[
-              { key: 'status', label: 'Status', type: 'select', options: [{ value: '', label: 'All' }, { value: 'paid', label: 'Paid' }, { value: 'processing', label: 'Processing' }, { value: 'cancelled', label: 'Cancelled' }] },
+              { key: 'status', label: 'Status', type: 'select', options: [{ value: '', label: 'All' }, { value: 'pending', label: 'Pending' }, { value: 'paid', label: 'Paid' }, { value: 'failed', label: 'Failed' }, { value: 'refunded', label: 'Refunded' }, { value: 'cancelled', label: 'Cancelled' }] },
               { key: 'search', label: 'Search', type: 'text', placeholder: 'Order ID, customer, product', fullWidth: true }
             ]}
             values={filters}

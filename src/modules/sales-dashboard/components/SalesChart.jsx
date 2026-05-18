@@ -5,8 +5,8 @@ const SalesChart = ({ points = [] }) => {
     <section className="panel-card">
       <div className="dash-card-head">
         <div>
-          <h3>Sales vs Target</h3>
-          <p>Track closed sales against the monthly target run-rate.</p>
+          <h3>Sales Trend</h3>
+          <p>Track closed sales from live commercial activity.</p>
         </div>
       </div>
       <div style={{ display: 'grid', gap: '0.9rem' }}>
@@ -14,12 +14,12 @@ const SalesChart = ({ points = [] }) => {
           <div key={point.month} style={{ display: 'grid', gap: '0.35rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
               <span>{point.month}</span>
-              <span>{point.value} / {point.target}</span>
+              <span>{point.target ? `${point.value} / ${point.target}` : point.value}</span>
             </div>
             <div style={{ height: '12px', borderRadius: '999px', background: '#dbe7f1', overflow: 'hidden' }}>
               <div
                 style={{
-                  width: `${Math.max(10, Math.round((Number(point.value || 0) / maxValue) * 100))}%`,
+                  width: `${Math.round((Number(point.value || 0) / maxValue) * 100)}%`,
                   height: '100%',
                   background: 'linear-gradient(90deg, #1f7a61 0%, #2d8fcb 100%)'
                 }}

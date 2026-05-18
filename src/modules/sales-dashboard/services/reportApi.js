@@ -1,11 +1,24 @@
 import { SALES_BASE, safeRequest } from './salesApi';
-import { salesDummyData } from '../data/salesDummyData';
+
+const emptyReports = {
+  summary: {
+    totalLeads: 0,
+    convertedLeads: 0,
+    conversionRate: 0,
+    totalOrders: 0,
+    paidOrders: 0,
+    totalCustomers: 0,
+    totalRevenue: 0
+  },
+  topSources: [],
+  conversion: [],
+  monthlyRevenue: []
+};
 
 export const getSalesReports = async () =>
   safeRequest({
     path: `${SALES_BASE}/reports`,
-    emptyData: salesDummyData.reports,
-    fallbackData: salesDummyData.reports,
+    emptyData: emptyReports,
     extract: (payload) => {
       const reports = payload?.reports || payload || {};
       return {

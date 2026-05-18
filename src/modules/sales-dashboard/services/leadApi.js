@@ -1,5 +1,4 @@
 import { SALES_BASE, buildQueryString, safeRequest, strictRequest } from './salesApi';
-import { salesDummyData } from '../data/salesDummyData';
 import { mapSalesLead } from './mappers';
 
 export const getLeads = async (filters = {}) =>
@@ -16,7 +15,6 @@ export const getLeads = async (filters = {}) =>
       search: filters.search || ''
     })}` : ''}`,
     emptyData: [],
-    fallbackData: salesDummyData.leads,
     extract: (payload) => (payload?.leads || []).map(mapSalesLead)
   });
 
@@ -24,7 +22,6 @@ export const getLeadDetails = async (leadId) =>
   safeRequest({
     path: `${SALES_BASE}/leads/${leadId}`,
     emptyData: {},
-    fallbackData: salesDummyData.leads.find((item) => item.id === leadId) || salesDummyData.leads[0] || {},
     extract: (payload) => mapSalesLead(payload?.lead || payload || {})
   });
 

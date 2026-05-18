@@ -120,7 +120,7 @@ const SalesOverview = () => {
           </div>
 
           <div className="split-grid">
-            <DashboardSectionCard eyebrow="Target Pace" title="Monthly sales vs target">
+            <DashboardSectionCard eyebrow="Sales Pace" title="Monthly sales performance">
               <SalesChart points={state.overview.monthlySales || []} />
             </DashboardSectionCard>
             <DashboardSectionCard eyebrow="Revenue Trend" title="Revenue and refund movement">

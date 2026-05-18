@@ -49,16 +49,12 @@ const ADMIN_USER_ROLE_OPTIONS = [
   { value: 'sales', label: 'Sales' },
   { value: 'accounts', label: 'Accounts' },
   { value: 'dataentry', label: 'Data Entry' },
-  { value: 'platform', label: 'Platform Ops' },
-  { value: 'audit', label: 'Audit Desk' },
   { value: 'campus_connect', label: 'Campus Connect' },
   { value: 'company_admin', label: 'Company Admin' }
 ];
 
 const ADMIN_MANAGED_ROLE_OPTIONS = [
   { value: 'admin', label: 'Management' },
-  { value: 'platform', label: 'Platform Ops' },
-  { value: 'audit', label: 'Audit Desk' },
   { value: 'dataentry', label: 'Data Entry' },
   { value: 'support', label: 'Support' },
   { value: 'accounts', label: 'Accounts' },

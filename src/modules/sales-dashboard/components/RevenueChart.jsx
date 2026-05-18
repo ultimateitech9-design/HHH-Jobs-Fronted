@@ -19,10 +19,10 @@ const RevenueChart = ({ points = [] }) => {
               <span>{formatCompactCurrency(point.revenue || 0)}</span>
             </div>
             <div style={{ height: '10px', borderRadius: '999px', background: '#dbe7f1', overflow: 'hidden' }}>
-              <div style={{ width: `${Math.max(10, Math.round((Number(point.revenue || 0) / maxValue) * 100))}%`, height: '100%', background: '#1f7a61' }} />
+              <div style={{ width: `${Math.round((Number(point.revenue || 0) / maxValue) * 100)}%`, height: '100%', background: '#1f7a61' }} />
             </div>
             <div style={{ height: '10px', borderRadius: '999px', background: '#f6d9d9', overflow: 'hidden' }}>
-              <div style={{ width: `${Math.max(8, Math.round((Number(point.refunds || 0) / maxValue) * 100))}%`, height: '100%', background: '#d44f4f' }} />
+              <div style={{ width: `${Math.round((Number(point.refunds || 0) / maxValue) * 100)}%`, height: '100%', background: '#d44f4f' }} />
             </div>
           </div>
         ))}

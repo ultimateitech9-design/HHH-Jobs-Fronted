@@ -22,7 +22,7 @@ const CouponTable = ({ rows = [] }) => {
     }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} pagination itemsPerPage={10} />;
 };
 
 export default CouponTable;

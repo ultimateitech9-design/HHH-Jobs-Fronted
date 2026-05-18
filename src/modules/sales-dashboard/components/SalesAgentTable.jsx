@@ -20,7 +20,7 @@ const SalesAgentTable = ({ rows = [] }) => {
     }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} pagination itemsPerPage={10} />;
 };
 
 export default SalesAgentTable;

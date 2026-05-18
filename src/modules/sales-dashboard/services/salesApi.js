@@ -1,5 +1,4 @@
-import { apiFetch, areDemoFallbacksEnabled } from '../../../utils/api';
-import { salesDummyData } from '../data/salesDummyData';
+import { apiFetch } from '../../../utils/api';
 import { mapSalesAgent, mapSalesProduct } from './mappers';
 
 export const SALES_BASE = '/sales';
@@ -10,11 +9,6 @@ const parseJson = async (response) => {
   } catch (error) {
     return null;
   }
-};
-
-const clone = (value) => {
-  if (value === null || value === undefined) return value;
-  return JSON.parse(JSON.stringify(value));
 };
 
 export const strictRequest = async ({ path, options, extract = (payload) => payload }) => {
@@ -28,18 +22,14 @@ export const strictRequest = async ({ path, options, extract = (payload) => payl
   return extract(payload || {});
 };
 
-export const safeRequest = async ({ path, options, emptyData, fallbackData, extract = (payload) => payload }) => {
+export const safeRequest = async ({ path, options, emptyData, extract = (payload) => payload }) => {
   try {
     const data = await strictRequest({ path, options, extract });
-    return { data, error: '', isDemo: false };
+    return { data, error: '' };
   } catch (error) {
-    const resolvedFallback = areDemoFallbacksEnabled()
-      ? (typeof fallbackData === 'function' ? fallbackData() : fallbackData)
-      : undefined;
     return {
-      data: clone(resolvedFallback !== undefined ? resolvedFallback : emptyData),
-      error: error.message || 'Request failed.',
-      isDemo: resolvedFallback !== undefined
+      data: emptyData,
+      error: error.message || 'Request failed.'
     };
   }
 };
@@ -108,7 +98,7 @@ const normalizeFunnelStage = (entry = {}) => {
   };
 };
 
-const buildFunnelSummary = (funnel = [], fallbackRevenue = 0) => {
+const buildDerivedFunnelSummary = (funnel = [], revenue = 0) => {
   const totalLeads = funnel.reduce((sum, stage) => sum + Number(stage.count || 0), 0);
   const convertedCount = funnel.find((stage) => stage.stage === 'converted')?.count || 0;
 
@@ -116,7 +106,7 @@ const buildFunnelSummary = (funnel = [], fallbackRevenue = 0) => {
     totalLeads,
     convertedCount,
     conversionRate: totalLeads > 0 ? Math.round((convertedCount / totalLeads) * 100) : 0,
-    totalRevenue: Number(fallbackRevenue || 0)
+    totalRevenue: Number(revenue || 0)
   };
 };
 
@@ -124,7 +114,6 @@ export const getSalesOverview = async () =>
   safeRequest({
     path: `${SALES_BASE}/overview`,
     emptyData: emptyOverview,
-    fallbackData: salesDummyData.overview,
     extract: (payload) => {
       const ov = payload?.overview || payload || {};
       const totalOrders = ov.totalOrders || 0;
@@ -153,7 +142,6 @@ export const getSalesTeam = async () =>
   safeRequest({
     path: `${SALES_BASE}/team`,
     emptyData: [],
-    fallbackData: salesDummyData.agents,
     extract: (payload) => (payload?.agents || []).map(mapSalesAgent)
   });
 
@@ -161,7 +149,6 @@ export const getProducts = async () =>
   safeRequest({
     path: `${SALES_BASE}/products`,
     emptyData: [],
-    fallbackData: salesDummyData.products,
     extract: (payload) => (payload?.products || []).map(mapSalesProduct)
   });
 
@@ -169,25 +156,18 @@ export const getSalesFunnel = async () =>
   safeRequest({
     path: `${SALES_BASE}/funnel`,
     emptyData: { funnel: [], summary: { totalLeads: 0, convertedCount: 0, conversionRate: 0, totalRevenue: 0 } },
-    fallbackData: () => {
-      const funnel = (salesDummyData.reports?.conversion || []).map(normalizeFunnelStage);
-      return {
-        funnel,
-        summary: buildFunnelSummary(funnel, salesDummyData.overview?.stats?.totalRevenue || 0)
-      };
-    },
     extract: (payload) => {
       const funnel = (payload?.funnel || []).map(normalizeFunnelStage);
       const summary = payload?.summary || {};
-      const fallbackSummary = buildFunnelSummary(funnel, summary.totalRevenue);
+      const derivedSummary = buildDerivedFunnelSummary(funnel, summary.totalRevenue);
 
       return {
         funnel,
         summary: {
-          totalLeads: Number(summary.totalLeads ?? fallbackSummary.totalLeads),
-          convertedCount: Number(summary.convertedCount ?? fallbackSummary.convertedCount),
-          conversionRate: Number(summary.conversionRate ?? fallbackSummary.conversionRate),
-          totalRevenue: Number(summary.totalRevenue ?? fallbackSummary.totalRevenue)
+          totalLeads: Number(summary.totalLeads ?? derivedSummary.totalLeads),
+          convertedCount: Number(summary.convertedCount ?? derivedSummary.convertedCount),
+          conversionRate: Number(summary.conversionRate ?? derivedSummary.conversionRate),
+          totalRevenue: Number(summary.totalRevenue ?? derivedSummary.totalRevenue)
         }
       };
     }

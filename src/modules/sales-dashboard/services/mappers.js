@@ -1,5 +1,10 @@
 const normalizeStatus = (value, fallback) => String(value || fallback || '').toLowerCase();
 
+const buildLeadCode = (lead = {}) => {
+  const existingCode = String(lead.lead_code || lead.leadCode || lead.lead_number || lead.leadNumber || '').trim();
+  return existingCode ? existingCode.slice(0, 11).toUpperCase() : String(lead.id || '').trim();
+};
+
 export const mapSalesAgent = (agent = {}) => ({
   id: agent.id,
   name: agent.name || '-',
@@ -41,6 +46,7 @@ export const mapSalesOrder = (order = {}) => {
 
 export const mapSalesLead = (lead = {}) => ({
   id: lead.id,
+  leadCode: buildLeadCode(lead),
   company: lead.company || lead.company_name || '-',
   contactName: lead.contactName || lead.contact_name || '-',
   email: lead.email || lead.contact_email || '-',

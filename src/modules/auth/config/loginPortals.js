@@ -7,8 +7,6 @@ const baseBenefits = [
 const managementPortalKeySet = new Set([
   'admin',
   'super-admin',
-  'platform',
-  'audit',
   'support',
   'sales',
   'dataentry',
@@ -137,44 +135,6 @@ const loginPortals = {
       'Central access for top-level approvals and system visibility.',
       'Minimal, role-locked sign-in path for reduced confusion.',
       'Direct landing into the protected super admin workspace.'
-    ]
-  },
-  platform: {
-    key: 'platform',
-    title: 'Platform operations login',
-    eyebrow: 'Operations access',
-    description: 'Enter the platform workspace for infrastructure, workflow, and process visibility.',
-    helperText: 'For authorized platform operations team members only.',
-    emailLabel: 'Platform team email',
-    emailPlaceholder: 'Enter your platform email',
-    passwordPlaceholder: 'Enter your password',
-    allowSocialLogin: false,
-    showCreateAccount: false,
-    showOtpLogin: true,
-    defaultRedirectPath: '/portal/platform/dashboard',
-    benefits: [
-      'Stay focused on platform operations without public auth noise.',
-      'Cleaner access to operational dashboards and controls.',
-      'Safer redirect behavior for internal-only accounts.'
-    ]
-  },
-  audit: {
-    key: 'audit',
-    title: 'Audit desk login',
-    eyebrow: 'Compliance access',
-    description: 'Open the audit workspace for review, tracking, and compliance-led workflows.',
-    helperText: 'Only authorized compliance and audit personnel should continue here.',
-    emailLabel: 'Audit email',
-    emailPlaceholder: 'Enter your audit email',
-    passwordPlaceholder: 'Enter your password',
-    allowSocialLogin: false,
-    showCreateAccount: false,
-    showOtpLogin: true,
-    defaultRedirectPath: '/portal/audit/dashboard',
-    benefits: [
-      'Enter a dedicated compliance-first workspace.',
-      'Stay on the correct portal with role-aware redirect protection.',
-      'Preserve recovery options while keeping the flow clean and minimal.'
     ]
   },
   support: {

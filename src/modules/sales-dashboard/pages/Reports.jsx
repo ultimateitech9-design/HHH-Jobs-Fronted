@@ -46,7 +46,7 @@ const Reports = () => {
       {error ? <p className="form-error">{error}</p> : null}
       <SalesStatCards cards={cards} />
       <div className="split-grid">
-        <SalesChart points={(report.conversion || []).map((item) => ({ month: item.label || item.stage, value: item.count, target: item.count + 4 }))} />
+        <SalesChart points={(report.conversion || []).map((item) => ({ month: item.label || item.stage, value: item.count }))} />
         <RevenueChart points={report.monthlyRevenue || []} />
       </div>
       <section className="panel-card">

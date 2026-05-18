@@ -92,7 +92,7 @@ const LeadDetails = () => {
       {!loading && lead ? (
         <section className="panel-card space-y-6">
           <div className="dash-list">
-            <li><strong>Lead ID</strong><span>{lead.id}</span></li>
+            <li><strong>Lead ID</strong><span>{lead.leadCode || lead.id}</span></li>
             <li><strong>Company</strong><span>{lead.company}</span></li>
             <li><strong>Contact</strong><span>{lead.contactName}</span></li>
             <li><strong>Email</strong><span>{lead.email}</span></li>

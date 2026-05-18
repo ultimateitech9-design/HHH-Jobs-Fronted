@@ -7,10 +7,12 @@ import { formatDateTime } from '../utils/dateFormat';
 const LeadTable = ({ rows = [] }) => {
   const columns = [
     {
-      key: 'id',
+      key: 'leadCode',
       label: 'Lead ID',
-      render: (value) => (
-        <Link to={`/portal/sales/lead-details/${encodeURIComponent(value)}`} className="font-semibold text-brand-700 hover:text-brand-800">
+      width: 130,
+      wrap: false,
+      render: (value, row) => (
+        <Link to={`/portal/sales/lead-details/${encodeURIComponent(row.id)}`} className="font-semibold text-brand-700 hover:text-brand-800">
           {value}
         </Link>
       )
@@ -47,7 +49,7 @@ const LeadTable = ({ rows = [] }) => {
     }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} pagination itemsPerPage={10} />;
 };
 
 export default LeadTable;

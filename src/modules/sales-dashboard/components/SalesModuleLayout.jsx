@@ -1,6 +1,5 @@
 import {
   FiBarChart2,
-  FiDollarSign,
   FiFileText,
   FiGift,
   FiLayers,
@@ -21,10 +20,7 @@ const salesNavItems = [
   { to: '/portal/sales/products', label: 'Products', icon: FiPackage },
   { to: '/portal/sales/coupons', label: 'Coupons', icon: FiGift },
   { to: '/portal/sales/refunds', label: 'Refunds', icon: FiRefreshCcw },
-  { to: '/portal/sales/reports', label: 'Reports', icon: FiFileText },
-  { to: '/portal/sales/order-details', label: 'Order Details', icon: FiDollarSign },
-  { to: '/portal/sales/lead-details', label: 'Lead Details', icon: FiDollarSign },
-  { to: '/portal/sales/customer-details', label: 'Customer Details', icon: FiDollarSign }
+  { to: '/portal/sales/reports', label: 'Reports', icon: FiFileText }
 ];
 
 const SalesModuleLayout = () => {

@@ -27,7 +27,7 @@ const OrderTable = ({ rows = [] }) => {
     {
       key: 'status',
       label: 'Order Status',
-      render: (value) => <StatusPill value={value || 'processing'} />
+      render: (value) => <StatusPill value={value || 'pending'} />
     },
     {
       key: 'paymentStatus',
@@ -41,7 +41,7 @@ const OrderTable = ({ rows = [] }) => {
     }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} pagination itemsPerPage={10} />;
 };
 
 export default OrderTable;
