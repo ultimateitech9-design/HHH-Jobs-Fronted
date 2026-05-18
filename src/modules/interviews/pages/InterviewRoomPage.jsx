@@ -106,6 +106,8 @@ const INTERVIEW_STAGE_STACK_BREAKPOINT = 980;
 const INTERVIEW_PREVIEW_MARGIN = 16;
 const CODE_RUN_TIMEOUT_MS = 3000;
 const SIGNAL_LOOKBACK_MS = 15000;
+const SIGNAL_POLL_INTERVAL_MS = 500;
+const LIVE_CODE_SYNC_DEBOUNCE_MS = 180;
 
 const createSignalSessionId = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -186,6 +188,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const sidebarResizeStateRef = useRef(null);
   const previewDragStateRef = useRef(null);
   const codeRunnerRef = useRef(null);
+  const liveWorkspaceSyncTimerRef = useRef(null);
+  const latestCodeEditorLanguageRef = useRef('javascript');
+  const latestCodeEditorContentRef = useRef(defaultCodeEditorContent);
   const lastSyncedWhiteboardRef = useRef(serializeWorkspaceValue(defaultWhiteboard));
   const lastSyncedCodeLanguageRef = useRef('javascript');
   const lastSyncedCodeContentRef = useRef(defaultCodeEditorContent);
@@ -421,12 +426,14 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     if (workspace.codeEditorLanguage !== undefined) {
       const nextLanguage = String(workspace.codeEditorLanguage || 'javascript').trim() || 'javascript';
+      latestCodeEditorLanguageRef.current = nextLanguage;
       lastSyncedCodeLanguageRef.current = nextLanguage;
       setCodeEditorLanguage(nextLanguage);
     }
 
     if (workspace.codeEditorContent !== undefined) {
       const nextContent = String(workspace.codeEditorContent || '');
+      latestCodeEditorContentRef.current = nextContent;
       lastSyncedCodeContentRef.current = nextContent;
       setCodeEditorContent(nextContent);
     }
@@ -468,6 +475,8 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       setWhiteboardData(nextWhiteboardData);
       setCodeEditorLanguage(nextCodeEditorLanguage);
       setCodeEditorContent(nextCodeEditorContent);
+      latestCodeEditorLanguageRef.current = nextCodeEditorLanguage;
+      latestCodeEditorContentRef.current = nextCodeEditorContent;
       didHydrateRef.current = true;
     } else {
       if (forceWorkspace || !nextPermissions.canManage || serializeWorkspaceValue(whiteboardData) === previousWhiteboardSnapshot) {
@@ -475,9 +484,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       }
       if (forceWorkspace || !nextPermissions.canManage || codeEditorLanguage === previousCodeLanguage) {
         setCodeEditorLanguage(nextCodeEditorLanguage);
+        latestCodeEditorLanguageRef.current = nextCodeEditorLanguage;
       }
       if (forceWorkspace || !nextPermissions.canManage || codeEditorContent === previousCodeContent) {
         setCodeEditorContent(nextCodeEditorContent);
+        latestCodeEditorContentRef.current = nextCodeEditorContent;
       }
     }
   };
@@ -538,6 +549,62 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         actor: isManager ? 'hr' : 'candidate'
       }
     }).catch(() => {});
+
+  const sendWorkspaceSignal = (kind, workspace) =>
+    sendInterviewSignal(interviewId, {
+      signalType: 'workspace-sync',
+      payload: {
+        kind,
+        updatedAt: new Date().toISOString(),
+        actor: isManager ? 'hr' : 'candidate',
+        workspace
+      }
+    }).catch(() => {});
+
+  const queueLiveCodeSync = ({ language, content }) => {
+    latestCodeEditorLanguageRef.current = language;
+    latestCodeEditorContentRef.current = content;
+
+    if (liveWorkspaceSyncTimerRef.current) {
+      window.clearTimeout(liveWorkspaceSyncTimerRef.current);
+    }
+
+    liveWorkspaceSyncTimerRef.current = window.setTimeout(() => {
+      liveWorkspaceSyncTimerRef.current = null;
+      sendWorkspaceSignal('workspace-live', {
+        codeEditorLanguage: latestCodeEditorLanguageRef.current,
+        codeEditorContent: latestCodeEditorContentRef.current
+      });
+    }, LIVE_CODE_SYNC_DEBOUNCE_MS);
+  };
+
+  const handleCodeLanguageChange = (nextLanguage) => {
+    const normalizedLanguage = String(nextLanguage || 'javascript').trim() || 'javascript';
+    setCodeEditorLanguage(normalizedLanguage);
+    setWorkspaceVersion((value) => value + 1);
+    queueLiveCodeSync({
+      language: normalizedLanguage,
+      content: latestCodeEditorContentRef.current
+    });
+    setCodeRunState({
+      status: 'idle',
+      output: '',
+      error: '',
+      ranAt: '',
+      language: normalizedLanguage,
+      meta: ''
+    });
+  };
+
+  const handleCodeEditorChange = (value) => {
+    const nextContent = value || '';
+    setCodeEditorContent(nextContent);
+    setWorkspaceVersion((count) => count + 1);
+    queueLiveCodeSync({
+      language: latestCodeEditorLanguageRef.current,
+      content: nextContent
+    });
+  };
 
   const replaceOutgoingVideoTrack = async (nextTrack, nextSource) => {
     if (!localStreamRef.current || !nextTrack) return;
@@ -979,11 +1046,19 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       return;
     }
 
-    if (type === 'workspace-sync' && payloadBody.kind === 'workspace-updated') {
+    if (
+      type === 'workspace-sync'
+      && ['workspace-live', 'workspace-updated'].includes(payloadBody.kind)
+    ) {
       if (payloadBody.workspace && typeof payloadBody.workspace === 'object') {
         applyRemoteWorkspaceSnapshot(payloadBody.workspace);
         return;
       }
+
+      if (payloadBody.kind === 'workspace-live') {
+        return;
+      }
+
       await loadRoom({ hydrateDrafts: false, forceWorkspace: true });
       return;
     }
@@ -1105,7 +1180,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       } catch (error) {
         // Ignore temporary polling failures.
       }
-    }, 1200);
+    }, SIGNAL_POLL_INTERVAL_MS);
 
     const roomInterval = setInterval(() => {
       loadRoom({ hydrateDrafts: false }).catch(() => {});
@@ -1172,6 +1247,10 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
     if (previewDragStateRef.current?.cleanup) {
       previewDragStateRef.current.cleanup();
+    }
+    if (liveWorkspaceSyncTimerRef.current) {
+      window.clearTimeout(liveWorkspaceSyncTimerRef.current);
+      liveWorkspaceSyncTimerRef.current = null;
     }
     clearCodeRunner();
   }, []);
@@ -1247,20 +1326,12 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         setIsSavingWorkspace(true);
         const response = await updateInterviewWorkspace(interviewId, updatePayload);
         applyPayload(response, { hydrateDrafts: false });
-        sendInterviewSignal(interviewId, {
-          signalType: 'workspace-sync',
-          payload: {
-            kind: 'workspace-updated',
-            updatedAt: new Date().toISOString(),
-            actor: isManager ? 'hr' : 'candidate',
-            workspace: {
-              whiteboardData,
-              codeEditorLanguage,
-              codeEditorContent,
-              ...(isManager ? { liveNotes } : {})
-            }
-          }
-        }).catch(() => {});
+        sendWorkspaceSignal('workspace-updated', {
+          whiteboardData,
+          codeEditorLanguage,
+          codeEditorContent,
+          ...(isManager ? { liveNotes } : {})
+        });
       } catch (error) {
         pendingTranscriptSegmentsRef.current = transcriptAppend.concat(pendingTranscriptSegmentsRef.current);
       } finally {
@@ -1706,18 +1777,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                   <div className="flex items-center gap-2">
                     <select
                       value={codeEditorLanguage}
-                      onChange={(e) => {
-                        setCodeEditorLanguage(e.target.value);
-                        setWorkspaceVersion((v) => v + 1);
-                        setCodeRunState({
-                          status: 'idle',
-                          output: '',
-                          error: '',
-                          ranAt: '',
-                          language: e.target.value,
-                          meta: ''
-                        });
-                      }}
+                      onChange={(e) => handleCodeLanguageChange(e.target.value)}
                       className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700"
                     >
                       <option value="javascript">JavaScript</option>
@@ -1757,7 +1817,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                       language={codeEditorLanguage}
                       theme="vs-light"
                       value={codeEditorContent}
-                      onChange={(value) => { setCodeEditorContent(value || ''); setWorkspaceVersion((c) => c + 1); }}
+                      onChange={handleCodeEditorChange}
                       options={{
                         fontSize: 13,
                         minimap: { enabled: false },
