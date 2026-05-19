@@ -35,6 +35,7 @@ const initialFilters = {
 };
 
 const PAGE_SIZE = 12;
+const COMMERCIAL_PAGE_SIZE = 10;
 
 const emptyDraft = {
   status: 'pending',
@@ -80,6 +81,7 @@ const AdminPaymentsPage = () => {
   const [couponDraft, setCouponDraft] = useState(emptyCouponDraft);
   const [filters, setFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
+  const [commercialPage, setCommercialPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingPurchases, setLoadingPurchases] = useState(true);
   const [loadingCommercial, setLoadingCommercial] = useState(true);
@@ -145,6 +147,7 @@ const AdminPaymentsPage = () => {
 
   useEffect(() => {
     setPage(1);
+    setCommercialPage(1);
   }, [filters.search, filters.status]);
 
   const filteredPayments = useMemo(() => {
@@ -166,6 +169,23 @@ const AdminPaymentsPage = () => {
       setPage(totalPages);
     }
   }, [page, totalPages]);
+
+  const commercialTotalPages = Math.max(1, Math.ceil(commercialPurchases.length / COMMERCIAL_PAGE_SIZE));
+  const paginatedCommercialPurchases = useMemo(
+    () => commercialPurchases.slice(
+      (commercialPage - 1) * COMMERCIAL_PAGE_SIZE,
+      commercialPage * COMMERCIAL_PAGE_SIZE
+    ),
+    [commercialPurchases, commercialPage]
+  );
+  const commercialVisibleStart = commercialPurchases.length ? ((commercialPage - 1) * COMMERCIAL_PAGE_SIZE) + 1 : 0;
+  const commercialVisibleEnd = Math.min(commercialPage * COMMERCIAL_PAGE_SIZE, commercialPurchases.length);
+
+  useEffect(() => {
+    if (commercialPage > commercialTotalPages) {
+      setCommercialPage(commercialTotalPages);
+    }
+  }, [commercialPage, commercialTotalPages]);
 
   const stats = useMemo(() => {
     const paid = payments.filter((payment) => payment.status === 'paid');
@@ -538,7 +558,7 @@ const AdminPaymentsPage = () => {
                 <tr>
                   <td colSpan="6" className="p-12 text-center text-neutral-500 font-medium">No commercial plan purchases yet.</td>
                 </tr>
-              ) : commercialPurchases.map((purchase) => (
+              ) : paginatedCommercialPurchases.map((purchase) => (
                 <tr key={purchase.id} className="hover:bg-neutral-50 transition-colors">
                   <td className="p-4 pl-6 align-top">
                     <div className="font-mono text-primary text-sm font-bold">{String(purchase.id).slice(-8).toUpperCase()}</div>
@@ -568,6 +588,32 @@ const AdminPaymentsPage = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-neutral-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p className="text-xs font-semibold text-neutral-500">
+            Showing <span className="text-neutral-800">{commercialVisibleStart}</span>-<span className="text-neutral-800">{commercialVisibleEnd}</span> of <span className="text-neutral-800">{commercialPurchases.length}</span> purchases
+            <span className="mx-2 text-neutral-300">|</span>
+            Page <span className="text-neutral-800">{commercialPage}</span> of <span className="text-neutral-800">{commercialTotalPages}</span>
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCommercialPage((current) => Math.max(1, current - 1))}
+              disabled={commercialPage <= 1}
+              className="btn-secondary"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setCommercialPage((current) => Math.min(commercialTotalPages, current + 1))}
+              disabled={commercialPage >= commercialTotalPages}
+              className="btn-secondary"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </section>
 
