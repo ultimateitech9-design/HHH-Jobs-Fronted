@@ -75,7 +75,7 @@ export default function CampusDashboardPage() {
 
   const activeFeatureSet = useMemo(() => {
     const values = [
-      ...(Array.isArray(activePlan?.features) ? activePlan.features : []),
+      ...(Array.isArray(activePlan?.meta?.featureKeys) ? activePlan.meta.featureKeys : []),
       ...(Array.isArray(currentPlan?.meta?.features) ? currentPlan.meta.features : [])
     ];
     return new Set(values.flatMap((item) => {
@@ -87,7 +87,7 @@ export default function CampusDashboardPage() {
   const hasActivePlan = useMemo(() => {
     if (!currentPlan) return false;
     const status = String(currentPlan.status || '').toLowerCase();
-    if (status && !['active', 'pending'].includes(status)) return false;
+    if (status && !['active', 'trialing'].includes(status)) return false;
     if (!currentPlan.ends_at) return true;
     return new Date(currentPlan.ends_at).getTime() >= Date.now();
   }, [currentPlan]);
@@ -149,7 +149,7 @@ export default function CampusDashboardPage() {
         const checkoutResult = await openRazorpaySubscriptionCheckout({
           ...response.paymentSession,
           name: 'HHH Jobs Campus Plan',
-          description: `Start your ${formatTrialLabel('campus_connect')} now and enable Razorpay auto-pay for renewal.`
+          description: `Enable Razorpay auto-pay first, then start your ${formatTrialLabel('campus_connect')}.`
         });
 
         if (checkoutResult.dismissed) {
@@ -255,7 +255,7 @@ export default function CampusDashboardPage() {
               <p className="mt-1 text-xs font-semibold text-brand-700">
                 {currentPlan?.meta?.isTrial
                   ? `${TRIAL_DAYS.campus_connect}-day trial active until ${new Date(currentPlan?.trial_ends_at || currentPlan?.ends_at || Date.now()).toLocaleDateString()}`
-                  : (currentPlan?.ends_at ? `Current cycle active until ${new Date(currentPlan.ends_at).toLocaleDateString()}` : `Choose a campus plan to start your ${formatTrialLabel('campus_connect')}`)}
+                  : (currentPlan?.ends_at ? `Current cycle active until ${new Date(currentPlan.ends_at).toLocaleDateString()}` : `Choose a campus plan, authorize auto-pay, then start your ${formatTrialLabel('campus_connect')}`)}
               </p>
               <p className="mt-1 text-[11px] font-semibold text-brand-700">
                 {currentPlan?.autopay_enabled ? `Auto-pay: ${currentPlan?.autopay_status || 'active'}` : 'Auto-pay not enabled yet'}
@@ -280,7 +280,7 @@ export default function CampusDashboardPage() {
 
         <div className="rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.10)]">
           <h2 className="text-lg font-bold text-navy">Activate Campus Plan</h2>
-          <p className="mt-1 text-sm text-slate-500">New campus accounts get a {formatTrialLabel('campus_connect')} first, then Razorpay handles the recurring renewal automatically.</p>
+          <p className="mt-1 text-sm text-slate-500">Authorize Razorpay auto-pay first. Your {formatTrialLabel('campus_connect')} starts after authorization succeeds.</p>
           <input value={couponCode} onChange={(event) => setCouponCode(event.target.value.toUpperCase())} placeholder="Coupon code" className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2 font-semibold uppercase" />
           {quote ? (
             <div className="mt-4 rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm">
@@ -292,7 +292,7 @@ export default function CampusDashboardPage() {
           ) : null}
           {billingMessage ? <p className="mt-4 text-sm font-semibold text-brand-700">{billingMessage}</p> : null}
           <button onClick={handleCheckout} disabled={billingLoading || !selectedPlanSlug} className="mt-5 w-full rounded-full bg-brand-600 px-4 py-3 text-sm font-bold text-white hover:bg-brand-500 disabled:opacity-50">
-            {billingLoading ? 'Processing...' : `Start ${TRIAL_DAYS.campus_connect}-Day Trial + Enable Auto-pay`}
+            {billingLoading ? 'Processing...' : `Enable Auto-pay + Start ${TRIAL_DAYS.campus_connect}-Day Trial`}
           </button>
         </div>
       </div>

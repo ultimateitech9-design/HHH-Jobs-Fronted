@@ -32,7 +32,7 @@ export const PLAN_TIERS = Object.freeze({
 });
 
 // ── Tier Display Names ──────────────────────────────────────────────────────
-export const TIER_NAMES = ['Free', 'Starter', 'Professional', 'Enterprise'];
+export const TIER_NAMES = ['Free', 'Starter', 'Growth', 'Enterprise'];
 
 export const getPlanTierName = (tier) => TIER_NAMES[tier] || 'Free';
 
@@ -90,14 +90,14 @@ export const HR_PLANS = Object.freeze([
     slug: 'hr_starter',
     name: 'Starter',
     tier: 1,
-    price: 0,
+    price: 999,
     priceAfterTrial: 999,
     durationDays: 30,
     trialDays: TRIAL_DAYS.hr,
     billingCycle: 'month',
     includedJobCredits: 3,
     isFeatured: false,
-    tagline: '2 month free trial',
+    tagline: '2 month free with auto-pay',
     features: [
       'Post up to 3 jobs',
       'Candidate search & filters',
@@ -144,7 +144,7 @@ export const HR_PLANS = Object.freeze([
     isFeatured: false,
     tagline: 'For large-scale hiring',
     features: [
-      'Everything in Professional',
+      'Everything in Growth',
       'Unlimited job postings',
       'Priority listing in search',
       'Dedicated account manager',
@@ -160,14 +160,14 @@ export const STUDENT_PLANS = Object.freeze([
     slug: 'student_basic',
     name: 'Basic',
     tier: 1,
-    price: 0,
+    price: 199,
     priceAfterTrial: 199,
     durationDays: 30,
     trialDays: TRIAL_DAYS.student,
     billingCycle: 'month',
     includedJobCredits: 0,
     isFeatured: false,
-    tagline: '20 days free trial',
+    tagline: '20 days free with auto-pay',
     features: [
       'Auto-apply to matched jobs',
       'AI resume builder',
@@ -226,14 +226,14 @@ export const CAMPUS_PLANS = Object.freeze([
     slug: 'campus_basic',
     name: 'Basic',
     tier: 1,
-    price: 0,
+    price: 1499,
     priceAfterTrial: 1499,
     durationDays: 30,
     trialDays: TRIAL_DAYS.campus_connect,
     billingCycle: 'month',
     includedJobCredits: 0,
     isFeatured: false,
-    tagline: '1 month free trial',
+    tagline: '1 month free with auto-pay',
     features: [
       'Create campus drives',
       'Company connection requests',
@@ -276,7 +276,7 @@ export const CAMPUS_PLANS = Object.freeze([
     isFeatured: false,
     tagline: 'Institutional-level access',
     features: [
-      'Everything in Professional',
+      'Everything in Growth',
       'Unlimited campus drives',
       'Priority placement pipeline',
       'Dedicated support manager',
@@ -320,7 +320,7 @@ export const SUBSCRIPTION_STATUSES = Object.freeze({
 export const isSubscriptionActive = (subscription) => {
   if (!subscription) return false;
   const status = String(subscription.status || '').toLowerCase();
-  if (!['active', 'trialing', 'pending'].includes(status)) return false;
+  if (!['active', 'trialing'].includes(status)) return false;
   if (!subscription.ends_at) return true;
   return new Date(subscription.ends_at).getTime() >= Date.now();
 };
@@ -377,6 +377,5 @@ export const formatTrialLabel = (role) => {
 
 export const formatBillingCycle = (plan) => {
   if (!plan) return '';
-  if (plan.price <= 0) return 'free during trial';
   return `/${plan.billingCycle || 'month'}`;
 };

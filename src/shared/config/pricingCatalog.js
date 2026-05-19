@@ -2,11 +2,11 @@ export const hrStarterPricing = {
   slug: 'hr_starter',
   name: 'HR Starter',
   listPrice: 999,
-  trialRenewalPrice: 399,
+  trialRenewalPrice: 999,
   currency: 'INR',
   billingCycle: 'monthly',
-  trialDays: 30,
-  discountText: 'After trial ₹399/month'
+  trialDays: 60,
+  discountText: 'After trial ₹999/month'
 };
 
 export const jobPostingPlans = [

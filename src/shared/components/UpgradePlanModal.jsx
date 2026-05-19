@@ -7,7 +7,7 @@ import { hrStarterPricing } from '../config/pricingCatalog';
 import { formatTrialLabel } from '../constants/planConfig';
 import { openRazorpaySubscriptionCheckout, preloadRazorpayCheckout } from '../utils/razorpayCheckout';
 
-const tierNames = ['Free', 'Starter', 'Professional', 'Enterprise'];
+const tierNames = ['Free', 'Starter', 'Growth', 'Enterprise'];
 const tierColors = [
   'border-slate-200 bg-slate-50',
   'border-blue-200 bg-blue-50',
@@ -182,7 +182,7 @@ const UpgradePlanModal = ({
         const checkoutResult = await openRazorpaySubscriptionCheckout({
           ...paymentSession,
           name: `HHH Jobs ${rolePlanNames[audienceRole] || 'Premium'} Plan`,
-          description: `Start your ${trialLabel} now and enable Razorpay auto-pay for renewal.`
+          description: `Enable Razorpay auto-pay first, then start your ${trialLabel}.`
         });
 
         logUpgradePlanDebug('razorpay checkout result', checkoutResult);
@@ -322,12 +322,14 @@ const UpgradePlanModal = ({
 
                     <div className="mb-3">
                       <span className="text-2xl font-extrabold text-slate-900">
-                        {formatPlanPrice(plan)}
+                        {plan.trialDays ? 'Free trial' : formatPlanPrice(plan)}
                       </span>
-                      {plan.billingCycle && plan.price > 0 && (
+                      {plan.trialDays ? (
+                        <span className="text-xs text-slate-500"> after auto-pay setup</span>
+                      ) : plan.billingCycle && plan.price > 0 && (
                         <span className="text-xs text-slate-500">/{plan.billingCycle}</span>
                       )}
-                      {getRenewalPrice(plan) < Number(plan?.meta?.listPrice || plan.price || 0) ? (
+                      {getRenewalPrice(plan) > 0 ? (
                         <p className="mt-1 text-xs font-bold text-emerald-700">
                           After trial ₹{getRenewalPrice(plan).toLocaleString('en-IN')}/month
                         </p>
@@ -359,7 +361,7 @@ const UpgradePlanModal = ({
                         ) : (
                           <FiZap size={12} />
                         )}
-                        Upgrade Now
+                        Enable Auto-pay
                       </button>
                     )}
                   </div>
@@ -379,7 +381,7 @@ const UpgradePlanModal = ({
             </p>
           ) : null}
           <p className="text-center text-xs text-slate-400">
-            Plans are billed securely via Razorpay. Cancel anytime from your account settings.
+            Auto-pay is authorised before the free trial starts. Cancel anytime from your account settings.
           </p>
         </div>
       </div>

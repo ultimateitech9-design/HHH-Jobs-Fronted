@@ -12,7 +12,13 @@ import { FaGem, FaMedal } from 'react-icons/fa';
 import PublicCallToAction from '../components/publicPages/PublicCallToAction';
 import PublicSectionHeader from '../components/publicPages/PublicSectionHeader';
 import { getCurrentUser } from '../../../utils/auth';
-import { jobPostingPlans } from '../../../shared/config/pricingCatalog';
+import {
+  CAMPUS_PLANS,
+  HR_PLANS,
+  STUDENT_PLANS,
+  formatPrice,
+  formatTrialLabel
+} from '../../../shared/constants/planConfig';
 
 const premiumFeatures = [
   {
@@ -97,6 +103,9 @@ const studentServicePaths = {
 };
 
 const planWrapperClassByTone = {
+  starter: 'bg-white border-slate-200 shadow-sm',
+  growth: 'bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 text-white border-transparent shadow-2xl',
+  enterprise: 'bg-white border-slate-200 shadow-sm',
   premium: 'bg-gradient-to-br from-slate-950 via-brand-700 to-indigo-700 text-white border-transparent shadow-2xl',
   pro: 'bg-white border-slate-200 shadow-sm',
   standard: 'bg-white border-slate-200 shadow-sm',
@@ -120,14 +129,57 @@ const buildPlanLink = (path, extraParams = {}) => {
 
 const formatPlanPrice = (amount) => `₹${Number(amount || 0).toLocaleString('en-IN')}`;
 
+const rolePlanSections = [
+  {
+    key: 'hr',
+    eyebrow: 'For HR',
+    title: 'Recruiter plans',
+    description: 'The same HR plans shown inside the recruiter dashboard.',
+    role: 'hr',
+    plans: HR_PLANS,
+    ctaBase: '/portal/hr/jobs',
+    signupRole: 'hr'
+  },
+  {
+    key: 'student',
+    eyebrow: 'For Students',
+    title: 'Student plans',
+    description: 'The same student plans shown inside the student services dashboard.',
+    role: 'student',
+    plans: STUDENT_PLANS,
+    ctaBase: '/portal/student/services',
+    signupRole: 'student'
+  },
+  {
+    key: 'campus_connect',
+    eyebrow: 'For Campus Connect',
+    title: 'Campus plans',
+    description: 'The same campus plans shown inside the campus connect dashboard.',
+    role: 'campus_connect',
+    plans: CAMPUS_PLANS,
+    ctaBase: '/portal/campus-connect/dashboard',
+    signupRole: 'campus_connect'
+  }
+];
+
+const getRolePlanCta = ({ user, section, plan }) => {
+  if (user?.role === section.role || (section.role === 'hr' && user?.role === 'admin')) {
+    return section.ctaBase;
+  }
+  return `/sign-up?role=${section.signupRole}&plan=${plan.slug}`;
+};
+
+const planTone = (plan) => {
+  if (plan.isFeatured) return 'growth';
+  if (String(plan.name || '').toLowerCase().includes('enterprise')) return 'enterprise';
+  return 'starter';
+};
+
 const ServicesPage = () => {
   const user = getCurrentUser();
   const isStudent = user?.role === 'student';
   const isHr = user?.role === 'hr' || user?.role === 'admin';
   const [activePremiumKey, setActivePremiumKey] = useState(premiumFeatures[0].key);
-  const [jobPostingQuantities, setJobPostingQuantities] = useState(() => (
-    Object.fromEntries(jobPostingPlans.filter((plan) => plan.withQuantity).map((plan) => [plan.slug, '01']))
-  ));
   const [resumePlanQuantities, setResumePlanQuantities] = useState(() => (
     Object.fromEntries(resumeDatabasePlans.filter((plan) => plan.withQuantity).map((plan) => [plan.title, '01']))
   ));
@@ -153,101 +205,77 @@ const ServicesPage = () => {
       <section className="container mx-auto mt-4 max-w-[72rem] px-4 md:mt-5">
         <PublicSectionHeader
           centered
-          eyebrow="For Employers"
-          title="Job posting plans designed for hiring volume and reach"
+          eyebrow="Pricing"
+          title="One plan catalog across public pricing and dashboards"
+          description="HR, Student, and Campus Connect users see these same plans after login. Auto-pay is authorised first, then the free trial starts."
         />
 
-        <div className="mt-4.5 grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
-          {jobPostingPlans.map((plan) => {
-            const selectedQuantity = Number(jobPostingQuantities[plan.slug] || '01');
-            const ctaTo = plan.withQuantity ? buildPlanLink(plan.ctaTo, { quantity: selectedQuantity }) : plan.ctaTo;
-            const displayPrice = plan.withQuantity && plan.numericPrice
-              ? formatPlanPrice(plan.numericPrice * selectedQuantity)
-              : plan.price;
-
-            return (
-              <article
-                key={plan.title}
-                className={`flex flex-col rounded-[1.05rem] border p-2.5 md:p-3 ${planWrapperClassByTone[plan.tone]}`}
-              >
-              <div>
-                <h3 className={`font-heading text-[1.2rem] font-extrabold ${plan.tone === 'premium' ? 'text-white' : 'text-navy'}`}>
-                  {plan.title}
-                </h3>
-                <div className="mt-1.5">
-                  <span className="text-[1.35rem] font-black leading-none">{displayPrice}</span>
+        <div className="mt-5 space-y-5">
+          {rolePlanSections.map((section) => (
+            <div key={section.key} className="rounded-[1.35rem] border border-slate-200 bg-white p-3 shadow-sm md:p-4">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-brand-700">{section.eyebrow}</p>
+                  <h2 className="mt-1 font-heading text-[1.35rem] font-extrabold text-navy">{section.title}</h2>
+                  <p className="mt-1 max-w-2xl text-[12.5px] leading-5 text-slate-500">{section.description}</p>
                 </div>
-                {plan.previousPrice ? (
-                  <div className={`mt-1 flex items-center gap-1.5 text-[13px] font-semibold ${plan.tone === 'premium' ? 'text-white/72' : 'text-slate-500'}`}>
-                    <s>{plan.previousPrice}</s>
-                    <span className={plan.tone === 'premium' ? 'text-amber-200' : 'text-emerald-700'}>
-                      {plan.discountText}
-                    </span>
-                  </div>
-                ) : null}
-                <p className={`mt-1 text-[8.5px] font-semibold uppercase tracking-[0.13em] ${plan.tone === 'premium' ? 'text-white/58' : 'text-slate-400'}`}>
-                  {plan.taxNote || plan.subTitle}
-                </p>
-                {plan.offerText ? (
-                  <p className={`mt-1.5 rounded-xl px-2 py-1 text-[8.5px] font-bold leading-4 ${plan.tone === 'premium' ? 'bg-white/10 text-white' : 'bg-orange-50 text-orange-700'}`}>
-                    {plan.offerText}
-                  </p>
-                ) : null}
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+                  {formatTrialLabel(section.role)}
+                </span>
               </div>
 
-              <ul className="mt-3 space-y-1">
-                {plan.features.map((feature) => (
-                  <li
-                    key={feature.label}
-                    className={`flex items-start gap-1.5 text-[11.5px] leading-[1.35rem] ${feature.included ? '' : 'opacity-40'} ${
-                      plan.tone === 'premium' ? 'text-white/86' : 'text-slate-600'
-                    }`}
-                  >
-                    <FiCheckCircle className={`mt-0.5 shrink-0 ${plan.tone === 'premium' ? 'text-amber-200' : 'text-brand-700'}`} />
-                    <span>{feature.label}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-3 grid gap-2.5 md:grid-cols-3">
+                {section.plans.map((plan) => {
+                  const tone = planTone(plan);
+                  const isDark = tone === 'growth';
+                  const renewalPrice = plan.priceAfterTrial || plan.price;
+                  return (
+                    <article
+                      key={plan.slug}
+                      className={`flex min-h-[250px] flex-col rounded-[1.05rem] border p-3 ${planWrapperClassByTone[tone]}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className={`font-heading text-[1.08rem] font-extrabold ${isDark ? 'text-white' : 'text-navy'}`}>{plan.name}</h3>
+                          <p className={`mt-1 text-[11px] font-semibold ${isDark ? 'text-white/70' : 'text-slate-500'}`}>{plan.tagline}</p>
+                        </div>
+                        {plan.isFeatured ? (
+                          <span className="rounded-full bg-white/15 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.13em] text-white">Popular</span>
+                        ) : null}
+                      </div>
 
-              <div className="mt-auto pt-2.5">
-                {plan.withQuantity ? (
-                  <select
-                    value={jobPostingQuantities[plan.slug] || '01'}
-                    onChange={(event) => setJobPostingQuantities((current) => ({ ...current, [plan.slug]: event.target.value }))}
-                    className={`mb-2 w-full rounded-xl border px-3 py-1.5 text-[10.5px] font-semibold ${
-                      plan.tone === 'premium'
-                        ? 'border-white/20 bg-white/10 text-white'
-                        : 'border-slate-200 bg-slate-50 text-navy'
-                    }`}
-                  >
-                    <option value="01">1 Job Post</option>
-                    <option value="02">2 Job Posts</option>
-                    <option value="03">3 Job Posts</option>
-                    <option value="05">5 Job Posts</option>
-                  </select>
-                ) : null}
-                {plan.withQuantity ? (
-                  <p className={`mb-2 text-center text-[9px] font-semibold uppercase tracking-[0.13em] ${plan.tone === 'premium' ? 'text-white/70' : 'text-slate-500'}`}>
-                    {selectedQuantity} job post{selectedQuantity > 1 ? 's' : ''} selected
-                  </p>
-                ) : null}
-                <Link
-                  to={ctaTo}
-                  className={`block rounded-full px-4 py-1.5 text-center text-[10.5px] font-semibold ${
-                    plan.tone === 'premium'
-                      ? 'bg-white text-navy'
-                      : 'gradient-gold text-primary shadow-lg shadow-gold/20'
-                  }`}
-                >
-                  {plan.ctaLabel}
-                </Link>
-                <p className={`mt-1.5 text-center text-[8.5px] font-semibold uppercase tracking-[0.13em] ${plan.tone === 'premium' ? 'text-white/58' : 'text-slate-400'}`}>
-                  {plan.validity}
-                </p>
+                      <div className="mt-3">
+                        <p className={`text-[1.25rem] font-black ${isDark ? 'text-white' : 'text-emerald-700'}`}>Free trial</p>
+                        <p className={`mt-1 text-[11px] font-bold ${isDark ? 'text-amber-100' : 'text-emerald-700'}`}>
+                          Then {formatPrice(renewalPrice)}/{plan.billingCycle || 'month'}
+                        </p>
+                      </div>
+
+                      <ul className="mt-3 space-y-1.5">
+                        {plan.features.slice(0, 6).map((feature) => (
+                          <li key={feature} className={`flex items-start gap-1.5 text-[11.5px] leading-5 ${isDark ? 'text-white/86' : 'text-slate-600'}`}>
+                            <FiCheckCircle className={`mt-0.5 shrink-0 ${isDark ? 'text-amber-200' : 'text-brand-700'}`} />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="mt-auto pt-3">
+                        <Link
+                          to={getRolePlanCta({ user, section, plan })}
+                          className={`block rounded-full px-4 py-2 text-center text-[11px] font-bold ${
+                            isDark ? 'bg-white text-navy' : 'gradient-gold text-primary shadow-lg shadow-gold/20'
+                          }`}
+                        >
+                          Enable auto-pay + start trial
+                        </Link>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
-              </article>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </section>
 

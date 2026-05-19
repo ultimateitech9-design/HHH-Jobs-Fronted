@@ -87,7 +87,7 @@ const StudentServicesPage = () => {
 
   const activeFeatureSet = useMemo(() => {
     const values = [
-      ...(Array.isArray(activePlan?.features) ? activePlan.features : []),
+      ...(Array.isArray(activePlan?.meta?.featureKeys) ? activePlan.meta.featureKeys : []),
       ...(Array.isArray(currentPlan?.meta?.features) ? currentPlan.meta.features : [])
     ];
     return new Set(values.flatMap((item) => {
@@ -99,7 +99,7 @@ const StudentServicesPage = () => {
   const hasActivePlan = useMemo(() => {
     if (!currentPlan) return false;
     const status = String(currentPlan.status || '').toLowerCase();
-    if (status && !['active', 'pending'].includes(status)) return false;
+    if (status && !['active', 'trialing'].includes(status)) return false;
     if (!currentPlan.ends_at) return true;
     return new Date(currentPlan.ends_at).getTime() >= Date.now();
   }, [currentPlan]);
@@ -152,7 +152,7 @@ const StudentServicesPage = () => {
         const checkoutResult = await openRazorpaySubscriptionCheckout({
           ...response.paymentSession,
           name: 'HHH Jobs Student Plan',
-          description: `Start your ${formatTrialLabel('student')} now and enable auto-pay for renewal.`
+          description: `Enable auto-pay first, then start your ${formatTrialLabel('student')}.`
         });
 
         if (checkoutResult.dismissed) {
@@ -371,7 +371,7 @@ const StudentServicesPage = () => {
             <p className="mt-1 text-xs font-semibold text-slate-500">
               {currentPlan?.meta?.isTrial
                 ? `${TRIAL_DAYS.student}-day free trial active until ${new Date(currentPlan?.trial_ends_at || currentPlan?.ends_at || Date.now()).toLocaleDateString()}.`
-                : (currentPlan?.ends_at ? `Renewal cycle active until ${new Date(currentPlan.ends_at).toLocaleDateString()}.` : 'Choose a plan to start your student premium flow.')}
+              : (currentPlan?.ends_at ? `Renewal cycle active until ${new Date(currentPlan.ends_at).toLocaleDateString()}.` : 'Choose a plan, authorize auto-pay, then start your student trial.')}
             </p>
             <p className="mt-1 text-xs font-semibold text-brand-700">
               {currentPlan?.autopay_enabled
@@ -389,7 +389,7 @@ const StudentServicesPage = () => {
             ) : null}
             {billingMessage ? <p className="mt-4 text-sm font-semibold text-brand-700">{billingMessage}</p> : null}
             <button onClick={handleCheckout} disabled={billingLoading || !selectedPlanSlug} className="mt-5 w-full rounded-full bg-brand-600 px-4 py-3 text-sm font-bold text-white hover:bg-brand-500 disabled:opacity-50">
-              {billingLoading ? 'Processing...' : `Start ${TRIAL_DAYS.student}-Day Trial + Enable Auto-pay`}
+              {billingLoading ? 'Processing...' : `Enable Auto-pay + Start ${TRIAL_DAYS.student}-Day Trial`}
             </button>
           </div>
         </div>

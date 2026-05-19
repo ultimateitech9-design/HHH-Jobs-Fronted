@@ -602,7 +602,7 @@ const HrJobsPage = () => {
         const checkoutResult = await openRazorpaySubscriptionCheckout({
           ...response.paymentSession,
           name: 'HHH Jobs Recruiter Plan',
-          description: 'Start the HR starter trial now and enable Razorpay auto-pay for renewal.'
+          description: 'Enable Razorpay auto-pay first, then start your HR free trial.'
         });
 
         if (checkoutResult.dismissed) {
@@ -1023,10 +1023,10 @@ const HrJobsPage = () => {
                     </div>
                   )}
 
-                  <p className="text-[11px] text-neutral-400">New accounts start with a trial. Checkout authorises Razorpay auto-renewal.</p>
+                  <p className="text-[11px] text-neutral-400">Checkout authorises Razorpay auto-pay first. Your free trial starts only after authorisation succeeds.</p>
 
                   <button type="submit" disabled={roleCheckoutSaving || rolePlans.length === 0} className="w-full py-2.5 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50">
-                    {roleCheckoutSaving ? 'Processing...' : 'Start Trial + Enable Auto-pay'}
+                    {roleCheckoutSaving ? 'Processing...' : 'Enable Auto-pay + Start Trial'}
                   </button>
                 </form>
               </div>

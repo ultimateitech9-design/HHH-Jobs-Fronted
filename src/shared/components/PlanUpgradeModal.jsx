@@ -67,19 +67,24 @@ const PlanUpgradeModal = ({
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-base font-bold text-navy">{plan.name || formatPlanLabel(plan.slug)}</p>
-                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{plan.description || 'Professional access plan'}</p>
+                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{plan.description || 'Premium access plan'}</p>
                       </div>
                       {selected ? <FiCheckCircle className="shrink-0 text-brand-600" size={18} /> : null}
                     </div>
                     <div className="mt-3">
-                      {(plan.price ?? 0) <= 0 ? (
-                        <><span className="text-xl font-black text-emerald-600">Free</span><span className="ml-1 text-xs text-slate-500">for {TRIAL_DAYS[audienceRole] || 15} days</span></>
+                      {plan.trialDays || TRIAL_DAYS[audienceRole] ? (
+                        <>
+                          <span className="text-xl font-black text-emerald-600">Free trial</span>
+                          <span className="ml-1 text-xs text-slate-500">after auto-pay setup</span>
+                        </>
                       ) : (
                         <span className="text-xl font-black text-brand-700">{formatPrice(plan.price, plan.currency === 'USD' ? '$' : '₹')}</span>
                       )}
                     </div>
-                    {(plan.price ?? 0) <= 0 && (plan.priceAfterTrial || getPlanBySlug(plan.slug)?.priceAfterTrial) > 0 && (
-                      <p className="mt-0.5 text-[10px] text-slate-400">Then {formatPrice(plan.priceAfterTrial || getPlanBySlug(plan.slug)?.priceAfterTrial)}/month after trial</p>
+                    {(plan.priceAfterTrial || getPlanBySlug(plan.slug)?.priceAfterTrial || plan.price) > 0 && (
+                      <p className="mt-0.5 text-[10px] text-slate-400">
+                        Then {formatPrice(plan.priceAfterTrial || getPlanBySlug(plan.slug)?.priceAfterTrial || plan.price)}/month after trial
+                      </p>
                     )}
                     {Array.isArray(plan.features) && plan.features.length > 0 ? (
                       <ul className="mt-2 space-y-1">
@@ -120,7 +125,7 @@ const PlanUpgradeModal = ({
               className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FiCreditCard size={15} />
-              {loading ? 'Processing...' : `Start ${TRIAL_DAYS[audienceRole] || 15}-day trial + enable auto-pay`}
+              {loading ? 'Processing...' : `Enable auto-pay + start ${TRIAL_DAYS[audienceRole] || 15}-day trial`}
             </button>
           </aside>
         </div>
