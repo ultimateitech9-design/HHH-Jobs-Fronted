@@ -6,6 +6,7 @@ import useNotificationStore from '../../../../core/notifications/notificationSto
 import PortalNotificationsDrawer from './PortalNotificationsDrawer';
 
 const COMPACT_HEADER_ROLES = ['admin', 'super_admin', 'dataentry', 'support', 'sales', 'accounts', 'hr'];
+const LOGOUT_ONLY_MENU_ROLES = ['admin', 'super_admin', 'dataentry', 'support', 'sales', 'accounts', 'campus_connect'];
 
 const PortalWorkbenchHeader = ({
   activePortalRole,
@@ -38,7 +39,7 @@ const PortalWorkbenchHeader = ({
   const unreadCount = notifications.filter((notification) => !notification.is_read).length;
   const isStudentMarketplaceHeader = headerVariant === 'student-marketplace';
   const showRoleSwitcher = roleSwitchOptions.length > 1;
-  const useLogoutOnlyMenu = ['admin', 'super_admin'].includes(String(activePortalRole || '').trim().toLowerCase());
+  const useLogoutOnlyMenu = LOGOUT_ONLY_MENU_ROLES.includes(String(activePortalRole || '').trim().toLowerCase());
   const showHeaderTitleBlock = !COMPACT_HEADER_ROLES.includes(String(activePortalRole || '').trim().toLowerCase());
   const showStudentApplicationsShortcut = ['student', 'retired_employee'].includes(String(activePortalRole || '').trim().toLowerCase());
 
