@@ -266,6 +266,17 @@ export default function HrCandidatesPage() {
         </div>
       ) : null}
 
+      {access.hasPaidAccess && Number.isFinite(access.studentDbViewLimit) ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-[13px] font-semibold text-indigo-800 shadow-sm">
+          <span>
+            Student DB trial views: {access.studentDbViewsUsed ?? summary.studentDbViewsUsed ?? 0}/{access.studentDbViewLimit}
+          </span>
+          <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-indigo-700">
+            {access.studentDbViewsRemaining ?? summary.studentDbViewsRemaining ?? 0} left
+          </span>
+        </div>
+      ) : null}
+
       <UpgradePlanModal
         isOpen={upgradeModalOpen}
         onClose={() => setUpgradeModalOpen(false)}
@@ -625,7 +636,7 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
           ) : null}
 
           <div className="mt-3 rounded-lg border border-dashed border-slate-200 px-3 py-2.5 text-xs leading-5 text-slate-500">
-            {candidate.access?.requiresUpgrade ? (
+            {candidate.access?.requiresUpgrade || !candidate.access?.canBrowseFullProfile ? (
               <div className="flex items-start gap-2">
                 <FiLock size={14} className="mt-0.5 shrink-0 text-amber-600" />
                 <p>{candidate.access.blurReason}</p>

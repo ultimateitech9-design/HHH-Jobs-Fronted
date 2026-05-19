@@ -4,9 +4,9 @@
 
 // ── Trial Periods (days) ────────────────────────────────────────────────────
 export const TRIAL_DAYS = Object.freeze({
-  hr: 30,
+  hr: 60,
   campus_connect: 30,
-  student: 15
+  student: 20
 });
 
 // ── Plan Tier Levels ────────────────────────────────────────────────────────
@@ -16,14 +16,17 @@ export const PLAN_TIERS = Object.freeze({
   free:                0,
   // HR tiers
   hr_starter:          1,
+  hr_growth:           2,
   hr_professional:     2,
   hr_enterprise:       3,
   // Student tiers
   student_basic:       1,
   student_plus:        2,
+  student_pro:         3,
   student_premium:     3,
   // Campus Connect tiers
   campus_basic:        1,
+  campus_growth:       2,
   campus_professional: 2,
   campus_enterprise:   3
 });
@@ -94,7 +97,7 @@ export const HR_PLANS = Object.freeze([
     billingCycle: 'month',
     includedJobCredits: 3,
     isFeatured: false,
-    tagline: '1 month free trial',
+    tagline: '2 month free trial',
     features: [
       'Post up to 3 jobs',
       'Candidate search & filters',
@@ -106,8 +109,8 @@ export const HR_PLANS = Object.freeze([
     ]
   },
   {
-    slug: 'hr_professional',
-    name: 'Professional',
+    slug: 'hr_growth',
+    name: 'Growth',
     tier: 2,
     price: 2499,
     priceAfterTrial: 2499,
@@ -164,7 +167,7 @@ export const STUDENT_PLANS = Object.freeze([
     billingCycle: 'month',
     includedJobCredits: 0,
     isFeatured: false,
-    tagline: '15 days free trial',
+    tagline: '20 days free trial',
     features: [
       'Auto-apply to matched jobs',
       'AI resume builder',
@@ -196,8 +199,8 @@ export const STUDENT_PLANS = Object.freeze([
     ]
   },
   {
-    slug: 'student_premium',
-    name: 'Premium',
+    slug: 'student_pro',
+    name: 'Pro',
     tier: 3,
     price: 999,
     priceAfterTrial: 999,
@@ -240,8 +243,8 @@ export const CAMPUS_PLANS = Object.freeze([
     ]
   },
   {
-    slug: 'campus_professional',
-    name: 'Professional',
+    slug: 'campus_growth',
+    name: 'Growth',
     tier: 2,
     price: 3999,
     priceAfterTrial: 3999,
@@ -367,6 +370,7 @@ export const formatPrice = (price, currency = '₹') => {
 export const formatTrialLabel = (role) => {
   const days = TRIAL_DAYS[role];
   if (!days) return '';
+  if (days >= 60) return '2 month free trial';
   if (days >= 30) return '1 month free trial';
   return `${days} day free trial`;
 };

@@ -65,6 +65,21 @@ const formatDateTime = (value) => {
   return date.toLocaleString();
 };
 
+const normalizeExternalMeetingUrl = (value = '') => {
+  try {
+    const parsed = new URL(String(value || '').trim());
+    if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+    return parsed.href;
+  } catch (error) {
+    return '';
+  }
+};
+
+const canEmbedMeetingUrl = (value = '') => {
+  const url = normalizeExternalMeetingUrl(value);
+  return /^https:\/\/meet\.jit\.si\//i.test(url);
+};
+
 const readAsConnectionLabel = (state = 'new') => {
   switch (String(state || '').toLowerCase()) {
     case 'connected':
@@ -104,18 +119,93 @@ const INTERVIEW_SIDEBAR_MAX_WIDTH = 520;
 const INTERVIEW_SIDEBAR_DEFAULT_WIDTH = 320;
 const INTERVIEW_STAGE_STACK_BREAKPOINT = 980;
 const INTERVIEW_PREVIEW_MARGIN = 16;
+const P2P_INTERVIEW_ROOM_PARTICIPANTS = 25;
 const CODE_RUN_TIMEOUT_MS = 3000;
 const SIGNAL_LOOKBACK_MS = 15000;
 const SIGNAL_POLL_INTERVAL_MS = 500;
 const LIVE_CODE_SYNC_DEBOUNCE_MS = 180;
 const SIGNAL_CURSOR_OVERLAP_MS = 2000;
-const MAX_TRACKED_SIGNAL_IDS = 500;
+const MAX_TRACKED_SIGNAL_IDS = 5000;
 const MEDIA_RETRY_INTERVAL_MS = 5000;
+const PRESENCE_HEARTBEAT_INTERVAL_MS = 4000;
 
 const createSignalSessionId = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
 const isWorkspaceTab = (tab) => ['video', 'code', 'whiteboard', 'transcript'].includes(String(tab || ''));
+
+const CandidateVideoTile = ({ participant, mediaState, isSelected, onSelect, onReconnect }) => {
+  const videoRef = useRef(null);
+  const stream = mediaState?.stream || null;
+  const isReady = Boolean(mediaState?.ready || stream);
+  const connectionLabel = readAsConnectionLabel(mediaState?.connectionState || (participant?.isOnline ? 'connecting' : 'new'));
+  const lastSeenAt = mediaState?.lastSeenAt || participant?.lastSeenAt || participant?.joinedAt || '';
+
+  useEffect(() => {
+    const element = videoRef.current;
+    if (!element) return;
+    element.srcObject = stream || null;
+    if (stream && typeof element.play === 'function') {
+      const playAttempt = element.play();
+      if (playAttempt && typeof playAttempt.catch === 'function') {
+        playAttempt.catch(() => {});
+      }
+    }
+  }, [stream]);
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect?.();
+        }
+      }}
+      className={`group overflow-hidden rounded-lg border bg-slate-950 text-left shadow-sm transition ${
+        isSelected ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-slate-200 hover:border-slate-300'
+      }`}
+    >
+      <div className="relative aspect-video">
+        <video ref={videoRef} autoPlay playsInline className="absolute inset-0 h-full w-full object-contain" />
+        {!isReady && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-slate-400">
+            <FiUsers size={18} />
+            <p className="text-[10px]">Waiting...</p>
+          </div>
+        )}
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/75 to-transparent px-2 py-2">
+          <span className="truncate text-[10px] font-bold text-white">{participant?.name || 'Candidate'}</span>
+          <span className="ml-2 flex shrink-0 items-center gap-1">
+            <span className={`rounded-full border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide ${connectionLabel.className}`}>
+              {isReady ? 'Live' : connectionLabel.label}
+            </span>
+            {onReconnect && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onReconnect();
+                }}
+                className="rounded-md border border-white/20 bg-white/10 p-1 text-white transition hover:bg-white/20"
+                title="Reconnect this candidate"
+              >
+                <FiRefreshCw size={9} />
+              </button>
+            )}
+          </span>
+        </div>
+        {!isReady && lastSeenAt && (
+          <div className="absolute bottom-2 left-2 rounded-md bg-black/55 px-2 py-0.5 text-[9px] font-semibold text-white/80">
+            Seen {formatDateTime(lastSeenAt)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const navigate = useNavigate();
@@ -165,6 +255,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const [assignedTask, setAssignedTask] = useState(null);
   const [forcedMutedByHr, setForcedMutedByHr] = useState(false);
   const [hrControlNotice, setHrControlNotice] = useState('');
+  const [hrCandidateMedia, setHrCandidateMedia] = useState({});
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -177,6 +268,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const whiteboardCanvasRef = useRef(null);
   const drawingRef = useRef({ active: false, currentLine: null });
   const peerConnectionRef = useRef(null);
+  const hrPeerConnectionsRef = useRef(new Map());
   const localStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
   const signalCursorRef = useRef('');
@@ -213,6 +305,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const activeRoomTabRef = useRef('video');
   const pendingWorkspaceSyncRef = useRef({});
   const processedSignalIdsRef = useRef(new Set());
+  const hrCandidateMediaRef = useRef({});
   const lastSyncedWhiteboardRef = useRef(serializeWorkspaceValue(defaultWhiteboard));
   const lastSyncedCodeLanguageRef = useRef('javascript');
   const lastSyncedCodeContentRef = useRef(defaultCodeEditorContent);
@@ -225,6 +318,9 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const hr = payload?.hr || {};
   const roomParticipants = Array.isArray(payload?.roomParticipants) ? payload.roomParticipants : [];
   const rtcConfig = payload?.rtcConfig || defaultRtcConfig;
+  const externalMeetingUrl = normalizeExternalMeetingUrl(interview?.meeting_link || interview?.meetingLink || '');
+  const usesExternalMeeting = Boolean(externalMeetingUrl && interview?.mode === 'virtual');
+  const embedsExternalMeeting = usesExternalMeeting && canEmbedMeetingUrl(externalMeetingUrl);
 
   const returnPath = portalRole === 'student' ? '/portal/student/interviews' : '/portal/hr/interviews';
   const transcriptText = useMemo(
@@ -559,6 +655,193 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     syncRemoteVideo(null);
   };
 
+  const updateHrCandidateMedia = (candidateId, patch = {}) => {
+    const normalizedCandidateId = String(candidateId || '').trim();
+    if (!normalizedCandidateId) return;
+
+    setHrCandidateMedia((current) => {
+      const nextState = {
+        ...current,
+        [normalizedCandidateId]: {
+          ...(current[normalizedCandidateId] || {}),
+          ...patch,
+          updatedAt: new Date().toISOString()
+        }
+      };
+      hrCandidateMediaRef.current = nextState;
+      return nextState;
+    });
+  };
+
+  const destroyHrCandidatePeer = (candidateId = '') => {
+    const normalizedCandidateId = String(candidateId || '').trim();
+    const entries = normalizedCandidateId
+      ? [[normalizedCandidateId, hrPeerConnectionsRef.current.get(normalizedCandidateId)]]
+      : Array.from(hrPeerConnectionsRef.current.entries());
+
+    entries.forEach(([entryCandidateId, entry]) => {
+      if (!entry) return;
+      try {
+        entry.peerConnection.ontrack = null;
+        entry.peerConnection.onicecandidate = null;
+        entry.peerConnection.onconnectionstatechange = null;
+        entry.peerConnection.oniceconnectionstatechange = null;
+        entry.peerConnection.onnegotiationneeded = null;
+        entry.peerConnection.close();
+      } catch (error) {
+        // no-op
+      }
+      hrPeerConnectionsRef.current.delete(entryCandidateId);
+      updateHrCandidateMedia(entryCandidateId, {
+        stream: null,
+        ready: false,
+        connectionState: 'disconnected'
+      });
+    });
+  };
+
+  const flushHrPendingIceCandidates = async (candidateId) => {
+    const entry = hrPeerConnectionsRef.current.get(candidateId);
+    if (!entry || !entry.remoteDescriptionReady || entry.pendingIceCandidates.length === 0) return;
+
+    const queuedCandidates = [...entry.pendingIceCandidates];
+    entry.pendingIceCandidates = [];
+
+    for (const candidatePayload of queuedCandidates) {
+      try {
+        await entry.peerConnection.addIceCandidate(new RTCIceCandidate(candidatePayload));
+      } catch (error) {
+        entry.pendingIceCandidates.push(candidatePayload);
+      }
+    }
+  };
+
+  const ensureHrCandidatePeer = (candidateId) => {
+    const normalizedCandidateId = String(candidateId || '').trim();
+    if (!normalizedCandidateId) return null;
+
+    const existingEntry = hrPeerConnectionsRef.current.get(normalizedCandidateId);
+    if (existingEntry?.peerConnection && existingEntry.peerConnection.connectionState !== 'closed') {
+      return existingEntry;
+    }
+
+    const peerConnection = new RTCPeerConnection(rtcConfig);
+    const entry = {
+      peerConnection,
+      pendingIceCandidates: [],
+      remoteDescriptionReady: false,
+      sessionId: '',
+      offerInFlight: false,
+      offerStartedAt: 0
+    };
+
+    peerConnection.ontrack = (event) => {
+      const [stream] = event.streams;
+      if (!stream) return;
+
+      updateHrCandidateMedia(normalizedCandidateId, {
+        stream,
+        ready: true,
+        connectionState: 'connected'
+      });
+
+      if (normalizedCandidateId === currentCandidateId) {
+        remoteStreamRef.current = stream;
+        syncRemoteVideo(stream);
+        setRemoteStreamReady(true);
+        setConnectionState('connected');
+      }
+    };
+
+    peerConnection.onicecandidate = (event) => {
+      if (!event.candidate || !entry.sessionId) return;
+      sendInterviewSignal(roomApiInterviewId, {
+        signalType: 'ice-candidate',
+        recipientId: normalizedCandidateId,
+        payload: {
+          candidate: event.candidate.toJSON(),
+          candidateId: normalizedCandidateId,
+          sessionId: entry.sessionId
+        }
+      }).catch(() => {});
+    };
+
+    const markConnectionState = () => {
+      const nextState = peerConnection.connectionState || peerConnection.iceConnectionState || 'new';
+      updateHrCandidateMedia(normalizedCandidateId, { connectionState: nextState });
+      if (normalizedCandidateId === currentCandidateId) {
+        setConnectionState(nextState);
+      }
+      if (['failed', 'disconnected'].includes(nextState) && localStreamRef.current) {
+        createHrCandidateOffer(normalizedCandidateId, { iceRestart: true }).catch(() => {});
+      }
+    };
+
+    peerConnection.onconnectionstatechange = markConnectionState;
+    peerConnection.oniceconnectionstatechange = markConnectionState;
+    peerConnection.onnegotiationneeded = () => {
+      if (!localStreamRef.current) return;
+      createHrCandidateOffer(normalizedCandidateId).catch(() => {});
+    };
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => {
+        peerConnection.addTrack(track, localStreamRef.current);
+      });
+    }
+
+    hrPeerConnectionsRef.current.set(normalizedCandidateId, entry);
+    updateHrCandidateMedia(normalizedCandidateId, { connectionState: 'connecting' });
+    return entry;
+  };
+
+  const createHrCandidateOffer = async (candidateId, { iceRestart = false } = {}) => {
+    const normalizedCandidateId = String(candidateId || '').trim();
+    if (!isManager || !localStreamRef.current || !normalizedCandidateId) return;
+
+    const entry = ensureHrCandidatePeer(normalizedCandidateId);
+    if (!entry || entry.offerInFlight) return;
+
+    const { peerConnection } = entry;
+    if (peerConnection.signalingState !== 'stable') {
+      const stuckMs = Date.now() - (entry.offerStartedAt || 0);
+      if (peerConnection.signalingState === 'have-local-offer' && stuckMs > 8000) {
+        try {
+          await peerConnection.setLocalDescription({ type: 'rollback' });
+        } catch (error) {
+          destroyHrCandidatePeer(normalizedCandidateId);
+          return;
+        }
+      } else {
+        return;
+      }
+    }
+
+    entry.offerInFlight = true;
+    entry.offerStartedAt = Date.now();
+    try {
+      const sessionId = createSignalSessionId();
+      entry.sessionId = sessionId;
+      const offer = await peerConnection.createOffer({ iceRestart });
+      await peerConnection.setLocalDescription(offer);
+      updateHrCandidateMedia(normalizedCandidateId, { connectionState: 'connecting' });
+      if (normalizedCandidateId === currentCandidateId) {
+        setConnectionState('connecting');
+      }
+      await sendInterviewSignal(roomApiInterviewId, {
+        signalType: 'offer',
+        recipientId: normalizedCandidateId,
+        payload: {
+          sdp: peerConnection.localDescription || offer,
+          candidateId: normalizedCandidateId,
+          sessionId
+        }
+      });
+    } finally {
+      entry.offerInFlight = false;
+    }
+  };
+
   const flushPendingIceCandidates = async (peerConnection) => {
     if (!peerConnection || !remoteDescriptionReadyRef.current || pendingIceCandidatesRef.current.length === 0) return;
 
@@ -680,6 +963,34 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const replaceOutgoingVideoTrack = async (nextTrack, nextSource) => {
     if (!localStreamRef.current || !nextTrack) return;
 
+    if (isManager) {
+      const existingTracks = localStreamRef.current.getVideoTracks();
+      existingTracks.forEach((track) => {
+        if (track !== nextTrack) {
+          localStreamRef.current.removeTrack(track);
+        }
+      });
+
+      if (!localStreamRef.current.getVideoTracks().includes(nextTrack)) {
+        localStreamRef.current.addTrack(nextTrack);
+      }
+
+      const replaceTasks = Array.from(hrPeerConnectionsRef.current.values()).map(async (entry) => {
+        const sender = entry.peerConnection.getSenders().find((candidateSender) => candidateSender.track?.kind === 'video');
+        if (sender) {
+          await sender.replaceTrack(nextTrack);
+        } else {
+          entry.peerConnection.addTrack(nextTrack, localStreamRef.current);
+        }
+      });
+      await Promise.all(replaceTasks);
+
+      nextTrack.enabled = isCameraOn;
+      syncLocalVideo(localStreamRef.current);
+      setVideoSource(nextSource);
+      return;
+    }
+
     const peerConnection = ensurePeerConnection();
     const existingTracks = localStreamRef.current.getVideoTracks();
     existingTracks.forEach((track) => {
@@ -791,19 +1102,20 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     return peerConnection;
   };
 
-  const sendPresenceSignal = (reason = 'ready') => {
-    if (!videoRecipientId) return;
+  const sendPresenceSignal = (reason = 'ready', { force = false, recipientId = videoRecipientId } = {}) => {
+    if (!recipientId) return;
     const now = Date.now();
-    if (now - lastPresenceSignalAtRef.current < 1500) return;
+    if (!force && now - lastPresenceSignalAtRef.current < 1500) return;
     lastPresenceSignalAtRef.current = now;
 
     sendInterviewSignal(roomApiInterviewId, {
       signalType: 'presence',
-      recipientId: videoRecipientId || null,
+      recipientId: recipientId || null,
       payload: {
         actor: localActor,
         reason,
         candidateId: currentCandidateId,
+        roomInterviewId: interview?.room_interview_id || interview?.id || roomApiInterviewId,
         sessionId: createSignalSessionId(),
         sentAt: new Date().toISOString()
       }
@@ -813,6 +1125,10 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const maybeCreateOffer = async ({ iceRestart = false } = {}) => {
     if (!isManager || !localStreamRef.current) return;
     if (!videoRecipientId) return;
+    if (isManager) {
+      await createHrCandidateOffer(videoRecipientId, { iceRestart });
+      return;
+    }
     if (offerInFlightRef.current) return;
 
     const peerConnection = ensurePeerConnection();
@@ -897,7 +1213,15 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const startLocalMedia = async ({ createOffer = true, announcePresence = true } = {}) => {
     if (localStreamRef.current) {
       if (announcePresence) sendPresenceSignal('media-ready');
-      if (createOffer) await maybeCreateOffer();
+      if (createOffer) {
+        if (isManager && roomParticipants.length > 1) {
+          await Promise.all(roomParticipants
+            .filter((participant) => participant.candidateId)
+            .map((participant) => createHrCandidateOffer(participant.candidateId, { iceRestart: true }).catch(() => null)));
+        } else {
+          await maybeCreateOffer();
+        }
+      }
       return;
     }
 
@@ -917,11 +1241,19 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       setVideoSource('camera');
       setConnectionState((current) => (current === 'connected' ? current : 'connecting'));
       syncLocalVideo(stream);
-      ensurePeerConnection();
+      if (!isManager) {
+        ensurePeerConnection();
+      }
       if (announcePresence) sendPresenceSignal('media-ready');
 
       if (createOffer) {
-        await maybeCreateOffer();
+        if (isManager && roomParticipants.length > 1) {
+          await Promise.all(roomParticipants
+            .filter((participant) => participant.candidateId)
+            .map((participant) => createHrCandidateOffer(participant.candidateId).catch(() => null)));
+        } else {
+          await maybeCreateOffer();
+        }
       }
     } catch (error) {
       setLocalMediaError(error.message || 'Unable to access camera and microphone.');
@@ -1236,9 +1568,23 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     try {
       const response = await getInterviewRoom(participant.interviewId);
       setActiveInterviewId(participant.interviewId);
-      destroyPeerConnection();
-      setConnectionState('connecting');
-      setRemoteVideoSource('camera');
+      if (!isManager) {
+        destroyPeerConnection();
+      }
+      const mediaState = hrCandidateMedia[participant.candidateId] || {};
+      if (mediaState.stream) {
+        remoteStreamRef.current = mediaState.stream;
+        syncRemoteVideo(mediaState.stream);
+        setRemoteStreamReady(true);
+        setConnectionState(mediaState.connectionState || 'connected');
+      } else {
+        setRemoteStreamReady(false);
+        setConnectionState('connecting');
+        if (isManager && localStreamRef.current) {
+          createHrCandidateOffer(participant.candidateId, { iceRestart: true }).catch(() => {});
+        }
+      }
+      setRemoteVideoSource(mediaState.videoSource || 'camera');
       setAssignedTask(null);
       applyPayload(response, { hydrateDrafts: true, forceWorkspace: true });
     } catch (error) {
@@ -1266,7 +1612,15 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       }
       activeSignalSessionRef.current = signalSessionId;
       await startLocalMedia({ createOffer: false, announcePresence: false });
-      const peerConnection = ensurePeerConnection();
+      let peerConnection = ensurePeerConnection();
+      if (peerConnection.signalingState !== 'stable') {
+        try {
+          await peerConnection.setLocalDescription({ type: 'rollback' });
+        } catch (error) {
+          destroyPeerConnection();
+          peerConnection = ensurePeerConnection();
+        }
+      }
       await peerConnection.setRemoteDescription(new RTCSessionDescription(payloadBody.sdp));
       remoteDescriptionReadyRef.current = true;
       await flushPendingIceCandidates(peerConnection);
@@ -1285,6 +1639,17 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       return;
     }
 
+    if (type === 'answer' && isManager) {
+      const answerCandidateId = String(payloadBody.candidateId || '').trim();
+      const entry = hrPeerConnectionsRef.current.get(answerCandidateId);
+      if (!answerCandidateId || !entry || !signalSessionId || signalSessionId !== entry.sessionId) return;
+      updateHrCandidateMedia(answerCandidateId, { connectionState: 'connecting' });
+      await entry.peerConnection.setRemoteDescription(new RTCSessionDescription(payloadBody.sdp));
+      entry.remoteDescriptionReady = true;
+      await flushHrPendingIceCandidates(answerCandidateId);
+      return;
+    }
+
     if (type === 'answer' && peerConnectionRef.current) {
       if (!isSignalForCurrentParticipant(payloadBody)) return;
       if (!signalSessionId || signalSessionId !== activeSignalSessionRef.current) return;
@@ -1296,6 +1661,22 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
 
     if (type === 'ice-candidate' && payloadBody.candidate) {
+      if (isManager) {
+        const iceCandidateId = String(payloadBody.candidateId || '').trim();
+        const entry = hrPeerConnectionsRef.current.get(iceCandidateId);
+        if (!iceCandidateId || !entry || !signalSessionId || signalSessionId !== entry.sessionId) return;
+        if (!entry.remoteDescriptionReady) {
+          entry.pendingIceCandidates.push(payloadBody.candidate);
+          return;
+        }
+        try {
+          await entry.peerConnection.addIceCandidate(new RTCIceCandidate(payloadBody.candidate));
+        } catch (error) {
+          entry.pendingIceCandidates.push(payloadBody.candidate);
+        }
+        return;
+      }
+
       if (!isSignalForCurrentParticipant(payloadBody)) return;
       if (!signalSessionId || signalSessionId !== activeSignalSessionRef.current) return;
       if (!peerConnectionRef.current || !remoteDescriptionReadyRef.current) {
@@ -1312,6 +1693,11 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }
 
     if (type === 'workspace-sync' && payloadBody.kind === 'media-state') {
+      if (isManager && payloadBody.candidateId) {
+        updateHrCandidateMedia(payloadBody.candidateId, {
+          videoSource: payloadBody.videoSource === 'screen' ? 'screen' : 'camera'
+        });
+      }
       if (!isSignalForCurrentParticipant(payloadBody)) return;
       setRemoteVideoSource(payloadBody.videoSource === 'screen' ? 'screen' : 'camera');
       return;
@@ -1394,38 +1780,68 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     if (type === 'presence' && isManager && signalSessionId) {
       markRoomParticipantOnline(payloadBody.candidateId, true);
-      if (!isSignalForCurrentParticipant(payloadBody)) return;
+      const presenceCandidateId = String(payloadBody.candidateId || '').trim();
+      if (presenceCandidateId) {
+        updateHrCandidateMedia(presenceCandidateId, {
+          lastSeenAt: payloadBody.sentAt || new Date().toISOString()
+        });
+      }
       if (!localStreamRef.current) {
         pendingPresenceRequestRef.current = true;
-        await startLocalMedia({ createOffer: true, announcePresence: false });
+        await startLocalMedia({ createOffer: false, announcePresence: false });
+      }
+      if (presenceCandidateId) {
+        const mediaState = hrCandidateMediaRef.current[presenceCandidateId] || {};
+        const hasLiveConnection = Boolean(mediaState.ready && mediaState.connectionState === 'connected');
+        if (!hasLiveConnection || ['media-ready', 'media-waiting', 'reconnect-request'].includes(String(payloadBody.reason || ''))) {
+          await createHrCandidateOffer(presenceCandidateId, { iceRestart: true });
+        }
         return;
       }
-      await maybeCreateOffer({ iceRestart: true });
+      return;
+    }
+
+    if (type === 'presence' && !isManager) {
+      if (!isSignalForCurrentParticipant(payloadBody)) return;
+      if (!remoteStreamReady) {
+        setConnectionState((current) => (current === 'connected' ? current : 'connecting'));
+      }
       return;
     }
 
     if (type === 'reconnect') {
-      if (!isSignalForCurrentParticipant(payloadBody)) return;
-      if (isManager && localStreamRef.current) {
-        await maybeCreateOffer({ iceRestart: true });
+      if (isManager) {
+        const reconnectCandidateId = String(payloadBody.candidateId || '').trim();
+        if (reconnectCandidateId && localStreamRef.current) {
+          await createHrCandidateOffer(reconnectCandidateId, { iceRestart: true });
+        }
         return;
       }
 
+      if (!isSignalForCurrentParticipant(payloadBody)) return;
+      destroyPeerConnection();
       await startLocalMedia({ createOffer: false, announcePresence: true });
+      sendPresenceSignal('reconnect-ack', { force: true });
     }
   };
 
   const handleReconnect = async () => {
-    destroyPeerConnection();
+    if (isManager) {
+      destroyHrCandidatePeer();
+    } else {
+      destroyPeerConnection();
+    }
     setConnectionState('connecting');
     await startLocalMedia({ createOffer: isManager, announcePresence: true });
 
     if (isManager) {
-      await maybeCreateOffer({ iceRestart: true });
+      await Promise.all((roomParticipants.length > 0 ? roomParticipants : [{ candidateId: currentCandidateId }])
+        .filter((participant) => participant.candidateId)
+        .map((participant) => createHrCandidateOffer(participant.candidateId, { iceRestart: true }).catch(() => null)));
       return;
     }
 
-    sendPresenceSignal('reconnect-request');
+    sendPresenceSignal('reconnect-request', { force: true });
     await sendInterviewSignal(roomApiInterviewId, {
       signalType: 'reconnect',
       recipientId: videoRecipientId || null,
@@ -1434,6 +1850,35 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         reason: 'manual',
         candidateId: currentCandidateId,
         sessionId: activeSignalSessionRef.current || '',
+        sentAt: new Date().toISOString()
+      }
+    });
+  };
+
+  const requestCandidateReconnect = async (candidateId) => {
+    const targetCandidateId = String(candidateId || '').trim();
+    if (!isManager || !targetCandidateId) return;
+
+    destroyHrCandidatePeer(targetCandidateId);
+    updateHrCandidateMedia(targetCandidateId, {
+      stream: null,
+      ready: false,
+      connectionState: 'connecting'
+    });
+
+    await startLocalMedia({ createOffer: false, announcePresence: false });
+    if (localStreamRef.current) {
+      await createHrCandidateOffer(targetCandidateId, { iceRestart: true });
+    }
+
+    await sendInterviewSignal(roomApiInterviewId, {
+      signalType: 'reconnect',
+      recipientId: targetCandidateId,
+      payload: {
+        requestedBy: 'hr',
+        reason: 'manual-candidate',
+        candidateId: targetCandidateId,
+        sessionId: createSignalSessionId(),
         sentAt: new Date().toISOString()
       }
     });
@@ -1514,6 +1959,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       stopScreenShare({ notify: false }).catch(() => {});
       stopCompositeRecording({ upload: false }).catch(() => {});
       destroyPeerConnection();
+      destroyHrCandidatePeer();
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((track) => track.stop());
       }
@@ -1522,19 +1968,39 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   }, [interviewId]);
 
   useEffect(() => {
-    if (!payload?.permissions?.canJoin || localStreamRef.current || isStartingMedia) return undefined;
+    if (usesExternalMeeting || !payload?.permissions?.canJoin || localStreamRef.current || isStartingMedia) return undefined;
 
     const timer = setTimeout(() => {
       startLocalMedia({ createOffer: isManager }).catch(() => {});
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [payload?.permissions?.canJoin, isStartingMedia, isManager]);
+  }, [payload?.permissions?.canJoin, isStartingMedia, isManager, usesExternalMeeting]);
+
+  useEffect(() => {
+    hrCandidateMediaRef.current = hrCandidateMedia;
+  }, [hrCandidateMedia]);
+
+  useEffect(() => {
+    if (usesExternalMeeting || !isManager || !payload?.permissions?.canJoin || !localStreamRef.current) return undefined;
+    if (roomParticipants.length <= 1) return undefined;
+
+    const timer = setTimeout(() => {
+      roomParticipants.forEach((participant) => {
+        if (!participant.candidateId) return;
+        const mediaState = hrCandidateMedia[participant.candidateId] || {};
+        if (mediaState.ready && mediaState.connectionState === 'connected') return;
+        createHrCandidateOffer(participant.candidateId, { iceRestart: false }).catch(() => {});
+      });
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [isManager, payload?.permissions?.canJoin, roomParticipants.length, roomApiInterviewId, usesExternalMeeting]);
 
   // Live room updates flow through signals; avoid periodic room reloads because
   // they remount editor/video surfaces and interrupt typing.
   useEffect(() => {
-    if (!payload?.permissions?.canJoin) return undefined;
+    if (usesExternalMeeting || !payload?.permissions?.canJoin) return undefined;
 
     let polling = false;
     const pollSignals = async () => {
@@ -1559,17 +2025,39 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     return () => {
       clearInterval(signalInterval);
     };
-  }, [roomApiInterviewId, payload?.permissions?.canJoin]);
+  }, [roomApiInterviewId, payload?.permissions?.canJoin, usesExternalMeeting]);
 
   useEffect(() => {
-    if (!payload?.permissions?.canJoin) return undefined;
+    if (usesExternalMeeting || !payload?.permissions?.canJoin || !videoRecipientId || !currentCandidateId) return undefined;
+
+    const sendHeartbeat = () => {
+      sendPresenceSignal('heartbeat', { force: true });
+    };
+
+    sendHeartbeat();
+    const heartbeatTimer = setInterval(sendHeartbeat, PRESENCE_HEARTBEAT_INTERVAL_MS);
+
+    return () => clearInterval(heartbeatTimer);
+  }, [roomApiInterviewId, payload?.permissions?.canJoin, videoRecipientId, currentCandidateId, usesExternalMeeting]);
+
+  useEffect(() => {
+    if (usesExternalMeeting || !payload?.permissions?.canJoin) return undefined;
 
     const retryTimer = setInterval(() => {
       if (!localStreamRef.current) return;
       if (!videoRecipientId) return;
-      if (remoteStreamRef.current && remoteStreamReady) return;
 
       if (isManager) {
+        const participantsToConnect = roomParticipants.length > 0
+          ? roomParticipants
+          : [{ candidateId: currentCandidateId }];
+        participantsToConnect.forEach((participant) => {
+          const mediaState = hrCandidateMedia[participant.candidateId] || {};
+          if (mediaState.ready && mediaState.connectionState === 'connected') return;
+          createHrCandidateOffer(participant.candidateId, { iceRestart: true }).catch(() => {});
+        });
+
+        if (remoteStreamRef.current && remoteStreamReady) return;
         const peerConnection = peerConnectionRef.current;
         const stuckLong =
           peerConnection
@@ -1583,6 +2071,8 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         maybeCreateOffer({ iceRestart: true }).catch(() => {});
         return;
       }
+
+      if (remoteStreamRef.current && remoteStreamReady) return;
 
       sendPresenceSignal('media-waiting');
       sendInterviewSignal(roomApiInterviewId, {
@@ -1599,7 +2089,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     }, MEDIA_RETRY_INTERVAL_MS);
 
     return () => clearInterval(retryTimer);
-  }, [roomApiInterviewId, payload?.permissions?.canJoin, isManager, remoteStreamReady, videoRecipientId, currentCandidateId]);
+  }, [roomApiInterviewId, payload?.permissions?.canJoin, isManager, remoteStreamReady, videoRecipientId, currentCandidateId, usesExternalMeeting]);
 
   useEffect(() => {
     if (!isManager || !currentCandidateId) return;
@@ -1609,10 +2099,19 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     activeCandidateIdRef.current = currentCandidateId;
     if (!previousCandidateId || !localStreamRef.current) return;
 
-    destroyPeerConnection();
+    const mediaState = hrCandidateMedia[currentCandidateId] || {};
+    if (mediaState.stream) {
+      remoteStreamRef.current = mediaState.stream;
+      syncRemoteVideo(mediaState.stream);
+      setRemoteStreamReady(true);
+      setConnectionState(mediaState.connectionState || 'connected');
+      return;
+    }
+
+    setRemoteStreamReady(false);
     setConnectionState('connecting');
     const timer = setTimeout(() => {
-      maybeCreateOffer({ iceRestart: true }).catch(() => {});
+      createHrCandidateOffer(currentCandidateId, { iceRestart: true }).catch(() => {});
     }, 150);
 
     return () => clearTimeout(timer);
@@ -1997,7 +2496,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-xl border border-slate-200 bg-white">
+    <div className="flex min-h-[calc(100vh-96px)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
       <audio ref={bindRemoteAudioRef} autoPlay className="hidden" />
       {roomState.error && (
         <div className="flex items-center gap-2 border-b border-red-200 bg-red-50 px-4 py-2 text-[12px] font-medium text-red-700">
@@ -2067,9 +2566,82 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
         </div>
       )}
 
+      {usesExternalMeeting ? (
+        <div className="flex min-h-[680px] flex-1 flex-col bg-slate-50 xl:flex-row">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">External video room</p>
+                <p className="mt-1 truncate text-[13px] font-semibold text-slate-800">
+                  {roomParticipants.length > P2P_INTERVIEW_ROOM_PARTICIPANTS
+                    ? `${roomParticipants.length} participants`
+                    : 'Video meeting'}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={externalMeetingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-3 py-2 text-[11px] font-semibold text-white transition hover:bg-slate-800"
+                >
+                  <FiMonitor size={12} /> Open room
+                </a>
+                <button type="button" onClick={() => navigate(returnPath)} className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-semibold text-red-700 transition hover:bg-red-100">
+                  <FiPhoneOff size={12} /> Leave
+                </button>
+              </div>
+            </div>
+
+            <div className="min-h-[560px] flex-1 overflow-hidden rounded-lg border border-slate-200 bg-white">
+              {embedsExternalMeeting ? (
+                <iframe
+                  title="External interview room"
+                  src={externalMeetingUrl}
+                  allow="camera; microphone; display-capture; fullscreen; clipboard-write"
+                  className="h-full min-h-[560px] w-full border-0"
+                />
+              ) : (
+                <div className="flex h-full min-h-[560px] flex-col items-center justify-center gap-3 p-6 text-center">
+                  <FiVideo size={34} className="text-slate-300" />
+                  <p className="max-w-md text-[13px] font-semibold text-slate-700">This interview is hosted in an external video room.</p>
+                  <a
+                    href={externalMeetingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-slate-800"
+                  >
+                    <FiMonitor size={13} /> Open video room
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <aside className="flex max-h-[560px] w-full shrink-0 flex-col overflow-hidden border-t border-slate-200 bg-white xl:max-h-none xl:w-[320px] xl:border-l xl:border-t-0">
+            <div className="border-b border-slate-100 px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Room</p>
+              <p className="mt-1 text-[13px] font-bold text-slate-900">{interview?.title || job?.job_title || 'Interview'}</p>
+              <p className="mt-1 text-[11px] text-slate-500">{formatDateTime(interview?.scheduled_at)} &middot; {interview?.duration_minutes || 45}m</p>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Participants</p>
+              <div className="mt-2 space-y-1.5">
+                {roomParticipants.map((participant) => (
+                  <div key={participant.interviewId || participant.candidateId} className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2">
+                    <p className="truncate text-[11px] font-semibold text-slate-800">{participant.name || 'Candidate'}</p>
+                    <p className="mt-0.5 truncate text-[9px] text-slate-500">{participant.email || participant.status || 'Scheduled'}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
+      ) : (
+        <>
       {/* Compact Toolbar */}
       <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-slate-200 bg-slate-50 px-4 py-1.5">
-        <button type="button" onClick={() => startLocalMedia({ createOffer: true }).catch(() => {})} disabled={isStartingMedia} className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50">
+        <button type="button" onClick={() => (localStreamRef.current ? handleReconnect() : startLocalMedia({ createOffer: true })).catch(() => {})} disabled={isStartingMedia} className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50">
           {isStartingMedia ? <FiRefreshCw size={11} className="animate-spin" /> : <FiPlay size={11} />}
           {localStreamRef.current ? 'Restart' : 'Start camera'}
         </button>
@@ -2100,7 +2672,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       </div>
 
       {/* Main content: Tabs + Sidebar */}
-      <div className="flex min-h-[620px] flex-1">
+      <div className="flex min-h-[680px] flex-1 flex-col xl:flex-row">
         {/* Left: Tabbed workspace */}
         <div ref={workspacePaneRef} className="flex min-w-0 flex-1 flex-col">
           {/* Tab bar */}
@@ -2152,7 +2724,39 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
             )}
 
             {activeRoomTab === 'video' && (
-              <div className="mx-auto min-h-0 w-full max-w-[1120px] flex-1">
+              <div className="mx-auto flex min-h-0 w-full max-w-[1180px] flex-1 flex-col gap-3">
+                {isManager && roomParticipants.length > 1 && (
+                  <div className="rounded-lg border border-slate-200 bg-white p-3">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Live candidate gallery</p>
+                        <p className="text-[10px] text-slate-400">Click a tile to focus, assign work, or unmute that candidate.</p>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button type="button" onClick={muteAllCandidates} className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-[10px] font-semibold text-red-700 transition hover:bg-red-100">
+                          <FiMicOff size={10} /> Mute all
+                        </button>
+                        <button type="button" onClick={unmuteSelectedCandidate} className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                          <FiMic size={10} /> Unmute focus
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      {roomParticipants.map((participant) => (
+                        <CandidateVideoTile
+                          key={participant.interviewId || participant.candidateId}
+                          participant={participant}
+                          mediaState={hrCandidateMedia[participant.candidateId]}
+                          isSelected={participant.candidateId === currentCandidateId}
+                          onSelect={() => selectRoomParticipant(participant)}
+                          onReconnect={() => requestCandidateReconnect(participant.candidateId).catch((error) => {
+                            setRoomState((current) => ({ ...current, error: error.message || 'Unable to reconnect candidate.' }));
+                          })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div ref={mainStageContainerRef} className="relative">
                   <div className="relative aspect-video overflow-hidden rounded-[24px] border border-slate-200 bg-slate-950 shadow-[0_22px_54px_rgba(15,23,42,0.18)]">
                     {isLocalPrimaryStage ? (
@@ -2457,8 +3061,8 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
           className="hidden w-1.5 shrink-0 cursor-col-resize bg-transparent transition hover:bg-slate-200 xl:block"
         />
         <aside
-          className="hidden shrink-0 flex-col overflow-hidden border-l border-slate-200 bg-white xl:flex"
-          style={{ width: `${sidebarWidth}px` }}
+          className="flex max-h-[560px] w-full shrink-0 flex-col overflow-hidden border-t border-slate-200 bg-white xl:max-h-none xl:w-[var(--interview-sidebar-width)] xl:border-l xl:border-t-0"
+          style={{ '--interview-sidebar-width': `${sidebarWidth}px` }}
         >
           <div className="flex-1 overflow-y-auto pr-1.5">
             {/* Interview Info */}
@@ -2619,16 +3223,42 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                 </div>
               </>
             ) : (
-              <div className="px-4 py-3 space-y-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Tips</p>
-                <p className="rounded-md bg-slate-50 px-2 py-1.5 text-[10px] text-slate-600">Resume is shared with the recruiter.</p>
-                <p className="rounded-md bg-slate-50 px-2 py-1.5 text-[10px] text-slate-600">Use Code and Whiteboard tabs for technical rounds.</p>
-                <p className="rounded-md bg-slate-50 px-2 py-1.5 text-[10px] text-slate-600">Enable transcript if you consent to AI notes.</p>
-              </div>
+              <>
+                <div className="border-b border-slate-100 px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Recruiter</p>
+                  <div className="mt-2 flex items-start gap-2.5">
+                    {hr?.logoUrl ? (
+                      <img src={hr.logoUrl} alt="" className="h-9 w-9 shrink-0 rounded-md border border-slate-200 object-contain" />
+                    ) : (
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-900 text-[12px] font-bold text-white">
+                        {(hr?.name || hr?.companyName || 'H')[0]?.toUpperCase()}
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate text-[12px] font-semibold text-slate-900">{hr?.name || 'Recruiter'}</p>
+                      <p className="truncate text-[10px] text-slate-500">{hr?.companyName || job?.company_name || 'Hiring team'}</p>
+                      {hr?.email && <p className="mt-1 truncate text-[10px] text-slate-400">{hr.email}</p>}
+                    </div>
+                  </div>
+                  <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-[10px] text-slate-600">
+                    {roomParticipants.find((participant) => participant.candidateId === currentCandidateId)?.isHrOnline
+                      ? 'Recruiter is in this room.'
+                      : 'Recruiter will appear here when they join or reconnect.'}
+                  </div>
+                </div>
+                <div className="px-4 py-3 space-y-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Tips</p>
+                  <p className="rounded-md bg-slate-50 px-2 py-1.5 text-[10px] text-slate-600">Resume is shared with the recruiter.</p>
+                  <p className="rounded-md bg-slate-50 px-2 py-1.5 text-[10px] text-slate-600">Use Code and Whiteboard tabs for technical rounds.</p>
+                  <p className="rounded-md bg-slate-50 px-2 py-1.5 text-[10px] text-slate-600">Enable transcript if you consent to AI notes.</p>
+                </div>
+              </>
             )}
           </div>
         </aside>
       </div>
+        </>
+      )}
     </div>
   );
 };

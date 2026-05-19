@@ -45,7 +45,8 @@ const defaultInterviewForm = {
   panelMembersInput: ''
 };
 
-const MAX_INTERVIEW_ROOM_PARTICIPANTS = 25;
+const P2P_INTERVIEW_ROOM_PARTICIPANTS = 25;
+const MAX_INTERVIEW_ROOM_PARTICIPANTS = 500;
 const defaultCampusApplicantSummary = {
   total: 0,
   applied: 0,
@@ -303,7 +304,7 @@ const HrInterviewsPage = () => {
     if ((form.campusApplicationIds.length + visibleCampusSelectableIds.length) > MAX_INTERVIEW_ROOM_PARTICIPANTS) {
       setState((current) => ({
         ...current,
-        error: `A single room supports up to ${MAX_INTERVIEW_ROOM_PARTICIPANTS} participants. Filter by round/status and schedule the rest in another batch.`
+        error: `Large interview events support up to ${MAX_INTERVIEW_ROOM_PARTICIPANTS} participants. Above ${P2P_INTERVIEW_ROOM_PARTICIPANTS}, an external video room is used.`
       }));
     }
   };
@@ -321,7 +322,7 @@ const HrInterviewsPage = () => {
     }
 
     if (selectedIds.length > MAX_INTERVIEW_ROOM_PARTICIPANTS) {
-      setMessage(`A single room supports up to ${MAX_INTERVIEW_ROOM_PARTICIPANTS} participants. Please schedule in smaller batches.`, true);
+      setMessage(`Large interview events support up to ${MAX_INTERVIEW_ROOM_PARTICIPANTS} participants. Please split the remaining students into another event.`, true);
       return;
     }
 
@@ -339,13 +340,16 @@ const HrInterviewsPage = () => {
       ));
       setState((current) => ({
         ...current,
-        message: `${created.createdCount || selectedIds.length} interview room participant(s) scheduled inside HHH Jobs.`,
+        message: selectedIds.length > P2P_INTERVIEW_ROOM_PARTICIPANTS
+          ? `${created.createdCount || selectedIds.length} participant(s) scheduled with an external video room.`
+          : `${created.createdCount || selectedIds.length} interview room participant(s) scheduled inside HHH Jobs.`,
         error: ''
       }));
       setForm((current) => ({
         ...current,
         title: '',
         scheduledAt: '',
+        meetingLink: '',
         note: '',
         panelMembersInput: '',
         applicationIds: current.sourceType === 'job' ? current.applicationIds : [],
@@ -601,7 +605,7 @@ const HrInterviewsPage = () => {
               )}
               <p className="mt-1 text-[10px] text-slate-400">
                 {form.sourceType === 'campus'
-                  ? `For large campus drives, filter by round or status and schedule interview rooms in batches of up to ${MAX_INTERVIEW_ROOM_PARTICIPANTS} participants.`
+                  ? `For large campus drives, select up to ${MAX_INTERVIEW_ROOM_PARTICIPANTS} participants. More than ${P2P_INTERVIEW_ROOM_PARTICIPANTS} opens in an external video room.`
                   : 'Select one candidate for a one-to-one room, or multiple candidates to create one shared interview room for the same round.'}
               </p>
             </div>
@@ -642,6 +646,18 @@ const HrInterviewsPage = () => {
                 <input value={form.timezone} onChange={(event) => setForm((current) => ({ ...current, timezone: event.target.value }))} className={inputClass} />
               </div>
             </div>
+
+            {form.mode === 'virtual' && (
+              <div>
+                <label className={labelClass}>External video link</label>
+                <input
+                  value={form.meetingLink}
+                  onChange={(event) => setForm((current) => ({ ...current, meetingLink: event.target.value }))}
+                  className={inputClass}
+                  placeholder="Auto for 26+ participants"
+                />
+              </div>
+            )}
 
             <div className="flex gap-2">
               <label className="flex flex-1 cursor-pointer items-center gap-1.5 rounded-md border border-slate-200 px-2 py-1.5">

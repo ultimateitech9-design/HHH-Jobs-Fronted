@@ -46,9 +46,9 @@ export const updateInterviewConsent = async (interviewId, payload) =>
     extract: (responsePayload) => responsePayload
   });
 
-export const getInterviewSignals = async (interviewId, since = '') =>
+export const getInterviewSignals = async (interviewId, since = '', limit = 1000) =>
   strictRequest({
-    path: `/interviews/${interviewId}/signals${since ? `?since=${encodeURIComponent(since)}` : ''}`,
+    path: `/interviews/${interviewId}/signals?limit=${encodeURIComponent(limit)}${since ? `&since=${encodeURIComponent(since)}` : ''}`,
     extract: (payload) => payload?.signals || []
   });
 
