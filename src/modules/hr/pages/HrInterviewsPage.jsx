@@ -9,6 +9,7 @@ import {
   FiInfo,
   FiMonitor,
   FiStar,
+  FiTrash2,
   FiUsers,
   FiVideo
 } from 'react-icons/fi';
@@ -47,6 +48,7 @@ const defaultInterviewForm = {
 
 const P2P_INTERVIEW_ROOM_PARTICIPANTS = 25;
 const MAX_INTERVIEW_ROOM_PARTICIPANTS = 500;
+const INTERVIEWS_PER_PAGE = 5;
 const defaultCampusApplicantSummary = {
   total: 0,
   applied: 0,
@@ -98,6 +100,7 @@ const HrInterviewsPage = () => {
   const [form, setForm] = useState(defaultInterviewForm);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('upcoming');
+  const [interviewPage, setInterviewPage] = useState(1);
   const [campusApplicantQuery, setCampusApplicantQuery] = useState({
     search: '',
     status: 'all',
@@ -278,6 +281,22 @@ const HrInterviewsPage = () => {
     return normalized === 'cancelled' || normalized === 'no_show';
   }), [activeTab, groupedInterviews]);
 
+  const totalInterviewPages = Math.max(1, Math.ceil(filteredInterviews.length / INTERVIEWS_PER_PAGE));
+  const paginatedInterviews = useMemo(() => {
+    const start = (interviewPage - 1) * INTERVIEWS_PER_PAGE;
+    return filteredInterviews.slice(start, start + INTERVIEWS_PER_PAGE);
+  }, [filteredInterviews, interviewPage]);
+
+  useEffect(() => {
+    setInterviewPage(1);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (interviewPage > totalInterviewPages) {
+      setInterviewPage(totalInterviewPages);
+    }
+  }, [interviewPage, totalInterviewPages]);
+
   const setMessage = (message, isError = false) => {
     setState((current) => ({ ...current, message, error: isError ? message : current.error }));
   };
@@ -370,6 +389,15 @@ const HrInterviewsPage = () => {
     } catch (error) {
       setState((current) => ({ ...current, error: error.message || 'Unable to update interview.' }));
     }
+  };
+
+  const handleDeleteInterview = (interview) => {
+    const targetRoomId = interview.room_interview_id || interview.id;
+    setInterviews((current) => current.filter((item) => {
+      const itemRoomId = item.room_interview_id || item.id;
+      return item.id !== interview.id && itemRoomId !== targetRoomId;
+    }));
+    setState((current) => ({ ...current, error: '', message: 'Interview removed from this list.' }));
   };
 
   const inputClass = 'mt-1 w-full rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] text-slate-700 shadow-sm transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none';
@@ -733,7 +761,7 @@ const HrInterviewsPage = () => {
                   </div>
                 </div>
               ))
-            ) : filteredInterviews.length > 0 ? filteredInterviews.map((interview) => (
+            ) : filteredInterviews.length > 0 ? paginatedInterviews.map((interview) => (
               <div key={interview.id} className="px-5 py-4 transition hover:bg-slate-50/50">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3.5 min-w-0">
@@ -787,6 +815,9 @@ const HrInterviewsPage = () => {
                     <button type="button" onClick={() => patchInterview(interview.id, { status: 'cancelled' }, 'Interview cancelled.')} className="inline-flex items-center rounded-lg border border-red-200 bg-red-50 p-1.5 text-red-600 transition hover:bg-red-100" title="Cancel interview">
                       <FiInfo size={14} />
                     </button>
+                    <button type="button" onClick={() => handleDeleteInterview(interview)} className="inline-flex items-center rounded-lg border border-red-200 bg-white p-1.5 text-red-600 transition hover:bg-red-50" title="Delete from list">
+                      <FiTrash2 size={14} />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -800,6 +831,34 @@ const HrInterviewsPage = () => {
               </div>
             )}
           </div>
+          {!state.loading && filteredInterviews.length > INTERVIEWS_PER_PAGE && (
+            <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
+              <p className="text-[11px] font-medium text-slate-400">
+                Showing {(interviewPage - 1) * INTERVIEWS_PER_PAGE + 1}-{Math.min(interviewPage * INTERVIEWS_PER_PAGE, filteredInterviews.length)} of {filteredInterviews.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInterviewPage((page) => Math.max(1, page - 1))}
+                  disabled={interviewPage <= 1}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+                <span className="text-[11px] font-semibold text-slate-500">
+                  Page {interviewPage} / {totalInterviewPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setInterviewPage((page) => Math.min(totalInterviewPages, page + 1))}
+                  disabled={interviewPage >= totalInterviewPages}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </div>

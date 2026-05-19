@@ -333,7 +333,7 @@ export default function HrCampusConnectionsPage() {
         <StatPill label="Sent" value={outgoingRequests.length} tone="blue" onClick={() => navigate('/portal/hr/campus-connections/activity/sent')} />
         <StatPill label="Connected" value={activeConnections.length} tone="emerald" onClick={() => navigate('/portal/hr/campus-connections/activity/connected')} />
         <StatPill label="Closed" value={closedConnections.length} tone="slate" onClick={() => navigate('/portal/hr/campus-connections/activity/closed')} />
-        <StatPill label="Campuses" value={directory.summary?.totalColleges || 0} tone="slate" />
+        <StatPill label="Campuses" value={directory.summary?.totalColleges || 0} tone="slate" onClick={() => navigate('/portal/hr/campus-connections/activity/sent')} />
       </div>
 
       {error && (

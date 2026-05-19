@@ -485,14 +485,6 @@ function DriveApplicantsView({ driveId, onBack }) {
           </button>
           <button
             type="button"
-            onClick={() => runBulkRoundUpdate('filtered')}
-            disabled={updating}
-            className="rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            Move all filtered to round
-          </button>
-          <button
-            type="button"
             onClick={() => runBulkStatusUpdate('selected')}
             disabled={updating}
             className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"

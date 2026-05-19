@@ -225,7 +225,7 @@ const AdminReportsPage = () => {
       </section>
 
       {/* Trust & Safety Table */}
-      <section className="admin-ops-panel min-h-[600px]">
+      <section className="admin-ops-panel">
         <div className="admin-ops-panel-header">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 w-full">
             <div>
@@ -268,20 +268,20 @@ const AdminReportsPage = () => {
           </div>
         </div>
 
-        <div className="admin-ops-table-wrap custom-scrollbar">
+        <div className="admin-ops-table-wrap overflow-hidden">
           {loading ? (
              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
                <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
              </div>
           ) : null}
 
-          <table className="w-full text-left border-collapse min-w-[1100px]">
+          <table className="w-full table-fixed text-left border-collapse">
             <thead>
               <tr className="bg-neutral-50 border-b border-neutral-200">
-                <th className="p-4 pl-6 text-xs font-black text-neutral-400 uppercase tracking-widest w-48">Incident Details</th>
-                <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest min-w-[250px]">User Report</th>
-                <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest w-32">Queue Status</th>
-                <th className="p-4 text-xs font-black text-neutral-400 uppercase tracking-widest border-l border-neutral-200 bg-brand-50/50 pr-6">Moderation Resolution</th>
+                <th className="px-3 py-3 text-[10px] font-black text-neutral-400 uppercase tracking-widest w-[16%]">Incident Details</th>
+                <th className="px-3 py-3 text-[10px] font-black text-neutral-400 uppercase tracking-widest w-[34%]">User Report</th>
+                <th className="px-3 py-3 text-[10px] font-black text-neutral-400 uppercase tracking-widest w-[12%]">Queue Status</th>
+                <th className="px-3 py-3 text-[10px] font-black text-neutral-400 uppercase tracking-widest border-l border-neutral-200 bg-brand-50/50 w-[38%]">Moderation Resolution</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 bg-white">
@@ -298,38 +298,38 @@ const AdminReportsPage = () => {
                   
                   return (
                     <tr key={report.id} className="hover:bg-neutral-50/30 transition-colors group">
-                      <td className="p-4 pl-6 align-top">
-                        <div className="font-bold text-primary text-sm uppercase mb-1">
-                          <span className="text-brand-600 bg-brand-50 px-2 py-0.5 rounded mr-2">{report.targetType || 'Item'}</span>
+                      <td className="px-3 py-3 align-top">
+                        <div className="font-bold text-primary text-xs uppercase mb-1">
+                          <span className="text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded">{report.targetType || 'Item'}</span>
                         </div>
-                        <div className="font-mono text-xs text-neutral-500 font-bold tracking-wider mb-2">ID: {report.targetId ? report.targetId.slice(-8) : 'UNK'}</div>
-                        <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">
+                        <div className="font-mono text-[10px] text-neutral-500 font-bold tracking-wider mb-1">ID: {report.targetId ? report.targetId.slice(-8) : 'UNK'}</div>
+                        <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wide">
                           {formatDateTime(report.createdAt)}
                         </div>
                       </td>
                       
-                      <td className="p-4 align-top">
-                        <div className="flex flex-col gap-1.5 pr-4">
-                           <strong className="text-sm font-bold text-primary flex items-center gap-1.5">
+                      <td className="px-3 py-3 align-top">
+                        <div className="flex flex-col gap-1.5">
+                           <strong className="text-xs font-bold text-primary flex items-center gap-1.5 min-w-0">
                              <FiAlertTriangle className="text-red-500 shrink-0" /> {report.reason || 'Flagged Content'}
                            </strong>
-                           <p className="text-xs font-medium text-neutral-600 leading-relaxed bg-neutral-50 p-3 rounded-xl border border-neutral-200 shadow-inner">
+                           <p className="text-[11px] font-medium text-neutral-600 leading-snug bg-neutral-50 p-2.5 rounded-xl border border-neutral-200 shadow-inner break-words">
                              {report.details || 'No expanded details provided by user.'}
                            </p>
                         </div>
                       </td>
                       
-                      <td className="p-4 align-top pt-5">
-                         <span className={`px-3 py-1.5 rounded-lg text-xs uppercase font-black tracking-wider border inline-block ${getStatusBadge(report.status || 'open')}`}>
+                      <td className="px-3 py-3 align-top">
+                         <span className={`px-2 py-1 rounded-lg text-[10px] uppercase font-black tracking-wider border inline-block ${getStatusBadge(report.status || 'open')}`}>
                            {(report.status || 'open').replace('_', ' ')}
                          </span>
                       </td>
                       
-                      <td className="p-4 border-l border-neutral-100 bg-brand-50/20 align-top pr-6 w-[400px]">
-                        <div className="space-y-3">
+                      <td className="px-3 py-3 border-l border-neutral-100 bg-brand-50/20 align-top">
+                        <div className="space-y-2">
                            <div className="flex items-center gap-2">
                              <select
-                               className={`flex-1 py-1.5 px-3 border rounded-lg text-xs font-bold uppercase tracking-wide appearance-none focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors shadow-sm ${
+                               className={`min-w-0 flex-1 py-1.5 px-2 border rounded-lg text-[10px] font-bold uppercase tracking-wide appearance-none focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors shadow-sm ${
                                  draft.status === 'resolved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                                  draft.status === 'in_review' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                                  draft.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
@@ -345,7 +345,7 @@ const AdminReportsPage = () => {
                              </select>
                              
                              <button 
-                               className="bg-brand-600 text-white px-3 py-1.5 rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50 shrink-0 font-bold text-xs flex items-center gap-1.5 shadow-sm border border-brand-700"
+                               className="bg-brand-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50 shrink-0 font-bold text-[10px] flex items-center gap-1 shadow-sm border border-brand-700"
                                onClick={() => handleUpdateReport(report)}
                                disabled={isBusy || (draft.status === report.status && draft.adminNote === report.adminNote && !draft.escalationAction && !draft.assignedTeam)}
                                title="Save Resolution"
@@ -355,19 +355,19 @@ const AdminReportsPage = () => {
                            </div>
                            
                            <div className="relative">
-                             <FiMessageSquare className="absolute left-3 top-3 text-neutral-400" />
+                             <FiMessageSquare className="absolute left-2.5 top-2.5 text-neutral-400" />
                              <textarea
-                               className="w-full py-2.5 pl-9 pr-3 bg-white border border-brand-200 rounded-xl text-xs font-medium placeholder-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-sm resize-none h-20 custom-scrollbar"
+                               className="w-full py-2 pl-8 pr-2.5 bg-white border border-brand-200 rounded-xl text-[11px] font-medium placeholder-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-sm resize-none h-16"
                                placeholder="Record internal resolution note or investigation details here..."
                                value={draft.adminNote}
                                onChange={(e) => updateDraft(report.id, 'adminNote', e.target.value)}
                              />
                            </div>
-                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                           <div className="grid grid-cols-2 gap-2">
                              <select
                                value={draft.escalationAction}
                                onChange={(e) => updateDraft(report.id, 'escalationAction', e.target.value)}
-                               className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500"
+                               className="min-w-0 rounded-xl border border-brand-200 bg-white px-2 py-1.5 text-[10px] font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500"
                              >
                                <option value="">Next workflow action</option>
                                <option value="Escalate to resolver team">Escalate to resolver team</option>
@@ -377,7 +377,7 @@ const AdminReportsPage = () => {
                              <select
                                value={draft.assignedTeam}
                                onChange={(e) => updateDraft(report.id, 'assignedTeam', e.target.value)}
-                               className="rounded-xl border border-brand-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500"
+                               className="min-w-0 rounded-xl border border-brand-200 bg-white px-2 py-1.5 text-[10px] font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500"
                              >
                                <option value="">Responsible team</option>
                                <option value="Trust & Safety">Trust & Safety</option>

@@ -88,6 +88,7 @@ const AdminUsersPage = () => {
   const [busyAction, setBusyAction] = useState('');
   const [securityPage, setSecurityPage] = useState(1);
   const [showAuthKey, setShowAuthKey] = useState(false);
+  const [accountFormTouched, setAccountFormTouched] = useState({ email: false, password: false });
   const [accountForm, setAccountForm] = useState({
     name: '',
     phone: '',
@@ -97,15 +98,13 @@ const AdminUsersPage = () => {
     department: 'Operations'
   });
   const normalizedAccountEmail = String(accountForm.email || '').trim().toLowerCase();
-  const emailValidationMessage = !normalizedAccountEmail
-    ? 'Use a valid work email like user@example.com.'
-    : (emailRegex.test(normalizedAccountEmail) ? 'Valid work email format.' : 'Enter a valid email address like user@example.com.');
+  const showEmailValidationMessage = accountFormTouched.email && Boolean(normalizedAccountEmail) && !emailRegex.test(normalizedAccountEmail);
+  const emailValidationMessage = 'Enter a valid email address like user@example.com.';
   const authKeyPolicyError = accountForm.password
     ? getPasswordPolicyError(accountForm.password, '')
     : '';
-  const authKeyValidationMessage = accountForm.password
-    ? (authKeyPolicyError || 'Strong Auth Key ready to use.')
-    : PASSWORD_POLICY_HELPER;
+  const showAuthKeyValidationMessage = accountFormTouched.password && Boolean(authKeyPolicyError);
+  const authKeyValidationMessage = authKeyPolicyError || PASSWORD_POLICY_HELPER;
 
   const loadUsers = async (nextFilters = filters) => {
     setLoading(true);
@@ -147,16 +146,19 @@ const AdminUsersPage = () => {
     const passwordError = getPasswordPolicyError(accountForm.password, 'Auth Key is required.');
 
     if (!accountForm.name || !email) {
+      setAccountFormTouched((current) => ({ ...current, email: true }));
       setError('Name and Email are required.');
       return;
     }
 
     if (!emailRegex.test(email)) {
+      setAccountFormTouched((current) => ({ ...current, email: true }));
       setError('Enter a valid email address like user@example.com.');
       return;
     }
 
     if (passwordError) {
+      setAccountFormTouched((current) => ({ ...current, password: true }));
       setError(passwordError.replace('Password', 'Auth Key'));
       return;
     }
@@ -172,6 +174,7 @@ const AdminUsersPage = () => {
         role: 'admin',
         department: 'Operations'
       });
+      setAccountFormTouched({ email: false, password: false });
       setMessage(`${created.name} account ${getManagementDisplayId(created.id, created.role)} created for ${created.role}. Login will open ${getDashboardPathByRole(created.role)}.`);
       setTimeout(() => setMessage(''), 4000);
     } catch (actionError) {
@@ -391,14 +394,16 @@ const AdminUsersPage = () => {
                     placeholder="name@company.com"
                     onChange={(e) => {
                       setAccountForm({ ...accountForm, email: e.target.value });
+                      setAccountFormTouched((current) => ({ ...current, email: true }));
                       if (error) setError('');
                     }}
+                    onBlur={() => setAccountFormTouched((current) => ({ ...current, email: true }))}
                     autoComplete="email"
                     inputMode="email"
                     aria-invalid={Boolean(normalizedAccountEmail) && !emailRegex.test(normalizedAccountEmail)}
                     className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-sm font-medium focus:ring-2 focus:ring-brand-500"
                   />
-                  <p className={`text-[11px] font-semibold ${normalizedAccountEmail && !emailRegex.test(normalizedAccountEmail) ? 'text-rose-600' : 'text-neutral-500'}`}>{emailValidationMessage}</p>
+                  {showEmailValidationMessage ? <p className="text-[11px] font-semibold text-rose-600">{emailValidationMessage}</p> : null}
                 </div>
                 <div className="space-y-1.5 col-span-2 sm:col-span-1">
                   <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Auth Key</label>
@@ -409,8 +414,10 @@ const AdminUsersPage = () => {
                       placeholder="Strong auth key"
                       onChange={(e) => {
                         setAccountForm({ ...accountForm, password: e.target.value });
+                        setAccountFormTouched((current) => ({ ...current, password: true }));
                         if (error) setError('');
                       }}
+                      onBlur={() => setAccountFormTouched((current) => ({ ...current, password: true }))}
                       autoComplete="new-password"
                       minLength={8}
                       aria-invalid={Boolean(authKeyPolicyError)}
@@ -426,7 +433,7 @@ const AdminUsersPage = () => {
                       {showAuthKey ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                     </button>
                   </div>
-                  <p className={`text-[11px] font-semibold ${authKeyPolicyError ? 'text-rose-600' : 'text-neutral-500'}`}>{authKeyValidationMessage}</p>
+                  {showAuthKeyValidationMessage ? <p className="text-[11px] font-semibold text-rose-600">{authKeyValidationMessage}</p> : null}
                 </div>
               </div>
 
