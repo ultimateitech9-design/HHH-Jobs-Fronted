@@ -44,7 +44,7 @@ const StatCard = ({ label, value, helper, tone = 'default' }) => {
     <article className={`stat-card group relative min-h-[108px] overflow-hidden transition-all duration-200 hover:-translate-y-0.5 ${styles.border} ${toneClassName}`.trim()}>
       <div className={`absolute -right-7 -top-7 h-24 w-24 rounded-full opacity-55 transition-transform duration-300 group-hover:scale-110 ${styles.glow}`} />
       <div className={`absolute bottom-0 left-0 h-0.5 w-full ${styles.bar} opacity-40`} />
-      <div className="relative z-10">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col items-start">
         <p className={`stat-label ${styles.accent}`}>{label}</p>
         <p className="stat-value font-heading font-extrabold leading-none text-navy">{value}</p>
         {helper ? (
