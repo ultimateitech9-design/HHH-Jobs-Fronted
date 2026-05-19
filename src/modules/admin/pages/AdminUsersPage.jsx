@@ -56,6 +56,8 @@ const ADMIN_USER_ROLE_OPTIONS = [
 
 const ADMIN_MANAGED_ROLE_OPTIONS = [
   { value: 'admin', label: 'Management' },
+  { value: 'hr', label: 'HR' },
+  { value: 'student', label: 'Student' },
   { value: 'dataentry', label: 'Data Entry' },
   { value: 'support', label: 'Support' },
   { value: 'accounts', label: 'Accounts' },

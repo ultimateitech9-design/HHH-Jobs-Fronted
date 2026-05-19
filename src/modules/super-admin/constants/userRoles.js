@@ -3,6 +3,8 @@ export const USER_ROLES = ['super_admin', 'admin', 'support', 'sales', 'dataentr
 export const ASSIGNABLE_DASHBOARD_ROLE_OPTIONS = [
   { value: 'admin', label: 'Admin Dashboard' },
   { value: 'super_admin', label: 'Super Admin' },
+  { value: 'hr', label: 'HR Dashboard' },
+  { value: 'student', label: 'Student Dashboard' },
   { value: 'support', label: 'Support Desk' },
   { value: 'sales', label: 'Sales Dashboard' },
   { value: 'dataentry', label: 'Data Entry' },
