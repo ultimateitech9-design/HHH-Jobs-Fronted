@@ -25,7 +25,7 @@ const ComplaintTable = ({ rows = [] }) => {
     }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} searchable pagination itemsPerPage={10} searchPlaceholder="Search complaint, customer, owner, severity, or status" />;
 };
 
 export default ComplaintTable;

@@ -5,15 +5,20 @@ import AdminSidebar from '../components/AdminSidebar';
 import ReportsChart from '../components/ReportsChart';
 import StatusBadge from '../components/StatusBadge';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import Pagination from '../../../shared/components/Pagination';
 import { getDashboardWorkspaceButtonClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import useDashboardStats from '../hooks/useDashboardStats';
 import { formatCurrency } from '../utils/currencyFormat';
 import { formatDateTime } from '../utils/formatDate';
 
+const DASHBOARD_PAGE_SIZE = 10;
+
 const SuperAdminDashboard = () => {
   const { dashboard, loading, error } = useDashboardStats();
   const [selectedWorkspace, setSelectedWorkspace] = useState('super_admin');
   const [selectedRecordId, setSelectedRecordId] = useState('');
+  const [workspacePage, setWorkspacePage] = useState(1);
+  const [supportPage, setSupportPage] = useState(1);
 
   const cards = useMemo(() => {
     const stats = dashboard?.stats || {};
@@ -248,11 +253,31 @@ const SuperAdminDashboard = () => {
 
   const activeWorkspace = workspaceSnapshots.find((item) => item.key === selectedWorkspace) || workspaceSnapshots[0];
   const activeRecord = activeWorkspace?.records.find((record) => record.id === selectedRecordId) || activeWorkspace?.records[0] || null;
+  const workspaceTotalPages = Math.max(1, Math.ceil((activeWorkspace?.records.length || 0) / DASHBOARD_PAGE_SIZE));
+  const paginatedWorkspaceRecords = useMemo(() => {
+    const records = activeWorkspace?.records || [];
+    return records.slice((workspacePage - 1) * DASHBOARD_PAGE_SIZE, workspacePage * DASHBOARD_PAGE_SIZE);
+  }, [activeWorkspace, workspacePage]);
+  const supportTickets = dashboard?.supportTickets || [];
+  const supportTotalPages = Math.max(1, Math.ceil(supportTickets.length / DASHBOARD_PAGE_SIZE));
+  const paginatedSupportTickets = useMemo(
+    () => supportTickets.slice((supportPage - 1) * DASHBOARD_PAGE_SIZE, supportPage * DASHBOARD_PAGE_SIZE),
+    [supportTickets, supportPage]
+  );
 
   useEffect(() => {
     if (!activeWorkspace) return;
     setSelectedRecordId(activeWorkspace.records[0]?.id || '');
+    setWorkspacePage(1);
   }, [activeWorkspace, selectedWorkspace]);
+
+  useEffect(() => {
+    if (workspacePage > workspaceTotalPages) setWorkspacePage(workspaceTotalPages);
+  }, [workspacePage, workspaceTotalPages]);
+
+  useEffect(() => {
+    if (supportPage > supportTotalPages) setSupportPage(supportTotalPages);
+  }, [supportPage, supportTotalPages]);
 
   return (
     <div className="super-admin-dashboard space-y-3 pb-2">
@@ -306,7 +331,7 @@ const SuperAdminDashboard = () => {
                   <ul className="dash-feed">
                     {activeWorkspace.records.length === 0 ? (
                       <li><p className="module-note">No records available for this workspace yet.</p></li>
-                    ) : activeWorkspace.records.map((record) => (
+                    ) : paginatedWorkspaceRecords.map((record) => (
                       <li
                         key={record.id}
                         style={{
@@ -326,6 +351,7 @@ const SuperAdminDashboard = () => {
                       </li>
                     ))}
                   </ul>
+                  <Pagination page={workspacePage} totalPages={workspaceTotalPages} onChange={setWorkspacePage} />
                 </section>
                 <section className="panel-card">
                   <AdminHeader
@@ -352,7 +378,7 @@ const SuperAdminDashboard = () => {
             <section className="panel-card">
               <AdminHeader eyebrow="Escalations" title="Open Support Escalations" subtitle="Critical or high-priority issues that need immediate attention." />
               <ul className="dash-feed">
-                {(dashboard.supportTickets || []).map((ticket) => (
+                {paginatedSupportTickets.map((ticket) => (
                   <li key={ticket.id}>
                     <div>
                       <strong>{ticket.title}</strong>
@@ -363,6 +389,7 @@ const SuperAdminDashboard = () => {
                   </li>
                 ))}
               </ul>
+              <Pagination page={supportPage} totalPages={supportTotalPages} onChange={setSupportPage} />
             </section>
             <section className="panel-card">
               <AdminHeader eyebrow="System Watch" title="Critical Logs" subtitle="Recent incidents and unusual platform behavior." />

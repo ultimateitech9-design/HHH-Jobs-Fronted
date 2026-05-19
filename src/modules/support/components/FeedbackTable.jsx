@@ -16,7 +16,7 @@ const FeedbackTable = ({ rows = [] }) => {
     }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} searchable pagination itemsPerPage={10} searchPlaceholder="Search feedback, customer, channel, rating, sentiment, or message" />;
 };
 
 export default FeedbackTable;

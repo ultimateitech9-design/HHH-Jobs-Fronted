@@ -36,7 +36,7 @@ const TicketTable = ({ rows = [] }) => {
     }
   ];
 
-  return <DataTable columns={columns} rows={rows} />;
+  return <DataTable columns={columns} rows={rows} searchable pagination itemsPerPage={10} searchPlaceholder="Search ticket, customer, category, owner, priority, or status" />;
 };
 
 export default TicketTable;

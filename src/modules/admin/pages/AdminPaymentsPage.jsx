@@ -27,6 +27,7 @@ import {
   updateAdminRolePricingPlan
 } from '../services/adminApi';
 import rankedSearch from '../../../shared/utils/rankedSearch';
+import Pagination from '../../../shared/components/Pagination';
 import { TRIAL_DAYS } from '../../../shared/constants/planConfig';
 
 const initialFilters = {
@@ -36,6 +37,8 @@ const initialFilters = {
 
 const PAGE_SIZE = 12;
 const COMMERCIAL_PAGE_SIZE = 10;
+const PLAN_PURCHASE_PAGE_SIZE = 10;
+const COUPON_PAGE_SIZE = 6;
 
 const emptyDraft = {
   status: 'pending',
@@ -82,6 +85,8 @@ const AdminPaymentsPage = () => {
   const [filters, setFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
   const [commercialPage, setCommercialPage] = useState(1);
+  const [planPurchasePage, setPlanPurchasePage] = useState(1);
+  const [couponPage, setCouponPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingPurchases, setLoadingPurchases] = useState(true);
   const [loadingCommercial, setLoadingCommercial] = useState(true);
@@ -148,6 +153,7 @@ const AdminPaymentsPage = () => {
   useEffect(() => {
     setPage(1);
     setCommercialPage(1);
+    setPlanPurchasePage(1);
   }, [filters.search, filters.status]);
 
   const filteredPayments = useMemo(() => {
@@ -186,6 +192,33 @@ const AdminPaymentsPage = () => {
       setCommercialPage(commercialTotalPages);
     }
   }, [commercialPage, commercialTotalPages]);
+
+  const planPurchaseTotalPages = Math.max(1, Math.ceil(planPurchases.length / PLAN_PURCHASE_PAGE_SIZE));
+  const paginatedPlanPurchases = useMemo(
+    () => planPurchases.slice(
+      (planPurchasePage - 1) * PLAN_PURCHASE_PAGE_SIZE,
+      planPurchasePage * PLAN_PURCHASE_PAGE_SIZE
+    ),
+    [planPurchases, planPurchasePage]
+  );
+
+  useEffect(() => {
+    if (planPurchasePage > planPurchaseTotalPages) {
+      setPlanPurchasePage(planPurchaseTotalPages);
+    }
+  }, [planPurchasePage, planPurchaseTotalPages]);
+
+  const couponTotalPages = Math.max(1, Math.ceil(coupons.length / COUPON_PAGE_SIZE));
+  const paginatedCoupons = useMemo(
+    () => coupons.slice((couponPage - 1) * COUPON_PAGE_SIZE, couponPage * COUPON_PAGE_SIZE),
+    [coupons, couponPage]
+  );
+
+  useEffect(() => {
+    if (couponPage > couponTotalPages) {
+      setCouponPage(couponTotalPages);
+    }
+  }, [couponPage, couponTotalPages]);
 
   const stats = useMemo(() => {
     const paid = payments.filter((payment) => payment.status === 'paid');
@@ -375,6 +408,7 @@ const AdminPaymentsPage = () => {
       });
 
       setCoupons((current) => [created, ...current]);
+      setCouponPage(1);
       setCouponDraft(emptyCouponDraft);
       setMessage(`Coupon ${created.code} created.`);
       setTimeout(() => setMessage(''), 3000);
@@ -509,7 +543,7 @@ const AdminPaymentsPage = () => {
             </button>
           </form>
           <div className="mt-5 space-y-3 max-h-[420px] overflow-auto">
-            {coupons.map((coupon) => (
+            {paginatedCoupons.map((coupon) => (
               <div key={coupon.id} className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -526,6 +560,7 @@ const AdminPaymentsPage = () => {
               </div>
             ))}
           </div>
+          <Pagination page={couponPage} totalPages={couponTotalPages} onChange={setCouponPage} />
         </div>
       </section>
 
@@ -735,7 +770,7 @@ const AdminPaymentsPage = () => {
                   </td>
                 </tr>
               ) : (
-                planPurchases.map((purchase) => (
+                paginatedPlanPurchases.map((purchase) => (
                   <tr key={purchase.id} className="hover:bg-white/5 transition-colors group">
                     <td className="p-4 pl-6 align-top">
                       <div className="font-mono text-white text-sm font-bold bg-white/10 px-2 py-1 rounded inline-block mb-2 border border-white/10">
@@ -799,6 +834,29 @@ const AdminPaymentsPage = () => {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="flex flex-col gap-3 border-t border-white/10 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p className="text-xs font-semibold text-indigo-200">
+            Page <span className="text-white">{planPurchasePage}</span> of <span className="text-white">{planPurchaseTotalPages}</span>
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPlanPurchasePage((current) => Math.max(1, current - 1))}
+              disabled={planPurchasePage <= 1}
+              className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setPlanPurchasePage((current) => Math.min(planPurchaseTotalPages, current + 1))}
+              disabled={planPurchasePage >= planPurchaseTotalPages}
+              className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </section>
 

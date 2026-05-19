@@ -23,6 +23,7 @@ import {
 import { createAdminUser } from '../../super-admin/services/usersApi';
 import { getDashboardPathByRole } from '../../../utils/auth';
 import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
+import Pagination from '../../../shared/components/Pagination';
 import {
   deleteManagedAccount,
   findManagedAccountByEmail,
@@ -89,6 +90,7 @@ const AdminUsersPage = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [busyAction, setBusyAction] = useState('');
+  const [managedPage, setManagedPage] = useState(1);
   const [securityPage, setSecurityPage] = useState(1);
   const [showAuthKey, setShowAuthKey] = useState(false);
   const [accountFormTouched, setAccountFormTouched] = useState({ email: false, password: false });
@@ -275,12 +277,23 @@ const AdminUsersPage = () => {
     () => filteredSecurityUsers.slice((securityPage - 1) * USERS_PAGE_SIZE, securityPage * USERS_PAGE_SIZE),
     [filteredSecurityUsers, securityPage]
   );
+  const managedTotalPages = Math.max(1, Math.ceil(managedAccounts.length / USERS_PAGE_SIZE));
+  const paginatedManagedAccounts = useMemo(
+    () => managedAccounts.slice((managedPage - 1) * USERS_PAGE_SIZE, managedPage * USERS_PAGE_SIZE),
+    [managedAccounts, managedPage]
+  );
 
   useEffect(() => {
     if (securityPage > securityTotalPages) {
       setSecurityPage(securityTotalPages);
     }
   }, [securityPage, securityTotalPages]);
+
+  useEffect(() => {
+    if (managedPage > managedTotalPages) {
+      setManagedPage(managedTotalPages);
+    }
+  }, [managedPage, managedTotalPages]);
 
   const securitySearchSuggestions = useMemo(() => {
     const values = new Set();
@@ -521,7 +534,7 @@ const AdminUsersPage = () => {
                     </td>
                   </tr>
                 ) : (
-                  managedAccounts.map((acc) => (
+                  paginatedManagedAccounts.map((acc) => (
                     <tr key={acc.id} className="hover:bg-neutral-50 transition-colors">
                       <td className="p-3 pl-5 align-middle">
                         <div className="text-sm font-bold text-primary">{acc.name}</div>
@@ -550,6 +563,9 @@ const AdminUsersPage = () => {
                 )}
               </tbody>
             </table>
+            <div className="border-t border-neutral-100 bg-white px-5 py-3">
+              <Pagination page={managedPage} totalPages={managedTotalPages} onChange={setManagedPage} />
+            </div>
           </div>
 
         </div>

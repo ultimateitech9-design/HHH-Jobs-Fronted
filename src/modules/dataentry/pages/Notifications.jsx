@@ -3,12 +3,15 @@ import { Link } from 'react-router-dom';
 import SectionHeader from '../../../shared/components/SectionHeader';
 import StatusPill from '../../../shared/components/StatusPill';
 import StatCard from '../../../shared/components/StatCard';
+import Pagination from '../../../shared/components/Pagination';
 import useNotificationStore from '../../../core/notifications/notificationStore';
 import {
   fetchNotifications,
   markNotificationReadRequest
 } from '../../../core/notifications/notificationApi';
 import { formatDateTime } from '../services/dataentryApi';
+
+const NOTIFICATIONS_PAGE_SIZE = 10;
 
 const Notifications = () => {
   const notifications = useNotificationStore((state) => state.notifications);
@@ -21,6 +24,7 @@ const Notifications = () => {
   const upsertNotification = useNotificationStore((state) => state.upsertNotification);
 
   const [pageError, setPageError] = useState('');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (hydrated || loading) return undefined;
@@ -58,6 +62,17 @@ const Notifications = () => {
   ]), [notifications]);
 
   const activeError = storeError || pageError;
+  const totalPages = Math.max(1, Math.ceil(notifications.length / NOTIFICATIONS_PAGE_SIZE));
+  const paginatedNotifications = useMemo(
+    () => notifications.slice((page - 1) * NOTIFICATIONS_PAGE_SIZE, page * NOTIFICATIONS_PAGE_SIZE),
+    [notifications, page]
+  );
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const markRead = async (notificationId) => {
     const previousNotification = notifications.find((item) => item.id === notificationId);
@@ -87,7 +102,7 @@ const Notifications = () => {
       <section className="panel-card">
         {loading && !hydrated ? <p className="module-note">Loading notifications...</p> : null}
         <ul className="dash-feed">
-          {notifications.map((item) => (
+          {paginatedNotifications.map((item) => (
             <li key={item.id}>
               <div>
                 <strong>{item.title || 'Notification'}</strong>
@@ -103,6 +118,7 @@ const Notifications = () => {
           ))}
           {notifications.length === 0 && (!loading || hydrated) ? <li className="dash-list-empty">No notifications found.</li> : null}
         </ul>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </section>
     </div>
   );

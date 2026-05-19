@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import SectionHeader from '../../../shared/components/SectionHeader';
+import Pagination from '../../../shared/components/Pagination';
 import StatusPill from '../../../shared/components/StatusPill';
 import {
   createAdminCategory,
@@ -63,6 +64,13 @@ const initialForm = {
 const isActive = (value) => value !== false;
 const actionButtonClass = 'inline-flex items-center justify-center rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-black text-neutral-700 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700';
 const dangerButtonClass = 'inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-black text-red-700 shadow-sm transition hover:bg-red-100';
+const MASTER_PAGE_SIZE = 10;
+const masterKeys = ['categories', 'locations', 'states', 'districts', 'tehsils', 'villages', 'pincodes', 'industries', 'skills'];
+
+const getTotalPages = (items) => Math.max(1, Math.ceil((items?.length || 0) / MASTER_PAGE_SIZE));
+const getPaginatedItems = (items = [], page = 1) => (
+  items.slice((page - 1) * MASTER_PAGE_SIZE, page * MASTER_PAGE_SIZE)
+);
 
 const AdminMasterDataPage = () => {
   const [form, setForm] = useState(initialForm);
@@ -80,14 +88,27 @@ const AdminMasterDataPage = () => {
     industries: [],
     skills: []
   });
+  const [pages, setPages] = useState(Object.fromEntries(masterKeys.map((key) => [key, 1])));
 
   const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const setPage = (key, value) => setPages((current) => ({ ...current, [key]: value }));
 
   const stateNameById = useMemo(() => Object.fromEntries(data.states.map((item) => [item.id, item.name])), [data.states]);
   const districtNameById = useMemo(() => Object.fromEntries(data.districts.map((item) => [item.id, item.name])), [data.districts]);
   const tehsilNameById = useMemo(() => Object.fromEntries(data.tehsils.map((item) => [item.id, item.name])), [data.tehsils]);
   const villageNameById = useMemo(() => Object.fromEntries(data.villages.map((item) => [item.id, item.name])), [data.villages]);
   const industryNameById = useMemo(() => Object.fromEntries(data.industries.map((item) => [item.id, item.name])), [data.industries]);
+  const totalPagesByKey = useMemo(() => Object.fromEntries(masterKeys.map((key) => [
+    key,
+    getTotalPages(data[key])
+  ])), [data]);
+  const pageData = useMemo(() => Object.fromEntries(masterKeys.map((key) => [
+    key,
+    {
+      items: getPaginatedItems(data[key], pages[key]),
+      totalPages: totalPagesByKey[key]
+    }
+  ])), [data, pages, totalPagesByKey]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -125,6 +146,13 @@ const AdminMasterDataPage = () => {
     loadAll();
   }, []);
 
+  useEffect(() => {
+    setPages((current) => Object.fromEntries(masterKeys.map((key) => [
+      key,
+      Math.min(current[key] || 1, totalPagesByKey[key])
+    ])));
+  }, [totalPagesByKey]);
+
   const runMutation = async (action, successText) => {
     setError('');
     setMessage('');
@@ -160,7 +188,7 @@ const AdminMasterDataPage = () => {
           }, 'Category created.')}>Add</button>
         </div>
         <ul className="student-list">
-          {data.categories.map((item) => (
+          {pageData.categories.items.map((item) => (
             <li key={item.id}>
               <div><strong>{item.name}</strong></div>
               <div className="student-list-actions">
@@ -171,6 +199,7 @@ const AdminMasterDataPage = () => {
             </li>
           ))}
         </ul>
+        <Pagination page={pages.categories} totalPages={pageData.categories.totalPages} onChange={(page) => setPage('categories', page)} />
       </section>
 
       <section className="panel-card">
@@ -184,7 +213,7 @@ const AdminMasterDataPage = () => {
           }, 'Location created.')}>Add</button>
         </div>
         <ul className="student-list">
-          {data.locations.map((item) => (
+          {pageData.locations.items.map((item) => (
             <li key={item.id}>
               <div><strong>{item.name}</strong></div>
               <div className="student-list-actions">
@@ -195,6 +224,7 @@ const AdminMasterDataPage = () => {
             </li>
           ))}
         </ul>
+        <Pagination page={pages.locations} totalPages={pageData.locations.totalPages} onChange={(page) => setPage('locations', page)} />
       </section>
 
       <section className="panel-card">
@@ -210,7 +240,7 @@ const AdminMasterDataPage = () => {
           }, 'State created.')}>Add</button>
         </div>
         <ul className="student-list">
-          {data.states.map((item) => (
+          {pageData.states.items.map((item) => (
             <li key={item.id}>
               <div><strong>{item.name}</strong> ({item.code || '-'})</div>
               <div className="student-list-actions">
@@ -221,6 +251,7 @@ const AdminMasterDataPage = () => {
             </li>
           ))}
         </ul>
+        <Pagination page={pages.states} totalPages={pageData.states.totalPages} onChange={(page) => setPage('states', page)} />
       </section>
 
       <section className="panel-card">
@@ -265,7 +296,7 @@ const AdminMasterDataPage = () => {
         </div>
         <h4 style={{ marginTop: 12 }}>Districts</h4>
         <ul className="student-list">
-          {data.districts.map((item) => (
+          {pageData.districts.items.map((item) => (
             <li key={item.id}>
               <div><strong>{item.name}</strong> | {stateNameById[item.state_id] || '-'}</div>
               <div className="student-list-actions">
@@ -276,9 +307,10 @@ const AdminMasterDataPage = () => {
             </li>
           ))}
         </ul>
+        <Pagination page={pages.districts} totalPages={pageData.districts.totalPages} onChange={(page) => setPage('districts', page)} />
         <h4 style={{ marginTop: 12 }}>Tehsils</h4>
         <ul className="student-list">
-          {data.tehsils.map((item) => (
+          {pageData.tehsils.items.map((item) => (
             <li key={item.id}>
               <div><strong>{item.name}</strong> | {districtNameById[item.district_id] || '-'}</div>
               <div className="student-list-actions">
@@ -289,9 +321,10 @@ const AdminMasterDataPage = () => {
             </li>
           ))}
         </ul>
+        <Pagination page={pages.tehsils} totalPages={pageData.tehsils.totalPages} onChange={(page) => setPage('tehsils', page)} />
         <h4 style={{ marginTop: 12 }}>Villages</h4>
         <ul className="student-list">
-          {data.villages.map((item) => (
+          {pageData.villages.items.map((item) => (
             <li key={item.id}>
               <div><strong>{item.name}</strong> | {tehsilNameById[item.tehsil_id] || '-'} | {item.pincode || '-'}</div>
               <div className="student-list-actions">
@@ -302,6 +335,7 @@ const AdminMasterDataPage = () => {
             </li>
           ))}
         </ul>
+        <Pagination page={pages.villages} totalPages={pageData.villages.totalPages} onChange={(page) => setPage('villages', page)} />
       </section>
 
       <section className="panel-card">
@@ -327,7 +361,7 @@ const AdminMasterDataPage = () => {
           }, 'Pincode created.')}>Add Pincode</button>
         </div>
         <ul className="student-list">
-          {data.pincodes.map((item) => (
+          {pageData.pincodes.items.map((item) => (
             <li key={item.id}>
               <div><strong>{item.pincode}</strong> | {stateNameById[item.state_id] || '-'} | {districtNameById[item.district_id] || '-'} | {villageNameById[item.village_id] || '-'}</div>
               <div className="student-list-actions">
@@ -336,6 +370,7 @@ const AdminMasterDataPage = () => {
             </li>
           ))}
         </ul>
+        <Pagination page={pages.pincodes} totalPages={pageData.pincodes.totalPages} onChange={(page) => setPage('pincodes', page)} />
       </section>
 
       <section className="panel-card">
@@ -362,7 +397,7 @@ const AdminMasterDataPage = () => {
         </div>
         <h4 style={{ marginTop: 12 }}>Industries</h4>
         <ul className="student-list">
-          {data.industries.map((item) => (
+          {pageData.industries.items.map((item) => (
             <li key={item.id}>
               <div><strong>{item.name}</strong></div>
               <div className="student-list-actions">
@@ -373,9 +408,10 @@ const AdminMasterDataPage = () => {
             </li>
           ))}
         </ul>
+        <Pagination page={pages.industries} totalPages={pageData.industries.totalPages} onChange={(page) => setPage('industries', page)} />
         <h4 style={{ marginTop: 12 }}>Skills</h4>
         <ul className="student-list">
-          {data.skills.map((item) => (
+          {pageData.skills.items.map((item) => (
             <li key={item.id}>
               <div><strong>{item.name}</strong> | {industryNameById[item.industry_id] || '-'}</div>
               <div className="student-list-actions">
@@ -386,6 +422,7 @@ const AdminMasterDataPage = () => {
             </li>
           ))}
         </ul>
+        <Pagination page={pages.skills} totalPages={pageData.skills.totalPages} onChange={(page) => setPage('skills', page)} />
       </section>
     </div>
   );

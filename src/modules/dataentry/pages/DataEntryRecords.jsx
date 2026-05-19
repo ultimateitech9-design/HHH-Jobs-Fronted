@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import SectionHeader from '../../../shared/components/SectionHeader';
 import StatCard from '../../../shared/components/StatCard';
+import Pagination from '../../../shared/components/Pagination';
 import { getDataEntryPortalRecords } from '../services/dataentryApi';
+
+const RECORDS_PAGE_SIZE = 10;
 
 const emptyState = {
   summary: {
@@ -22,6 +25,11 @@ const emptyState = {
   }
 };
 
+const getTotalPages = (items) => Math.max(1, Math.ceil((items?.length || 0) / RECORDS_PAGE_SIZE));
+const getPaginatedItems = (items = [], page = 1) => (
+  items.slice((page - 1) * RECORDS_PAGE_SIZE, page * RECORDS_PAGE_SIZE)
+);
+
 const DataEntryRecords = () => {
   const [state, setState] = useState({
     loading: true,
@@ -29,6 +37,16 @@ const DataEntryRecords = () => {
     records: emptyState,
     isDemo: false
   });
+  const [pages, setPages] = useState({
+    jobs: 1,
+    candidates: 1,
+    companies: 1,
+    notifications: 1
+  });
+
+  const setPage = (key, value) => {
+    setPages((current) => ({ ...current, [key]: value }));
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -42,6 +60,12 @@ const DataEntryRecords = () => {
         error: response.error || '',
         records: { ...emptyState, ...(response.data || {}) },
         isDemo: Boolean(response.isDemo)
+      });
+      setPages({
+        jobs: 1,
+        candidates: 1,
+        companies: 1,
+        notifications: 1
       });
     };
 
@@ -58,6 +82,39 @@ const DataEntryRecords = () => {
     { label: 'Company Records', value: String(state.records.summary?.totalCompanies || 0), helper: 'Companies visible in portal data', tone: 'default' },
     { label: 'Notifications', value: String(state.records.summary?.totalNotifications || 0), helper: 'Alerts and record updates', tone: 'warning' }
   ]), [state.records]);
+
+  const pageData = useMemo(() => ({
+    jobs: {
+      items: getPaginatedItems(state.records.jobs, pages.jobs),
+      totalPages: getTotalPages(state.records.jobs)
+    },
+    candidates: {
+      items: getPaginatedItems(state.records.candidates, pages.candidates),
+      totalPages: getTotalPages(state.records.candidates)
+    },
+    companies: {
+      items: getPaginatedItems(state.records.companies, pages.companies),
+      totalPages: getTotalPages(state.records.companies)
+    },
+    notifications: {
+      items: getPaginatedItems(state.records.notifications, pages.notifications),
+      totalPages: getTotalPages(state.records.notifications)
+    }
+  }), [pages, state.records]);
+
+  useEffect(() => {
+    setPages((current) => ({
+      jobs: Math.min(current.jobs, pageData.jobs.totalPages),
+      candidates: Math.min(current.candidates, pageData.candidates.totalPages),
+      companies: Math.min(current.companies, pageData.companies.totalPages),
+      notifications: Math.min(current.notifications, pageData.notifications.totalPages)
+    }));
+  }, [
+    pageData.jobs.totalPages,
+    pageData.candidates.totalPages,
+    pageData.companies.totalPages,
+    pageData.notifications.totalPages
+  ]);
 
   return (
     <div className="module-page module-page--dataentry">
@@ -88,7 +145,7 @@ const DataEntryRecords = () => {
                 subtitle="Jobs currently visible inside the data entry workflow."
               />
               <ul className="dash-feed">
-                {state.records.jobs.map((job) => (
+                {pageData.jobs.items.map((job) => (
                   <li key={job.id}>
                     <div>
                       <strong>{job.title}</strong>
@@ -98,6 +155,7 @@ const DataEntryRecords = () => {
                   </li>
                 ))}
               </ul>
+              <Pagination page={pages.jobs} totalPages={pageData.jobs.totalPages} onChange={(page) => setPage('jobs', page)} />
             </section>
 
             <section className="panel-card">
@@ -107,7 +165,7 @@ const DataEntryRecords = () => {
                 subtitle="Candidate profiles attached to posted jobs."
               />
               <ul className="dash-feed">
-                {state.records.candidates.map((candidate) => (
+                {pageData.candidates.items.map((candidate) => (
                   <li key={candidate.id}>
                     <div>
                       <strong>{candidate.name}</strong>
@@ -117,6 +175,7 @@ const DataEntryRecords = () => {
                   </li>
                 ))}
               </ul>
+              <Pagination page={pages.candidates} totalPages={pageData.candidates.totalPages} onChange={(page) => setPage('candidates', page)} />
             </section>
           </div>
 
@@ -128,7 +187,7 @@ const DataEntryRecords = () => {
                 subtitle="Companies currently appearing in data entry records."
               />
               <ul className="dash-feed">
-                {state.records.companies.map((company) => (
+                {pageData.companies.items.map((company) => (
                   <li key={company.id}>
                     <div>
                       <strong>{company.companyName}</strong>
@@ -138,6 +197,7 @@ const DataEntryRecords = () => {
                   </li>
                 ))}
               </ul>
+              <Pagination page={pages.companies} totalPages={pageData.companies.totalPages} onChange={(page) => setPage('companies', page)} />
             </section>
 
             <section className="panel-card">
@@ -162,7 +222,7 @@ const DataEntryRecords = () => {
               subtitle="Recent notifications related to records and quality checks."
             />
             <ul className="dash-feed">
-              {state.records.notifications.map((notification) => (
+              {pageData.notifications.items.map((notification) => (
                 <li key={notification.id}>
                   <div>
                     <strong>{notification.title}</strong>
@@ -172,6 +232,7 @@ const DataEntryRecords = () => {
                 </li>
               ))}
             </ul>
+            <Pagination page={pages.notifications} totalPages={pageData.notifications.totalPages} onChange={(page) => setPage('notifications', page)} />
           </section>
         </>
       ) : null}
