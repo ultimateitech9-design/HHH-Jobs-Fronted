@@ -6077,6 +6077,119 @@ select {
   line-height: 1.55;
 }
 
+.super-admin-dashboard {
+  font-size: 0.78rem;
+}
+
+.super-admin-dashboard .super-admin-metric-cards > * {
+  min-height: 112px;
+  padding: 0.75rem 0.9rem;
+  border-radius: 1rem;
+}
+
+.super-admin-dashboard .super-admin-metric-cards p {
+  font-size: 0.68rem !important;
+  line-height: 1.25 !important;
+}
+
+.super-admin-dashboard .super-admin-metric-cards .font-heading {
+  font-size: 1.08rem !important;
+  line-height: 1 !important;
+}
+
+.super-admin-dashboard .section-header {
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.52rem;
+}
+
+.super-admin-dashboard .section-title,
+.super-admin-dashboard .panel-card > h3 {
+  font-size: 1rem !important;
+  line-height: 1.18;
+}
+
+.super-admin-dashboard .section-subtitle,
+.super-admin-dashboard .module-note {
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.super-admin-dashboard .panel-card {
+  padding: 0.82rem;
+  border-radius: 1.15rem;
+}
+
+.super-admin-dashboard .student-job-actions {
+  gap: 0.35rem;
+}
+
+.super-admin-dashboard .student-job-actions button {
+  min-height: 34px !important;
+  padding: 0.4rem 0.72rem !important;
+  font-size: 0.7rem !important;
+}
+
+.super-admin-dashboard .dash-card {
+  gap: 0.42rem;
+  padding: 0.62rem;
+  border-radius: 12px;
+}
+
+.super-admin-dashboard .dash-card strong {
+  font-size: 0.85rem;
+}
+
+.super-admin-dashboard .dash-card span {
+  font-size: 0.68rem;
+}
+
+.super-admin-dashboard .dash-feed {
+  gap: 0.34rem;
+}
+
+.super-admin-dashboard .dash-feed li {
+  padding: 0.62rem !important;
+  border-radius: 11px !important;
+  gap: 0.45rem;
+}
+
+.super-admin-dashboard .dash-feed li strong {
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.super-admin-dashboard .dash-feed li p,
+.super-admin-dashboard .dash-feed li span,
+.super-admin-dashboard .profile-overview-meta-grid p {
+  font-size: 0.68rem;
+  line-height: 1.28;
+}
+
+.super-admin-dashboard .status-pill {
+  min-height: 1.45rem;
+  padding: 0.2rem 0.48rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.07em;
+}
+
+.super-admin-dashboard .dash-check-list {
+  gap: 0.34rem;
+}
+
+.super-admin-dashboard .dash-check-list li {
+  padding: 0.58rem;
+  border-radius: 11px;
+}
+
+.super-admin-dashboard .dash-check-list h4 {
+  font-size: 0.72rem;
+}
+
+.super-admin-dashboard .dash-check-list p {
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
 .dash-progress-list {
   display: grid;
   gap: 0.58rem;

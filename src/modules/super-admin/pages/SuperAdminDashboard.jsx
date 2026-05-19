@@ -255,13 +255,13 @@ const SuperAdminDashboard = () => {
   }, [activeWorkspace, selectedWorkspace]);
 
   return (
-    <div className="space-y-3 pb-2">
+    <div className="super-admin-dashboard space-y-3 pb-2">
       {error ? <p className="form-error">{error}</p> : null}
       {loading ? <p className="module-note">Loading super admin dashboard...</p> : null}
 
       {!loading && dashboard ? (
         <>
-          <DashboardMetricCards cards={cards} />
+          <DashboardMetricCards cards={cards} className="super-admin-metric-cards" />
           <div className="split-grid">
             <section className="panel-card">
               <AdminHeader eyebrow="Revenue Trend" title="Platform Revenue Movement" subtitle="Monthly top-line collections and refund pressure." />
