@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
-import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
 import { getDataEntryDashboard } from '../services/dataentryApi';
 
 const emptyDashboard = {
@@ -113,80 +112,6 @@ const DataEntryDashboard = () => {
     tone: ['accent', 'info', 'success', 'danger'][index] || 'default'
   }));
 
-  const quickActions = useMemo(() => {
-    const totals = state.dashboard.totals || {};
-    const quality = state.dashboard.quality || {};
-    const pipeline = state.dashboard.pipeline || {};
-    const activityCount = Array.isArray(state.dashboard.activityFeed) ? state.dashboard.activityFeed.length : 0;
-
-    return [
-    {
-      to: '/portal/dataentry/add-job',
-      title: 'Post Job',
-      description: 'Create a new job entry and send it into the publishing workflow.',
-      eyebrow: 'Create',
-      tone: 'brand',
-      ctaLabel: 'Open posting'
-    },
-    {
-      to: '/portal/dataentry/records',
-      title: 'Data Records',
-      description: `${Number(totals.totalEntries || 0)} total records available across jobs, candidates, companies, and queue data.`,
-      eyebrow: 'Records',
-      tone: 'neutral',
-      ctaLabel: 'Open records'
-    },
-    {
-      to: '/portal/dataentry/manage-entries',
-      title: 'Manage Jobs',
-      description: `${Number(totals.jobsPosted || 0)} job entries are currently tracked from the main operator queue.`,
-      eyebrow: 'Queue',
-      tone: 'info',
-      ctaLabel: 'Open queue'
-    },
-    {
-      to: '/portal/dataentry/drafts',
-      title: 'Draft Jobs',
-      description: `${Number(quality.drafts || 0)} draft entries still need operator input before they can move forward.`,
-      eyebrow: 'Drafts',
-      tone: 'accent',
-      ctaLabel: 'Open drafts'
-    },
-    {
-      to: '/portal/dataentry/pending',
-      title: 'Pending Approval',
-      description: `${Number(quality.pendingReview || 0)} entries are waiting for review or next-stage approval.`,
-      eyebrow: 'Review',
-      tone: 'warning',
-      ctaLabel: 'Review pending'
-    },
-    {
-      to: '/portal/dataentry/approved',
-      title: 'Approved Jobs',
-      description: `${Number(quality.approved || 0)} entries have cleared review and moved into the approved pipeline.`,
-      eyebrow: 'Approved',
-      tone: 'success',
-      ctaLabel: 'Open approved'
-    },
-    {
-      to: '/portal/dataentry/rejected',
-      title: 'Rejected Jobs',
-      description: `${Number(pipeline.rejected || 0)} records are currently marked rejected and need follow-up or correction.`,
-      eyebrow: 'Rejected',
-      tone: 'warning',
-      ctaLabel: 'Open rejected'
-    },
-    {
-      to: '/portal/dataentry/notifications',
-      title: 'Notifications',
-      description: `${activityCount} recent alerts and workflow updates are available for operator follow-up.`,
-      eyebrow: 'Alerts',
-      tone: 'neutral',
-      ctaLabel: 'Open alerts'
-    }
-    ];
-  }, [state.dashboard]);
-
   return (
     <div className="space-y-3 pb-2">
       <div>
@@ -205,20 +130,6 @@ const DataEntryDashboard = () => {
       {!state.loading ? (
         <>
           <DashboardMetricCards cards={statCards} />
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {quickActions.map((action) => (
-              <DashboardQuickActionCard
-                key={action.title}
-                to={action.to}
-                title={action.title}
-                description={action.description}
-                eyebrow={action.eyebrow}
-                tone={action.tone}
-                ctaLabel={action.ctaLabel}
-              />
-            ))}
-          </div>
         </>
       ) : null}
     </div>

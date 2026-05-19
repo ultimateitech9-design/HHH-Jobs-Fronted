@@ -20,11 +20,12 @@ import {
   updateAdminHrApproval,
   updateAdminUserStatus
 } from '../services/adminApi';
+import { createAdminUser } from '../../super-admin/services/usersApi';
 import { getDashboardPathByRole } from '../../../utils/auth';
 import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
 import {
-  createManagedAccount,
   deleteManagedAccount,
+  findManagedAccountByEmail,
   getManagedAccounts,
   getManagementDisplayId
 } from '../../../utils/managedUsers';
@@ -138,7 +139,7 @@ const AdminUsersPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
-  const handleCreateManagedAccount = () => {
+  const handleCreateManagedAccount = async () => {
     setError('');
     setMessage('');
 
@@ -157,6 +158,11 @@ const AdminUsersPage = () => {
       return;
     }
 
+    if (findManagedAccountByEmail(email)) {
+      setError('Email already registered.');
+      return;
+    }
+
     if (passwordError) {
       setAccountFormTouched((current) => ({ ...current, password: true }));
       setError(passwordError.replace('Password', 'Auth Key'));
@@ -164,7 +170,17 @@ const AdminUsersPage = () => {
     }
 
     try {
-      const created = createManagedAccount(accountForm);
+      setBusyAction('create-managed-account');
+      const created = await createAdminUser({
+        name: accountForm.name,
+        email,
+        password: accountForm.password,
+        role: accountForm.role,
+        mobile: accountForm.phone,
+        company: 'HHH Jobs',
+        department: accountForm.department
+      });
+      const managedAccount = findManagedAccountByEmail(email) || created;
       setManagedAccounts(getManagedAccounts());
       setAccountForm({
         name: '',
@@ -175,10 +191,12 @@ const AdminUsersPage = () => {
         department: 'Operations'
       });
       setAccountFormTouched({ email: false, password: false });
-      setMessage(`${created.name} account ${getManagementDisplayId(created.id, created.role)} created for ${created.role}. Login will open ${getDashboardPathByRole(created.role)}.`);
+      setMessage(`${managedAccount.name || created.name} account ${getManagementDisplayId(managedAccount.id || created.id, managedAccount.role || created.role)} created for ${managedAccount.role || created.role}. Login will open ${getDashboardPathByRole(managedAccount.role || created.role)}.`);
       setTimeout(() => setMessage(''), 4000);
     } catch (actionError) {
       setError(String(actionError.message || 'Unable to create managed account.'));
+    } finally {
+      setBusyAction('');
     }
   };
 
@@ -474,9 +492,10 @@ const AdminUsersPage = () => {
               <button 
                 type="button" 
                 onClick={handleCreateManagedAccount}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-neutral-800"
+                disabled={busyAction === 'create-managed-account'}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <FiPlus /> Provision Account
+                <FiPlus /> {busyAction === 'create-managed-account' ? 'Provisioning...' : 'Provision Account'}
               </button>
             </form>
           </div>

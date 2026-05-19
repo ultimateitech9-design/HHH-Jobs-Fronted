@@ -164,6 +164,18 @@ export const findManagedAccountByEmail = (email) => {
   return getManagedAccounts().find((account) => normalizeEmail(account.email) === normalizedEmail) || null;
 };
 
+export const findManagedAccountByLogin = (value) => {
+  const normalizedEmailValue = normalizeEmail(value);
+  const normalizedIdValue = normalizeAlphaNumeric(value);
+
+  return getManagedAccounts().find((account) => {
+    const displayId = getManagementDisplayId(account.id, account.role);
+    return normalizeEmail(account.email) === normalizedEmailValue
+      || normalizeAlphaNumeric(account.id) === normalizedIdValue
+      || normalizeAlphaNumeric(displayId) === normalizedIdValue;
+  }) || null;
+};
+
 export const createManagedAccount = ({ name, email, password, role, phone, department }) => {
   const normalizedEmail = normalizeEmail(email);
   const current = readManagedAccounts();

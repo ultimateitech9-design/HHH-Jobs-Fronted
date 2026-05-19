@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { FiX } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { apiFetch, apiUrl, areDemoFallbacksEnabled, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
+import { apiFetch, apiUrl, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
 import {
   beginPendingVerificationSession,
   clearAuthSession,
@@ -13,7 +13,7 @@ import {
   setAuthSession
 } from '../../../utils/auth';
 import {
-  findManagedAccountByEmail,
+  findManagedAccountByLogin,
   updateManagedAccountLogin
 } from '../../../utils/managedUsers';
 import {
@@ -55,8 +55,13 @@ const buildPortalRoleErrorMessage = (allowedLoginRoles = []) => {
 };
 
 const tryManagedAccountLogin = ({ email, password, navigate, redirectTo, setError, allowedLoginRoles }) => {
-  const managedAccount = findManagedAccountByEmail(email);
-  if (!managedAccount || managedAccount.password !== password) return false;
+  const managedAccount = findManagedAccountByLogin(email);
+  if (!managedAccount) return false;
+
+  if (managedAccount.password !== password) {
+    setError?.('Wrong ID or password.');
+    return true;
+  }
 
   if (!isRoleAllowedOnLoginPage(managedAccount.role, allowedLoginRoles)) {
     setError?.(buildPortalRoleErrorMessage(allowedLoginRoles));
@@ -119,7 +124,6 @@ const LoginPanelContent = ({
 
   const normalizedAllowedLoginRoles = normalizeAllowedLoginRoles(allowedLoginRoles);
   const redirectTo = location.state?.from || defaultRedirectPath || null;
-  const demoFallbacksEnabled = areDemoFallbacksEnabled();
 
   useEffect(() => {
     const oauthError = new URLSearchParams(location.search).get('oauth_error');
@@ -161,7 +165,7 @@ const LoginPanelContent = ({
       return;
     }
 
-    if (demoFallbacksEnabled && tryManagedAccountLogin({
+    if (tryManagedAccountLogin({
       email: form.email,
       password: form.password,
       navigate,
@@ -296,9 +300,10 @@ const LoginPanelContent = ({
         <div>
           <label className="text-[0.98rem] font-semibold text-slate-800">{emailLabel}</label>
           <input
-            type="email"
+            type="text"
             placeholder={emailPlaceholder}
-            autoComplete="email"
+            autoComplete="username"
+            inputMode="email"
             value={form.email}
             onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
             disabled={isSubmitting || Boolean(socialLoading)}
