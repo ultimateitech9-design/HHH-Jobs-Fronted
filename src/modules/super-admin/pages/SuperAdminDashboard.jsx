@@ -5,7 +5,6 @@ import AdminSidebar from '../components/AdminSidebar';
 import ReportsChart from '../components/ReportsChart';
 import StatusBadge from '../components/StatusBadge';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
-import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
 import { getDashboardWorkspaceButtonClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import useDashboardStats from '../hooks/useDashboardStats';
 import { formatCurrency } from '../utils/currencyFormat';
@@ -250,65 +249,6 @@ const SuperAdminDashboard = () => {
   const activeWorkspace = workspaceSnapshots.find((item) => item.key === selectedWorkspace) || workspaceSnapshots[0];
   const activeRecord = activeWorkspace?.records.find((record) => record.id === selectedRecordId) || activeWorkspace?.records[0] || null;
 
-  const quickActions = useMemo(() => ([
-    {
-      to: '/portal/super-admin/users',
-      title: 'Users',
-      description: 'Manage user IDs, roles, and account lifecycle from one place.',
-      tone: 'brand',
-      ctaLabel: 'Open users'
-    },
-    {
-      to: '/portal/super-admin/companies',
-      title: 'Companies',
-      description: 'Review company profiles, access, and activity coverage.',
-      tone: 'info',
-      ctaLabel: 'Open companies'
-    },
-    {
-      to: '/portal/super-admin/jobs',
-      title: 'Jobs',
-      description: 'Monitor listings, approval status, and live publishing health.',
-      tone: 'success',
-      ctaLabel: 'Open jobs'
-    },
-    {
-      to: '/portal/super-admin/payments',
-      title: 'Payments',
-      description: 'Track payment flow, billing issues, and transaction states.',
-      tone: 'warning',
-      ctaLabel: 'Open payments'
-    },
-    {
-      to: '/portal/super-admin/support-tickets',
-      title: 'Support Tickets',
-      description: 'Inspect escalations, ticket pressure, and service workload.',
-      tone: 'accent',
-      ctaLabel: 'Open support'
-    },
-    {
-      to: '/portal/super-admin/roles-permissions',
-      title: 'Roles & Permissions',
-      description: 'Control access levels and operational permissions across portals.',
-      tone: 'neutral',
-      ctaLabel: 'Open roles'
-    },
-    {
-      to: '/portal/super-admin/subscriptions',
-      title: 'Subscriptions',
-      description: 'Review active plans, billing continuity, and renewal coverage.',
-      tone: 'info',
-      ctaLabel: 'Open subscriptions'
-    },
-    {
-      to: '/portal/super-admin/system-settings',
-      title: 'System Settings',
-      description: 'Open platform configuration, controls, and policy settings.',
-      tone: 'brand',
-      ctaLabel: 'Open settings'
-    }
-  ]), []);
-
   useEffect(() => {
     if (!activeWorkspace) return;
     setSelectedRecordId(activeWorkspace.records[0]?.id || '');
@@ -322,18 +262,6 @@ const SuperAdminDashboard = () => {
       {!loading && dashboard ? (
         <>
           <DashboardMetricCards cards={cards} />
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {quickActions.map((action) => (
-              <DashboardQuickActionCard
-                key={action.title}
-                to={action.to}
-                title={action.title}
-                description={action.description}
-                tone={action.tone}
-                ctaLabel={action.ctaLabel}
-              />
-            ))}
-          </div>
           <div className="split-grid">
             <section className="panel-card">
               <AdminHeader eyebrow="Revenue Trend" title="Platform Revenue Movement" subtitle="Monthly top-line collections and refund pressure." />
