@@ -30,6 +30,7 @@ const ManagementLoginPage = () => {
               createAccountLabel={portalKey === 'campus-connect' ? 'Register campus' : 'Create account'}
               showOtpLogin={true}
               showAccessNotice={false}
+              allowedLoginRoles={portalConfig.allowedLoginRoles}
               emailLabel={portalConfig.emailLabel}
               emailPlaceholder={portalConfig.emailPlaceholder}
               passwordPlaceholder={portalConfig.passwordPlaceholder}

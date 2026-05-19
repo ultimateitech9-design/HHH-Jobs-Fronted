@@ -314,10 +314,6 @@ export const normalizeRedirectPath = (path, fallbackRole = '') => {
 export const isRedirectPathAllowedForRole = (path, role) => {
   if (!path) return true;
 
-  if (isAdminAccessRole(role)) {
-    return true;
-  }
-
   const normalizedRedirect = normalizeRedirectPath(path, role);
   if (!normalizedRedirect.startsWith('/portal/')) {
     return true;

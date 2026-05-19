@@ -1,13 +1,13 @@
 export const PORTAL_ACCESS = Object.freeze({
-  student: Object.freeze(['student', 'retired_employee', 'admin', 'super_admin']),
-  hr: Object.freeze(['hr', 'admin', 'super_admin']),
-  admin: Object.freeze(['admin', 'super_admin']),
-  superAdmin: Object.freeze(['super_admin', 'admin']),
-  accounts: Object.freeze(['admin', 'super_admin', 'accounts']),
-  sales: Object.freeze(['admin', 'super_admin', 'sales']),
-  support: Object.freeze(['admin', 'super_admin', 'support']),
+  student: Object.freeze(['student', 'retired_employee']),
+  hr: Object.freeze(['hr']),
+  admin: Object.freeze(['admin']),
+  superAdmin: Object.freeze(['super_admin']),
+  accounts: Object.freeze(['accounts']),
+  sales: Object.freeze(['sales']),
+  support: Object.freeze(['support']),
   platform: Object.freeze(['admin', 'super_admin', 'platform']),
   audit: Object.freeze(['admin', 'super_admin', 'audit']),
-  dataentry: Object.freeze(['admin', 'super_admin', 'dataentry']),
-  campusConnect: Object.freeze(['admin', 'super_admin', 'campus_connect'])
+  dataentry: Object.freeze(['dataentry']),
+  campusConnect: Object.freeze(['campus_connect'])
 });

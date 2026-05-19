@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { syncSessionUser } from '../core/auth/sessionSync';
 import { hasApiAccessToken } from '../utils/api';
-import { getCurrentUser, hasRole, isAuthenticated } from '../utils/auth';
+import { clearAuthSession, getCurrentUser, hasRole, isAuthenticated } from '../utils/auth';
 
 const resolvePortalLoginPath = (pathname = '') => {
   const normalizedPath = String(pathname || '').trim().toLowerCase();
@@ -19,6 +19,14 @@ const resolvePortalLoginPath = (pathname = '') => {
   if (normalizedPath.startsWith('/portal/student')) return '/login/student';
 
   return '/login';
+};
+
+const RoleMismatchRedirect = ({ to, state }) => {
+  useEffect(() => {
+    clearAuthSession();
+  }, []);
+
+  return <Navigate to={to} replace state={state} />;
 };
 
 const RoleProtectedRoute = ({ roles, children }) => {
@@ -80,7 +88,9 @@ const RoleProtectedRoute = ({ roles, children }) => {
   }
 
   if (!roleAllowed) {
-    return <Navigate to="/forbidden" replace />;
+    const nextLoginPath = resolvePortalLoginPath(location.pathname);
+    const nextState = { from: `${location.pathname}${location.search}${location.hash}` };
+    return <RoleMismatchRedirect to={nextLoginPath} state={nextState} />;
   }
 
   return children;
