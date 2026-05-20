@@ -283,3 +283,83 @@ export const getPublicCompanyDetail = async (companySlug) => {
     };
   }
 };
+
+export const getCompanySubscription = async ({ companySlug, companyName } = {}) => {
+  const slug = String(companySlug || '').trim();
+  const name = String(companyName || '').trim();
+
+  if (!slug || !name) {
+    return {
+      data: { subscription: { subscribed: false } },
+      error: 'Company is required'
+    };
+  }
+
+  const params = new URLSearchParams({ companyName: name });
+
+  try {
+    const response = await apiFetch(`/student/company-subscriptions/${encodeURIComponent(slug)}?${params.toString()}`);
+    const payload = await parseJson(response);
+
+    if (!response.ok) {
+      return {
+        data: { subscription: { subscribed: false } },
+        error: payload?.message || `Request failed (${response.status})`
+      };
+    }
+
+    return {
+      data: { subscription: payload?.subscription || { subscribed: false } },
+      error: ''
+    };
+  } catch (error) {
+    return {
+      data: { subscription: { subscribed: false } },
+      error: error.message || 'Unable to load company subscription'
+    };
+  }
+};
+
+export const updateCompanySubscription = async ({
+  companySlug,
+  companyName,
+  subscribed = true
+} = {}) => {
+  const slug = String(companySlug || '').trim();
+  const name = String(companyName || '').trim();
+
+  if (!slug || !name) {
+    return {
+      data: { subscription: { subscribed: false } },
+      error: 'Company is required'
+    };
+  }
+
+  try {
+    const response = await apiFetch(`/student/company-subscriptions/${encodeURIComponent(slug)}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        companyName: name,
+        subscribed: Boolean(subscribed)
+      })
+    });
+    const payload = await parseJson(response);
+
+    if (!response.ok) {
+      return {
+        data: { subscription: { subscribed: false } },
+        error: payload?.message || `Request failed (${response.status})`
+      };
+    }
+
+    return {
+      data: { subscription: payload?.subscription || { subscribed: false } },
+      error: ''
+    };
+  } catch (error) {
+    return {
+      data: { subscription: { subscribed: false } },
+      error: error.message || 'Unable to update company subscription'
+    };
+  }
+};

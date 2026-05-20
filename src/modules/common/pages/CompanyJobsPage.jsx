@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   FiArrowLeft,
   FiArrowUpRight,
+  FiBell,
   FiBriefcase,
   FiExternalLink,
   FiLock,
@@ -16,7 +17,11 @@ import {
 
 import useAuthStore from '../../../core/auth/authStore';
 import { normalizeRole } from '../../../utils/auth';
-import { getPublicCompanyDetail } from '../services/companyDirectoryApi';
+import {
+  getCompanySubscription,
+  getPublicCompanyDetail,
+  updateCompanySubscription
+} from '../services/companyDirectoryApi';
 import { getCompanyOverviewContent } from '../services/companyOverviewContent';
 import { getLoginRedirectState, shouldLockJobBoards } from '../utils/publicAccess';
 import {
@@ -254,6 +259,7 @@ const CompanyJobsPage = () => {
   const isJobBoardLocked = shouldLockJobBoards(isAuthenticated);
   const userRole = normalizeRole(user?.role);
   const canOpenPortalJobs = isCandidateRole(userRole);
+  const canSubscribeToCompany = userRole === 'student';
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = useMemo(
@@ -273,6 +279,11 @@ const CompanyJobsPage = () => {
   });
   const [search, setSearch] = useState('');
   const [resumeIntent, setResumeIntent] = useState(null);
+  const [subscriptionState, setSubscriptionState] = useState({
+    subscribed: false,
+    loading: false,
+    error: ''
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -309,6 +320,38 @@ const CompanyJobsPage = () => {
   const company = detailState.company;
   const companyOverview = useMemo(() => getCompanyOverviewContent(company), [company]);
   const allJobs = useMemo(() => buildUnifiedJobs(detailState.jobs), [detailState.jobs]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSubscription = async () => {
+      if (!isAuthenticated || !canSubscribeToCompany || !company?.name) {
+        setSubscriptionState({ subscribed: false, loading: false, error: '' });
+        return;
+      }
+
+      setSubscriptionState((current) => ({ ...current, loading: true, error: '' }));
+      const response = await getCompanySubscription({
+        companySlug: company.slug || companySlug,
+        companyName: company.name
+      });
+
+      if (!mounted) return;
+
+      setSubscriptionState({
+        subscribed: Boolean(response.data?.subscription?.subscribed),
+        loading: false,
+        error: response.error || ''
+      });
+    };
+
+    loadSubscription();
+
+    return () => {
+      mounted = false;
+    };
+  }, [canSubscribeToCompany, company?.name, company?.slug, companySlug, isAuthenticated]);
+
   const filteredJobs = useMemo(
     () =>
       allJobs.filter((job) => {
@@ -357,6 +400,43 @@ const CompanyJobsPage = () => {
 
     setResumeIntent(null);
     navigate(getPortalJobPathByRole(userRole, job.portalJobId || job.id));
+  };
+
+  const handleCompanySubscription = async () => {
+    if (!isAuthenticated) {
+      toast('Login first to subscribe for company job alerts.');
+      navigate('/login', { state: loginRedirectState });
+      return;
+    }
+
+    if (!canSubscribeToCompany) {
+      toast.error('Sign in with a student account to subscribe for company alerts.');
+      return;
+    }
+
+    if (!company?.name || subscriptionState.loading) return;
+
+    const nextSubscribed = !subscriptionState.subscribed;
+    setSubscriptionState((current) => ({ ...current, loading: true, error: '' }));
+
+    const response = await updateCompanySubscription({
+      companySlug: company.slug || companySlug,
+      companyName: company.name,
+      subscribed: nextSubscribed
+    });
+
+    if (response.error) {
+      setSubscriptionState((current) => ({ ...current, loading: false, error: response.error }));
+      toast.error(response.error);
+      return;
+    }
+
+    setSubscriptionState({
+      subscribed: Boolean(response.data?.subscription?.subscribed),
+      loading: false,
+      error: ''
+    });
+    toast.success(nextSubscribed ? `Subscribed to ${company.name} job alerts.` : `Unsubscribed from ${company.name} job alerts.`);
   };
 
   if (detailState.loading) {
@@ -464,6 +544,25 @@ const CompanyJobsPage = () => {
                       {isAuthenticated ? 'Browse All Jobs' : 'Login to Unlock Jobs'}
                       <FiArrowUpRight size={15} />
                     </Link>
+                    {(!isAuthenticated || canSubscribeToCompany) ? (
+                      <button
+                        type="button"
+                        onClick={handleCompanySubscription}
+                        disabled={subscriptionState.loading}
+                        className={`inline-flex min-h-[48px] items-center gap-2 rounded-full border px-6 py-3 text-sm font-bold shadow-[0_12px_26px_rgba(15,23,42,0.08)] transition disabled:cursor-not-allowed disabled:opacity-70 ${
+                          subscriptionState.subscribed
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300'
+                            : 'border-[#d7d9e0] bg-white text-slate-700 hover:border-brand-300 hover:text-brand-700'
+                        }`}
+                      >
+                        <FiBell size={15} />
+                        {subscriptionState.loading
+                          ? 'Updating'
+                          : subscriptionState.subscribed
+                            ? 'Subscribed'
+                            : 'Subscribe Alerts'}
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               </div>
