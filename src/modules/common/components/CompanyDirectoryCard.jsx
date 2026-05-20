@@ -18,10 +18,10 @@ import {
 } from '../services/companyDirectoryApi';
 
 const primaryActionClassName =
-  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-brand-500 via-brand-500 to-warning-400 px-3.5 py-2 text-[12px] font-black text-white shadow-[0_12px_22px_rgba(229,155,23,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_28px_rgba(229,155,23,0.24)]';
+  'inline-flex min-h-9 min-w-0 items-center justify-center gap-1 rounded-full bg-gradient-to-r from-brand-500 via-brand-500 to-warning-400 px-2.5 py-2 text-[11px] font-black text-white shadow-[0_12px_22px_rgba(229,155,23,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_28px_rgba(229,155,23,0.24)]';
 
 const secondaryActionClassName =
-  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700';
+  'inline-flex min-h-9 min-w-0 items-center justify-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-semibold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700';
 
 const getInitials = (name = '') =>
   String(name || '')
@@ -222,14 +222,14 @@ const CompanyDirectoryCard = ({
         ))}
       </div>
 
-      <div className="mt-auto flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap">
-        <button type="button" className={`${primaryActionClassName} w-full sm:w-auto`} onClick={() => onOpenCompany(company)}>
-          {primaryLabel}
+      <div className="mt-auto grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 border-t border-slate-100 pt-3">
+        <button type="button" className={`${primaryActionClassName} w-full whitespace-nowrap`} onClick={() => onOpenCompany(company)}>
+          <span className="truncate">{primaryLabel}</span>
           <FiArrowRight size={13} />
         </button>
 
         {secondaryTo ? (
-          <Link to={secondaryTo} className={`${secondaryActionClassName} w-full sm:w-auto`}>
+          <Link to={secondaryTo} className={`${secondaryActionClassName} whitespace-nowrap`}>
             {secondaryLabel}
           </Link>
         ) : null}
@@ -239,7 +239,7 @@ const CompanyDirectoryCard = ({
             type="button"
             onClick={handleSubscribe}
             disabled={subscriptionState.loading}
-            className={`${secondaryActionClassName} w-full disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto ${
+            className={`${secondaryActionClassName} whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-70 ${
               subscriptionState.subscribed ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700' : ''
             }`}
           >
