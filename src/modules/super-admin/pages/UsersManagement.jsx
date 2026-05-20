@@ -307,6 +307,7 @@ const UsersManagement = () => {
       <DashboardStatsCards cards={cards} />
       <section className="panel-card min-w-0">
         <FilterBar
+          className="filter-bar--users-management"
           filters={draftFilters}
           onChange={(key, value) => setDraftFilters((current) => ({ ...current, [key]: value }))}
           fields={[
@@ -315,6 +316,9 @@ const UsersManagement = () => {
           ]}
           actions={(
             <>
+              <button type="button" className="btn-primary inline-flex items-center gap-2" onClick={() => applyFilters(draftFilters)}>
+                <FiSearch size={14} /> Search
+              </button>
               <button
                 type="button"
                 className="btn-secondary inline-flex items-center gap-2"
@@ -335,9 +339,6 @@ const UsersManagement = () => {
                 }}
               >
                 {draftFilters.role === 'hr' ? 'Show All IDs' : 'Show HR IDs'}
-              </button>
-              <button type="button" className="btn-primary inline-flex items-center gap-2" onClick={() => applyFilters(draftFilters)}>
-                <FiSearch size={14} /> Search
               </button>
             </>
           )}

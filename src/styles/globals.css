@@ -4654,6 +4654,22 @@ select {
   white-space: normal;
 }
 
+.filter-bar--users-management {
+  align-items: flex-end;
+}
+
+.filter-bar--users-management .filter-bar__actions {
+  flex: 0 1 auto;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.filter-bar--users-management .filter-bar__actions .btn-primary,
+.filter-bar--users-management .filter-bar__actions .btn-secondary {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
 .filter-bar__search input,
 .filter-bar__field select {
   min-height: 44px;

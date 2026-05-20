@@ -1,8 +1,8 @@
 import SearchBar from './SearchBar';
 
-const FilterBar = ({ filters, onChange, fields = [], actions }) => {
+const FilterBar = ({ filters, onChange, fields = [], actions, className = '' }) => {
   return (
-    <div className="filter-bar">
+    <div className={`filter-bar ${className}`.trim()}>
       <div className="filter-bar__search">
         <SearchBar value={filters.search || ''} placeholder="Search by name, email, company, ID, or title" onChange={(value) => onChange('search', value)} />
       </div>
