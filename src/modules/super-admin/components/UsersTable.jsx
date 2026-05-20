@@ -31,10 +31,11 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
     {
       key: 'actions',
       label: 'Actions',
-      width: 156,
+      width: 196,
+      wrap: false,
       render: (_, row) => (
         ['super_admin', 'admin', 'hr', 'support', 'student', 'dataentry', 'accounts', 'sales', 'company_admin', 'platform', 'audit', 'campus_connect', 'retired_employee'].includes(row.role) ? (
-          <div className="grid min-w-0 grid-cols-2 gap-2">
+          <div className="flex min-w-[176px] flex-nowrap items-center justify-start gap-1">
             {['active', 'banned'].map((status) => {
               const isSelected = row.status === status;
               const toneClassName = status === 'banned'
@@ -44,7 +45,7 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
                 <button
                   key={status}
                   type="button"
-                  className={`inline-flex min-h-8 w-full items-center justify-center rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-semibold transition ${toneClassName} disabled:cursor-not-allowed disabled:opacity-50`}
+                  className={`inline-flex h-8 min-w-[52px] shrink-0 items-center justify-center rounded-full border border-slate-200 px-2.5 text-[11px] font-semibold transition ${toneClassName} disabled:cursor-not-allowed disabled:opacity-50`}
                   disabled={busyUserId === row.id || isSelected}
                   onClick={() => onStatusChange?.(row, status)}
                 >
@@ -54,7 +55,7 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
             })}
             <button
               type="button"
-              className="btn-danger col-span-2 inline-flex min-h-8 w-full items-center justify-center whitespace-nowrap px-3 py-1 text-[11px]"
+              className="inline-flex h-8 min-w-[64px] shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-rose-700/20 bg-gradient-to-r from-rose-600 to-red-700 px-3 text-[11px] font-bold text-white shadow-sm transition hover:shadow-md"
               onClick={() => onDelete?.(row)}
             >
               Delete
