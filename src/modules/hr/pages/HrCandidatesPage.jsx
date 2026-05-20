@@ -245,7 +245,7 @@ export default function HrCandidatesPage() {
         <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Candidate Database</p>
         <h1 className="mt-1 text-2xl font-black tracking-tight text-navy sm:text-3xl">Candidate DB</h1>
         <p className="mt-1 max-w-2xl text-sm font-semibold text-slate-500">
-          Search student profiles, shortlist verified talent, and send recruiter interest requests.
+          Search student profiles, shortlist verified talent, and send candidate connection requests.
         </p>
       </div>
 
@@ -253,7 +253,7 @@ export default function HrCandidatesPage() {
         <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-sm">
           <div className="flex items-center gap-2 text-[13px] font-medium text-amber-800">
             <FiAlertCircle size={16} className="shrink-0" />
-            <span>Blurred previews — upgrade to unlock full profiles &amp; direct outreach.</span>
+            <span>Candidate profiles are available. Contact details unlock after the student accepts your request.</span>
           </div>
           <button
             type="button"
@@ -373,7 +373,7 @@ export default function HrCandidatesPage() {
               className={primaryButtonClass}
             >
               <FiSend size={14} />
-              Send bulk interest
+              Send bulk request
             </button>
 
             <span className="ml-auto text-[13px] font-semibold text-slate-500">
@@ -455,7 +455,7 @@ export default function HrCandidatesPage() {
       </section>
 
       {interestModal ? (
-        <Modal title={`Send interest to ${interestModal.user?.name || 'candidate'}`} onClose={() => setInterestModal(null)}>
+        <Modal title={`Send connection request to ${interestModal.user?.name || 'candidate'}`} onClose={() => setInterestModal(null)}>
           <div className="space-y-4">
             <select
               value={interestTemplateId}
@@ -472,7 +472,7 @@ export default function HrCandidatesPage() {
               value={interestMessage}
               onChange={(event) => setInterestMessage(event.target.value)}
               className={`${inputClass} resize-none`}
-              placeholder="Tell the candidate why you are reaching out."
+              placeholder="Tell the student why you want to connect."
             />
             <div className="flex gap-3">
               <button type="button" onClick={() => setInterestModal(null)} className="flex-1 rounded-full border border-slate-200 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">
@@ -485,7 +485,7 @@ export default function HrCandidatesPage() {
                 className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-brand-600 py-2.5 text-sm font-bold text-white hover:bg-brand-500 disabled:opacity-60"
               >
                 {actionState[interestModal.id] === 'sending' ? <FiRefreshCw size={14} className="animate-spin" /> : <FiSend size={14} />}
-                Send interest
+                Send request
               </button>
             </div>
           </div>
@@ -493,7 +493,7 @@ export default function HrCandidatesPage() {
       ) : null}
 
       {bulkOpen ? (
-        <Modal title={`Bulk outreach to ${selectedCount} candidates`} onClose={() => setBulkOpen(false)}>
+        <Modal title={`Bulk connection request to ${selectedCount} candidates`} onClose={() => setBulkOpen(false)}>
           <div className="space-y-4">
             <select
               value={bulkTemplateId}
@@ -510,7 +510,7 @@ export default function HrCandidatesPage() {
               value={bulkMessage}
               onChange={(event) => setBulkMessage(event.target.value)}
               className={`${inputClass} resize-none`}
-              placeholder="Message for the selected candidates."
+              placeholder="Message for the selected students."
             />
             <div className="flex gap-3">
               <button type="button" onClick={() => setBulkOpen(false)} className="flex-1 rounded-full border border-slate-200 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">
@@ -523,7 +523,7 @@ export default function HrCandidatesPage() {
                 className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[#2d5bff] py-2.5 text-sm font-bold text-white hover:bg-[#2449d8] disabled:opacity-60"
               >
                 {actionState.bulk === 'sending' ? <FiRefreshCw size={14} className="animate-spin" /> : <FiSend size={14} />}
-                Send to selected
+                Send requests
               </button>
             </div>
           </div>
@@ -655,7 +655,7 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
             ) : (
               <div className="flex items-start gap-2">
                 <FiEye size={14} className="mt-0.5 shrink-0 text-brand-600" />
-                <p>{candidate.access?.blurReason || 'Contact details unlock after candidate acceptance.'}</p>
+                <p>{candidate.access?.blurReason || 'Contact details unlock after the student accepts your connection request.'}</p>
               </div>
             )}
           </div>
@@ -674,7 +674,7 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#2d5bff] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#2449d8] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {interestLoading ? <FiRefreshCw size={13} className="animate-spin" /> : <FiSend size={13} />}
-                Send interest
+                Send request
               </button>
             )}
           </div>
