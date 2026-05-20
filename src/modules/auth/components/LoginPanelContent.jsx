@@ -165,17 +165,6 @@ const LoginPanelContent = ({
       return;
     }
 
-    if (tryManagedAccountLogin({
-      email: form.email,
-      password: form.password,
-      navigate,
-      redirectTo,
-      setError,
-      allowedLoginRoles: normalizedAllowedLoginRoles
-    })) {
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       const response = await apiFetch('/auth/login', {
@@ -200,6 +189,17 @@ const LoginPanelContent = ({
       }
 
       if (!response.ok) {
+        if (tryManagedAccountLogin({
+          email: form.email,
+          password: form.password,
+          navigate,
+          redirectTo,
+          setError,
+          allowedLoginRoles: normalizedAllowedLoginRoles
+        })) {
+          return;
+        }
+
         clearAuthSession();
         setError(normalizeLoginErrorMessage(payload.message || 'Login failed.'));
         return;
@@ -255,6 +255,17 @@ const LoginPanelContent = ({
       setAuthSession(payload.token, nextUser);
       navigate(normalizeRedirectPath(redirectTo || payload.redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
     } catch (requestError) {
+      if (tryManagedAccountLogin({
+        email: form.email,
+        password: form.password,
+        navigate,
+        redirectTo,
+        setError,
+        allowedLoginRoles: normalizedAllowedLoginRoles
+      })) {
+        return;
+      }
+
       setError(requestError.message || 'Unable to sign in right now. Please try again.');
     } finally {
       setIsSubmitting(false);

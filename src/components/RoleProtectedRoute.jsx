@@ -29,6 +29,14 @@ const RoleMismatchRedirect = ({ to, state }) => {
   return <Navigate to={to} replace state={state} />;
 };
 
+const ApiSessionRedirect = ({ to, state }) => {
+  useEffect(() => {
+    clearAuthSession();
+  }, []);
+
+  return <Navigate to={to} replace state={state} />;
+};
+
 const RoleProtectedRoute = ({ roles, children }) => {
   const location = useLocation();
   const [resolvedRole, setResolvedRole] = useState(() => getCurrentUser()?.role || null);
@@ -78,6 +86,15 @@ const RoleProtectedRoute = ({ roles, children }) => {
       <Navigate
         to={resolvePortalLoginPath(location.pathname)}
         replace
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+      />
+    );
+  }
+
+  if (String(location.pathname || '').toLowerCase().startsWith('/portal/dataentry') && !hasApiAccessToken()) {
+    return (
+      <ApiSessionRedirect
+        to={resolvePortalLoginPath(location.pathname)}
         state={{ from: `${location.pathname}${location.search}${location.hash}` }}
       />
     );
