@@ -1,5 +1,8 @@
-import { apiFetch } from '../../../utils/api';
+import { apiFetch, hasApiAccessToken } from '../../../utils/api';
+import { getCurrentUser } from '../../../utils/auth';
 import { buildCompanyLogoUrl } from './companyLogoUrl';
+
+const COMPANY_SUBSCRIPTION_STORAGE_KEY = 'hhh_jobs_company_subscriptions';
 
 const COMPANY_BRANDING_OVERRIDES = [
   {
@@ -23,6 +26,80 @@ const normalizeKey = (value = '') =>
   String(value || '')
     .trim()
     .toLowerCase();
+
+const toCompanySubscriptionKey = ({ companySlug = '', companyName = '' } = {}) =>
+  String(companySlug || companyName || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const getLocalSubscriptionOwnerKey = () => {
+  const user = getCurrentUser();
+  return String(user?.id || user?.email || user?.mobile || 'guest').trim().toLowerCase();
+};
+
+const readLocalCompanySubscriptions = () => {
+  if (typeof window === 'undefined' || !window.localStorage) return {};
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(COMPANY_SUBSCRIPTION_STORAGE_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeLocalCompanySubscriptions = (value = {}) => {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  window.localStorage.setItem(COMPANY_SUBSCRIPTION_STORAGE_KEY, JSON.stringify(value));
+};
+
+const getLocalCompanySubscription = ({ companySlug, companyName } = {}) => {
+  const ownerKey = getLocalSubscriptionOwnerKey();
+  const companyKey = toCompanySubscriptionKey({ companySlug, companyName });
+  const store = readLocalCompanySubscriptions();
+  const subscribed = Boolean(companyKey && store?.[ownerKey]?.[companyKey]);
+
+  return {
+    data: {
+      subscription: {
+        subscribed,
+        companySlug: companySlug || '',
+        companyName: companyName || ''
+      }
+    },
+    error: ''
+  };
+};
+
+const setLocalCompanySubscription = ({ companySlug, companyName, subscribed = true } = {}) => {
+  const ownerKey = getLocalSubscriptionOwnerKey();
+  const companyKey = toCompanySubscriptionKey({ companySlug, companyName });
+  const store = readLocalCompanySubscriptions();
+  const ownerSubscriptions = { ...(store[ownerKey] || {}) };
+
+  if (companyKey) {
+    if (subscribed) ownerSubscriptions[companyKey] = true;
+    else delete ownerSubscriptions[companyKey];
+  }
+
+  writeLocalCompanySubscriptions({
+    ...store,
+    [ownerKey]: ownerSubscriptions
+  });
+
+  return {
+    data: {
+      subscription: {
+        subscribed: Boolean(subscribed),
+        companySlug: companySlug || '',
+        companyName: companyName || ''
+      }
+    },
+    error: ''
+  };
+};
 
 const pickPreferredText = (...values) => {
   for (const value of values) {
@@ -295,6 +372,10 @@ export const getCompanySubscription = async ({ companySlug, companyName } = {}) 
     };
   }
 
+  if (!hasApiAccessToken()) {
+    return getLocalCompanySubscription({ companySlug: slug, companyName: name });
+  }
+
   const params = new URLSearchParams({ companyName: name });
 
   try {
@@ -335,6 +416,10 @@ export const updateCompanySubscription = async ({
     };
   }
 
+  if (!hasApiAccessToken()) {
+    return setLocalCompanySubscription({ companySlug: slug, companyName: name, subscribed });
+  }
+
   try {
     const response = await apiFetch(`/companies/${encodeURIComponent(slug)}/subscription`, {
       method: 'PUT',
@@ -352,8 +437,25 @@ export const updateCompanySubscription = async ({
       };
     }
 
+    const remoteSubscription = payload?.subscription || {};
+    if (remoteSubscription.unavailable) {
+      return {
+        data: { subscription: { subscribed: false } },
+        error: 'Company subscription storage is not ready on the backend.'
+      };
+    }
+
+    if (typeof remoteSubscription.subscribed === 'boolean' && remoteSubscription.subscribed !== Boolean(subscribed)) {
+      return {
+        data: { subscription: remoteSubscription },
+        error: 'Company subscription could not be saved. Please try again.'
+      };
+    }
+
+    setLocalCompanySubscription({ companySlug: slug, companyName: name, subscribed });
+
     return {
-      data: { subscription: payload?.subscription || { subscribed: false } },
+      data: { subscription: remoteSubscription },
       error: ''
     };
   } catch (error) {

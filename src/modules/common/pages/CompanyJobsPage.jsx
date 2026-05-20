@@ -561,7 +561,7 @@ const CompanyJobsPage = () => {
                         {subscriptionState.loading
                           ? 'Updating'
                           : subscriptionState.subscribed
-                            ? 'Subscribed'
+                            ? 'Unsubscribe'
                             : 'Subscribe Alerts'}
                       </button>
                     ) : null}

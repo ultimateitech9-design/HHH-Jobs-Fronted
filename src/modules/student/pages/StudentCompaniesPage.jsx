@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
+  FiChevronLeft,
+  FiChevronRight,
   FiFilter,
   FiLayers,
   FiSearch,
@@ -8,8 +10,7 @@ import {
 import {
   StudentEmptyState,
   StudentNotice,
-  StudentSurfaceCard,
-  studentSecondaryButtonClassName
+  StudentSurfaceCard
 } from '../components/StudentExperience';
 import { getPublicCompanies } from '../../common/services/companyDirectoryApi';
 import { getCompanyEntryIntent } from '../../common/utils/publicAccess';
@@ -22,6 +23,8 @@ const FILTER_OPTIONS = [
   { key: 'live-feed', label: 'Live feed' }
 ];
 
+const COMPANIES_PER_PAGE = 12;
+
 const StudentCompaniesPage = () => {
   const navigate = useNavigate();
   const [state, setState] = useState({
@@ -32,6 +35,7 @@ const StudentCompaniesPage = () => {
   });
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     let mounted = true;
@@ -72,12 +76,22 @@ const StudentCompaniesPage = () => {
     return true;
   }), [filter, search, state.companies]);
 
-  const counts = useMemo(() => ({
-    total: filteredCompanies.length,
-    premium: filteredCompanies.filter((company) => company.premium).length,
-    portal: filteredCompanies.filter((company) => company.portalProfile || company.portalJobs > 0).length,
-    live: filteredCompanies.filter((company) => company.liveFeed).length
-  }), [filteredCompanies]);
+  const totalPages = Math.max(1, Math.ceil(filteredCompanies.length / COMPANIES_PER_PAGE));
+
+  const paginatedCompanies = useMemo(() => {
+    const start = (page - 1) * COMPANIES_PER_PAGE;
+    return filteredCompanies.slice(start, start + COMPANIES_PER_PAGE);
+  }, [filteredCompanies, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter, search]);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const openCompany = (company) => {
     const intent = getCompanyEntryIntent({
@@ -94,29 +108,21 @@ const StudentCompaniesPage = () => {
     <div className="space-y-4 pb-6">
       {state.error ? <StudentNotice type="error" text={state.error} /> : null}
 
-      <StudentSurfaceCard
-        eyebrow="Companies"
-        title="Portal companies"
-        subtitle="Open a company and jump straight to its roles."
-        className="p-4 md:p-5 xl:p-5"
-      >
+      <section className="px-1 py-2">
+        <div className="mb-4">
+          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-amber-700">
+            Companies
+          </p>
+          <h1 className="mt-3 text-2xl font-black text-navy">
+            Portal companies
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Open a company and jump straight to its roles.
+          </p>
+        </div>
+
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
-                {counts.total} visible
-              </span>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                Premium {counts.premium}
-              </span>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                Portal {counts.portal}
-              </span>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                Live {counts.live}
-              </span>
-            </div>
-
             <div className="relative w-full md:max-w-[380px]">
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -129,10 +135,6 @@ const StudentCompaniesPage = () => {
           </div>
 
           <div className="flex flex-col gap-3 xl:items-end">
-            <Link to="/portal/student/jobs" className={`${studentSecondaryButtonClassName} w-full px-4 py-2 text-[13px] md:w-auto`}>
-              Browse jobs
-            </Link>
-
             <div className="flex flex-wrap gap-2 xl:justify-end">
               {FILTER_OPTIONS.map((item) => (
                 <button
@@ -152,7 +154,7 @@ const StudentCompaniesPage = () => {
             </div>
           </div>
         </div>
-      </StudentSurfaceCard>
+      </section>
 
       <StudentSurfaceCard className="p-3.5 sm:p-4">
             {state.loading ? (
@@ -162,18 +164,63 @@ const StudentCompaniesPage = () => {
                 ))}
               </div>
             ) : filteredCompanies.length > 0 ? (
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredCompanies.map((company) => (
-                  <CompanyDirectoryCard
-                    key={company.id || company.slug}
-                    company={company}
-                    onOpenCompany={openCompany}
-                    primaryLabel="Open company"
-                    secondaryTo="/portal/student/jobs"
-                    secondaryLabel="Browse jobs"
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {paginatedCompanies.map((company) => (
+                    <CompanyDirectoryCard
+                      key={company.id || company.slug}
+                      company={company}
+                      onOpenCompany={openCompany}
+                      primaryLabel="Open company"
+                    />
+                  ))}
+                </div>
+
+                {totalPages > 1 ? (
+                  <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-semibold text-slate-500">
+                      Showing {(page - 1) * COMPANIES_PER_PAGE + 1}-{Math.min(page * COMPANIES_PER_PAGE, filteredCompanies.length)} of {filteredCompanies.length}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPage((current) => Math.max(1, current - 1))}
+                        disabled={page === 1}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-brand-200 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-45"
+                        aria-label="Previous page"
+                      >
+                        <FiChevronLeft size={17} />
+                      </button>
+
+                      {Array.from({ length: totalPages }, (_, index) => index + 1).map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setPage(item)}
+                          className={`h-9 min-w-9 rounded-full px-3 text-sm font-black transition ${
+                            page === item
+                              ? 'bg-navy text-white shadow-sm'
+                              : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:bg-brand-50'
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      ))}
+
+                      <button
+                        type="button"
+                        onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                        disabled={page === totalPages}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-brand-200 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-45"
+                        aria-label="Next page"
+                      >
+                        <FiChevronRight size={17} />
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </>
             ) : (
               <StudentEmptyState
                 icon={FiLayers}

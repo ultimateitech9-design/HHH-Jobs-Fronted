@@ -21,7 +21,6 @@ const CompaniesPage = () => {
     error: ''
   });
   const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
     let mounted = true;
@@ -138,8 +137,6 @@ const CompaniesPage = () => {
                     company={company}
                     onOpenCompany={handleOpenCompany}
                     primaryLabel={isAuthenticated ? 'Open company' : 'Login to Unlock'}
-                    secondaryTo="/jobs"
-                    secondaryLabel="Browse jobs"
                   />
                 ))}
               </div>

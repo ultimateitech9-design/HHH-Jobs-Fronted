@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   FiArrowRight,
   FiBell,
   FiBriefcase,
-  FiLayers,
   FiMapPin,
   FiStar
 } from 'react-icons/fi';
@@ -31,11 +30,6 @@ const getInitials = (name = '') =>
     .map((part) => part.charAt(0).toUpperCase())
     .join('') || 'CO';
 
-const formatMetaLine = (company = {}) => {
-  const parts = [company.industry, company.companySize].filter(Boolean);
-  return parts.length > 0 ? parts.join(' • ') : 'Employer profile on HHH Jobs';
-};
-
 const getCategoryList = (company = {}) => {
   const categories = Array.isArray(company.categories)
     ? company.categories.filter(Boolean).slice(0, 2)
@@ -48,14 +42,12 @@ const buildCurrentPath = (location) =>
   `${location.pathname || ''}${location.search || ''}${location.hash || ''}`;
 
 const canRoleSubscribeToCompany = (role) =>
-  ['student', 'retired_employee', 'hr', 'campus_connect'].includes(normalizeRole(role));
+  ['student', 'retired_employee', 'hr', 'campus_connect', 'admin', 'super_admin'].includes(normalizeRole(role));
 
 const CompanyDirectoryCard = ({
   company,
   onOpenCompany,
-  primaryLabel = 'Open company',
-  secondaryTo = '/jobs',
-  secondaryLabel = 'Browse jobs'
+  primaryLabel = 'Open company'
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -68,7 +60,9 @@ const CompanyDirectoryCard = ({
     loading: false
   });
   const categories = getCategoryList(company);
-  const description = company.description || 'Open this company to see its available roles and hiring page.';
+
+  const readSubscribedFlag = (subscription, fallback = false) =>
+    typeof subscription?.subscribed === 'boolean' ? subscription.subscribed : fallback;
 
   useEffect(() => {
     let mounted = true;
@@ -88,7 +82,7 @@ const CompanyDirectoryCard = ({
       if (!mounted) return;
 
       setSubscriptionState({
-        subscribed: Boolean(response.data?.subscription?.subscribed),
+        subscribed: readSubscribedFlag(response.data?.subscription),
         loading: false
       });
     };
@@ -129,7 +123,7 @@ const CompanyDirectoryCard = ({
     }
 
     setSubscriptionState({
-      subscribed: Boolean(response.data?.subscription?.subscribed),
+      subscribed: readSubscribedFlag(response.data?.subscription, nextSubscribed),
       loading: false
     });
     toast.success(nextSubscribed ? `Subscribed to ${company.name}.` : `Unsubscribed from ${company.name}.`);
@@ -197,20 +191,6 @@ const CompanyDirectoryCard = ({
         </div>
       </div>
 
-      <div className="mt-2.5 rounded-[0.8rem] border border-slate-200 bg-white px-2.5 py-2">
-        <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-          <FiLayers size={11} />
-          Company profile
-        </p>
-        <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-4 text-slate-700">
-          {formatMetaLine(company)}
-        </p>
-      </div>
-
-      <p className="mt-2.5 min-h-10 line-clamp-2 text-[12px] leading-4 text-slate-600">
-        {description}
-      </p>
-
       <div className="mt-2.5 flex min-h-7 flex-wrap gap-1.5">
         {categories.map((category) => (
           <span
@@ -222,17 +202,11 @@ const CompanyDirectoryCard = ({
         ))}
       </div>
 
-      <div className="mt-auto grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 border-t border-slate-100 pt-3">
+      <div className="mt-auto grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 border-t border-slate-100 pt-3">
         <button type="button" className={`${primaryActionClassName} w-full whitespace-nowrap`} onClick={() => onOpenCompany(company)}>
           <span className="truncate">{primaryLabel}</span>
           <FiArrowRight size={13} />
         </button>
-
-        {secondaryTo ? (
-          <Link to={secondaryTo} className={`${secondaryActionClassName} whitespace-nowrap`}>
-            {secondaryLabel}
-          </Link>
-        ) : null}
 
         {(!isAuthenticated || canSubscribe) ? (
           <button
@@ -247,7 +221,7 @@ const CompanyDirectoryCard = ({
             {subscriptionState.loading
               ? 'Updating'
               : subscriptionState.subscribed
-                ? 'Subscribed'
+                ? 'Unsubscribe'
                 : 'Subscribe'}
           </button>
         ) : null}
