@@ -53,6 +53,8 @@ const buildCurrentPath = (location) =>
   `${location.pathname || ''}${location.search || ''}${location.hash || ''}`;
 const isCandidateRole = (role) =>
   ['student', 'retired_employee'].includes(normalizeRole(role));
+const canSubscribeToCompanyRole = (role) =>
+  ['student', 'retired_employee', 'hr', 'campus_connect'].includes(normalizeRole(role));
 const getPortalJobPathByRole = (role, jobId) =>
   normalizeRole(role) === 'retired_employee'
     ? `/portal/retired/jobs/${jobId}`
@@ -259,7 +261,7 @@ const CompanyJobsPage = () => {
   const isJobBoardLocked = shouldLockJobBoards(isAuthenticated);
   const userRole = normalizeRole(user?.role);
   const canOpenPortalJobs = isCandidateRole(userRole);
-  const canSubscribeToCompany = userRole === 'student';
+  const canSubscribeToCompany = canSubscribeToCompanyRole(userRole);
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = useMemo(
@@ -410,7 +412,7 @@ const CompanyJobsPage = () => {
     }
 
     if (!canSubscribeToCompany) {
-      toast.error('Sign in with a student account to subscribe for company alerts.');
+      toast.error('Sign in with a portal account to subscribe for company alerts.');
       return;
     }
 

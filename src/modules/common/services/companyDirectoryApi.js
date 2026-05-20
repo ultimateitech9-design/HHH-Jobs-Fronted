@@ -298,7 +298,7 @@ export const getCompanySubscription = async ({ companySlug, companyName } = {}) 
   const params = new URLSearchParams({ companyName: name });
 
   try {
-    const response = await apiFetch(`/student/company-subscriptions/${encodeURIComponent(slug)}?${params.toString()}`);
+    const response = await apiFetch(`/companies/${encodeURIComponent(slug)}/subscription?${params.toString()}`);
     const payload = await parseJson(response);
 
     if (!response.ok) {
@@ -336,7 +336,7 @@ export const updateCompanySubscription = async ({
   }
 
   try {
-    const response = await apiFetch(`/student/company-subscriptions/${encodeURIComponent(slug)}`, {
+    const response = await apiFetch(`/companies/${encodeURIComponent(slug)}/subscription`, {
       method: 'PUT',
       body: JSON.stringify({
         companyName: name,

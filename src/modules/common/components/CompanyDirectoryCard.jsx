@@ -1,12 +1,21 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiArrowRight,
+  FiBell,
   FiBriefcase,
   FiLayers,
   FiMapPin,
   FiStar
 } from 'react-icons/fi';
+
+import useAuthStore from '../../../core/auth/authStore';
+import { normalizeRole } from '../../../utils/auth';
+import {
+  getCompanySubscription,
+  updateCompanySubscription
+} from '../services/companyDirectoryApi';
 
 const primaryActionClassName =
   'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-brand-500 via-brand-500 to-warning-400 px-3.5 py-2 text-[12px] font-black text-white shadow-[0_12px_22px_rgba(229,155,23,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_28px_rgba(229,155,23,0.24)]';
@@ -35,6 +44,12 @@ const getCategoryList = (company = {}) => {
   return categories.length > 0 ? categories : ['General hiring'];
 };
 
+const buildCurrentPath = (location) =>
+  `${location.pathname || ''}${location.search || ''}${location.hash || ''}`;
+
+const canRoleSubscribeToCompany = (role) =>
+  ['student', 'retired_employee', 'hr', 'campus_connect'].includes(normalizeRole(role));
+
 const CompanyDirectoryCard = ({
   company,
   onOpenCompany,
@@ -42,9 +57,83 @@ const CompanyDirectoryCard = ({
   secondaryTo = '/jobs',
   secondaryLabel = 'Browse jobs'
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = Boolean(user);
+  const canSubscribe = canRoleSubscribeToCompany(user?.role);
   const [logoError, setLogoError] = useState(false);
+  const [subscriptionState, setSubscriptionState] = useState({
+    subscribed: false,
+    loading: false
+  });
   const categories = getCategoryList(company);
   const description = company.description || 'Open this company to see its available roles and hiring page.';
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSubscription = async () => {
+      if (!isAuthenticated || !canSubscribe || !company?.name || !company?.slug) {
+        setSubscriptionState({ subscribed: false, loading: false });
+        return;
+      }
+
+      setSubscriptionState((current) => ({ ...current, loading: true }));
+      const response = await getCompanySubscription({
+        companySlug: company.slug,
+        companyName: company.name
+      });
+
+      if (!mounted) return;
+
+      setSubscriptionState({
+        subscribed: Boolean(response.data?.subscription?.subscribed),
+        loading: false
+      });
+    };
+
+    loadSubscription();
+
+    return () => {
+      mounted = false;
+    };
+  }, [canSubscribe, company?.name, company?.slug, isAuthenticated]);
+
+  const handleSubscribe = async () => {
+    if (!isAuthenticated) {
+      toast('Login first to subscribe for company job alerts.');
+      navigate('/login', { state: { from: buildCurrentPath(location) } });
+      return;
+    }
+
+    if (!canSubscribe) {
+      toast.error('This portal role cannot subscribe to company job alerts.');
+      return;
+    }
+
+    if (!company?.name || !company?.slug || subscriptionState.loading) return;
+
+    const nextSubscribed = !subscriptionState.subscribed;
+    setSubscriptionState((current) => ({ ...current, loading: true }));
+    const response = await updateCompanySubscription({
+      companySlug: company.slug,
+      companyName: company.name,
+      subscribed: nextSubscribed
+    });
+
+    if (response.error) {
+      setSubscriptionState((current) => ({ ...current, loading: false }));
+      toast.error(response.error);
+      return;
+    }
+
+    setSubscriptionState({
+      subscribed: Boolean(response.data?.subscription?.subscribed),
+      loading: false
+    });
+    toast.success(nextSubscribed ? `Subscribed to ${company.name}.` : `Unsubscribed from ${company.name}.`);
+  };
 
   return (
     <article className="flex h-full min-w-0 flex-col rounded-[1rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-3 shadow-[0_10px_20px_rgba(15,23,42,0.05)]">
@@ -143,6 +232,24 @@ const CompanyDirectoryCard = ({
           <Link to={secondaryTo} className={`${secondaryActionClassName} w-full sm:w-auto`}>
             {secondaryLabel}
           </Link>
+        ) : null}
+
+        {(!isAuthenticated || canSubscribe) ? (
+          <button
+            type="button"
+            onClick={handleSubscribe}
+            disabled={subscriptionState.loading}
+            className={`${secondaryActionClassName} w-full disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto ${
+              subscriptionState.subscribed ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700' : ''
+            }`}
+          >
+            <FiBell size={13} />
+            {subscriptionState.loading
+              ? 'Updating'
+              : subscriptionState.subscribed
+                ? 'Subscribed'
+                : 'Subscribe'}
+          </button>
         ) : null}
       </div>
     </article>
