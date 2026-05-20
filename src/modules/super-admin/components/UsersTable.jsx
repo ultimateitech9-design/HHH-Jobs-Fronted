@@ -31,17 +31,15 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
     {
       key: 'actions',
       label: 'Actions',
-      width: 196,
+      width: 156,
       render: (_, row) => (
         ['super_admin', 'admin', 'hr', 'support', 'student', 'dataentry', 'accounts', 'sales', 'company_admin', 'platform', 'audit', 'campus_connect', 'retired_employee'].includes(row.role) ? (
           <div className="grid min-w-0 grid-cols-2 gap-2">
-            {['active', 'blocked', 'banned'].map((status) => {
+            {['active', 'banned'].map((status) => {
               const isSelected = row.status === status;
               const toneClassName = status === 'banned'
                 ? (isSelected ? 'bg-rose-100 text-rose-700 shadow-sm' : 'text-rose-600 hover:text-rose-700')
-                : status === 'blocked'
-                  ? (isSelected ? 'bg-amber-100 text-amber-700 shadow-sm' : 'text-amber-700 hover:text-amber-800')
-                  : (isSelected ? 'bg-emerald-100 text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-800');
+                : (isSelected ? 'bg-emerald-100 text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-800');
               return (
                 <button
                   key={status}
@@ -50,7 +48,7 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
                   disabled={busyUserId === row.id || isSelected}
                   onClick={() => onStatusChange?.(row, status)}
                 >
-                  {status === 'active' ? 'Active' : status === 'blocked' ? 'Block' : 'Ban'}
+                  {status === 'active' ? 'Active' : 'Ban'}
                 </button>
               );
             })}

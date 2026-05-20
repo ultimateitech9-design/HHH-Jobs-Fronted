@@ -725,20 +725,13 @@ const AdminUsersPage = () => {
                           )}
                           
                           {/* Generic Status Actions */}
-                          <div className="flex flex-nowrap bg-neutral-100 rounded-lg p-0.5 border border-neutral-200">
+                          <div className="flex flex-nowrap items-center rounded-lg border border-neutral-200 bg-neutral-100 p-0.5">
                              <button
                                disabled={isStatusBusy}
                                onClick={() => handleStatusChange(user.id, 'active')}
                                className={`whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold transition-all ${user.status === 'active' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-neutral-700'} disabled:opacity-50`}
                              >
                                Active
-                             </button>
-                             <button
-                               disabled={isStatusBusy}
-                               onClick={() => handleStatusChange(user.id, 'blocked')}
-                               className={`whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold transition-all ${user.status === 'blocked' ? 'bg-amber-100 text-amber-800 shadow-sm' : 'text-neutral-500 hover:text-amber-700'} disabled:opacity-50`}
-                             >
-                               Block
                              </button>
                              <button
                                disabled={isStatusBusy}
