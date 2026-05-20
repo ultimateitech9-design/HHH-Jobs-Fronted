@@ -228,10 +228,10 @@ const UsersManagement = () => {
 
   const cards = useMemo(() => [
     { label: 'Total Users', value: String(users.length), helper: `${users.filter((item) => item.status === 'active').length} active`, tone: 'info' },
-    { label: 'Pending Verification', value: String(users.filter((item) => item.status === 'pending').length), helper: 'Requires approval or onboarding review', tone: 'warning' },
-    { label: 'Blocked', value: String(users.filter((item) => item.status === 'blocked').length), helper: 'Temporarily restricted', tone: 'danger' },
-    { label: 'Banned', value: String(users.filter((item) => item.status === 'banned').length), helper: 'Permanently removed from access', tone: 'danger' },
-    { label: 'Verified Accounts', value: String(users.filter((item) => item.verified).length), helper: 'Identity checks complete', tone: 'success' }
+    { label: 'Pending Verification', value: String(users.filter((item) => item.status === 'pending').length), helper: 'Approval review', tone: 'warning' },
+    { label: 'Blocked', value: String(users.filter((item) => item.status === 'blocked').length), helper: 'Restricted', tone: 'danger' },
+    { label: 'Banned', value: String(users.filter((item) => item.status === 'banned').length), helper: 'Access removed', tone: 'danger' },
+    { label: 'Verified Accounts', value: String(users.filter((item) => item.verified).length), helper: 'Checks complete', tone: 'success' }
   ], [users]);
 
   const handleCreateAdmin = async ({ name, email, company, password, role }) => {
@@ -304,7 +304,7 @@ const UsersManagement = () => {
       {error ? <p className="form-error">{error}</p> : null}
       {actionError ? <p className="form-error">{actionError}</p> : null}
       {formMessage ? <p className="module-note">{formMessage}</p> : null}
-      <DashboardStatsCards cards={cards} />
+      <DashboardStatsCards cards={cards} className="stats-grid--users-management" />
       <section className="panel-card min-w-0">
         <FilterBar
           className="filter-bar--users-management"
