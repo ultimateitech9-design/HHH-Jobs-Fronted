@@ -18,12 +18,10 @@ import {
   formatTrialLabel
 } from '../constants/planConfig';
 
-const cache = { data: null, timestamp: 0, loading: false };
+const cache = {};
 const CACHE_TTL = 5 * 60 * 1000;
 
 export const usePlanAccess = () => {
-  const [subscription, setSubscription] = useState(cache.data);
-  const [loading, setLoading] = useState(!cache.data);
   const user = getCurrentUser();
   const role = user?.role || '';
 
@@ -31,32 +29,37 @@ export const usePlanAccess = () => {
     : role === 'student' ? 'student'
     : role === 'campus_connect' ? 'campus_connect'
     : '';
+  const cachedRoleState = audienceRole ? cache[audienceRole] : null;
+  const [subscription, setSubscription] = useState(cachedRoleState?.data || null);
+  const [loading, setLoading] = useState(!cachedRoleState?.data);
 
   const fetchSubscription = useCallback(async () => {
     if (!audienceRole) return;
+    const roleCache = cache[audienceRole] || { data: null, timestamp: 0, loading: false };
+    cache[audienceRole] = roleCache;
 
     const now = Date.now();
-    if (cache.data && (now - cache.timestamp) < CACHE_TTL) {
-      setSubscription(cache.data);
+    if (roleCache.data && (now - roleCache.timestamp) < CACHE_TTL) {
+      setSubscription(roleCache.data);
       setLoading(false);
       return;
     }
 
-    if (cache.loading) return;
-    cache.loading = true;
+    if (roleCache.loading) return;
+    roleCache.loading = true;
 
     try {
       const response = await apiFetch(`/pricing/role-subscriptions/current?audienceRole=${audienceRole}`);
       const payload = await response.json();
       const sub = payload?.subscription || null;
 
-      cache.data = sub;
-      cache.timestamp = Date.now();
+      roleCache.data = sub;
+      roleCache.timestamp = Date.now();
       setSubscription(sub);
     } catch (error) {
       setSubscription(null);
     } finally {
-      cache.loading = false;
+      roleCache.loading = false;
       setLoading(false);
     }
   }, [audienceRole]);
@@ -91,10 +94,11 @@ export const usePlanAccess = () => {
   }, [audienceRole]);
 
   const refresh = useCallback(() => {
-    cache.data = null;
-    cache.timestamp = 0;
+    if (audienceRole) {
+      cache[audienceRole] = { data: null, timestamp: 0, loading: false };
+    }
     return fetchSubscription();
-  }, [fetchSubscription]);
+  }, [audienceRole, fetchSubscription]);
 
   return {
     subscription,
