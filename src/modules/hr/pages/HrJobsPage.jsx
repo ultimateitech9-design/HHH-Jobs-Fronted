@@ -135,13 +135,20 @@ const isCurrentRoleSubscriptionPlan = (subscription = null, plan = null) => {
 };
 
 const JOB_POSTING_DESCRIPTION_LIMIT = 250;
-const JOB_POSTING_LOCATION_LIMIT = 1;
 const OTHER_COMPANY_VALUE = '__other_company__';
 const PRIVATE_COMPANY_PATTERN = /\b(private|pvt|limited|ltd|llp)\b/i;
-const TRACKED_JOB_PLAN_SLUGS = ['standard', 'hot_vacancy', 'premium'];
+const TRACKED_JOB_PLAN_SLUGS = ['premium', 'hot_vacancy', 'standard'];
+const JOB_PLAN_PRIORITY = Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug, index) => [slug, index]));
 
 const getJobPlanSlug = (job = {}) =>
   String(job.planSlug || job.plan_slug || job.pricingPlanSlug || job.pricing_plan_slug || job.plan?.slug || '').trim().toLowerCase();
+
+const sortByJobPlanPriority = (a = {}, b = {}) => {
+  const aRank = JOB_PLAN_PRIORITY[String(a.slug || '').toLowerCase()] ?? 99;
+  const bRank = JOB_PLAN_PRIORITY[String(b.slug || '').toLowerCase()] ?? 99;
+  if (aRank !== bRank) return aRank - bRank;
+  return Number(a.sortOrder ?? a.sort_order ?? 999) - Number(b.sortOrder ?? b.sort_order ?? 999);
+};
 
 const getStatusColor = (status) => {
   const s = String(status || '').toLowerCase();
@@ -225,13 +232,15 @@ const HrJobsPage = () => {
     [plans]
   );
 
-  const postablePlans = useMemo(() => normalizedPlans.filter((plan) => !isDisabledPostingPlan(plan)), [normalizedPlans]);
+  const postablePlans = useMemo(
+    () => [...normalizedPlans.filter((plan) => !isDisabledPostingPlan(plan))].sort(sortByJobPlanPriority),
+    [normalizedPlans]
+  );
   const paidPlans = useMemo(() => postablePlans.filter((plan) => !plan.isFreeNormalized && Number(plan.price || 0) > 0), [postablePlans]);
 
   const selectedPlan = useMemo(
     () =>
       normalizedPlans.find((plan) => plan.slug === draft.planSlug)
-      || postablePlans.find((plan) => plan.slug === 'standard')
       || postablePlans[0]
       || null,
     [normalizedPlans, postablePlans, draft.planSlug]
@@ -298,10 +307,6 @@ const HrJobsPage = () => {
     }
     return counts;
   }, [jobs]);
-  const selectedPlanPostedCount = useMemo(
-    () => postedJobCountsByPlan[String(selectedPlan?.slug || '').toLowerCase()] || 0,
-    [postedJobCountsByPlan, selectedPlan]
-  );
   const hasUsableRecruiterPlan = useMemo(
     () => isUsableRoleSubscription(currentRoleSubscription),
     [currentRoleSubscription]
@@ -414,7 +419,8 @@ const HrJobsPage = () => {
     setPurchases(purchasesRes.data || []);
     setPricingError([plansRes.error, creditsRes.error, purchasesRes.error].filter(Boolean).join(' | '));
 
-    const firstPaidPlan = nextPlans.find((plan) => !isFreePlan(plan));
+    const nextPostablePlans = [...nextPlans.filter((plan) => !isDisabledPostingPlan(plan))].sort(sortByJobPlanPriority);
+    const firstPaidPlan = nextPostablePlans.find((plan) => !isFreePlan(plan));
 
     setCheckoutForm((current) => {
       const currentPlanIsValidPaid = nextPlans.some((plan) => plan.slug === current.planSlug && !isFreePlan(plan));
@@ -424,7 +430,7 @@ const HrJobsPage = () => {
       };
     });
 
-    const firstPostingPlan = nextPlans.find((plan) => plan.slug === 'standard') || nextPlans.find((plan) => !isDisabledPostingPlan(plan)) || nextPlans[0];
+    const firstPostingPlan = nextPostablePlans[0] || nextPlans[0];
     if (firstPostingPlan) {
       setDraft((current) => ({
         ...current,
@@ -625,10 +631,6 @@ const HrJobsPage = () => {
     const resolvedLocations = resolveDraftLocations();
     if (resolvedLocations.length === 0) {
       return 'At least one job location is required.';
-    }
-
-    if (resolvedLocations.length > JOB_POSTING_LOCATION_LIMIT) {
-      return `Only ${JOB_POSTING_LOCATION_LIMIT} location is allowed for each job posting.`;
     }
 
     const descriptionLimit = Math.min(
@@ -1043,24 +1045,23 @@ const HrJobsPage = () => {
                   </select>
                 </div>
                 {selectedPlan && (
-                  <div className="md:col-span-2 text-xs font-bold text-brand-700 bg-brand-50 p-3 rounded-lg flex flex-wrap gap-3">
-                    <span>Validity: {formatDurationLabel(selectedPlan.jobValidityDays)}</span>
-                    <span>Max Locations: {Number(selectedPlan.maxLocations || JOB_POSTING_LOCATION_LIMIT) || JOB_POSTING_LOCATION_LIMIT}</span>
-                    <span>Description Limit: {Math.min(JOB_POSTING_DESCRIPTION_LIMIT, Number(selectedPlan.maxDescriptionChars || JOB_POSTING_DESCRIPTION_LIMIT) || JOB_POSTING_DESCRIPTION_LIMIT)}</span>
-                    <span>Contact Visible: {selectedPlan.contactDetailsVisible ? 'Yes' : 'No'}</span>
-                    <span>Credits Remaining: {selectedPlanCredits}</span>
-                    <span>Posted on this plan: {selectedPlanPostedCount}</span>
+                  <div className="md:col-span-2 grid grid-cols-2 gap-2 rounded-xl border border-brand-100 bg-white p-2 shadow-sm sm:grid-cols-4">
+                    {[
+                      { label: 'Validity', value: formatDurationLabel(selectedPlan.jobValidityDays) },
+                      {
+                        label: 'Description',
+                        value: `${Math.min(JOB_POSTING_DESCRIPTION_LIMIT, Number(selectedPlan.maxDescriptionChars || JOB_POSTING_DESCRIPTION_LIMIT) || JOB_POSTING_DESCRIPTION_LIMIT)} chars`
+                      },
+                      { label: 'Contact', value: selectedPlan.contactDetailsVisible ? 'Visible' : 'Hidden' },
+                      { label: 'Credits left', value: selectedPlanCredits }
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-lg bg-brand-50/70 px-3 py-2">
+                        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-brand-500">{item.label}</p>
+                        <p className="mt-0.5 text-sm font-extrabold text-slate-900">{item.value}</p>
+                      </div>
+                    ))}
                   </div>
                 )}
-                <div className="md:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {trackedJobPlanStats.map((stat) => (
-                    <div key={stat.slug} className="rounded-xl border border-neutral-200 bg-white px-3 py-2">
-                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-neutral-400">{stat.label}</p>
-                      <p className="mt-1 text-lg font-extrabold text-slate-900">{stat.count}</p>
-                      <p className="text-[11px] font-semibold text-neutral-500">jobs posted</p>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
 
@@ -1124,7 +1125,7 @@ const HrJobsPage = () => {
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-neutral-700">Primary Location</label>
               <input required value={draft.jobLocation} onChange={(e) => updateDraftField('jobLocation', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. Bangalore" />
-              <p className="text-xs font-medium text-neutral-400">Only one location is allowed for each posting.</p>
+              <p className="text-xs font-medium text-neutral-400">Enter any city, state, remote, or work location.</p>
             </div>
 
             <div className="space-y-1.5">
@@ -1205,6 +1206,14 @@ const HrJobsPage = () => {
                       Auto-pay: {currentRoleSubscription?.autopay_enabled ? (currentRoleSubscription?.autopay_status || 'active') : 'not enabled'}
                     </p>
                   )}
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {trackedJobPlanStats.map((stat) => (
+                      <div key={stat.slug} className="rounded-lg border border-white/80 bg-white/85 px-3 py-2 shadow-sm">
+                        <p className="truncate text-[10px] font-black uppercase tracking-[0.12em] text-neutral-400">{stat.label}</p>
+                        <p className="mt-0.5 text-base font-extrabold text-slate-900">{stat.count}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {rolePricingError && (
