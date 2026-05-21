@@ -416,10 +416,6 @@ function DriveApplicantsView({ driveId, onBack }) {
                 </span>
               </div>
             </div>
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-left lg:text-right">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Created On</p>
-              <p className="mt-1 text-sm font-extrabold text-navy">{formatDate(drive.createdAt || drive.driveDate)}</p>
-            </div>
           </div>
 
           {String(drive.driveMode || '').toLowerCase() === 'virtual' && (
