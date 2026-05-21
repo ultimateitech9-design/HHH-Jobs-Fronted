@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiActivity,
   FiBarChart2,
@@ -37,9 +38,21 @@ import {
 } from '../services/studentApi';
 
 const MAX_RESUME_FILE_SIZE = 8 * 1024 * 1024;
+const ATS_RESULT_STORAGE_KEY = 'studentAtsLatestResult';
 
 const compactFieldClassName = `${studentFieldClassName} rounded-[0.95rem] px-3 py-2.5 text-[13px]`;
 const compactTextareaClassName = `${studentTextareaClassName} min-h-[104px] rounded-[0.95rem] px-3 py-2.5 text-[13px] leading-5`;
+
+const readStoredAtsResult = () => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const payload = JSON.parse(window.sessionStorage.getItem(ATS_RESULT_STORAGE_KEY) || 'null');
+    return payload?.result ? payload : null;
+  } catch {
+    return null;
+  }
+};
 
 const getJobId = (job = {}) => String(job.id || job._id || '');
 
@@ -191,7 +204,10 @@ const ScoreBar = ({ value = 0, tone }) => {
 };
 
 const StudentAtsPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const searchBoxRef = useRef(null);
+  const initialStoredResult = readStoredAtsResult();
   const [jobs, setJobs] = useState([]);
   const [jobResults, setJobResults] = useState([]);
   const [jobSearch, setJobSearch] = useState('');
@@ -200,7 +216,8 @@ const StudentAtsPage = () => {
   const [history, setHistory] = useState([]);
   const [state, setState] = useState({ loading: true, error: '' });
   const [isRunning, setIsRunning] = useState(false);
-  const [result, setResult] = useState(null);
+  const [resultPayload, setResultPayload] = useState(initialStoredResult);
+  const [result, setResult] = useState(() => (initialStoredResult?.result ? normalizeResult(initialStoredResult.result) : null));
   const [notice, setNotice] = useState({ type: '', text: '' });
   const [selectedFileName, setSelectedFileName] = useState('');
   const [form, setForm] = useState({
@@ -289,6 +306,8 @@ const StudentAtsPage = () => {
 
   const selectedJobTitle = selectedJob?.jobTitle || form.targetTitle || 'Custom ATS preview';
   const selectedJobCompany = selectedJob?.companyName || 'Manual target';
+  const isResultRoute = location.pathname.endsWith('/ats/result');
+  const reportJobTitle = resultPayload?.selectedJobTitle || selectedJobTitle;
   const hasCustomResume = form.source === 'new_resume_upload';
   const isManualTarget = !form.jobId;
   const resumeTextWordCount = getWordCount(form.resumeText);
@@ -412,6 +431,16 @@ const StudentAtsPage = () => {
       }
 
       setResult(check);
+      const nextResultPayload = {
+        result: check,
+        selectedJobTitle,
+        selectedJobCompany,
+        generatedAt: new Date().toISOString(),
+        saved: Boolean(payload?.saved),
+        atsCheckId: payload?.atsCheckId || null
+      };
+      setResultPayload(nextResultPayload);
+      window.sessionStorage.setItem(ATS_RESULT_STORAGE_KEY, JSON.stringify(nextResultPayload));
 
       const historyItem = {
         id: payload?.atsCheckId || `temp-${Date.now()}`,
@@ -434,6 +463,7 @@ const StudentAtsPage = () => {
         type: payload?.persistenceWarning ? 'info' : 'success',
         text: payload?.persistenceWarning || 'ATS check completed with job-specific AI analysis.'
       });
+      navigate('/portal/student/ats/result', { state: nextResultPayload });
     } catch (error) {
       setNotice({ type: 'error', text: error.message || 'Unable to run ATS check.' });
     } finally {
@@ -592,6 +622,7 @@ const StudentAtsPage = () => {
       {notice.text ? <StudentNotice type={notice.type || 'info'} text={notice.text} /> : null}
 
       <div className="grid items-start gap-4">
+        {!isResultRoute ? (
         <StudentSurfaceCard
           eyebrow="Scan setup"
           title="Role-fit command center"
@@ -809,11 +840,22 @@ const StudentAtsPage = () => {
             </form>
           )}
         </StudentSurfaceCard>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-amber-700">ATS Report</p>
+              <h1 className="mt-1 font-heading text-2xl font-black text-navy">{reportJobTitle}</h1>
+            </div>
+            <Link to="/portal/student/ats" className={`${studentSecondaryButtonClassName} px-4 py-2 text-xs`}>
+              Run another scan
+            </Link>
+          </div>
+        )}
 
-        {result ? (
+        {isResultRoute ? (result ? (
           <StudentSurfaceCard
             eyebrow="Result"
-            title={`${result.fitLevel || 'ATS report'} for ${selectedJobTitle}`}
+            title={`${result.fitLevel || 'ATS report'} for ${reportJobTitle}`}
             subtitle="Weighted ATS scoring, business-fit checks, and OpenAI calibrated resume guidance in one report."
             className="w-full p-4 xl:p-5 [&>div:first-child]:mb-4 [&_h2]:text-[1.55rem] [&_p]:max-w-none"
           >
@@ -836,7 +878,7 @@ const StudentAtsPage = () => {
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <span className="rounded-full border border-white/80 bg-white px-3 py-1 text-xs font-bold text-slate-700">
-                        Target {result.targetRole || selectedJobTitle}
+                        Target {result.targetRole || reportJobTitle}
                       </span>
                       {result.resumeYearsExperience !== null ? (
                         <span className="rounded-full border border-white/80 bg-white px-3 py-1 text-xs font-bold text-slate-700">
@@ -1097,9 +1139,10 @@ const StudentAtsPage = () => {
               </div>
             </div>
           </StudentSurfaceCard>
-        )}
+        )) : null}
       </div>
 
+      {!isResultRoute ? (
       <StudentSurfaceCard
         eyebrow="History"
         title="Past ATS checks"
@@ -1117,6 +1160,7 @@ const StudentAtsPage = () => {
           <DataTable columns={columns} rows={history.map((item) => ({ ...item, id: item.id || item.created_at }))} />
         )}
       </StudentSurfaceCard>
+      ) : null}
     </StudentPageShell>
   );
 };

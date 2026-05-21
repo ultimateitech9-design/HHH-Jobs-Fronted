@@ -46,6 +46,7 @@ const studentRoutes = [
       { path: 'interviews/:interviewId/room', element: <StudentInterviewRoomPage /> },
       { path: 'analytics', element: <StudentAnalyticsPage /> },
       { path: 'ats', element: <StudentAtsPage /> },
+      { path: 'ats/result', element: <StudentAtsPage /> },
       { path: 'services', element: <StudentServicesPage /> },
       { path: 'notifications', element: <StudentNotificationsPage /> },
       { path: 'company-reviews', element: <Navigate to="/portal/student/companies" replace /> },
