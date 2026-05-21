@@ -268,7 +268,6 @@ const normalizeCompanyJobs = (jobs = {}) => ({
 export const getPublicCompanies = async (filters = {}) => {
   const params = new URLSearchParams();
   if (filters.search) params.set('search', filters.search);
-  if (filters.includeAll) params.set('includeAll', 'true');
 
   const query = params.toString();
   const path = query ? `/companies?${query}` : '/companies';
@@ -295,38 +294,6 @@ export const getPublicCompanies = async (filters = {}) => {
     return {
       data: { companies: [], summary: null },
       error: error.message || 'Unable to load companies'
-    };
-  }
-};
-
-export const searchRegisteredCompanies = async ({ search = '', limit = 20 } = {}) => {
-  const params = new URLSearchParams();
-  if (search) params.set('search', search);
-  if (limit) params.set('limit', String(limit));
-
-  try {
-    const response = await apiFetch(`/companies/registry-search?${params.toString()}`);
-    const payload = await parseJson(response);
-
-    if (!response.ok) {
-      return {
-        data: { companies: [] },
-        error: payload?.message || `Request failed (${response.status})`
-      };
-    }
-
-    return {
-      data: {
-        companies: normalizeCompanyCollection(payload?.companies || []),
-        registryConfigured: Boolean(payload?.registryConfigured),
-        source: payload?.source || ''
-      },
-      error: ''
-    };
-  } catch (error) {
-    return {
-      data: { companies: [] },
-      error: error.message || 'Unable to search registered companies'
     };
   }
 };
