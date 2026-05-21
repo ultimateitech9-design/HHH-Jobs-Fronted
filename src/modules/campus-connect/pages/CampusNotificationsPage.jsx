@@ -366,11 +366,6 @@ const CampusNotificationsPage = () => {
     [workspace]
   );
 
-  const recommendedPartnerships = useMemo(
-    () => connectedPartnerships.slice(0, 3),
-    [connectedPartnerships]
-  );
-
   const handleMarkRead = async (notificationId) => {
     setMessage('');
     const previousNotification = notifications.find((item) => item.id === notificationId);
@@ -588,76 +583,6 @@ const CampusNotificationsPage = () => {
                   <span className="text-base font-bold text-navy">{item.value}</span>
                 </div>
               ))}
-            </div>
-          </div>
-
-          <div className="rounded-[1.2rem] border border-slate-100 bg-white p-4 shadow-[0_8px_20px_-14px_rgba(15,23,42,0.12)]">
-            <h2 className="text-base font-bold text-navy">Connected next steps</h2>
-            <div className="mt-3 space-y-2.5">
-              {recommendedPartnerships.length > 0 ? recommendedPartnerships.map((company) => (
-                <div key={company.companyUserId} className="rounded-[0.95rem] border border-slate-200 bg-slate-50 px-3 py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-bold text-navy">{company.companyName}</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-500">{company.recommendation}</p>
-                    </div>
-                    <span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-slate-600">
-                      Score {company.score}
-                    </span>
-                  </div>
-
-                  <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
-                    <span className="rounded-full bg-white px-2 py-1 font-semibold text-slate-500">
-                      {company.openRoles || 0} roles
-                    </span>
-                    <span className="rounded-full bg-white px-2 py-1 font-semibold text-slate-500">
-                      {company.hasDrive ? 'Drive linked' : 'Drive missing'}
-                    </span>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Link
-                      to="/portal/campus-connect/drives"
-                      state={{
-                        autoOpenDriveForm: true,
-                        prefillDrive: buildDriveDraft(company)
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[#ff6b3d] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#ef5c30]"
-                    >
-                      <FiBriefcase size={13} />
-                      {company.hasDrive ? 'Refresh Drive' : 'Launch Drive'}
-                    </Link>
-                    <Link
-                      to="/portal/campus-connect/students"
-                      state={{ poolPreparation: buildPoolPreparationState(company) }}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                    >
-                      <FiUsers size={13} />
-                      Prepare Pool
-                    </Link>
-                  </div>
-                </div>
-              )) : (
-                <>
-                  {[
-                    { to: '/portal/campus-connect/drives', label: 'Review drives', icon: FiBriefcase },
-                    { to: '/portal/campus-connect/connections', label: 'Open company requests', icon: FiLink },
-                    { to: '/portal/campus-connect/students', label: 'Check student pool', icon: FiUsers }
-                  ].map((item) => (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className="flex items-center justify-between rounded-[0.9rem] border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-white"
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <item.icon size={14} />
-                        {item.label}
-                      </span>
-                      <FiArrowRight size={14} />
-                    </Link>
-                  ))}
-                </>
-              )}
             </div>
           </div>
         </aside>
