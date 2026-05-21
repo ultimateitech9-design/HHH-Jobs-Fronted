@@ -1044,7 +1044,7 @@ export default function CampusDrivesPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-[1180px] space-y-6 pb-12">
+    <div className="mx-auto w-full max-w-[1180px] space-y-4 pb-12">
       {(showForm || editingDrive) ? (
         <DriveFormModal
           initial={editingDrive || draftDrive}
@@ -1053,19 +1053,19 @@ export default function CampusDrivesPage() {
         />
       ) : null}
 
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-navy">Campus Pools & Drive Workflow</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-xl font-bold tracking-tight text-navy">Campus Pools & Drive Workflow</h1>
+          <p className="mt-0.5 text-xs text-slate-500">
             Publish pools, collect applications inside the platform, and manage shortlist or placement status without Excel.
           </p>
         </div>
         <button
           type="button"
           onClick={() => { setEditingDrive(null); setDraftDrive(null); setShowForm(true); }}
-          className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#ff6b3d] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-[#ef5c30]"
         >
-          <FiPlus size={15} />
+          <FiPlus size={14} />
           Create Drive Pool
         </button>
       </div>
@@ -1073,17 +1073,17 @@ export default function CampusDrivesPage() {
       {error ? <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">{error}</div> : null}
 
       {!loading && drives.length > 0 ? (
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           {[
             { label: 'Active Pools', value: upcoming.length, helper: 'Currently live or upcoming' },
             { label: 'Closed Pools', value: past.length, helper: 'Past, completed, or expired' },
             { label: 'Applicants', value: totalApplicants, helper: 'Total submissions across pools' },
             { label: 'Selected', value: selectedTotal, helper: `${platformOpenCount} open to platform` }
           ].map((item) => (
-            <article key={item.label} className="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.18)]">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
-              <p className="mt-2 text-2xl font-bold text-navy">{item.value}</p>
-              <p className="mt-1 text-xs text-slate-500">{item.helper}</p>
+            <article key={item.label} className="rounded-[0.95rem] border border-slate-200 bg-white px-3 py-2.5 shadow-[0_8px_20px_-18px_rgba(15,23,42,0.18)]">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{item.label}</p>
+              <p className="mt-1 text-xl font-bold text-navy">{item.value}</p>
+              <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500">{item.helper}</p>
             </article>
           ))}
         </section>
@@ -1109,12 +1109,12 @@ export default function CampusDrivesPage() {
           </button>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {upcoming.length > 0 ? (
             <div>
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-base font-bold text-navy">Active Pools</h2>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <h2 className="text-sm font-bold text-navy">Active Pools</h2>
+                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
                   {upcoming.length} live
                 </span>
               </div>
@@ -1134,9 +1134,9 @@ export default function CampusDrivesPage() {
 
           {past.length > 0 ? (
             <div>
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-base font-bold text-slate-500">Closed / Past Pools</h2>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <h2 className="text-sm font-bold text-slate-500">Closed / Past Pools</h2>
+                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
                   {past.length} archived
                 </span>
               </div>
