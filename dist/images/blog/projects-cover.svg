@@ -1,0 +1,24 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="40" y1="20" x2="1150" y2="610" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#112F57"/>
+      <stop offset="1" stop-color="#2A74B5"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="130" y="100" width="940" height="430" rx="28" fill="#F8FBFF" fill-opacity="0.94"/>
+  <rect x="185" y="162" width="360" height="300" rx="20" fill="#E6F1FF"/>
+  <rect x="224" y="210" width="132" height="90" rx="14" fill="#1F7A61"/>
+  <rect x="372" y="210" width="132" height="90" rx="14" fill="#2A74B5"/>
+  <rect x="224" y="318" width="280" height="22" rx="11" fill="#274A6E" fill-opacity="0.2"/>
+  <rect x="224" y="352" width="240" height="22" rx="11" fill="#274A6E" fill-opacity="0.16"/>
+  <rect x="600" y="165" width="420" height="38" rx="10" fill="#173D66" fill-opacity="0.92"/>
+  <rect x="600" y="220" width="380" height="18" rx="9" fill="#35567A" fill-opacity="0.45"/>
+  <rect x="600" y="250" width="400" height="18" rx="9" fill="#35567A" fill-opacity="0.34"/>
+  <rect x="600" y="291" width="360" height="14" rx="7" fill="#35567A" fill-opacity="0.2"/>
+  <rect x="600" y="316" width="330" height="14" rx="7" fill="#35567A" fill-opacity="0.2"/>
+  <rect x="600" y="341" width="350" height="14" rx="7" fill="#35567A" fill-opacity="0.2"/>
+  <rect x="600" y="380" width="180" height="44" rx="22" fill="#1F7A61"/>
+  <circle cx="1090" cy="80" r="130" fill="#6CB4FF" fill-opacity="0.18"/>
+  <text x="130" y="572" fill="#EAF5FF" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">Projects Recruiters Notice</text>
+</svg>

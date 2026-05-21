@@ -1,0 +1,23 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F365E"/>
+      <stop offset="1" stop-color="#1F7A61"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="120" y="100" width="960" height="430" rx="28" fill="#F8FCFF" fill-opacity="0.95"/>
+  <rect x="180" y="165" width="430" height="300" rx="18" fill="#E8F4FF"/>
+  <rect x="225" y="214" width="340" height="28" rx="8" fill="#153D67" fill-opacity="0.9"/>
+  <rect x="225" y="258" width="250" height="16" rx="8" fill="#345A7F" fill-opacity="0.44"/>
+  <rect x="225" y="285" width="290" height="16" rx="8" fill="#345A7F" fill-opacity="0.33"/>
+  <rect x="225" y="332" width="300" height="14" rx="7" fill="#345A7F" fill-opacity="0.2"/>
+  <rect x="225" y="357" width="270" height="14" rx="7" fill="#345A7F" fill-opacity="0.2"/>
+  <rect x="225" y="382" width="250" height="14" rx="7" fill="#345A7F" fill-opacity="0.2"/>
+  <rect x="665" y="165" width="355" height="300" rx="18" fill="#D7F0E7"/>
+  <rect x="720" y="220" width="245" height="44" rx="22" fill="#1F7A61" fill-opacity="0.86"/>
+  <rect x="720" y="283" width="220" height="44" rx="22" fill="#2A74B5" fill-opacity="0.8"/>
+  <rect x="720" y="346" width="260" height="44" rx="22" fill="#183F67" fill-opacity="0.76"/>
+  <circle cx="1080" cy="70" r="120" fill="#6CB4FF" fill-opacity="0.2"/>
+  <text x="120" y="575" fill="#E6F7FF" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">HR Expectations in 2026</text>
+</svg>

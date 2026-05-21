@@ -1,0 +1,137 @@
+<svg width="1600" height="1120" viewBox="0 0 1600 1120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Anime style job seeker working on laptop">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="1120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8EA7DB"/>
+      <stop offset="1" stop-color="#AFC2EA"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(790 430) rotate(90) scale(430 520)">
+      <stop stop-color="#F7FAFF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#F7FAFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="desk" x1="780" y1="850" x2="780" y2="1120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4F8FF"/>
+      <stop offset="1" stop-color="#CBD9F5"/>
+    </linearGradient>
+    <linearGradient id="shirt" x1="650" y1="500" x2="980" y2="930" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#77A4E7"/>
+      <stop offset="1" stop-color="#4B76BF"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="640" y1="260" x2="920" y2="470" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6C3E35"/>
+      <stop offset="1" stop-color="#3A1D1E"/>
+    </linearGradient>
+    <linearGradient id="laptop" x1="440" y1="720" x2="875" y2="925" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D4DDF0"/>
+      <stop offset="1" stop-color="#8997B8"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="1600" height="1120" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#1B2C55" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1120" fill="url(#bg)"/>
+  <rect width="1600" height="1120" fill="url(#halo)"/>
+
+  <g opacity="0.52">
+    <rect x="1260" y="270" width="220" height="170" rx="12" fill="#C8D6EE"/>
+    <rect x="1320" y="300" width="80" height="92" rx="8" fill="#EAF2FF"/>
+    <rect x="1268" y="318" width="40" height="66" rx="8" fill="#DCE8FC"/>
+    <rect x="1415" y="332" width="48" height="90" rx="8" fill="#D7E4FB"/>
+  </g>
+
+  <rect y="850" width="1600" height="270" fill="url(#desk)"/>
+
+  <g filter="url(#shadow)">
+    <rect x="960" y="418" width="200" height="380" rx="92" fill="#ECF1FB"/>
+    <rect x="600" y="410" width="430" height="430" rx="210" fill="#F4F7FE"/>
+  </g>
+
+  <g>
+    <ellipse cx="760" cy="394" rx="140" ry="130" fill="#FFD8BC"/>
+    <ellipse cx="707" cy="394" rx="14" ry="17" fill="#1C2A49"/>
+    <ellipse cx="808" cy="394" rx="14" ry="17" fill="#1C2A49"/>
+    <path d="M706 470C722 484 742 492 763 492C784 492 804 484 820 470" stroke="#B5755E" stroke-width="8" stroke-linecap="round"/>
+    <path d="M670 365C684 348 703 343 726 352" stroke="#4B2E2A" stroke-width="16" stroke-linecap="round"/>
+    <path d="M790 352C814 343 834 348 848 365" stroke="#4B2E2A" stroke-width="16" stroke-linecap="round"/>
+
+    <path d="M635 344C593 264 675 216 746 230C832 176 925 226 908 320C967 351 942 452 858 448C837 500 755 531 686 490C616 514 558 448 593 386C569 366 583 333 635 344Z" fill="url(#hair)"/>
+
+    <rect x="720" y="500" width="84" height="72" rx="24" fill="#FFD0B2"/>
+    <path d="M610 566C648 526 707 546 748 570C785 592 838 585 888 562C938 539 994 578 1003 636L1035 858H576L610 566Z" fill="url(#shirt)"/>
+
+    <g>
+      <ellipse cx="614" cy="392" rx="50" ry="76" fill="#23385F"/>
+      <ellipse cx="914" cy="392" rx="50" ry="76" fill="#23385F"/>
+      <rect x="586" y="326" width="356" height="36" rx="18" fill="#243B67"/>
+      <rect x="576" y="332" width="18" height="232" rx="9" fill="#1F2D49"/>
+      <rect x="930" y="332" width="18" height="248" rx="9" fill="#1F2D49"/>
+    </g>
+  </g>
+
+  <g filter="url(#shadow)">
+    <path d="M440 692H885C905 692 922 709 922 729V824C922 846 904 864 882 864H444C422 864 404 846 404 824V729C404 709 420 692 440 692Z" fill="url(#laptop)"/>
+    <circle cx="660" cy="777" r="28" fill="#F5F8FF" opacity="0.92"/>
+    <rect x="420" y="860" width="510" height="28" rx="14" fill="#3B4E73" opacity="0.5"/>
+  </g>
+
+  <g>
+    <rect x="220" y="206" width="256" height="128" rx="34" fill="#FFC249"/>
+    <circle cx="286" cy="270" r="14" fill="#F8F2E8"/>
+    <circle cx="355" cy="270" r="14" fill="#F8F2E8"/>
+    <circle cx="424" cy="270" r="14" fill="#F8F2E8"/>
+    <path d="M436 334L455 360L472 332" fill="#FFC249"/>
+    <animateTransform attributeName="transform" type="translate" values="0 0;0 -8;0 0" dur="4.8s" repeatCount="indefinite"/>
+  </g>
+
+  <g>
+    <rect x="220" y="432" width="260" height="138" rx="20" fill="#F7F7FC"/>
+    <path d="M220 446L350 534L480 446" stroke="#C5CBDD" stroke-width="6"/>
+    <circle cx="462" cy="430" r="28" fill="#E64A65"/>
+    <text x="454" y="441" font-size="34" fill="#fff" font-family="Arial" font-weight="700">1</text>
+    <animateTransform attributeName="transform" type="translate" values="0 0;0 7;0 0" dur="5.2s" repeatCount="indefinite"/>
+  </g>
+
+  <g>
+    <rect x="1128" y="192" width="204" height="154" rx="28" fill="#2A63B8"/>
+    <rect x="1184" y="154" width="88" height="40" rx="12" fill="#F4B53F"/>
+    <rect x="1210" y="252" width="40" height="40" rx="8" fill="#F4B53F"/>
+    <animateTransform attributeName="transform" type="translate" values="0 0;0 -10;0 0" dur="4.6s" repeatCount="indefinite"/>
+  </g>
+
+  <g>
+    <rect x="1038" y="416" width="218" height="282" rx="20" fill="#F7F8FC" stroke="#3B5A8A" stroke-width="12"/>
+    <rect x="1092" y="388" width="110" height="40" rx="8" fill="#F4B53F"/>
+    <path d="M1080 494L1097 511L1129 472" stroke="#6DAA4A" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M1148 495H1220" stroke="#5D6E8B" stroke-width="10" stroke-linecap="round"/>
+    <path d="M1080 567L1097 584L1129 545" stroke="#6DAA4A" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M1148 568H1220" stroke="#5D6E8B" stroke-width="10" stroke-linecap="round"/>
+    <path d="M1080 640L1097 657L1129 618" stroke="#6DAA4A" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M1148 641H1220" stroke="#5D6E8B" stroke-width="10" stroke-linecap="round"/>
+    <animateTransform attributeName="transform" type="translate" values="0 0;0 6;0 0" dur="4.9s" repeatCount="indefinite"/>
+  </g>
+
+  <g opacity="0.7">
+    <path d="M360 860C345 840 335 820 334 798" stroke="#D4DEF4" stroke-width="8" stroke-linecap="round"/>
+    <path d="M372 875C360 855 352 835 351 812" stroke="#D4DEF4" stroke-width="8" stroke-linecap="round"/>
+    <path d="M384 892C372 872 364 852 362 829" stroke="#D4DEF4" stroke-width="8" stroke-linecap="round"/>
+    <animateTransform attributeName="transform" type="translate" values="0 0;0 -10;0 0" dur="3.6s" repeatCount="indefinite"/>
+  </g>
+
+  <g>
+    <ellipse cx="160" cy="1016" rx="64" ry="22" fill="#6A82B8" opacity="0.35"/>
+    <rect x="92" y="916" width="136" height="96" rx="30" fill="#6FAA67"/>
+    <ellipse cx="108" cy="910" rx="36" ry="56" fill="#5D9955"/>
+    <ellipse cx="198" cy="904" rx="36" ry="56" fill="#4C8548"/>
+    <ellipse cx="158" cy="888" rx="40" ry="60" fill="#76AF6A"/>
+  </g>
+
+  <g>
+    <rect x="236" y="916" width="72" height="96" rx="16" fill="#2E549A"/>
+    <rect x="235" y="986" width="72" height="8" rx="4" fill="#C7D6F0"/>
+  </g>
+
+  <g>
+    <rect x="932" y="962" width="196" height="42" rx="10" fill="#2C5FAF"/>
+    <rect x="1144" y="956" width="144" height="56" rx="18" fill="#27416D"/>
+  </g>
+</svg>

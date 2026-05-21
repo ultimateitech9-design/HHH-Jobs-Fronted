@@ -1,0 +1,29 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0E2A47"/>
+      <stop offset="1" stop-color="#1F7A61"/>
+    </linearGradient>
+    <linearGradient id="card" x1="220" y1="120" x2="930" y2="510" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#E8F2FF" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1090" cy="90" r="160" fill="#6CB4FF" fill-opacity="0.25"/>
+  <circle cx="130" cy="560" r="190" fill="#34D399" fill-opacity="0.22"/>
+  <rect x="220" y="120" width="720" height="390" rx="26" fill="url(#card)"/>
+  <rect x="270" y="175" width="300" height="24" rx="8" fill="#1F3A5A" fill-opacity="0.88"/>
+  <rect x="270" y="218" width="410" height="16" rx="8" fill="#35567A" fill-opacity="0.55"/>
+  <rect x="270" y="245" width="430" height="16" rx="8" fill="#35567A" fill-opacity="0.42"/>
+  <rect x="270" y="282" width="110" height="34" rx="17" fill="#1F7A61"/>
+  <rect x="395" y="282" width="120" height="34" rx="17" fill="#2A74B5"/>
+  <rect x="270" y="340" width="620" height="10" rx="5" fill="#20466E" fill-opacity="0.18"/>
+  <rect x="270" y="365" width="540" height="10" rx="5" fill="#20466E" fill-opacity="0.16"/>
+  <rect x="270" y="390" width="510" height="10" rx="5" fill="#20466E" fill-opacity="0.14"/>
+  <rect x="770" y="180" width="130" height="130" rx="18" fill="#DCEEFF"/>
+  <path d="M808 262l24-24 20 20 30-36" stroke="#1E5C9D" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="760" y="330" width="140" height="26" rx="13" fill="#1F7A61" fill-opacity="0.18"/>
+  <rect x="760" y="367" width="120" height="26" rx="13" fill="#2A74B5" fill-opacity="0.18"/>
+  <text x="220" y="565" fill="#E8F7FF" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">ATS Resume Blueprint</text>
+</svg>

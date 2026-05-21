@@ -1,0 +1,30 @@
+User-agent: *
+Allow: /
+
+# Keep public marketing and discovery pages crawlable for SEO.
+
+# Block private portals, admin surfaces, and security-related areas.
+Disallow: /portal/
+Disallow: /management
+Disallow: /admin/
+Disallow: /super-admin/
+Disallow: /dashboard/
+Disallow: /platform/
+Disallow: /audit/
+Disallow: /accounts/
+Disallow: /sales/
+Disallow: /support/
+Disallow: /dataentry/
+
+# Block auth recovery/callback flows, but keep primary entry pages crawlable.
+Disallow: /verify-otp
+Disallow: /forgot-password
+Disallow: /oauth/
+
+# Block low-value utility and redirect-only routes.
+Disallow: /forbidden
+Disallow: /workflow
+Disallow: /global-jobs
+Disallow: /employer-home
+
+Sitemap: https://hhh-jobs.com/sitemap.xml

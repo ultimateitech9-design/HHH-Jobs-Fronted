@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="96" viewBox="0 0 320 96" role="img" aria-label="Eimager logo">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b3f91" />
+      <stop offset="100%" stop-color="#1f6feb" />
+    </linearGradient>
+  </defs>
+  <rect width="320" height="96" fill="none" />
+  <circle cx="32" cy="48" r="18" fill="url(#g)" />
+  <path d="M26 48h12M32 42v12" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" />
+  <text x="62" y="56" fill="#0f2f6a" font-size="34" font-family="Arial, Helvetica, sans-serif" font-weight="700">eimager</text>
+</svg>

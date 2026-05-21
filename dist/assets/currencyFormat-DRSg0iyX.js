@@ -1,0 +1,1 @@
+const o=(t,r="INR",n="en-IN")=>{const m=Number(t||0);return new Intl.NumberFormat(n,{style:"currency",currency:r,maximumFractionDigits:2}).format(m)},a=(t,r="INR",n="en-IN")=>{const m=Number(t||0);return new Intl.NumberFormat(n,{style:"currency",currency:r,notation:"compact",maximumFractionDigits:1}).format(m)};export{o as a,a as f};

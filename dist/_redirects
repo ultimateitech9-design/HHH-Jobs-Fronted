@@ -1,0 +1,4 @@
+/blog https://blog.hhh-jobs.com 301!
+/blog/* https://blog.hhh-jobs.com/:splat 301!
+/assets/* /assets/:splat 200
+/* /index.html 200
