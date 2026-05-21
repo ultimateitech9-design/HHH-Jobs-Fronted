@@ -36,6 +36,7 @@ const DRIVE_STATUS_STYLES = {
 };
 
 const ROUNDS = ['Aptitude', 'Group Discussion', 'Virtual Interview', 'Technical Round 1', 'Technical Round 2', 'HR Round', 'Final Round'];
+const APPLICATION_FILTERS = ['all', 'applied', 'shortlisted', 'selected', 'rejected', 'withdrawn'];
 
 const formatDate = (value) => {
   if (!value) return 'Not set';
@@ -251,7 +252,6 @@ function ApplicantRow({ app, onUpdate, updating }) {
 function DriveApplicantsView({ driveId, onBack }) {
   const [drive, setDrive] = useState(null);
   const [applications, setApplications] = useState([]);
-  const [summary, setSummary] = useState({ total: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState(false);
@@ -266,7 +266,6 @@ function DriveApplicantsView({ driveId, onBack }) {
       const result = await fetchHrCampusDriveApplications(driveId, { all: true });
       setDrive(result.drive);
       setApplications(result.applications);
-      setSummary(result.summary);
     } catch (err) {
       setError(err.message || 'Failed to load applications.');
     } finally {
@@ -401,48 +400,52 @@ function DriveApplicantsView({ driveId, onBack }) {
       </button>
 
       {drive && (
-        <div className="rounded-[1.5rem] border border-slate-100 bg-white p-5">
-          <h2 className="text-lg font-extrabold text-navy">{drive.jobTitle}</h2>
-          <p className="text-sm text-slate-500">{drive.collegeName} · {formatDate(drive.driveDate)}</p>
+        <div className="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Campus Drive</p>
+              <h2 className="mt-1 text-xl font-extrabold text-navy">{drive.jobTitle}</h2>
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-slate-500">
+                <span className="inline-flex items-center gap-1.5">
+                  <FiBriefcase size={13} className="text-brand-500" />
+                  {drive.collegeName || 'Campus name not available'}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <FiCalendar size={13} className="text-brand-500" />
+                  Drive date: {formatDate(drive.driveDate)}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-left lg:text-right">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Created On</p>
+              <p className="mt-1 text-sm font-extrabold text-navy">{formatDate(drive.createdAt || drive.driveDate)}</p>
+            </div>
+          </div>
+
           {String(drive.driveMode || '').toLowerCase() === 'virtual' && (
-            <p className="mt-2 rounded-xl bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700">
+            <p className="mt-4 rounded-xl bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700">
               Virtual drive: use round updates here, including &quot;Virtual Interview&quot;. No separate interview room is created from this screen.
             </p>
           )}
 
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-            {[
-              { label: 'Total', value: summary.total, color: 'text-slate-700' },
-              { label: 'Applied', value: summary.applied, color: 'text-blue-600' },
-              { label: 'Shortlisted', value: summary.shortlisted, color: 'text-amber-600' },
-              { label: 'Selected', value: summary.selected, color: 'text-emerald-600' },
-              { label: 'Rejected', value: summary.rejected, color: 'text-red-500' }
-            ].map((s) => (
-              <div key={s.label} className="rounded-xl bg-slate-50 px-3 py-2.5 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">{s.label}</p>
-                <p className={`text-xl font-extrabold ${s.color}`}>{s.value}</p>
-              </div>
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+            {APPLICATION_FILTERS.map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilter(f)}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                  filter === f ? 'bg-navy text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {capitalize(f)} {f !== 'all' ? `(${applications.filter((a) => a.status === f).length})` : `(${applications.length})`}
+              </button>
             ))}
           </div>
         </div>
       )}
 
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-medium text-red-600">{error}</p>}
-
-      <div className="flex flex-wrap gap-2">
-        {['all', 'applied', 'shortlisted', 'selected', 'rejected', 'withdrawn'].map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
-              filter === f ? 'bg-navy text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            {capitalize(f)} {f !== 'all' ? `(${applications.filter((a) => a.status === f).length})` : `(${applications.length})`}
-          </button>
-        ))}
-      </div>
 
       <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
