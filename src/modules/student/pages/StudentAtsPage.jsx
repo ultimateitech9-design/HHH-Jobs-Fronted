@@ -586,12 +586,12 @@ const StudentAtsPage = () => {
       heroSize="mini"
       statsLayout="inline"
       heroClassName="!rounded-[1.55rem] md:!px-5 md:!py-4"
-      bodyClassName="mx-auto max-w-[1240px] pb-6"
+      bodyClassName="mx-auto max-w-[1360px] pb-6"
     >
       {state.error ? <StudentNotice type="error" text={state.error} /> : null}
       {notice.text ? <StudentNotice type={notice.type || 'info'} text={notice.text} /> : null}
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.9fr)]">
+      <div className="grid items-start gap-4">
         <StudentSurfaceCard
           eyebrow="Scan setup"
           title="Role-fit command center"
@@ -867,20 +867,20 @@ const StudentAtsPage = () => {
                   </div>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     {scoreFocusCards.map((item) => {
-                  const Icon = item.icon;
-                  const value = Number(item.value || 0);
-                  const tone = getScoreTone(value);
-                  return (
-                    <div key={item.key} className="rounded-[0.9rem] border border-slate-100 bg-slate-50 p-2.5">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-xs font-bold uppercase text-slate-400">{item.label}</p>
-                        <Icon className="text-slate-400" size={15} />
-                      </div>
-                      <p className="mt-1 font-heading text-xl font-black text-navy">{Math.round(value)}%</p>
-                      <div className="mt-2"><ScoreBar value={value} tone={tone} /></div>
-                    </div>
-                  );
-                })}
+                      const Icon = item.icon;
+                      const value = Number(item.value || 0);
+                      const tone = getScoreTone(value);
+                      return (
+                        <div key={item.key} className="rounded-[0.9rem] border border-slate-100 bg-slate-50 p-2.5">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-bold uppercase text-slate-400">{item.label}</p>
+                            <Icon className="text-slate-400" size={15} />
+                          </div>
+                          <p className="mt-1 font-heading text-xl font-black text-navy">{Math.round(value)}%</p>
+                          <div className="mt-2"><ScoreBar value={value} tone={tone} /></div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
