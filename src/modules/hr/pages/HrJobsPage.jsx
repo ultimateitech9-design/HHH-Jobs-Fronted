@@ -16,6 +16,7 @@ import {
 import {
   checkoutRolePlan,
   closeHrJob,
+  contactSalesForRolePlan,
   createJobCreditPaymentOrder,
   createHrJob,
   deleteHrJob,
@@ -112,6 +113,9 @@ const getRolePlanRenewalPrice = (plan = {}) =>
 
 const getRolePlanDiscountLabel = (plan = {}) =>
   plan?.meta?.discountText || (plan.slug === hrStarterPricing.slug ? hrStarterPricing.discountText : '');
+
+const isContactSalesRolePlan = (plan = {}) =>
+  Boolean(plan?.meta?.contactSales) || plan?.meta?.selfCheckout === false || Boolean(plan?.contactSales);
 
 const JOB_POSTING_DESCRIPTION_LIMIT = 250;
 const JOB_POSTING_LOCATION_LIMIT = 1;
@@ -220,6 +224,10 @@ const HrJobsPage = () => {
     () => rolePlans.find((plan) => plan.slug === roleCheckoutForm.planSlug) || rolePlans[0] || null,
     [rolePlans, roleCheckoutForm.planSlug]
   );
+  const selectedRolePlanRequiresSales = useMemo(
+    () => isContactSalesRolePlan(selectedRolePlan),
+    [selectedRolePlan]
+  );
 
   const checkoutQuantity = useMemo(() => {
     const parsed = Number(checkoutForm.quantity);
@@ -231,7 +239,7 @@ const HrJobsPage = () => {
   const roleCheckoutQuantity = 1;
 
   const roleQuoteDisplay = useMemo(() => {
-    if (!selectedRolePlan) return null;
+    if (!selectedRolePlan || selectedRolePlanRequiresSales) return null;
 
     const currency = roleQuote?.currency || selectedRolePlan.currency || 'INR';
     const renewalUnitPrice = getRolePlanRenewalPrice(selectedRolePlan);
@@ -251,7 +259,7 @@ const HrJobsPage = () => {
       totalAmount,
       includedJobCredits: roleQuote?.includedJobCredits ?? ((selectedRolePlan.includedJobCredits || 0) * roleCheckoutQuantity)
     };
-  }, [selectedRolePlan, roleQuote, roleCheckoutQuantity]);
+  }, [selectedRolePlan, selectedRolePlanRequiresSales, roleQuote, roleCheckoutQuantity]);
 
   const selectedPlanCredits = useMemo(() => {
     if (!selectedPlan) return 0;
@@ -492,9 +500,10 @@ const HrJobsPage = () => {
     let active = true;
 
     const loadRoleQuote = async () => {
-      if (!selectedRolePlan) {
+      if (!selectedRolePlan || selectedRolePlanRequiresSales) {
         setRoleQuote(null);
         setRoleQuoteError('');
+        setRoleQuoteLoading(false);
         return;
       }
 
@@ -523,7 +532,7 @@ const HrJobsPage = () => {
     return () => {
       active = false;
     };
-  }, [selectedRolePlan, roleCheckoutQuantity, roleCheckoutForm.couponCode]);
+  }, [selectedRolePlan, selectedRolePlanRequiresSales, roleCheckoutQuantity, roleCheckoutForm.couponCode]);
 
   useEffect(() => {
     if (!requestedAudience || editingJobId) return;
@@ -727,6 +736,16 @@ const HrJobsPage = () => {
     setRoleCheckoutSaving(true);
 
     try {
+      if (isContactSalesRolePlan(selectedRolePlan)) {
+        await contactSalesForRolePlan({
+          planSlug: selectedRolePlan.slug,
+          audienceRole: 'hr'
+        });
+        await loadRolePricingState();
+        setMessage('Sales team has been notified. They will contact you for Enterprise pricing and rollout.');
+        return;
+      }
+
       const response = await checkoutRolePlan({
         planSlug: selectedRolePlan.slug,
         quantity: roleCheckoutQuantity,
@@ -1124,6 +1143,7 @@ const HrJobsPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {rolePlans.map((plan) => {
                     const isActivePlan = currentRoleSubscription?.role_plan_slug === plan.slug;
+                    const contactSalesPlan = isContactSalesRolePlan(plan);
                     const listPrice = getRolePlanListPrice(plan);
                     const renewalPrice = getRolePlanRenewalPrice(plan);
                     const discountLabel = getRolePlanDiscountLabel(plan);
@@ -1138,10 +1158,10 @@ const HrJobsPage = () => {
                         </div>
                         <p className="text-xs text-neutral-500 mb-3 line-clamp-2">{plan.description || 'Commercial recruiter plan'}</p>
                         <p className="text-xl font-extrabold text-slate-900">
-                          {formatMoney(plan.currency, listPrice)}
-                          <span className="text-xs font-medium text-neutral-400 ml-1">/{plan.durationDays}d</span>
+                          {contactSalesPlan ? 'Contact Sales' : formatMoney(plan.currency, listPrice)}
+                          {!contactSalesPlan && <span className="text-xs font-medium text-neutral-400 ml-1">/{plan.durationDays}d</span>}
                         </p>
-                        {renewalPrice < listPrice ? (
+                        {!contactSalesPlan && renewalPrice < listPrice ? (
                           <p className="mt-1 text-xs font-bold text-emerald-700">
                             After trial {formatMoney(plan.currency, renewalPrice)}/month
                           </p>
@@ -1152,8 +1172,14 @@ const HrJobsPage = () => {
                           </p>
                         ) : null}
                         <div className="mt-3 flex gap-2 text-[11px]">
-                          <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.includedJobCredits || 0} credits</span>
-                          <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.trialDays || 0}d trial</span>
+                          {contactSalesPlan ? (
+                            <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">Custom rollout</span>
+                          ) : (
+                            <>
+                              <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.includedJobCredits || 0} credits</span>
+                              <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.trialDays || 0}d trial</span>
+                            </>
+                          )}
                         </div>
                         {creditBuckets.length > 0 ? (
                           <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold text-slate-600">
@@ -1187,13 +1213,20 @@ const HrJobsPage = () => {
                       {rolePlans.map((plan) => <option key={plan.slug} value={plan.slug}>{plan.name}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold text-neutral-500 mb-1 block">Coupon Code</label>
-                    <input value={roleCheckoutForm.couponCode} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, couponCode: e.target.value.toUpperCase() })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold uppercase text-slate-900 focus:ring-2 focus:ring-brand-400" placeholder="OPTIONAL COUPON" />
-                  </div>
+                  {!selectedRolePlanRequiresSales && (
+                    <div>
+                      <label className="text-xs font-semibold text-neutral-500 mb-1 block">Coupon Code</label>
+                      <input value={roleCheckoutForm.couponCode} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, couponCode: e.target.value.toUpperCase() })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold uppercase text-slate-900 focus:ring-2 focus:ring-brand-400" placeholder="OPTIONAL COUPON" />
+                    </div>
+                  )}
 
-                  {roleQuoteError && <p className="text-xs font-medium text-red-600">{roleQuoteError}</p>}
-                  {roleQuoteLoading && <p className="text-xs text-neutral-400 animate-pulse">Refreshing quote...</p>}
+                  {selectedRolePlanRequiresSales ? (
+                    <div className="rounded-lg border border-brand-100 bg-brand-50 p-3 text-xs font-medium text-brand-700">
+                      Enterprise is a custom plan. Share your interest with sales for pricing, credits, and rollout.
+                    </div>
+                  ) : null}
+                  {!selectedRolePlanRequiresSales && roleQuoteError && <p className="text-xs font-medium text-red-600">{roleQuoteError}</p>}
+                  {!selectedRolePlanRequiresSales && roleQuoteLoading && <p className="text-xs text-neutral-400 animate-pulse">Refreshing quote...</p>}
                   {roleQuoteDisplay && (
                     <div className="rounded-lg bg-neutral-50 border border-neutral-100 p-3 space-y-1.5 text-xs">
                       <div className="flex justify-between text-neutral-600"><span>Subtotal:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.subtotal).toFixed(2)}</span></div>
@@ -1209,10 +1242,14 @@ const HrJobsPage = () => {
                     </div>
                   )}
 
-                  <p className="text-[11px] text-neutral-400">Checkout authorises Razorpay auto-pay first. Your free trial starts only after authorisation succeeds.</p>
+                  <p className="text-[11px] text-neutral-400">
+                    {selectedRolePlanRequiresSales
+                      ? 'No auto-pay is started for Enterprise. A sales lead is created for manual follow-up.'
+                      : 'Checkout authorises Razorpay auto-pay first. Your free trial starts only after authorisation succeeds.'}
+                  </p>
 
                   <button type="submit" disabled={roleCheckoutSaving || rolePlans.length === 0} className="w-full py-2.5 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50">
-                    {roleCheckoutSaving ? 'Processing...' : 'Enable Auto-pay + Start Trial'}
+                    {roleCheckoutSaving ? 'Processing...' : (selectedRolePlanRequiresSales ? 'Contact Sales' : 'Enable Auto-pay + Start Trial')}
                   </button>
                 </form>
               </div>

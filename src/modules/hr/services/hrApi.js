@@ -298,6 +298,16 @@ export const checkoutRolePlan = async ({
     extract: (payload) => payload
   });
 
+export const contactSalesForRolePlan = async ({ planSlug, audienceRole = 'hr' }) =>
+  strictRequest({
+    path: '/pricing/role-plans/contact-sales',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ planSlug, audienceRole })
+    },
+    extract: (payload) => payload
+  });
+
 export const verifyRolePlanAutopay = async ({
   localSubscriptionId,
   razorpaySubscriptionId,
