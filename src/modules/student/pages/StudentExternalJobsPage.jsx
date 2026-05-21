@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -261,6 +261,7 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
   const [categories, setCategories] = useState([]);
   const [sources, setSources] = useState([]);
   const [resumeApplyIntent, setResumeApplyIntent] = useState(null);
+  const lastJobsRequestKeyRef = useRef('');
 
   const currentPath = useMemo(() => buildCurrentPath(location), [location]);
 
@@ -293,7 +294,15 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
   }, [currentPath, isAuthenticated]);
 
   const loadJobs = useCallback(async (currentFilters) => {
-    setJobsState((prev) => ({ ...prev, loading: true, error: '' }));
+    const requestKey = JSON.stringify(currentFilters);
+    if (lastJobsRequestKeyRef.current === requestKey) return;
+    lastJobsRequestKeyRef.current = requestKey;
+
+    setJobsState((prev) => ({
+      ...prev,
+      loading: prev.jobs.length === 0,
+      error: ''
+    }));
     const response = await getExternalJobs(currentFilters);
 
     setJobsState({

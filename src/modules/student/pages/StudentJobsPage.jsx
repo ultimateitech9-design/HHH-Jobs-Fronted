@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FiBookmark,
@@ -172,6 +172,7 @@ const StudentJobsPage = ({
   });
   const [actionFeedback, setActionFeedback] = useState({ type: '', text: '', ctaTo: '', ctaLabel: '' });
   const [reloadKey, setReloadKey] = useState(0);
+  const lastJobsRequestKeyRef = useRef('');
 
   useEffect(() => {
     setFilters(makeDefaultFilters(effectiveAudience));
@@ -180,9 +181,22 @@ const StudentJobsPage = ({
 
   useEffect(() => {
     let mounted = true;
+    const requestKey = JSON.stringify({ effectiveAudience, filters, reloadKey });
+
+    if (lastJobsRequestKeyRef.current === requestKey) {
+      return () => {
+        mounted = false;
+      };
+    }
+
+    lastJobsRequestKeyRef.current = requestKey;
 
     const loadJobs = async () => {
-      setJobsState((current) => ({ ...current, loading: true, error: '' }));
+      setJobsState((current) => ({
+        ...current,
+        loading: current.jobs.length === 0,
+        error: ''
+      }));
 
       const isInternalOnly = filters.source === 'hhh_jobs';
       const shouldLoadInternal = !filters.source || isInternalOnly;

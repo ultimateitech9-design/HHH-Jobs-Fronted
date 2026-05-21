@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FiArrowRight,
   FiChevronLeft,
@@ -273,6 +273,7 @@ const StudentMergedJobsFeed = () => {
     generatedAt: null,
     recommendations: []
   });
+  const lastJobsRequestKeyRef = useRef('');
 
   const recommendationSignal = useMemo(
     () =>
@@ -286,9 +287,22 @@ const StudentMergedJobsFeed = () => {
 
   useEffect(() => {
     let mounted = true;
+    const requestKey = JSON.stringify({ effectiveAudience, filters });
+
+    if (lastJobsRequestKeyRef.current === requestKey) {
+      return () => {
+        mounted = false;
+      };
+    }
+
+    lastJobsRequestKeyRef.current = requestKey;
 
     const loadMergedJobs = async () => {
-      setState((current) => ({ ...current, loading: true, error: '' }));
+      setState((current) => ({
+        ...current,
+        loading: current.internalJobs.length === 0 && current.externalJobs.length === 0,
+        error: ''
+      }));
 
       const isInternalOnly = filters.source === 'hhh_jobs';
       const shouldLoadInternal = !filters.source || isInternalOnly;
