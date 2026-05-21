@@ -206,12 +206,12 @@ export const checkoutRolePlan = async ({
     extract: (payload) => payload
   });
 
-export const contactSalesForRolePlan = async ({ planSlug, audienceRole = 'hr' }) =>
+export const contactSalesForRolePlan = async ({ planSlug, audienceRole = 'hr', reason = '', currentPlanSlug = '', note = '' }) =>
   strictRequest({
     path: '/pricing/role-plans/contact-sales',
     options: {
       method: 'POST',
-      body: JSON.stringify({ planSlug, audienceRole })
+      body: JSON.stringify({ planSlug, audienceRole, reason, currentPlanSlug, note })
     },
     extract: (payload) => payload
   });

@@ -68,6 +68,14 @@ const isUsableRoleSubscription = (subscription = null) => {
   return new Date(subscription.ends_at).getTime() >= Date.now();
 };
 
+const isPendingAutopayRoleSubscription = (subscription = null) =>
+  Boolean(subscription?.role_plan_slug)
+  && (
+    subscription?.meta?.pendingAutopaySetup
+    || String(subscription?.status || '').toLowerCase() === 'pending'
+    || (!subscription?.autopay_enabled && (String(subscription?.status || '').toLowerCase() === 'trialing' || subscription?.meta?.isTrial))
+  );
+
 const getPlanPostingBuckets = (plan = {}, multiplier = 1) => {
   const buckets = plan?.meta?.jobPostingCredits || {};
   return [
@@ -103,13 +111,24 @@ const getRolePlanRenewalPrice = (plan = {}) =>
 const getRolePlanDiscountLabel = (plan = {}) =>
   plan?.meta?.offerBadge || plan?.meta?.badgeText || '';
 
+const getComparableRolePlanPrice = (plan = {}) =>
+  getRolePlanRenewalPrice(plan) || getRolePlanListPrice(plan);
+
+const getRolePlanChangeType = (currentPlan = null, nextPlan = null, hasExistingPlan = false, isCurrentPlan = false) => {
+  if (!hasExistingPlan || !currentPlan || !nextPlan || isCurrentPlan) return 'new';
+  const currentPrice = getComparableRolePlanPrice(currentPlan);
+  const nextPrice = getComparableRolePlanPrice(nextPlan);
+  if (nextPrice > currentPrice) return 'upgrade';
+  if (nextPrice < currentPrice) return 'downgrade';
+  return 'change';
+};
+
 const isContactSalesRolePlan = (plan = {}) =>
   Boolean(plan?.meta?.contactSales) || plan?.meta?.selfCheckout === false || Boolean(plan?.contactSales);
 
 const isCurrentRoleSubscriptionPlan = (subscription = null, plan = null) => {
   if (!subscription || !plan) return false;
-  const status = String(subscription.status || '').toLowerCase();
-  if (!['active', 'trialing', 'pending', 'paid'].includes(status)) return false;
+  if (!isUsableRoleSubscription(subscription)) return false;
   return String(subscription.role_plan_slug || '').toLowerCase() === String(plan.slug || '').toLowerCase();
 };
 
@@ -224,7 +243,10 @@ const HrJobsPage = () => {
     [rolePlans, roleCheckoutForm.planSlug]
   );
   const currentRolePlan = useMemo(
-    () => rolePlans.find((plan) => String(plan.slug || '').toLowerCase() === String(currentRoleSubscription?.role_plan_slug || '').toLowerCase()) || null,
+    () => {
+      if (!isUsableRoleSubscription(currentRoleSubscription)) return null;
+      return rolePlans.find((plan) => String(plan.slug || '').toLowerCase() === String(currentRoleSubscription?.role_plan_slug || '').toLowerCase()) || null;
+    },
     [rolePlans, currentRoleSubscription]
   );
   const selectedRolePlanRequiresSales = useMemo(
@@ -240,6 +262,13 @@ const HrJobsPage = () => {
 
   const roleQuoteDisplay = useMemo(() => {
     if (!selectedRolePlan || selectedRolePlanRequiresSales || selectedRolePlanIsCurrent) return null;
+    const selectedChangeType = getRolePlanChangeType(
+      currentRolePlan,
+      selectedRolePlan,
+      isUsableRoleSubscription(currentRoleSubscription),
+      selectedRolePlanIsCurrent
+    );
+    if (selectedChangeType === 'downgrade') return null;
 
     const currency = roleQuote?.currency || selectedRolePlan.currency || 'INR';
     const renewalUnitPrice = getRolePlanRenewalPrice(selectedRolePlan);
@@ -266,7 +295,7 @@ const HrJobsPage = () => {
       totalAmount,
       includedJobPosts: roleQuote?.includedJobCredits ?? ((selectedRolePlan.includedJobCredits || 0) * roleCheckoutQuantity)
     };
-  }, [selectedRolePlan, selectedRolePlanRequiresSales, selectedRolePlanIsCurrent, roleQuote, roleCheckoutQuantity]);
+  }, [currentRolePlan, currentRoleSubscription, selectedRolePlan, selectedRolePlanRequiresSales, selectedRolePlanIsCurrent, roleQuote, roleCheckoutQuantity]);
 
   const postedJobCountsByPlan = useMemo(() => {
     const counts = Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug) => [slug, 0]));
@@ -290,18 +319,12 @@ const HrJobsPage = () => {
     [currentRoleSubscription]
   );
   const hasExistingRecruiterPlan = useMemo(() => {
-    const status = String(currentRoleSubscription?.status || '').toLowerCase();
-    const currentSlug = String(currentRoleSubscription?.role_plan_slug || '').trim();
-    return Boolean(currentRoleSubscription && currentSlug && !['pending', 'cancelled', 'canceled', 'expired'].includes(status));
+    return isUsableRoleSubscription(currentRoleSubscription);
   }, [currentRoleSubscription]);
   const selectedRolePlanChangeType = useMemo(() => {
-    if (!hasExistingRecruiterPlan || !currentRolePlan || !selectedRolePlan || selectedRolePlanIsCurrent) return 'new';
-    const currentPrice = getRolePlanRenewalPrice(currentRolePlan) || getRolePlanListPrice(currentRolePlan);
-    const selectedPrice = getRolePlanRenewalPrice(selectedRolePlan) || getRolePlanListPrice(selectedRolePlan);
-    if (selectedPrice > currentPrice) return 'upgrade';
-    if (selectedPrice < currentPrice) return 'downgrade';
-    return 'change';
+    return getRolePlanChangeType(currentRolePlan, selectedRolePlan, hasExistingRecruiterPlan, selectedRolePlanIsCurrent);
   }, [currentRolePlan, hasExistingRecruiterPlan, selectedRolePlan, selectedRolePlanIsCurrent]);
+  const selectedRolePlanNeedsSalesFollowUp = selectedRolePlanRequiresSales || selectedRolePlanChangeType === 'downgrade';
   const postingUsageByPlan = useMemo(() => {
     const usage = Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug) => [slug, {
       limit: 0,
@@ -340,14 +363,63 @@ const HrJobsPage = () => {
     })),
     [planNameBySlug, postedJobCountsByPlan, postingUsageByPlan]
   );
-  const roleCheckoutActionLabel = useMemo(() => {
-    if (selectedRolePlanIsCurrent) return 'Current Plan Active';
-    if (selectedRolePlanRequiresSales) return 'Contact Sales';
-    if (!hasExistingRecruiterPlan) return 'Enable Auto-pay + Start Trial';
-    if (selectedRolePlanChangeType === 'downgrade') return 'Downgrade Plan';
-    if (selectedRolePlanChangeType === 'upgrade') return 'Upgrade Plan';
-    return 'Change Plan';
-  }, [hasExistingRecruiterPlan, selectedRolePlanChangeType, selectedRolePlanIsCurrent, selectedRolePlanRequiresSales]);
+  const hasPendingAutopaySetup = useMemo(
+    () => isPendingAutopayRoleSubscription(currentRoleSubscription),
+    [currentRoleSubscription]
+  );
+  const selectedRolePlanIsPendingSetup = useMemo(
+    () => hasPendingAutopaySetup
+      && String(currentRoleSubscription?.role_plan_slug || '').toLowerCase() === String(selectedRolePlan?.slug || '').toLowerCase(),
+    [currentRoleSubscription, hasPendingAutopaySetup, selectedRolePlan]
+  );
+  const roleCheckoutAction = useMemo(() => {
+    if (selectedRolePlanIsCurrent) {
+      return {
+        title: 'Current Plan Active',
+        detail: 'This plan is already enabled'
+      };
+    }
+    if (selectedRolePlanRequiresSales) {
+      return {
+        title: 'Contact Sales',
+        detail: 'Sales team will connect for this plan'
+      };
+    }
+    if (selectedRolePlanIsPendingSetup) {
+      return {
+        title: 'Complete Auto-pay Setup',
+        detail: 'Then your 2 months trial will start'
+      };
+    }
+    if (hasPendingAutopaySetup && !hasExistingRecruiterPlan) {
+      return {
+        title: 'Switch Plan + Enable Auto-pay',
+        detail: 'Then your 2 months trial will start'
+      };
+    }
+    if (!hasExistingRecruiterPlan) {
+      return {
+        title: 'Start 2 Months Trial',
+        detail: 'Enable Razorpay auto-pay first'
+      };
+    }
+    if (selectedRolePlanChangeType === 'downgrade') {
+      return {
+        title: 'Request Downgrade',
+        detail: 'Sales team will review and switch'
+      };
+    }
+    if (selectedRolePlanChangeType === 'upgrade') {
+      return {
+        title: 'Upgrade Plan',
+        detail: 'Pay adjusted amount for remaining days'
+      };
+    }
+    return {
+      title: 'Change Plan',
+      detail: 'No extra trial on plan change'
+    };
+  }, [hasExistingRecruiterPlan, hasPendingAutopaySetup, selectedRolePlanChangeType, selectedRolePlanIsCurrent, selectedRolePlanIsPendingSetup, selectedRolePlanRequiresSales]);
 
   const requestedAudience = useMemo(() => {
     const value = new URLSearchParams(location.search).get('audience');
@@ -519,7 +591,7 @@ const HrJobsPage = () => {
     let active = true;
 
     const loadRoleQuote = async () => {
-      if (!selectedRolePlan || selectedRolePlanRequiresSales || selectedRolePlanIsCurrent) {
+      if (!selectedRolePlan || selectedRolePlanNeedsSalesFollowUp || selectedRolePlanIsCurrent) {
         setRoleQuote(null);
         setRoleQuoteError('');
         setRoleQuoteLoading(false);
@@ -551,7 +623,7 @@ const HrJobsPage = () => {
     return () => {
       active = false;
     };
-  }, [selectedRolePlan, selectedRolePlanRequiresSales, selectedRolePlanIsCurrent, roleCheckoutQuantity, roleCheckoutForm.couponCode]);
+  }, [selectedRolePlan, selectedRolePlanNeedsSalesFollowUp, selectedRolePlanIsCurrent, roleCheckoutQuantity, roleCheckoutForm.couponCode]);
 
   useEffect(() => {
     if (!requestedAudience || editingJobId) return;
@@ -699,13 +771,20 @@ const HrJobsPage = () => {
     setRoleCheckoutSaving(true);
 
     try {
-      if (isContactSalesRolePlan(selectedRolePlan)) {
+      if (isContactSalesRolePlan(selectedRolePlan) || selectedRolePlanChangeType === 'downgrade') {
         await contactSalesForRolePlan({
           planSlug: selectedRolePlan.slug,
-          audienceRole: 'hr'
+          audienceRole: 'hr',
+          reason: selectedRolePlanChangeType === 'downgrade' ? 'downgrade_request' : 'contact_sales',
+          currentPlanSlug: currentRoleSubscription?.role_plan_slug || '',
+          note: selectedRolePlanChangeType === 'downgrade'
+            ? `HR wants to switch from ${currentRolePlan?.name || currentRoleSubscription?.role_plan_slug || 'current plan'} to ${selectedRolePlan.name || selectedRolePlan.slug}. Please call and understand the issue before changing the plan.`
+            : ''
         });
         await loadRolePricingState();
-        setMessage('Sales team has been notified. They will contact you for Enterprise pricing and rollout.');
+        setMessage(selectedRolePlanChangeType === 'downgrade'
+          ? 'Sales team has been notified for this downgrade request. They will contact the HR before changing the plan.'
+          : 'Sales team has been notified. They will contact you for Enterprise pricing and rollout.');
         return;
       }
 
@@ -1099,10 +1178,16 @@ const HrJobsPage = () => {
                 <div className="rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white px-5 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-600">Current Subscription</p>
                   <p className="mt-1.5 text-lg font-extrabold text-slate-900">
-                    {currentRoleSubscription ? (rolePlanNameBySlug[currentRoleSubscription.role_plan_slug] || currentRoleSubscription.role_plan_slug) : 'No active plan'}
+                    {hasUsableRecruiterPlan
+                      ? (rolePlanNameBySlug[currentRoleSubscription.role_plan_slug] || currentRoleSubscription.role_plan_slug)
+                      : isPendingAutopayRoleSubscription(currentRoleSubscription)
+                        ? `${rolePlanNameBySlug[currentRoleSubscription.role_plan_slug] || currentRoleSubscription.role_plan_slug} setup pending`
+                        : 'No active plan'}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {currentRoleSubscription?.meta?.isTrial
+                    {isPendingAutopayRoleSubscription(currentRoleSubscription)
+                      ? 'Auto-pay must be authorised before this plan becomes active.'
+                      : currentRoleSubscription?.meta?.isTrial
                       ? `Trial until ${formatDateTime(currentRoleSubscription.trial_ends_at || currentRoleSubscription.ends_at)}`
                       : (currentRoleSubscription?.ends_at
                         ? `Active until ${formatDateTime(currentRoleSubscription.ends_at)}`
@@ -1131,18 +1216,29 @@ const HrJobsPage = () => {
                 {/* Plan Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {rolePlans.map((plan) => {
-                    const isActivePlan = currentRoleSubscription?.role_plan_slug === plan.slug;
+                    const isActivePlan = hasUsableRecruiterPlan && currentRoleSubscription?.role_plan_slug === plan.slug;
+                    const isPendingPlan = !hasUsableRecruiterPlan && isPendingAutopayRoleSubscription(currentRoleSubscription) && currentRoleSubscription?.role_plan_slug === plan.slug;
                     const contactSalesPlan = isContactSalesRolePlan(plan);
+                    const planChangeType = getRolePlanChangeType(currentRolePlan, plan, hasExistingRecruiterPlan, isActivePlan);
                     const listPrice = getRolePlanListPrice(plan);
                     const renewalPrice = getRolePlanRenewalPrice(plan);
                     const discountLabel = getRolePlanDiscountLabel(plan);
                     const postingBuckets = getPlanPostingBuckets(plan);
+                    const planCaseLabel = !hasExistingRecruiterPlan
+                      ? `${formatDurationLabel(plan.trialDays || 0)} trial`
+                      : planChangeType === 'upgrade'
+                      ? 'Paid upgrade'
+                      : planChangeType === 'downgrade'
+                      ? 'Talk to sales'
+                      : planChangeType === 'change'
+                      ? 'Plan change'
+                      : 'Current plan';
                     return (
-                      <div key={plan.slug} className={`rounded-xl border p-4 transition-all ${isActivePlan ? 'border-brand-400 bg-brand-50/50 ring-1 ring-brand-300' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
+                      <div key={plan.slug} className={`rounded-xl border p-4 transition-all ${isActivePlan ? 'border-brand-400 bg-brand-50/50 ring-1 ring-brand-300' : isPendingPlan ? 'border-amber-300 bg-amber-50/50' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <p className="text-sm font-bold text-slate-900">{plan.name}</p>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${isActivePlan ? 'bg-brand-600 text-white' : 'bg-neutral-100 text-neutral-500'}`}>
-                            {isActivePlan ? 'Active' : (plan.billingCycle || 'monthly')}
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${isActivePlan ? 'bg-brand-600 text-white' : isPendingPlan ? 'bg-amber-100 text-amber-700' : 'bg-neutral-100 text-neutral-500'}`}>
+                            {isActivePlan ? 'Active' : isPendingPlan ? 'Auto-pay pending' : (plan.billingCycle || 'monthly')}
                           </span>
                         </div>
                         <p className="text-xs text-neutral-500 mb-3 line-clamp-2">{plan.description || 'Commercial recruiter plan'}</p>
@@ -1152,7 +1248,7 @@ const HrJobsPage = () => {
                         </p>
                         {!contactSalesPlan && renewalPrice < listPrice ? (
                           <p className="mt-1 text-xs font-bold text-emerald-700">
-                            {hasExistingRecruiterPlan ? 'Renews at' : 'After trial'} {formatMoney(plan.currency, renewalPrice)}/month
+                            {hasExistingRecruiterPlan ? 'Renews at' : `After ${formatDurationLabel(plan.trialDays || 0)} trial`} {formatMoney(plan.currency, renewalPrice)}/month
                           </p>
                         ) : null}
                         {discountLabel ? (
@@ -1167,7 +1263,7 @@ const HrJobsPage = () => {
                             <>
                               <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.includedJobCredits || 0} job posts</span>
                               <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">
-                                {hasExistingRecruiterPlan ? 'No trial on plan change' : `${plan.trialDays || 0}d trial`}
+                                {planCaseLabel}
                               </span>
                             </>
                           )}
@@ -1209,7 +1305,7 @@ const HrJobsPage = () => {
                       {selectedRolePlan?.name || 'This plan'} is already active on your account. Choose another plan to upgrade or change.
                     </div>
                   ) : null}
-                  {!selectedRolePlanRequiresSales && !selectedRolePlanIsCurrent && (
+                  {!selectedRolePlanNeedsSalesFollowUp && !selectedRolePlanIsCurrent && (
                     <div>
                       <label className="text-xs font-semibold text-neutral-500 mb-1 block">Coupon Code</label>
                       <input value={roleCheckoutForm.couponCode} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, couponCode: e.target.value.toUpperCase() })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold uppercase text-slate-900 focus:ring-2 focus:ring-brand-400" placeholder="OPTIONAL COUPON" />
@@ -1221,8 +1317,13 @@ const HrJobsPage = () => {
                       Enterprise is a custom plan. Share your interest with sales for pricing, job-post limits, and rollout.
                     </div>
                   ) : null}
-                  {!selectedRolePlanRequiresSales && !selectedRolePlanIsCurrent && roleQuoteError && <p className="text-xs font-medium text-red-600">{roleQuoteError}</p>}
-                  {!selectedRolePlanRequiresSales && !selectedRolePlanIsCurrent && roleQuoteLoading && <p className="text-xs text-neutral-400 animate-pulse">Refreshing quote...</p>}
+                  {selectedRolePlanChangeType === 'downgrade' && !selectedRolePlanIsCurrent ? (
+                    <div className="rounded-lg border border-amber-100 bg-amber-50 p-3 text-xs font-medium text-amber-700">
+                      Downgrade requests go to sales first. They will check the HR account, understand the issue, and then help switch the plan.
+                    </div>
+                  ) : null}
+                  {!selectedRolePlanNeedsSalesFollowUp && !selectedRolePlanIsCurrent && roleQuoteError && <p className="text-xs font-medium text-red-600">{roleQuoteError}</p>}
+                  {!selectedRolePlanNeedsSalesFollowUp && !selectedRolePlanIsCurrent && roleQuoteLoading && <p className="text-xs text-neutral-400 animate-pulse">Refreshing quote...</p>}
                   {roleQuoteDisplay && (
                     <div className="rounded-lg bg-neutral-50 border border-neutral-100 p-3 space-y-1.5 text-xs">
                       <div className="flex justify-between text-neutral-600"><span>Subtotal:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.subtotal).toFixed(2)}</span></div>
@@ -1248,17 +1349,36 @@ const HrJobsPage = () => {
                       ? 'Your current plan stays active until its listed expiry date.'
                       : selectedRolePlanRequiresSales
                       ? 'No auto-pay is started for Enterprise. A sales lead is created for manual follow-up.'
+                      : selectedRolePlanIsPendingSetup
+                      ? 'Auto-pay is still pending for this plan. Complete Razorpay authorisation to start the trial.'
+                      : hasPendingAutopaySetup && !hasExistingRecruiterPlan
+                      ? 'A previous trial setup is pending. Authorising now will switch the pending setup to the selected plan.'
                       : hasExistingRecruiterPlan
                       ? selectedRolePlanChangeType === 'downgrade'
-                        ? 'Existing recruiters downgrade without another free trial. Razorpay auto-pay authorisation is required for the lower plan.'
+                        ? 'No payment is collected for downgrade here. Sales gets the HR details and will follow up before switching the plan.'
                         : selectedRolePlanChangeType === 'upgrade'
                         ? 'Existing recruiters upgrade without another free trial. Razorpay auto-pay authorisation is required for the new plan.'
                         : 'Existing recruiters change plans without another free trial. Razorpay auto-pay authorisation is required for the new plan.'
                       : 'Checkout authorises Razorpay auto-pay first. Your free trial starts only after authorisation succeeds.'}
                   </p>
 
-                  <button type="submit" disabled={roleCheckoutSaving || rolePlans.length === 0 || selectedRolePlanIsCurrent} className="w-full py-2.5 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50">
-                    {roleCheckoutSaving ? 'Processing...' : roleCheckoutActionLabel}
+                  <button
+                    type="submit"
+                    disabled={roleCheckoutSaving || rolePlans.length === 0 || selectedRolePlanIsCurrent}
+                    className="flex min-h-[56px] w-full flex-col items-center justify-center gap-0.5 rounded-lg bg-brand-600 px-4 py-2.5 text-center text-white transition-colors hover:bg-brand-500 disabled:opacity-50"
+                  >
+                    {roleCheckoutSaving ? (
+                      <span className="text-sm font-bold leading-tight">Processing...</span>
+                    ) : (
+                      <>
+                        <span className="block max-w-full whitespace-normal break-words text-sm font-bold leading-tight">
+                          {roleCheckoutAction.title}
+                        </span>
+                        <span className="block max-w-full whitespace-normal break-words text-[11px] font-semibold leading-tight text-white/85">
+                          {roleCheckoutAction.detail}
+                        </span>
+                      </>
+                    )}
                   </button>
                 </form>
               </div>

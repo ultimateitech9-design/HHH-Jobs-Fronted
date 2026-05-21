@@ -40,11 +40,33 @@ const trackedJobPlanSlugs = ['premium', 'hot_vacancy', 'standard'];
 const fallbackPlanNames = {
   premium: 'Premium',
   hot_vacancy: 'Hot Vacancy',
-  standard: 'Normal'
+  standard: 'Normal',
+  starter: 'Starter',
+  growth: 'Growth',
+  enterprise: 'Enterprise',
+  hr_starter: 'Starter',
+  hr_growth: 'Growth',
+  hr_enterprise: 'Enterprise'
 };
 
 const getJobPlanSlug = (job = {}) =>
   String(job.planSlug || job.plan_slug || job.pricingPlanSlug || job.pricing_plan_slug || job.plan?.slug || '').trim().toLowerCase();
+
+const formatPlanName = (value = '') => {
+  const slug = String(value || '').trim().toLowerCase();
+  if (!slug) return '';
+  return fallbackPlanNames[slug] || slug.replace(/^hr_/, '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const hasDisplayableSubscription = (subscription = null) => {
+  if (!subscription?.role_plan_slug) return false;
+  const status = String(subscription.status || '').toLowerCase();
+  if (['cancelled', 'canceled', 'expired'].includes(status)) return false;
+  if (subscription?.meta?.pendingAutopaySetup || status === 'pending') return false;
+  if (!subscription?.autopay_enabled && (status === 'trialing' || subscription?.meta?.isTrial)) return false;
+  if (!subscription.ends_at) return true;
+  return new Date(subscription.ends_at).getTime() >= Date.now();
+};
 
 const HrModuleLayout = () => {
   const { currentPlanConfig, isActive, loading, planName, subscription, isTrialing, trialDaysRemaining, subscriptionDaysRemaining } = usePlanAccess();
@@ -59,16 +81,21 @@ const HrModuleLayout = () => {
     }))
   });
   const popoverRef = useRef(null);
+  const displayableSubscription = hasDisplayableSubscription(subscription);
   const currentPlanName = loading
     ? 'Loading...'
-    : (isActive ? (currentPlanConfig?.name || planName || 'Active plan') : 'No active plan');
+    : (displayableSubscription
+      ? (currentPlanConfig?.name || planName || formatPlanName(subscription?.role_plan_slug) || 'Active plan')
+      : 'No active plan');
   const planStatusText = loading
     ? 'Checking plan...'
-    : !isActive
+    : !displayableSubscription
       ? 'No active subscription'
-      : isTrialing
-        ? `${trialDaysRemaining || 0} trial days left`
-        : `${subscriptionDaysRemaining || 0} days left`;
+      : (isTrialing || subscription?.meta?.isTrial)
+        ? `${trialDaysRemaining || subscriptionDaysRemaining || 0} trial days left`
+        : isActive
+          ? `${subscriptionDaysRemaining || 0} days left`
+          : 'Plan selected, auto-pay pending';
 
   const totalPostedJobs = useMemo(
     () => planUsage.stats.reduce((sum, item) => sum + Number(item.posted || 0), 0),
