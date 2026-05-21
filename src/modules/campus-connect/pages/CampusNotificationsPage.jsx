@@ -441,7 +441,7 @@ const CampusNotificationsPage = () => {
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{message}</div>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-4">
         {[
           { label: 'Total updates', value: notifications.length, helper: 'Stored in your campus workspace', icon: FiBell },
           { label: 'Unread', value: unreadCount, helper: 'Needs your attention', icon: FiCheckCircle },
@@ -453,41 +453,41 @@ const CampusNotificationsPage = () => {
             icon: FiClock
           }
         ].map((stat) => (
-          <article key={stat.label} className="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+          <article key={stat.label} className="rounded-[1.1rem] border border-slate-100 bg-white px-4 py-3 shadow-[0_8px_20px_-16px_rgba(15,23,42,0.18)]">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{stat.label}</p>
-                <p className="mt-2 text-3xl font-bold text-navy">{stat.value}</p>
-                <p className="mt-2 text-xs text-slate-400">{stat.helper}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{stat.label}</p>
+                <p className="mt-1 text-2xl font-bold text-navy">{stat.value}</p>
+                <p className="mt-1 line-clamp-1 text-[11px] text-slate-400">{stat.helper}</p>
               </div>
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-                <stat.icon size={18} />
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                <stat.icon size={15} />
               </span>
             </div>
           </article>
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.18)]">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="rounded-[1.25rem] border border-slate-100 bg-white p-4 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.18)]">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-bold text-navy">Activity feed</h2>
-              <p className="mt-1 text-sm text-slate-500">Every campus-side alert stays timestamped, readable, and ready to convert into a next step.</p>
+              <h2 className="text-lg font-bold text-navy">Activity feed</h2>
+              <p className="mt-0.5 text-xs text-slate-500">Campus alerts with linked actions and timestamps.</p>
             </div>
-            <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+            <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
               {notifications.length} notifications
             </div>
           </div>
 
           {isLoading || workspaceLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[1, 2, 3].map((item) => (
-                <div key={item} className="h-32 animate-pulse rounded-[1.5rem] bg-slate-100" />
+                <div key={item} className="h-24 animate-pulse rounded-[1rem] bg-slate-100" />
               ))}
             </div>
           ) : notifications.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {notifications.map((notification) => {
                 const meta = getCampusNotificationMeta(notification);
                 const matchedCompany = matchCompanyToNotification(notification, connectedPartnerships);
@@ -497,36 +497,36 @@ const CampusNotificationsPage = () => {
                 return (
                   <article
                     key={notification.id}
-                    className={`rounded-[1.5rem] border p-5 transition ${
+                    className={`rounded-[1.1rem] border p-4 transition ${
                       notification.is_read ? 'border-slate-200 bg-white' : 'border-brand-100 bg-brand-50/40'
                     }`}
                   >
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="flex gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-brand-700">
-                          <Icon size={18} />
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-brand-700">
+                          <Icon size={16} />
                         </div>
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] ${meta.badgeClassName}`}>
+                            <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${meta.badgeClassName}`}>
                               {meta.label}
                             </span>
                             {!notification.is_read ? (
-                              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700">
                                 New
                               </span>
                             ) : null}
                             {matchedCompany?.openRoles ? (
-                              <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                              <span className="inline-flex items-center rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-slate-500">
                                 {matchedCompany.openRoles} open roles
                               </span>
                             ) : null}
                           </div>
-                          <h3 className="mt-3 text-lg font-bold text-navy">{notification.title || 'Notification'}</h3>
-                          <p className="mt-2 text-sm leading-6 text-slate-600">{notification.message || 'No details available yet.'}</p>
+                          <h3 className="mt-2 text-base font-bold text-navy">{notification.title || 'Notification'}</h3>
+                          <p className="mt-1 text-sm leading-5 text-slate-600">{notification.message || 'No details available yet.'}</p>
 
-                          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-400">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1">
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-400">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1">
                               <FiClock size={12} />
                               {formatDateTime(notification.created_at || notification.createdAt)}
                             </span>
@@ -535,12 +535,12 @@ const CampusNotificationsPage = () => {
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-3 lg:w-[280px] lg:justify-end">
+                      <div className="flex flex-wrap gap-2 lg:w-[240px] lg:justify-end">
                         {!notification.is_read ? (
                           <button
                             type="button"
                             onClick={() => handleMarkRead(notification.id)}
-                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
                           >
                             <FiCheckCircle size={14} />
                             Mark read
@@ -553,7 +553,7 @@ const CampusNotificationsPage = () => {
                         <button
                           type="button"
                           onClick={() => handleDeleteNotification(notification.id)}
-                          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                         >
                           <FiTrash2 size={14} />
                           Delete
@@ -565,64 +565,64 @@ const CampusNotificationsPage = () => {
               })}
             </div>
           ) : (
-            <div className="rounded-[1.75rem] border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-16 text-center">
-              <FiBell size={34} className="mx-auto text-slate-300" />
-              <h3 className="mt-4 text-2xl font-bold text-navy">No campus notifications yet</h3>
-              <p className="mt-2 text-sm text-slate-500">Drive delivery summaries and company connection activity will appear here.</p>
+            <div className="rounded-[1.25rem] border-2 border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center">
+              <FiBell size={26} className="mx-auto text-slate-300" />
+              <h3 className="mt-3 text-xl font-bold text-navy">No campus notifications yet</h3>
+              <p className="mt-1 text-sm text-slate-500">Drive summaries and company connection activity will appear here.</p>
             </div>
           )}
         </div>
 
-        <aside className="space-y-5">
-          <div className="rounded-[1.6rem] border border-slate-100 bg-white p-5 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.12)]">
-            <h2 className="text-lg font-bold text-navy">Activity mix</h2>
-            <div className="mt-4 space-y-3">
+        <aside className="space-y-4">
+          <div className="rounded-[1.2rem] border border-slate-100 bg-white p-4 shadow-[0_8px_20px_-14px_rgba(15,23,42,0.12)]">
+            <h2 className="text-base font-bold text-navy">Activity mix</h2>
+            <div className="mt-3 space-y-2">
               {[
                 { label: 'Drives', value: categoryCounts.Drives || 0 },
                 { label: 'Connections', value: categoryCounts.Connections || 0 },
                 { label: 'Students', value: categoryCounts.Students || 0 },
                 { label: 'Reports', value: categoryCounts.Reports || 0 }
               ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3">
+                <div key={item.label} className="flex items-center justify-between rounded-[0.9rem] border border-slate-200 bg-slate-50 px-3 py-2.5">
                   <span className="text-sm font-semibold text-slate-600">{item.label}</span>
-                  <span className="text-lg font-bold text-navy">{item.value}</span>
+                  <span className="text-base font-bold text-navy">{item.value}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-[1.6rem] border border-slate-100 bg-white p-5 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.12)]">
-            <h2 className="text-lg font-bold text-navy">Connected next steps</h2>
-            <div className="mt-4 space-y-3">
+          <div className="rounded-[1.2rem] border border-slate-100 bg-white p-4 shadow-[0_8px_20px_-14px_rgba(15,23,42,0.12)]">
+            <h2 className="text-base font-bold text-navy">Connected next steps</h2>
+            <div className="mt-3 space-y-2.5">
               {recommendedPartnerships.length > 0 ? recommendedPartnerships.map((company) => (
-                <div key={company.companyUserId} className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                <div key={company.companyUserId} className="rounded-[0.95rem] border border-slate-200 bg-slate-50 px-3 py-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-bold text-navy">{company.companyName}</p>
                       <p className="mt-1 text-xs leading-5 text-slate-500">{company.recommendation}</p>
                     </div>
-                    <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                    <span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-slate-600">
                       Score {company.score}
                     </span>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                    <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-500">
+                  <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
+                    <span className="rounded-full bg-white px-2 py-1 font-semibold text-slate-500">
                       {company.openRoles || 0} roles
                     </span>
-                    <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-500">
+                    <span className="rounded-full bg-white px-2 py-1 font-semibold text-slate-500">
                       {company.hasDrive ? 'Drive linked' : 'Drive missing'}
                     </span>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <Link
                       to="/portal/campus-connect/drives"
                       state={{
                         autoOpenDriveForm: true,
                         prefillDrive: buildDriveDraft(company)
                       }}
-                      className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#ef5c30]"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#ff6b3d] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#ef5c30]"
                     >
                       <FiBriefcase size={13} />
                       {company.hasDrive ? 'Refresh Drive' : 'Launch Drive'}
@@ -630,7 +630,7 @@ const CampusNotificationsPage = () => {
                     <Link
                       to="/portal/campus-connect/students"
                       state={{ poolPreparation: buildPoolPreparationState(company) }}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                     >
                       <FiUsers size={13} />
                       Prepare Pool
@@ -647,7 +647,7 @@ const CampusNotificationsPage = () => {
                     <Link
                       key={item.to}
                       to={item.to}
-                      className="flex items-center justify-between rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white"
+                      className="flex items-center justify-between rounded-[0.9rem] border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-white"
                     >
                       <span className="inline-flex items-center gap-2">
                         <item.icon size={14} />
@@ -677,7 +677,7 @@ function ActionLink({ action }) {
     <Link
       to={action.to}
       state={action.state}
-      className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition ${variantClassName}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition ${variantClassName}`}
     >
       <FiArrowRight size={14} />
       {action.label}
