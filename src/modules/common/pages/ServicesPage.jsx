@@ -163,6 +163,9 @@ const rolePlanSections = [
 ];
 
 const getRolePlanCta = ({ user, section, plan }) => {
+  if (plan.contactSales || Number(plan.priceAfterTrial || plan.price || 0) <= 0) {
+    return '/contact';
+  }
   if (user?.role === section.role || (section.role === 'hr' && user?.role === 'admin')) {
     return section.ctaBase;
   }
@@ -229,6 +232,10 @@ const ServicesPage = () => {
                   const tone = planTone(plan);
                   const isDark = tone === 'growth';
                   const renewalPrice = plan.priceAfterTrial || plan.price;
+                  const hasTrial = Number(plan.trialDays || 0) > 0;
+                  const listPrice = Number(plan.listPrice || 0);
+                  const hasDiscount = listPrice > Number(renewalPrice || 0) && Number(renewalPrice || 0) > 0;
+                  const isContactSales = Boolean(plan.contactSales) || Number(renewalPrice || 0) <= 0;
                   return (
                     <article
                       key={plan.slug}
@@ -245,10 +252,19 @@ const ServicesPage = () => {
                       </div>
 
                       <div className="mt-3">
-                        <p className={`text-[1.25rem] font-black ${isDark ? 'text-white' : 'text-emerald-700'}`}>Free trial</p>
-                        <p className={`mt-1 text-[11px] font-bold ${isDark ? 'text-amber-100' : 'text-emerald-700'}`}>
-                          Then {formatPrice(renewalPrice)}/{plan.billingCycle || 'month'}
+                        {hasDiscount ? (
+                          <p className={`text-[11px] font-bold line-through ${isDark ? 'text-white/45' : 'text-slate-400'}`}>
+                            {formatPrice(listPrice)}
+                          </p>
+                        ) : null}
+                        <p className={`text-[1.25rem] font-black ${isDark ? 'text-white' : 'text-emerald-700'}`}>
+                          {isContactSales ? 'Contact sales' : hasTrial ? 'Free trial' : formatPrice(renewalPrice)}
                         </p>
+                        {!isContactSales ? (
+                          <p className={`mt-1 text-[11px] font-bold ${isDark ? 'text-amber-100' : 'text-emerald-700'}`}>
+                            {hasTrial ? `Then ${formatPrice(renewalPrice)}/${plan.billingCycle || 'month'}` : `${hasDiscount ? 'After discount ' : ''}${formatPrice(renewalPrice)}/${plan.billingCycle || 'month'}`}
+                          </p>
+                        ) : null}
                       </div>
 
                       <ul className="mt-3 space-y-1.5">
@@ -267,7 +283,7 @@ const ServicesPage = () => {
                             isDark ? 'bg-white text-navy' : 'gradient-gold text-primary shadow-lg shadow-gold/20'
                           }`}
                         >
-                          Enable auto-pay + start trial
+                          {isContactSales ? 'Contact sales' : hasTrial ? 'Enable auto-pay + start trial' : 'Choose plan'}
                         </Link>
                       </div>
                     </article>

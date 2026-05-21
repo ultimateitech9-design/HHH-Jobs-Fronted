@@ -1,5 +1,5 @@
 import { FiCheck, FiCheckCircle, FiCreditCard, FiGift, FiLock, FiX } from 'react-icons/fi';
-import { getPlanBySlug, formatPrice, formatTrialLabel, TRIAL_DAYS } from '../constants/planConfig';
+import { getPlanBySlug, formatPrice, TRIAL_DAYS } from '../constants/planConfig';
 
 const formatPlanLabel = (value = '') => String(value || '').replace(/[_-]+/g, ' ').trim() || 'No active plan';
 
@@ -24,6 +24,8 @@ const PlanUpgradeModal = ({
   if (!open) return null;
 
   const activePlanSlug = currentPlan?.role_plan_slug || '';
+  const selectedPlan = plans.find((plan) => plan.slug === selectedPlanSlug) || null;
+  const selectedHasTrial = Number(selectedPlan?.trialDays || 0) > 0;
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-sm">
@@ -35,10 +37,10 @@ const PlanUpgradeModal = ({
             </div>
             <h2 className="mt-3 text-2xl font-bold tracking-tight text-navy">{title}</h2>
             <p className="mt-1 text-sm leading-6 text-slate-500">{subtitle}</p>
-            {formatTrialLabel(audienceRole) && (
+            {plans.some((plan) => Number(plan.trialDays || 0) > 0) && (
               <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
                 <FiGift size={11} />
-                {formatTrialLabel(audienceRole)} — start risk-free!
+                Free trial available on selected plans
               </div>
             )}
           </div>
@@ -72,7 +74,7 @@ const PlanUpgradeModal = ({
                       {selected ? <FiCheckCircle className="shrink-0 text-brand-600" size={18} /> : null}
                     </div>
                     <div className="mt-3">
-                      {plan.trialDays || TRIAL_DAYS[audienceRole] ? (
+                      {Number(plan.trialDays || 0) > 0 ? (
                         <>
                           <span className="text-xl font-black text-emerald-600">Free trial</span>
                           <span className="ml-1 text-xs text-slate-500">after auto-pay setup</span>
@@ -83,7 +85,9 @@ const PlanUpgradeModal = ({
                     </div>
                     {(plan.priceAfterTrial || getPlanBySlug(plan.slug)?.priceAfterTrial || plan.price) > 0 && (
                       <p className="mt-0.5 text-[10px] text-slate-400">
-                        Then {formatPrice(plan.priceAfterTrial || getPlanBySlug(plan.slug)?.priceAfterTrial || plan.price)}/month after trial
+                        {Number(plan.trialDays || 0) > 0 ? 'Then ' : ''}
+                        {formatPrice(plan.priceAfterTrial || getPlanBySlug(plan.slug)?.priceAfterTrial || plan.price)}/month
+                        {Number(plan.trialDays || 0) > 0 ? ' after trial' : ''}
                       </p>
                     )}
                     {Array.isArray(plan.features) && plan.features.length > 0 ? (
@@ -125,7 +129,7 @@ const PlanUpgradeModal = ({
               className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FiCreditCard size={15} />
-              {loading ? 'Processing...' : `Enable auto-pay + start ${TRIAL_DAYS[audienceRole] || 15}-day trial`}
+              {loading ? 'Processing...' : selectedHasTrial ? `Enable auto-pay + start ${selectedPlan?.trialDays || TRIAL_DAYS[audienceRole] || 15}-day trial` : 'Continue to checkout'}
             </button>
           </aside>
         </div>

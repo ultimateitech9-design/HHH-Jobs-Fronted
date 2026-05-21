@@ -2,11 +2,11 @@ export const hrStarterPricing = {
   slug: 'hr_starter',
   name: 'HR Starter',
   listPrice: 999,
-  trialRenewalPrice: 999,
+  trialRenewalPrice: 499,
   currency: 'INR',
   billingCycle: 'monthly',
   trialDays: 60,
-  discountText: 'After trial ₹999/month'
+  discountText: 'After trial ₹499/month'
 };
 
 export const jobPostingPlans = [
@@ -28,7 +28,7 @@ export const jobPostingPlans = [
       { label: 'Boost on Job Search Page', included: true },
       { label: 'Job Branding', included: true }
     ],
-    offerText: 'Trial starts today · renewal at ₹399/month for HR Starter',
+    offerText: 'Trial starts today · renewal at ₹499/month for HR Starter',
     ctaLabel: 'Start trial',
     ctaTo: '/sign-up?plan=hot_vacancy&role=hr',
     withQuantity: true,
