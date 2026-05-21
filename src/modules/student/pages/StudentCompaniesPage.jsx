@@ -25,6 +25,20 @@ const FILTER_OPTIONS = [
 
 const COMPANIES_PER_PAGE = 12;
 
+const getPortalCompanyWeight = (company = {}) =>
+  Number(Boolean(company.portalProfile || Number(company.portalJobs || 0) > 0));
+
+const sortPortalCompaniesFirst = (companies = []) =>
+  [...companies].sort((left, right) => {
+    const portalDelta = getPortalCompanyWeight(right) - getPortalCompanyWeight(left);
+    if (portalDelta !== 0) return portalDelta;
+
+    const jobsDelta = Number(right.totalJobs || 0) - Number(left.totalJobs || 0);
+    if (jobsDelta !== 0) return jobsDelta;
+
+    return String(left.name || '').localeCompare(String(right.name || ''));
+  });
+
 const StudentCompaniesPage = () => {
   const navigate = useNavigate();
   const [state, setState] = useState({
@@ -59,7 +73,7 @@ const StudentCompaniesPage = () => {
     };
   }, []);
 
-  const filteredCompanies = useMemo(() => state.companies.filter((company) => {
+  const filteredCompanies = useMemo(() => sortPortalCompaniesFirst(state.companies.filter((company) => {
     const haystack = [
       company.name,
       company.location,
@@ -74,7 +88,7 @@ const StudentCompaniesPage = () => {
     if (filter === 'portal') return company.portalProfile || company.portalJobs > 0;
     if (filter === 'subscribed') return Boolean(company.subscription?.subscribed);
     return true;
-  }), [filter, search, state.companies]);
+  })), [filter, search, state.companies]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCompanies.length / COMPANIES_PER_PAGE));
 

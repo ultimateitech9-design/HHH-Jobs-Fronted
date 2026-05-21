@@ -20,6 +20,7 @@ import useAuthStore from '../../../core/auth/authStore';
 import { buildCompanyLogoUrl } from '../../common/services/companyLogoUrl';
 import { getExternalJobCategories, getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
 import { getLoginRedirectState } from '../../common/utils/publicAccess';
+import { getStudentJobs } from '../services/studentApi';
 import {
   clearExternalApplyIntent,
   isExternalApplyIntentFresh,
@@ -45,6 +46,38 @@ const makeDefaultFilters = () => ({
   remote: false,
   page: 1,
   limit: 16
+});
+
+const isRemoteLike = (value = '') => /remote|work from home|wfh/i.test(String(value || ''));
+
+const buildCompanySourceKey = (companyName = '') => {
+  const normalized = String(companyName || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return normalized ? `${normalized}_jobs` : 'hhh_jobs';
+};
+
+const mapPortalJobToExternalCard = (job = {}) => ({
+  id: job.id || job._id,
+  source_key: buildCompanySourceKey(job.companyName),
+  company_name: job.companyName || 'HHH Jobs',
+  company_logo: job.companyLogo || '',
+  job_title: job.jobTitle || 'Open Role',
+  is_remote: isRemoteLike(job.jobLocation),
+  job_location: job.jobLocation || 'Remote',
+  employment_type: job.employmentType || 'Full-time',
+  category: job.category || '',
+  experience_level: job.experienceLevel || '',
+  salary_currency: '',
+  salary_min: '',
+  salary_max: '',
+  tags: Array.isArray(job.skills) ? job.skills : [],
+  apply_url: '',
+  __kind: 'portal',
+  details_id: job.id || job._id
 });
 
 const formatCount = (value) => Number(value || 0).toLocaleString();
@@ -303,13 +336,69 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
       loading: prev.jobs.length === 0,
       error: ''
     }));
-    const response = await getExternalJobs(currentFilters);
+    const page = Number(currentFilters.page || 1);
+    const limit = Number(currentFilters.limit || 16);
+    const shouldLoadPortalJobs = !currentFilters.source;
+    let portalResponse = { data: { jobs: [], pagination: { total: 0, totalPages: 0 } }, error: '' };
+    let externalResponse = { data: { jobs: [], pagination: { total: 0, totalPages: 0 } }, error: '' };
+    let combinedPagination = null;
+
+    if (shouldLoadPortalJobs) {
+      const portalMetaResponse = await getStudentJobs({
+        search: currentFilters.search,
+        location: currentFilters.location,
+        category: currentFilters.category,
+        page: 1,
+        limit
+      });
+      const portalPagination = portalMetaResponse.data?.pagination || { total: 0, totalPages: 0 };
+      const portalTotalPages = Number(portalPagination.totalPages || 0);
+      const externalPage = Math.max(1, page - portalTotalPages);
+
+      const [nextPortalResponse, nextExternalResponse] = await Promise.all([
+        page <= portalTotalPages
+          ? (page === 1 ? Promise.resolve(portalMetaResponse) : getStudentJobs({
+            search: currentFilters.search,
+            location: currentFilters.location,
+            category: currentFilters.category,
+            page,
+            limit
+          }))
+          : Promise.resolve({ data: { jobs: [], pagination: portalPagination }, error: '' }),
+        getExternalJobs({
+          ...currentFilters,
+          page: page <= portalTotalPages ? 1 : externalPage,
+          limit: page <= portalTotalPages ? 1 : limit
+        })
+      ]);
+
+      portalResponse = nextPortalResponse;
+      externalResponse = nextExternalResponse;
+
+      const externalPagination = externalResponse.data?.pagination || { total: 0, totalPages: 0 };
+      const total = Number(portalPagination.total || 0) + Number(externalPagination.total || 0);
+      const externalTotalPages = Math.ceil(Number(externalPagination.total || 0) / limit);
+      combinedPagination = {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, portalTotalPages + externalTotalPages)
+      };
+    } else {
+      externalResponse = await getExternalJobs(currentFilters);
+      combinedPagination = externalResponse.data?.pagination || null;
+    }
+
+    const portalJobs = (portalResponse.data?.jobs || []).map(mapPortalJobToExternalCard);
+    const externalJobs = shouldLoadPortalJobs && page <= Number(portalResponse.data?.pagination?.totalPages || 0)
+      ? []
+      : (externalResponse.data?.jobs || []).map((job) => ({ ...job, __kind: 'external' }));
 
     setJobsState({
-      jobs: response.data?.jobs || [],
-      pagination: response.data?.pagination || null,
+      jobs: [...portalJobs, ...externalJobs],
+      pagination: combinedPagination,
       loading: false,
-      error: response.error || ''
+      error: portalResponse.error || externalResponse.error || ''
     });
   }, []);
 
@@ -350,7 +439,10 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
   );
 
   const sourceMap = useMemo(
-    () => Object.fromEntries(sources.map((source) => [source.key, source])),
+    () => ({
+      hhh_jobs: { name: 'HHH Jobs' },
+      ...Object.fromEntries(sources.map((source) => [source.key, source]))
+    }),
     [sources]
   );
 
@@ -411,6 +503,18 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
 
     setResumeApplyIntent(null);
     openApplyDestination(applyUrl);
+  };
+
+  const handleJobAction = (job, sourceName) => {
+    if (job?.__kind === 'portal') {
+      const jobId = job.details_id || job.id;
+      if (jobId) {
+        navigate(`/portal/student/jobs/${jobId}`);
+      }
+      return;
+    }
+
+    handleApply(job, sourceName);
   };
 
   return (
@@ -547,10 +651,10 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
           <div className="student-job-grid mt-6">
             {jobsState.jobs.map((job) => (
               <ExternalJobCard
-                key={job.id}
+                key={`${job.__kind || 'external'}-${job.id}`}
                 isAuthenticated={isAuthenticated}
                 job={job}
-                onApply={handleApply}
+                onApply={handleJobAction}
                 sourceMap={sourceMap}
               />
             ))}

@@ -10,6 +10,20 @@ import { getCompanyEntryIntent } from '../utils/publicAccess';
 import { getPublicCompanies } from '../services/companyDirectoryApi';
 import CompanyDirectoryCard from '../components/CompanyDirectoryCard';
 
+const getPortalCompanyWeight = (company = {}) =>
+  Number(Boolean(company.portalProfile || Number(company.portalJobs || 0) > 0));
+
+const sortPortalCompaniesFirst = (companies = []) =>
+  [...companies].sort((left, right) => {
+    const portalDelta = getPortalCompanyWeight(right) - getPortalCompanyWeight(left);
+    if (portalDelta !== 0) return portalDelta;
+
+    const jobsDelta = Number(right.totalJobs || 0) - Number(left.totalJobs || 0);
+    if (jobsDelta !== 0) return jobsDelta;
+
+    return String(left.name || '').localeCompare(String(right.name || ''));
+  });
+
 const CompaniesPage = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -46,7 +60,7 @@ const CompaniesPage = () => {
   }, []);
 
   const filteredCompanies = useMemo(() => {
-    return directoryState.companies.filter((company) => {
+    return sortPortalCompaniesFirst(directoryState.companies.filter((company) => {
       const haystack = [
         company.name,
         company.location,
@@ -59,7 +73,7 @@ const CompaniesPage = () => {
 
       const matchesSearch = !search.trim() || haystack.includes(search.trim().toLowerCase());
       return matchesSearch;
-    });
+    }));
   }, [directoryState.companies, search]);
 
 
