@@ -112,10 +112,17 @@ const getRolePlanRenewalPrice = (plan = {}) =>
   Number(plan?.meta?.trialRenewalPrice || (plan.slug === hrStarterPricing.slug ? hrStarterPricing.trialRenewalPrice : plan.price) || 0);
 
 const getRolePlanDiscountLabel = (plan = {}) =>
-  plan?.meta?.discountText || (plan.slug === hrStarterPricing.slug ? hrStarterPricing.discountText : '');
+  plan?.meta?.offerBadge || plan?.meta?.badgeText || '';
 
 const isContactSalesRolePlan = (plan = {}) =>
   Boolean(plan?.meta?.contactSales) || plan?.meta?.selfCheckout === false || Boolean(plan?.contactSales);
+
+const isCurrentRoleSubscriptionPlan = (subscription = null, plan = null) => {
+  if (!subscription || !plan) return false;
+  const status = String(subscription.status || '').toLowerCase();
+  if (!['active', 'trialing', 'pending'].includes(status)) return false;
+  return String(subscription.role_plan_slug || '').toLowerCase() === String(plan.slug || '').toLowerCase();
+};
 
 const JOB_POSTING_DESCRIPTION_LIMIT = 250;
 const JOB_POSTING_LOCATION_LIMIT = 1;
@@ -228,6 +235,10 @@ const HrJobsPage = () => {
     () => isContactSalesRolePlan(selectedRolePlan),
     [selectedRolePlan]
   );
+  const selectedRolePlanIsCurrent = useMemo(
+    () => isCurrentRoleSubscriptionPlan(currentRoleSubscription, selectedRolePlan),
+    [currentRoleSubscription, selectedRolePlan]
+  );
 
   const checkoutQuantity = useMemo(() => {
     const parsed = Number(checkoutForm.quantity);
@@ -239,27 +250,27 @@ const HrJobsPage = () => {
   const roleCheckoutQuantity = 1;
 
   const roleQuoteDisplay = useMemo(() => {
-    if (!selectedRolePlan || selectedRolePlanRequiresSales) return null;
+    if (!selectedRolePlan || selectedRolePlanRequiresSales || selectedRolePlanIsCurrent) return null;
 
     const currency = roleQuote?.currency || selectedRolePlan.currency || 'INR';
     const renewalUnitPrice = getRolePlanRenewalPrice(selectedRolePlan);
     const listUnitPrice = getRolePlanListPrice(selectedRolePlan);
-    const subtotal = renewalUnitPrice * roleCheckoutQuantity;
     const listSubtotal = listUnitPrice * roleCheckoutQuantity;
-    const discountAmount = Math.max(listSubtotal - subtotal, 0);
+    const taxableAmount = renewalUnitPrice * roleCheckoutQuantity;
+    const discountAmount = Math.max(listSubtotal - taxableAmount, 0);
     const gstRate = Number(roleQuote?.gstRate ?? selectedRolePlan.gstRate ?? 18);
-    const gstAmount = subtotal * (gstRate / 100);
-    const totalAmount = subtotal + gstAmount;
+    const gstAmount = taxableAmount * (gstRate / 100);
+    const totalAmount = taxableAmount + gstAmount;
 
     return {
       currency,
-      subtotal,
+      subtotal: listSubtotal,
       discountAmount,
       gstAmount,
       totalAmount,
       includedJobCredits: roleQuote?.includedJobCredits ?? ((selectedRolePlan.includedJobCredits || 0) * roleCheckoutQuantity)
     };
-  }, [selectedRolePlan, selectedRolePlanRequiresSales, roleQuote, roleCheckoutQuantity]);
+  }, [selectedRolePlan, selectedRolePlanRequiresSales, selectedRolePlanIsCurrent, roleQuote, roleCheckoutQuantity]);
 
   const selectedPlanCredits = useMemo(() => {
     if (!selectedPlan) return 0;
@@ -410,14 +421,23 @@ const HrJobsPage = () => {
     ]);
 
     const nextPlans = plansRes.data || [];
+    const currentSubscription = currentSubscriptionRes.data || null;
+    const activePlanSlug = String(currentSubscription?.role_plan_slug || '').toLowerCase();
+    const preferredCheckoutPlan =
+      nextPlans.find((plan) => String(plan.slug || '').toLowerCase() !== activePlanSlug && !isContactSalesRolePlan(plan))
+      || nextPlans.find((plan) => String(plan.slug || '').toLowerCase() !== activePlanSlug)
+      || nextPlans[0]
+      || null;
     setRolePlans(nextPlans);
     setRoleSubscriptions(subscriptionsRes.data || []);
-    setCurrentRoleSubscription(currentSubscriptionRes.data || null);
+    setCurrentRoleSubscription(currentSubscription);
     setRolePurchases(purchasesRes.data || []);
     setRolePricingError([plansRes.error, subscriptionsRes.error, currentSubscriptionRes.error, purchasesRes.error].filter(Boolean).join(' | '));
     setRoleCheckoutForm((current) => ({
       ...current,
-      planSlug: nextPlans.some((plan) => plan.slug === current.planSlug) ? current.planSlug : (nextPlans[0]?.slug || '')
+      planSlug: nextPlans.some((plan) => plan.slug === current.planSlug && !isCurrentRoleSubscriptionPlan(currentSubscription, plan))
+        ? current.planSlug
+        : (preferredCheckoutPlan?.slug || '')
     }));
   };
 
@@ -500,7 +520,7 @@ const HrJobsPage = () => {
     let active = true;
 
     const loadRoleQuote = async () => {
-      if (!selectedRolePlan || selectedRolePlanRequiresSales) {
+      if (!selectedRolePlan || selectedRolePlanRequiresSales || selectedRolePlanIsCurrent) {
         setRoleQuote(null);
         setRoleQuoteError('');
         setRoleQuoteLoading(false);
@@ -532,7 +552,7 @@ const HrJobsPage = () => {
     return () => {
       active = false;
     };
-  }, [selectedRolePlan, selectedRolePlanRequiresSales, roleCheckoutQuantity, roleCheckoutForm.couponCode]);
+  }, [selectedRolePlan, selectedRolePlanRequiresSales, selectedRolePlanIsCurrent, roleCheckoutQuantity, roleCheckoutForm.couponCode]);
 
   useEffect(() => {
     if (!requestedAudience || editingJobId) return;
@@ -730,6 +750,11 @@ const HrJobsPage = () => {
 
     if (!selectedRolePlan) {
       setError('No recruiter plan is available right now. Contact admin.');
+      return;
+    }
+
+    if (isCurrentRoleSubscriptionPlan(currentRoleSubscription, selectedRolePlan)) {
+      setMessage(`${selectedRolePlan.name || 'This plan'} is already your current plan.`);
       return;
     }
 
@@ -1213,20 +1238,25 @@ const HrJobsPage = () => {
                       {rolePlans.map((plan) => <option key={plan.slug} value={plan.slug}>{plan.name}</option>)}
                     </select>
                   </div>
-                  {!selectedRolePlanRequiresSales && (
+                  {selectedRolePlanIsCurrent ? (
+                    <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-xs font-medium text-emerald-700">
+                      {selectedRolePlan?.name || 'This plan'} is already active on your account. Choose another plan to upgrade or change.
+                    </div>
+                  ) : null}
+                  {!selectedRolePlanRequiresSales && !selectedRolePlanIsCurrent && (
                     <div>
                       <label className="text-xs font-semibold text-neutral-500 mb-1 block">Coupon Code</label>
                       <input value={roleCheckoutForm.couponCode} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, couponCode: e.target.value.toUpperCase() })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold uppercase text-slate-900 focus:ring-2 focus:ring-brand-400" placeholder="OPTIONAL COUPON" />
                     </div>
                   )}
 
-                  {selectedRolePlanRequiresSales ? (
+                  {selectedRolePlanRequiresSales && !selectedRolePlanIsCurrent ? (
                     <div className="rounded-lg border border-brand-100 bg-brand-50 p-3 text-xs font-medium text-brand-700">
                       Enterprise is a custom plan. Share your interest with sales for pricing, credits, and rollout.
                     </div>
                   ) : null}
-                  {!selectedRolePlanRequiresSales && roleQuoteError && <p className="text-xs font-medium text-red-600">{roleQuoteError}</p>}
-                  {!selectedRolePlanRequiresSales && roleQuoteLoading && <p className="text-xs text-neutral-400 animate-pulse">Refreshing quote...</p>}
+                  {!selectedRolePlanRequiresSales && !selectedRolePlanIsCurrent && roleQuoteError && <p className="text-xs font-medium text-red-600">{roleQuoteError}</p>}
+                  {!selectedRolePlanRequiresSales && !selectedRolePlanIsCurrent && roleQuoteLoading && <p className="text-xs text-neutral-400 animate-pulse">Refreshing quote...</p>}
                   {roleQuoteDisplay && (
                     <div className="rounded-lg bg-neutral-50 border border-neutral-100 p-3 space-y-1.5 text-xs">
                       <div className="flex justify-between text-neutral-600"><span>Subtotal:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.subtotal).toFixed(2)}</span></div>
@@ -1243,13 +1273,15 @@ const HrJobsPage = () => {
                   )}
 
                   <p className="text-[11px] text-neutral-400">
-                    {selectedRolePlanRequiresSales
+                    {selectedRolePlanIsCurrent
+                      ? 'Your current plan stays active until its listed expiry date.'
+                      : selectedRolePlanRequiresSales
                       ? 'No auto-pay is started for Enterprise. A sales lead is created for manual follow-up.'
                       : 'Checkout authorises Razorpay auto-pay first. Your free trial starts only after authorisation succeeds.'}
                   </p>
 
-                  <button type="submit" disabled={roleCheckoutSaving || rolePlans.length === 0} className="w-full py-2.5 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50">
-                    {roleCheckoutSaving ? 'Processing...' : (selectedRolePlanRequiresSales ? 'Contact Sales' : 'Enable Auto-pay + Start Trial')}
+                  <button type="submit" disabled={roleCheckoutSaving || rolePlans.length === 0 || selectedRolePlanIsCurrent} className="w-full py-2.5 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50">
+                    {roleCheckoutSaving ? 'Processing...' : (selectedRolePlanIsCurrent ? 'Current Plan Active' : (selectedRolePlanRequiresSales ? 'Contact Sales' : 'Enable Auto-pay + Start Trial'))}
                   </button>
                 </form>
               </div>
