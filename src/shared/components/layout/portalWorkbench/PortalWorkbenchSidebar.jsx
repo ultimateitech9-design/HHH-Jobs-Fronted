@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { ChevronDown, Home, LogOut } from 'lucide-react';
+import { Building2, ChevronDown, LogOut } from 'lucide-react';
 import PortalWorkbenchBrand from './PortalWorkbenchBrand';
 import PortalWorkbenchSupportCard from './PortalWorkbenchSupportCard';
 import PortalWorkbenchUserCard from './PortalWorkbenchUserCard';
@@ -35,6 +35,9 @@ const PortalWorkbenchSidebar = ({
   const isCollapsed = viewport === 'desktop' ? collapsed : false;
   const avatarLetter = String(user?.name || user?.email || 'U').trim().slice(0, 1).toUpperCase();
   const avatarUrl = user?.avatarUrl || user?.avatar_url || '';
+  const profileShortcutLabel = String(portalLabel || '').toLowerCase().includes('hr')
+    ? 'Company Profile'
+    : 'My Profile';
   const groupedItemKeys = useMemo(
     () => navItems
       .filter((item) => Array.isArray(item.children) && item.children.length > 0)
@@ -116,13 +119,15 @@ const PortalWorkbenchSidebar = ({
             {portalLabel}
           </span>
 
-          <Link
-            to="/"
-            className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900"
-          >
-            <Home className="h-4 w-4 shrink-0" />
-            <span className="truncate">Back to Home</span>
-          </Link>
+          {profilePath ? (
+            <Link
+              to={profilePath}
+              className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+            >
+              <Building2 className="h-4 w-4 shrink-0" />
+              <span className="truncate">{profileShortcutLabel}</span>
+            </Link>
+          ) : null}
         </div>
       )}
 

@@ -27,7 +27,7 @@ import {
   updateApplicationStatus
 } from '../services/hrApi';
 
-const APPLICATION_STATUS_OPTIONS = ['applied', 'shortlisted', 'interview_scheduled', 'interviewed', 'offered', 'rejected', 'hired'];
+const APPLICATION_STATUS_OPTIONS = ['shortlisted', 'interview_scheduled', 'interviewed', 'offered', 'rejected', 'hired'];
 
 const defaultInterviewDraft = {
   scheduledAt: '',
@@ -138,8 +138,16 @@ const HrJobApplicantsPage = () => {
   const updateStatus = async (applicationId) => {
     setMessage('');
     setStatusInlineMessages((current) => ({ ...current, [applicationId]: null }));
-    const status = statusDrafts[applicationId] || 'applied';
+    const status = statusDrafts[applicationId] || '';
     const hrNotes = notesDrafts[applicationId] || '';
+
+    if (!APPLICATION_STATUS_OPTIONS.includes(status)) {
+      setStatusInlineMessages((current) => ({
+        ...current,
+        [applicationId]: { type: 'error', text: 'Choose the next stage before saving.' }
+      }));
+      return;
+    }
 
     try {
       const updated = await updateApplicationStatus({ applicationId, status, hrNotes });
@@ -490,13 +498,14 @@ const HrJobApplicantsPage = () => {
                         <div className="space-y-1.5">
                           <label className="text-sm font-bold text-neutral-700">Current Stage</label>
                           <select
-                            value={statusDrafts[activeApplicant.id] || 'applied'}
+                            value={APPLICATION_STATUS_OPTIONS.includes(statusDrafts[activeApplicant.id]) ? statusDrafts[activeApplicant.id] : ''}
                             onChange={(e) => {
                               setStatusDrafts({ ...statusDrafts, [activeApplicant.id]: e.target.value });
                               setStatusInlineMessages((current) => ({ ...current, [activeApplicant.id]: null }));
                             }}
                             className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-primary capitalize"
                           >
+                            <option value="" disabled>Choose next stage</option>
                             {APPLICATION_STATUS_OPTIONS.map((status) => (
                               <option key={status} value={status}>{getStatusLabel(status)}</option>
                             ))}
