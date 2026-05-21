@@ -100,13 +100,6 @@ const SCORING_MODEL = [
   { label: 'Impact', weight: '8%', key: 'impactScore' }
 ];
 
-const AI_PIPELINE_STEPS = [
-  { label: 'Parse', text: 'Resume text + selected job evidence' },
-  { label: 'Score', text: 'Weighted ATS and business-fit model' },
-  { label: 'Calibrate', text: 'OpenAI bounded review, no invented claims' },
-  { label: 'Report', text: 'Action plan, gaps, and rewrite guidance' }
-];
-
 const BUSINESS_FLAG_LABELS = {
   insufficient_core_skills: 'Core skill coverage is still below the target role requirements.',
   role_alignment_low: 'Resume title and positioning are weaker than the underlying project evidence.',
@@ -796,21 +789,6 @@ const StudentAtsPage = () => {
                 />
                 <span className="mt-1 block text-right text-xs font-semibold text-slate-400">{resumeTextWordCount} words</span>
               </label>
-
-              <div className="rounded-[1rem] border border-slate-200 bg-slate-50 p-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">AI scoring flow</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-4">
-                  {AI_PIPELINE_STEPS.map((item, index) => (
-                    <div key={item.label} className="rounded-[0.85rem] bg-white px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-[10px] font-black text-white">{index + 1}</span>
-                        <p className="text-xs font-black text-navy">{item.label}</p>
-                      </div>
-                      <p className="mt-1 text-[11px] leading-4 text-slate-500">{item.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
               {preflight.warnings.length > 0 ? (
                 <div className="rounded-[1rem] border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
