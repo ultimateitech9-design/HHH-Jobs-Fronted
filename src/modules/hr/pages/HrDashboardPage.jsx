@@ -4,7 +4,10 @@ import { FiBriefcase, FiUsers, FiCalendar, FiTrendingUp, FiArrowRight, FiPlus, F
 import StatusPill from '../../../shared/components/StatusPill';
 import FeatureGate from '../../../shared/components/FeatureGate';
 import {
+  fetchHrCampusDriveApplications,
+  fetchHrCampusDrives,
   formatDateTime,
+  getApplicantsForJob,
   getHrAnalytics,
   getHrInterviews,
   getHrJobs
@@ -31,13 +34,60 @@ const getJobApplicantsRoute = (job) => {
   return jobId ? `/portal/hr/jobs/${jobId}/applicants` : '/portal/hr/jobs';
 };
 
+const getCampusDriveRoute = () => '/portal/hr/campus-drives';
+
+const getTimeValue = (value) => {
+  const time = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(time) ? time : 0;
+};
+
+const sortLatest = (items = []) =>
+  [...items].sort((left, right) => getTimeValue(right.time || right.createdAt) - getTimeValue(left.time || left.createdAt));
+
+const pluralize = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
+
+const getCandidateName = (application = {}) =>
+  application?.applicant?.name
+  || application?.candidate?.name
+  || application?.applicantName
+  || application?.applicantEmail
+  || 'Applicant';
+
+const getApplicationTime = (application = {}) =>
+  application.appliedAt
+  || application.createdAt
+  || application.created_at
+  || application.updatedAt
+  || application.statusUpdatedAt
+  || '';
+
+const mapCampusStatusToPipeline = (status = '') => {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized === 'selected') return 'hired';
+  if (normalized === 'withdrawn') return 'rejected';
+  return normalized;
+};
+
+const normalizePipeline = (pipeline = {}) => ({
+  applied: Number(pipeline.applied || 0),
+  shortlisted: Number(pipeline.shortlisted || 0),
+  interview_scheduled: Number(pipeline.interview_scheduled || 0),
+  interviewed: Number(pipeline.interviewed || 0),
+  offered: Number(pipeline.offered || 0),
+  rejected: Number(pipeline.rejected || 0),
+  hired: Number(pipeline.hired || pipeline.selected || 0)
+});
+
 const HrDashboardPage = () => {
   const [state, setState] = useState({
     loading: true,
     error: '',
     jobs: [],
     analytics: null,
-    interviews: []
+    interviews: [],
+    jobApplications: [],
+    campusDrives: [],
+    campusApplications: []
   });
 
   const user = getCurrentUser();
@@ -50,10 +100,39 @@ const HrDashboardPage = () => {
       setState((current) => ({ ...current, loading: true, error: '' }));
 
       try {
-        const [jobsRes, analyticsRes, interviewsRes] = await Promise.all([
+        const [jobsRes, analyticsRes, interviewsRes, campusDrivesRes] = await Promise.all([
           getHrJobs(),
           getHrAnalytics(),
-          getHrInterviews()
+          getHrInterviews(),
+          fetchHrCampusDrives()
+        ]);
+
+        if (!mounted) return;
+
+        const jobs = jobsRes.data || [];
+        const campusDrives = campusDrivesRes.data || [];
+        const jobsWithApplicants = jobs.slice(0, 20);
+        const drivesWithApplicants = campusDrives.slice(0, 20);
+
+        const [jobApplicantGroups, campusApplicantGroups] = await Promise.all([
+          Promise.all(jobsWithApplicants.map((job) =>
+            getApplicantsForJob(job.id || job._id)
+              .then((response) => (response.data || []).map((application) => ({
+                ...application,
+                sourceType: 'job',
+                job
+              })))
+              .catch(() => [])
+          )),
+          Promise.all(drivesWithApplicants.map((drive) =>
+            fetchHrCampusDriveApplications(drive.id, { all: true, limit: 100 })
+              .then((response) => (response.data?.applications || []).map((application) => ({
+                ...application,
+                sourceType: 'campus',
+                drive: response.data?.drive || drive
+              })))
+              .catch(() => [])
+          ))
         ]);
 
         if (!mounted) return;
@@ -61,9 +140,12 @@ const HrDashboardPage = () => {
         setState({
           loading: false,
           error: '',
-          jobs: jobsRes.data || [],
+          jobs,
           analytics: analyticsRes.data,
-          interviews: interviewsRes.data || []
+          interviews: interviewsRes.data || [],
+          jobApplications: jobApplicantGroups.flat(),
+          campusDrives,
+          campusApplications: campusApplicantGroups.flat()
         });
       } catch (error) {
         if (!mounted) return;
@@ -94,63 +176,121 @@ const HrDashboardPage = () => {
   const hrReportsRoute = '/portal/hr/analytics';
   const applicantHubRoute = jobPostingsRoute;
 
-  const candidatePool = useMemo(() => {
-    const interviewCandidates = state.interviews.map((item, index) => ({
-      id: item.id || `interview-${index}`,
-      name: pickCandidateName(item, `Candidate ${index + 1}`),
-      role: pickCandidateRole(item, 'Interview round'),
-      stage: 'interview',
-      experience: `${(index % 5) + 1}+ years`,
-      time: formatDateTime(item.scheduled_at || item.scheduledAt),
-      status: item.status || 'scheduled'
+  const latestApplicants = useMemo(() => {
+    const jobApplicants = state.jobApplications.map((application, index) => ({
+      id: `job-${application.id || index}`,
+      sourceType: 'job',
+      title: getCandidateName(application),
+      subtitle: `${application.job?.jobTitle || 'Job post'} · ${application.job?.companyName || 'Your company'}`,
+      status: application.status || 'applied',
+      time: getApplicationTime(application),
+      to: getJobApplicantsRoute(application.job),
+      icon: (getCandidateName(application) || 'A')[0]
     }));
 
-    const jobCandidates = state.jobs.map((item, index) => ({
-      id: item.id || item._id || `job-${index}`,
-      name: item.recruiterName || item.ownerName || `Applicant ${index + 1}`,
-      role: item.jobTitle || 'Open role',
-      stage: index % 2 === 0 ? 'applied' : 'shortlisted',
-      experience: `${(index % 4) + 1}+ years`,
-      time: formatDateTime(item.createdAt || item.created_at),
-      status: item.status || 'open'
+    const campusApplicants = state.campusApplications.map((application, index) => ({
+      id: `campus-${application.id || index}`,
+      sourceType: 'campus',
+      title: getCandidateName(application),
+      subtitle: `${application.drive?.jobTitle || 'Campus drive'} · ${application.drive?.collegeName || application.drive?.college?.name || 'Campus drive'}`,
+      status: application.status || 'applied',
+      time: getApplicationTime(application),
+      to: getCampusDriveRoute(application.drive),
+      icon: (getCandidateName(application) || 'A')[0]
     }));
 
-    return [...interviewCandidates, ...jobCandidates];
-  }, [state.interviews, state.jobs]);
+    return sortLatest([...jobApplicants, ...campusApplicants]).slice(0, 6);
+  }, [state.campusApplications, state.jobApplications]);
 
-  const applicantPipelines = useMemo(
-    () =>
-      state.jobs
-        .filter((job) => Number(job.applicationsCount || 0) > 0)
-        .map((job) => ({
-          id: job.id || job._id,
-          title: job.jobTitle || 'Open role',
-          companyName: job.companyName || 'Your company',
-          applicantsCount: Number(job.applicationsCount || 0),
-          status: job.status || 'open',
-          to: getJobApplicantsRoute(job)
-        }))
-        .slice(0, 5),
-    [state.jobs]
-  );
+  const activityFeed = useMemo(() => {
+    const jobActivities = state.jobs.map((job, index) => ({
+      id: `job-post-${job.id || job._id || index}`,
+      title: job.jobTitle || 'Job posted',
+      subtitle: `Job post · ${job.companyName || 'Your company'} · ${pluralize(Number(job.applicationsCount || 0), 'applicant')}`,
+      status: job.status || 'open',
+      time: job.updatedAt || job.createdAt || job.postingDate,
+      to: getJobApplicantsRoute(job),
+      icon: 'J'
+    }));
+
+    const applicantActivities = latestApplicants.map((application) => ({
+      id: `activity-${application.id}`,
+      title: application.title,
+      subtitle: `${application.sourceType === 'campus' ? 'Campus applicant' : 'Job applicant'} · ${application.subtitle}`,
+      status: application.status,
+      time: application.time,
+      to: application.to,
+      icon: application.icon
+    }));
+
+    const driveActivities = state.campusDrives.map((drive, index) => ({
+      id: `campus-drive-${drive.id || index}`,
+      title: drive.jobTitle || 'Campus drive',
+      subtitle: `Campus drive · ${drive.college?.name || drive.collegeName || 'College'} · ${pluralize(Number(drive.counts?.total || 0), 'applicant')}`,
+      status: drive.status || 'ongoing',
+      time: drive.updatedAt || drive.createdAt || drive.driveDate || drive.applicationDeadline,
+      to: getCampusDriveRoute(drive),
+      icon: 'C'
+    }));
+
+    const interviewActivities = state.interviews.slice(0, 8).map((interview, index) => ({
+      id: `interview-${interview.id || index}`,
+      title: pickCandidateName(interview, 'Candidate'),
+      subtitle: `Interview · ${pickCandidateRole(interview, 'Role')} · ${formatDateTime(interview.scheduled_at || interview.scheduledAt)}`,
+      status: interview.status || 'scheduled',
+      time: interview.updatedAt || interview.createdAt || interview.scheduled_at || interview.scheduledAt,
+      to: '/portal/hr/interviews',
+      icon: 'I'
+    }));
+
+    return sortLatest([...applicantActivities, ...jobActivities, ...driveActivities, ...interviewActivities]).slice(0, 6);
+  }, [latestApplicants, state.campusDrives, state.interviews, state.jobs]);
+
+  const campusPipeline = useMemo(() => {
+    const next = { applied: 0, shortlisted: 0, interview_scheduled: 0, interviewed: 0, offered: 0, rejected: 0, hired: 0 };
+    state.campusApplications.forEach((application) => {
+      const status = mapCampusStatusToPipeline(application.status);
+      if (next[status] !== undefined) next[status] += 1;
+      if (application.currentRound && status !== 'hired' && status !== 'rejected') next.interview_scheduled += 1;
+    });
+    return next;
+  }, [state.campusApplications]);
+
+  const combinedPipeline = useMemo(() => {
+    const hrPipeline = normalizePipeline(analytics.pipeline);
+    return {
+      applied: hrPipeline.applied + campusPipeline.applied,
+      shortlisted: hrPipeline.shortlisted + campusPipeline.shortlisted,
+      interview_scheduled: hrPipeline.interview_scheduled + campusPipeline.interview_scheduled,
+      interviewed: hrPipeline.interviewed + campusPipeline.interviewed,
+      offered: hrPipeline.offered + campusPipeline.offered,
+      rejected: hrPipeline.rejected + campusPipeline.rejected,
+      hired: hrPipeline.hired + campusPipeline.hired
+    };
+  }, [analytics.pipeline, campusPipeline]);
 
   const pipelineColumns = useMemo(() => {
-    const pipeline = analytics.pipeline || { applied: 0, shortlisted: 0, hired: 0 };
-    const offerCount = Math.max(0, Number(pipeline.shortlisted || 0) - Number(pipeline.hired || 0));
+    const pipeline = combinedPipeline;
+    const interviewCount = Math.max(
+      totalInterviews,
+      Number(pipeline.interview_scheduled || 0) + Number(pipeline.interviewed || 0)
+    );
 
     return [
       { key: 'applied', label: 'Applied', count: Number(pipeline.applied || 0), to: applicantHubRoute },
       { key: 'shortlisted', label: 'Shortlisted', count: Number(pipeline.shortlisted || 0), to: applicantHubRoute },
-      { key: 'interview', label: 'Interviewing', count: totalInterviews, to: '/portal/hr/interviews' },
-      { key: 'offer', label: 'Offered', count: offerCount, to: applicantHubRoute },
+      { key: 'interview', label: 'Interviewing', count: interviewCount, to: '/portal/hr/interviews' },
+      { key: 'offer', label: 'Offered', count: Number(pipeline.offered || 0), to: applicantHubRoute },
       { key: 'hired', label: 'Hired', count: Number(pipeline.hired || 0), to: applicantHubRoute }
-    ].map((stage, stageIndex) => ({
-      ...stage,
-      candidates: candidatePool.filter((candidate, index) => (index + stageIndex) % 2 === 0).slice(0, 3)
-    }));
-  }, [analytics.pipeline, applicantHubRoute, totalInterviews, candidatePool]);
+    ];
+  }, [applicantHubRoute, combinedPipeline, totalInterviews]);
 
   const pipelineTotal = pipelineColumns.reduce((sum, col) => sum + col.count, 0) || 1;
+  const campusApplicantTotal = useMemo(
+    () => state.campusDrives.reduce((sum, drive) => sum + Number(drive?.counts?.total || 0), 0),
+    [state.campusDrives]
+  );
+  const totalApplicantCount = Number(analytics.totalApplications || 0) + campusApplicantTotal;
   const stageColors = ['bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-amber-500', 'bg-emerald-500'];
   const stageTextColors = ['text-blue-600', 'text-indigo-600', 'text-violet-600', 'text-amber-600', 'text-emerald-600'];
   const stageBgColors = ['bg-blue-50', 'bg-indigo-50', 'bg-violet-50', 'bg-amber-50', 'bg-emerald-50'];
@@ -192,9 +332,9 @@ const HrDashboardPage = () => {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
           { label: 'Open Roles', val: analytics.openJobs || analytics.totalJobs || 0, icon: FiBriefcase, accent: 'text-blue-600', bg: 'bg-blue-50', to: jobPostingsRoute },
-          { label: 'Total Applicants', val: analytics.totalApplications || 0, icon: FiUsers, accent: 'text-emerald-600', bg: 'bg-emerald-50', to: applicantHubRoute },
+          { label: 'Total Applicants', val: totalApplicantCount, icon: FiUsers, accent: 'text-emerald-600', bg: 'bg-emerald-50', to: applicantHubRoute },
           { label: 'Interviews', val: totalInterviews, icon: FiCalendar, accent: 'text-violet-600', bg: 'bg-violet-50', to: '/portal/hr/interviews' },
-          { label: 'Hired', val: analytics.pipeline?.hired || 0, icon: FiTrendingUp, accent: 'text-amber-600', bg: 'bg-amber-50', to: applicantHubRoute }
+          { label: 'Hired', val: combinedPipeline.hired || 0, icon: FiTrendingUp, accent: 'text-amber-600', bg: 'bg-amber-50', to: applicantHubRoute }
         ].map((metric) => (
           <Link
             key={metric.label}
@@ -269,26 +409,27 @@ const HrDashboardPage = () => {
                   <div className="h-2.5 w-48 animate-pulse rounded bg-slate-50" />
                 </div>
               </div>
-            )) : candidatePool.length > 0 ? candidatePool.slice(0, 6).map((candidate, index) => (
-              <div
-                key={candidate.id}
+            )) : activityFeed.length > 0 ? activityFeed.map((activity, index) => (
+              <Link
+                key={activity.id}
+                to={activity.to}
                 className="flex items-center justify-between gap-3 border-b border-slate-50 px-5 py-3 transition hover:bg-slate-50/50 last:border-b-0"
               >
                 <div className="flex min-w-0 items-center gap-3.5">
                   <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${stageBgColors[index % 5]} ${stageTextColors[index % 5]}`}>
-                    {(candidate.name || '?')[0].toUpperCase()}
+                    {(activity.icon || activity.title || '?')[0].toUpperCase()}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold text-slate-800">{candidate.name}</p>
-                    <p className="truncate text-[11px] text-slate-400">{candidate.role} &middot; {candidate.experience}</p>
+                    <p className="truncate text-[13px] font-semibold text-slate-800">{activity.title}</p>
+                    <p className="truncate text-[11px] text-slate-400">{activity.subtitle}</p>
                   </div>
                 </div>
-                <StatusPill value={candidate.status} />
-              </div>
+                <StatusPill value={activity.status} />
+              </Link>
             )) : (
               <div className="px-5 py-10 text-center">
-                <FiUsers className="mx-auto text-slate-300" size={28} />
-                <p className="mt-2 text-[13px] font-medium text-slate-400">No candidates in pipeline yet</p>
+                <FiBriefcase className="mx-auto text-slate-300" size={28} />
+                <p className="mt-2 text-[13px] font-medium text-slate-400">No HR activity yet</p>
                 <Link to="/portal/hr/jobs?tab=post" className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold text-indigo-600 hover:text-indigo-700">
                   <FiPlus size={12} /> Post your first job
                 </Link>
@@ -313,19 +454,21 @@ const HrDashboardPage = () => {
                   <div className="h-2.5 w-40 animate-pulse rounded bg-slate-50" />
                 </div>
               </div>
-            )) : applicantPipelines.length > 0 ? applicantPipelines.map((applicant) => (
+            )) : latestApplicants.length > 0 ? latestApplicants.map((applicant) => (
               <Link
                 key={applicant.id}
                 to={applicant.to}
                 className="flex items-center justify-between gap-3 border-b border-slate-50 px-5 py-3 transition hover:bg-slate-50/50 last:border-b-0"
               >
                 <div className="flex min-w-0 items-center gap-3.5">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-600">
-                    {(applicant.title || '?')[0].toUpperCase()}
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${applicant.sourceType === 'campus' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                    {(applicant.icon || applicant.title || '?')[0].toUpperCase()}
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-semibold text-slate-800">{applicant.title}</p>
-                    <p className="truncate text-[11px] text-slate-400">{applicant.companyName} &middot; {applicant.applicantsCount} applicants</p>
+                    <p className="truncate text-[11px] text-slate-400">
+                      {applicant.sourceType === 'campus' ? 'Campus drive' : 'Job post'} &middot; {applicant.subtitle}
+                    </p>
                   </div>
                 </div>
                 <StatusPill value={applicant.status} />
@@ -333,7 +476,7 @@ const HrDashboardPage = () => {
             )) : (
               <div className="px-5 py-10 text-center">
                 <FiUsers className="mx-auto text-slate-300" size={28} />
-                <p className="mt-2 text-[13px] font-medium text-slate-400">No applicant pipelines yet</p>
+                <p className="mt-2 text-[13px] font-medium text-slate-400">No job or campus applicants yet</p>
               </div>
             )}
           </div>
