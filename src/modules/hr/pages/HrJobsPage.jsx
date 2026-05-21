@@ -327,6 +327,10 @@ const HrJobsPage = () => {
       || postablePlans[0]
       || null;
   }, [postablePlans, postingUsageByPlan]);
+  const postingTypeOptions = useMemo(() => {
+    const planBySlug = new Map(postablePlans.map((plan) => [String(plan.slug || '').toLowerCase(), plan]));
+    return AUTO_JOB_PLAN_SLUGS.map((slug) => planBySlug.get(slug)).filter(Boolean);
+  }, [postablePlans]);
 
   const planNameBySlug = useMemo(
     () => Object.fromEntries(normalizedPlans.map((plan) => [plan.slug, plan.name || plan.slug])),
@@ -560,12 +564,14 @@ const HrJobsPage = () => {
   useEffect(() => {
     if (editingJobId || !autoPostingPlan) return;
 
-    setDraft((current) => (
-      current.planSlug === autoPostingPlan.slug
-        ? current
-        : { ...current, planSlug: autoPostingPlan.slug }
-    ));
-  }, [autoPostingPlan, editingJobId]);
+    setDraft((current) => {
+      const currentSlug = String(current.planSlug || '').toLowerCase();
+      const currentPlanExists = postablePlans.some((plan) => String(plan.slug || '').toLowerCase() === currentSlug);
+      const currentHasQuota = (postingUsageByPlan[currentSlug]?.remaining || 0) > 0;
+      if (currentPlanExists && currentHasQuota) return current;
+      return current.planSlug === autoPostingPlan.slug ? current : { ...current, planSlug: autoPostingPlan.slug };
+    });
+  }, [autoPostingPlan, editingJobId, postablePlans, postingUsageByPlan]);
 
   const filteredJobs = useMemo(() => {
     if (statusFilter === 'all') return jobs;
@@ -945,13 +951,31 @@ const HrJobsPage = () => {
 
           <form onSubmit={handleSubmitJob} className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
 
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="text-sm font-bold text-neutral-700 block mb-1">Target Audience</label>
-              <select value={draft.targetAudience} onChange={(e) => updateDraftField('targetAudience', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium">
-                <option value="all">All Candidates</option>
-                <option value="student">Only Students / Freshers</option>
-                <option value="retired_employee">Only Retired Professionals</option>
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:col-span-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-neutral-700 block mb-1">Job Type</label>
+                <select value={draft.planSlug} disabled={Boolean(editingJobId)} onChange={(e) => updateDraftField('planSlug', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 disabled:opacity-50 font-medium">
+                  {postingTypeOptions.map((plan) => {
+                    const slug = String(plan.slug || '').toLowerCase();
+                    const usage = postingUsageByPlan[slug] || { remaining: 0 };
+                    const disabled = !editingJobId && usage.remaining <= 0;
+                    return (
+                      <option key={plan.slug} value={plan.slug} disabled={disabled}>
+                        {plan.name || planNameBySlug[slug] || slug.replace(/_/g, ' ')} ({usage.remaining} left)
+                      </option>
+                    );
+                  })}
+                </select>
+                <p className="text-xs font-medium text-neutral-400">Choose Normal, Hot Vacancy, or Premium from your active plan quota.</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-neutral-700 block mb-1">Target Audience</label>
+                <select value={draft.targetAudience} onChange={(e) => updateDraftField('targetAudience', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium">
+                  <option value="all">All Candidates</option>
+                  <option value="student">Only Students / Freshers</option>
+                  <option value="retired_employee">Only Retired Professionals</option>
+                </select>
+              </div>
             </div>
 
             <div className="space-y-1.5">
