@@ -13,7 +13,6 @@ import {
   FiTrendingUp,
   FiUsers
 } from 'react-icons/fi';
-import SectionHeader from '../../../shared/components/SectionHeader';
 import useNotificationStore from '../../../core/notifications/notificationStore';
 import {
   deleteNotificationRequest,
@@ -455,23 +454,18 @@ const CampusNotificationsPage = () => {
 
   return (
     <div className="mx-auto w-full max-w-[1180px] space-y-6 pb-12">
-      <SectionHeader
-        eyebrow="Campus inbox"
-        title="Campus notifications"
-        subtitle="Review drive delivery summaries, company connection requests, and placement-side updates from one clean workspace."
-        action={(
-          unreadCount > 0 ? (
-            <button
-              type="button"
-              onClick={handleMarkAllRead}
-              className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm font-bold text-brand-700 transition hover:bg-brand-100"
-            >
-              <FiCheckSquare size={14} />
-              Mark all as read
-            </button>
-          ) : null
-        )}
-      />
+      {unreadCount > 0 ? (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleMarkAllRead}
+            className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm font-bold text-brand-700 transition hover:bg-brand-100"
+          >
+            <FiCheckSquare size={14} />
+            Mark all as read
+          </button>
+        </div>
+      ) : null}
 
       {activeError ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{activeError}</div>
