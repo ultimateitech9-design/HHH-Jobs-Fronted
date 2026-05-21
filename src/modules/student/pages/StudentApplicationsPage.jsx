@@ -203,6 +203,23 @@ const StudentApplicationsPage = () => {
             </Link>
           </div>
 
+          <div className="rounded-[1.25rem] border border-slate-200 bg-white p-3">
+            <div className="space-y-1">
+              {QUICK_LINKS.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  className={`flex items-center gap-2.5 rounded-full px-3 py-2 text-xs font-bold ${
+                    item.to === '/portal/student/applications' ? 'bg-slate-100 text-navy' : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <item.icon size={14} />
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
           <div className="rounded-[1.25rem] border border-[#d9e7ff] bg-[#edf4ff] p-3.5">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-black text-navy">Pipeline snapshot</h2>
@@ -221,23 +238,6 @@ const StudentApplicationsPage = () => {
             <div className="mt-3 flex items-center justify-between rounded-[1rem] bg-white px-3 py-2.5 text-left text-xs font-semibold leading-4 text-slate-700">
               <span>Keep your strongest roles moving this week</span>
               <FiTarget className="shrink-0" size={13} />
-            </div>
-          </div>
-
-          <div className="rounded-[1.25rem] border border-slate-200 bg-white p-3">
-            <div className="space-y-1">
-              {QUICK_LINKS.map((item) => (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  className={`flex items-center gap-2.5 rounded-full px-3 py-2 text-xs font-bold ${
-                    item.to === '/portal/student/applications' ? 'bg-slate-100 text-navy' : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <item.icon size={14} />
-                  <span>{item.label}</span>
-                </Link>
-              ))}
             </div>
           </div>
         </aside>
