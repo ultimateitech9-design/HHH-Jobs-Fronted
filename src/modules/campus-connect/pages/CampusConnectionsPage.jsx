@@ -105,6 +105,45 @@ const buildPoolPreparationState = (company) => ({
     : `Build a ready student pool for ${company.companyName} so a drive can be launched without delay.`
 });
 
+const getActivationPriority = ({
+  openRoles,
+  hasDrive,
+  hasStudentPool,
+  connectedDaysAgo,
+  isVerified,
+  contactEmail,
+  companyWebsite
+}) => {
+  const hiringDemand = Math.min(Number(openRoles || 0), 10) * 3;
+  const partnershipFreshness = connectedDaysAgo <= 7 ? 20 : connectedDaysAgo <= 30 ? 14 : connectedDaysAgo <= 90 ? 8 : 4;
+  const workflowOpportunity = hasDrive ? 8 : 20;
+  const readiness = (hasStudentPool ? 16 : 0) + (contactEmail ? 8 : 0) + (isVerified ? 4 : 0) + (companyWebsite ? 2 : 0);
+  const total = Math.min(100, Math.round(hiringDemand + partnershipFreshness + workflowOpportunity + readiness));
+
+  return {
+    score: total,
+    level: total >= 80 ? 'High' : total >= 55 ? 'Medium' : 'Low',
+    reasons: [
+      {
+        label: `${openRoles || 0} open role${Number(openRoles || 0) === 1 ? '' : 's'}`,
+        detail: hiringDemand ? `Hiring demand +${hiringDemand}` : 'Add open roles to improve match'
+      },
+      {
+        label: hasDrive ? 'Drive already linked' : 'No drive yet',
+        detail: hasDrive ? 'Refresh candidate pool' : `Workflow gap +${workflowOpportunity}`
+      },
+      {
+        label: hasStudentPool ? 'Pool ready' : 'Pool missing',
+        detail: hasStudentPool ? 'Students available +16' : 'Import students first'
+      },
+      {
+        label: connectedDaysAgo <= 7 ? 'Fresh connection' : `${connectedDaysAgo} days connected`,
+        detail: `Timing +${partnershipFreshness}`
+      }
+    ]
+  };
+};
+
 const buildConnectedActivationCompanies = ({ connections, directory, drives, totalStudents }) => {
   const directoryByUserId = Object.fromEntries(
     (directory.companies || []).map((company) => [company.companyUserId, company])
@@ -128,14 +167,15 @@ const buildConnectedActivationCompanies = ({ connections, directory, drives, tot
       const driveCount = driveCompanyCounts[companyKey] || 0;
       const hasDrive = driveCount > 0;
       const connectedDaysAgo = getConnectedDaysAgo(connection.responded_at || connection.created_at);
-      const score = (
-        (hasDrive ? 10 : 34)
-        + Math.min(openRoles, 8) * 5
-        + (directoryCompany.isVerified ? 12 : 0)
-        + (directoryCompany.contactEmail ? 10 : 0)
-        + (hasStudentPool ? 14 : 0)
-        + (connectedDaysAgo <= 7 ? 18 : connectedDaysAgo <= 30 ? 10 : 4)
-      );
+      const priority = getActivationPriority({
+        openRoles,
+        hasDrive,
+        hasStudentPool,
+        connectedDaysAgo,
+        isVerified: directoryCompany.isVerified,
+        contactEmail: directoryCompany.contactEmail,
+        companyWebsite: directoryCompany.companyWebsite
+      });
 
       return {
         ...directoryCompany,
@@ -149,7 +189,9 @@ const buildConnectedActivationCompanies = ({ connections, directory, drives, tot
         driveCount,
         hasDrive,
         hasStudentPool,
-        score,
+        score: priority.score,
+        priorityLevel: priority.level,
+        priorityReasons: priority.reasons,
         connectedDaysAgo,
         recommendedAction: !hasStudentPool
           ? 'Prepare Pool'
@@ -561,6 +603,9 @@ export default function CampusConnectionsPage() {
               <span className="rounded-full bg-slate-100 px-2.5 py-1">
                 Search ranked for fastest relevant matches
               </span>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">
+                Activation priority uses roles, connection age, student pool, contact quality, and drive gap
+              </span>
             </div>
 
             {filteredCompanies.length === 0 ? (
@@ -644,6 +689,11 @@ function CompanyCard({ company, activation, selected, onToggleSelect, onInvite, 
     rejected: 'Re-invite'
   };
   const isConnected = company.status === 'accepted' && activation;
+  const priorityTone = activation?.priorityLevel === 'High'
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    : activation?.priorityLevel === 'Medium'
+      ? 'border-amber-200 bg-amber-50 text-amber-700'
+      : 'border-slate-200 bg-slate-50 text-slate-600';
 
   return (
     <div className={`rounded-[1.1rem] border bg-white p-3 transition ${selected ? 'border-brand-300 shadow-[0_8px_20px_rgba(245,158,11,0.1)]' : 'border-slate-200 shadow-[0_6px_18px_rgba(15,23,42,0.04)]'}`}>
@@ -706,28 +756,29 @@ function CompanyCard({ company, activation, selected, onToggleSelect, onInvite, 
       ) : null}
 
       {isConnected ? (
-        <div className="mt-3 rounded-[1rem] border border-emerald-100 bg-emerald-50/60 px-3 py-3">
+        <div className="mt-3 rounded-[1rem] border border-emerald-100 bg-[linear-gradient(180deg,#ecfdf5_0%,#f8fffb_100%)] px-3 py-3">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-emerald-700">Next business action</p>
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-emerald-700">Recommended action</p>
               <p className="mt-1 text-sm font-bold text-navy">{activation.recommendedAction}</p>
               <p className="mt-1 text-xs leading-5 text-slate-600">{activation.recommendation}</p>
             </div>
-            <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600">
-              Score {activation.score}
+            <span
+              className={`shrink-0 rounded-full border px-2.5 py-1 text-center text-[11px] font-black ${priorityTone}`}
+              title="Activation priority out of 100. Higher score means this connected company is more ready for a drive or pool refresh."
+            >
+              {activation.priorityLevel}
+              <span className="block text-[10px] font-bold">{activation.score}/100</span>
             </span>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-500">
-              {activation.openRoles || 0} roles
-            </span>
-            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-500">
-              {activation.hasDrive ? `${activation.driveCount} drive linked` : 'No drive linked'}
-            </span>
-            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-slate-500">
-              {activation.hasStudentPool ? 'Pool ready' : 'Pool missing'}
-            </span>
+          <div className="mt-3 grid gap-1.5 text-xs sm:grid-cols-2">
+            {(activation.priorityReasons || []).map((reason) => (
+              <div key={`${reason.label}-${reason.detail}`} className="rounded-2xl bg-white/85 px-2.5 py-2">
+                <p className="truncate font-bold text-slate-700" title={reason.label}>{reason.label}</p>
+                <p className="truncate text-[11px] font-medium text-slate-500" title={reason.detail}>{reason.detail}</p>
+              </div>
+            ))}
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
