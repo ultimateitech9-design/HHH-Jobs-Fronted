@@ -26,7 +26,8 @@ import {
   removeFromShortlist,
   searchHrCandidatesV2,
   sendBulkCandidateInterest,
-  sendCandidateInterest
+  sendCandidateInterest,
+  viewHrCandidateResume
 } from '../services/hrApi';
 import UpgradePlanModal from '../../../shared/components/UpgradePlanModal';
 
@@ -69,11 +70,19 @@ const renderTemplateMessage = (template, candidate) => {
 
 const isOpenableResumeUrl = (value = '') => /^https?:\/\//i.test(String(value || '')) || /^data:/i.test(String(value || ''));
 
-const openResumeText = (candidate) => {
-  const resumeText = String(candidate?.profile?.resumeText || '').trim();
+const getStudentDbUsage = (access = {}, summary = {}) => {
+  const limit = access.studentDbViewLimit ?? summary.studentDbViewLimit;
+  const numericLimit = Number(limit);
+  if (!Number.isFinite(numericLimit)) return null;
+  const used = Number(access.studentDbViewsUsed ?? summary.studentDbViewsUsed ?? 0);
+  const remaining = Math.max(0, Number(access.studentDbViewsRemaining ?? summary.studentDbViewsRemaining ?? (numericLimit - used)));
+  return { limit: numericLimit, used, remaining };
+};
+
+const openResumeText = ({ candidateName = 'Candidate', resumeText = '' } = {}) => {
   if (!resumeText) return;
 
-  const title = `${candidate?.user?.name || 'Candidate'} Resume`;
+  const title = `${candidateName || 'Candidate'} Resume`;
   const doc = `<!doctype html>
 <html>
 <head>
@@ -93,28 +102,28 @@ const openResumeText = (candidate) => {
   window.setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
 };
 
-function ResumeAction({ candidate }) {
+const openResume = ({ candidate, resume }) => {
+  const candidateName = resume?.candidateName || candidate?.user?.name || 'Candidate';
+  const resumeUrl = resume?.resumeUrl || candidate?.profile?.resumeUrl || '';
+  const resumeText = String(resume?.resumeText || candidate?.profile?.resumeText || '').trim();
+
+  if (isOpenableResumeUrl(resumeUrl)) {
+    window.open(resumeUrl, '_blank', 'noopener,noreferrer');
+    return;
+  }
+
+  if (resumeText) openResumeText({ candidateName, resumeText });
+};
+
+function ResumeAction({ candidate, loading, onViewResume }) {
   if (!candidate?.access?.canViewResume || !candidate?.profile?.hasResume) return null;
 
-  if (isOpenableResumeUrl(candidate.profile.resumeUrl)) {
-    return (
-      <a href={candidate.profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline">
-        <FiFileText size={13} />
-        View resume
-      </a>
-    );
-  }
-
-  if (String(candidate.profile.resumeText || '').trim()) {
-    return (
-      <button type="button" onClick={() => openResumeText(candidate)} className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline">
-        <FiFileText size={13} />
-        View resume
-      </button>
-    );
-  }
-
-  return null;
+  return (
+    <button type="button" onClick={onViewResume} disabled={loading} className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline disabled:cursor-not-allowed disabled:opacity-60">
+      {loading ? <FiRefreshCw size={13} className="animate-spin" /> : <FiFileText size={13} />}
+      View resume
+    </button>
+  );
 }
 
 export default function HrCandidatesPage() {
@@ -183,6 +192,7 @@ export default function HrCandidatesPage() {
     ? ((pagination.page - 1) * (pagination.limit || pageSize)) + 1
     : 0;
   const visibleEnd = candidates.length ? visibleStart + candidates.length - 1 : 0;
+  const studentDbUsage = getStudentDbUsage(access, summary);
 
   const updateFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }));
 
@@ -208,11 +218,20 @@ export default function HrCandidatesPage() {
     setActionState((current) => ({ ...current, [candidate.id]: 'sending' }));
 
     try {
-      await sendCandidateInterest(candidate.id, {
+      const interest = await sendCandidateInterest(candidate.id, {
         message: interestMessage,
         templateId: interestTemplateId,
         campaignLabel: 'candidate_database_single'
       });
+      if (interest?.access) {
+        setAccess((current) => ({ ...current, ...interest.access }));
+        setSummary((current) => ({
+          ...current,
+          studentDbViewsUsed: interest.access.studentDbViewsUsed,
+          studentDbViewsRemaining: interest.access.studentDbViewsRemaining,
+          studentDbViewLimit: interest.access.studentDbViewLimit
+        }));
+      }
 
       setCandidates((current) =>
         current.map((item) =>
@@ -236,11 +255,20 @@ export default function HrCandidatesPage() {
     setActionState((current) => ({ ...current, bulk: 'sending' }));
 
     try {
-      await sendBulkCandidateInterest([...selectedIds], {
+      const response = await sendBulkCandidateInterest([...selectedIds], {
         message: bulkMessage,
         templateId: bulkTemplateId,
         campaignLabel: 'candidate_database_bulk'
       });
+      if (response?.access) {
+        setAccess((current) => ({ ...current, ...response.access }));
+        setSummary((current) => ({
+          ...current,
+          studentDbViewsUsed: response.access.studentDbViewsUsed,
+          studentDbViewsRemaining: response.access.studentDbViewsRemaining,
+          studentDbViewLimit: response.access.studentDbViewLimit
+        }));
+      }
 
       setCandidates((current) =>
         current.map((item) =>
@@ -285,6 +313,57 @@ export default function HrCandidatesPage() {
     }
   };
 
+  const handleViewResume = async (candidate) => {
+    if (!candidate?.id) return;
+
+    const hasEmbeddedResume = isOpenableResumeUrl(candidate.profile?.resumeUrl) || String(candidate.profile?.resumeText || '').trim();
+    if (hasEmbeddedResume && !candidate.access?.resumeRequiresTracking) {
+      openResume({ candidate });
+      return;
+    }
+
+    setActionState((current) => ({ ...current, [`resume_${candidate.id}`]: 'opening' }));
+    setError('');
+
+    try {
+      const response = await viewHrCandidateResume(candidate.id);
+      if (response.access) {
+        setAccess((current) => ({ ...current, ...response.access }));
+        setSummary((current) => ({
+          ...current,
+          studentDbViewsUsed: response.access.studentDbViewsUsed,
+          studentDbViewsRemaining: response.access.studentDbViewsRemaining,
+          studentDbViewLimit: response.access.studentDbViewLimit
+        }));
+      }
+
+      setCandidates((current) =>
+        current.map((item) =>
+          item.id === candidate.id
+            ? {
+                ...item,
+                profile: {
+                  ...item.profile,
+                  resumeUrl: response.resume?.resumeUrl || item.profile?.resumeUrl || null,
+                  resumeText: response.resume?.resumeText || item.profile?.resumeText || ''
+                },
+                access: {
+                  ...item.access,
+                  resumeRequiresTracking: false,
+                  canViewResume: true
+                }
+              }
+            : item
+        )
+      );
+      openResume({ candidate, resume: response.resume });
+    } catch (resumeError) {
+      setError(resumeError.message || 'Unable to open resume.');
+    } finally {
+      setActionState((current) => ({ ...current, [`resume_${candidate.id}`]: '' }));
+    }
+  };
+
   const applyTemplateToSingle = (templateId) => {
     setInterestTemplateId(templateId);
     const template = templates.find((item) => item.id === templateId);
@@ -324,13 +403,13 @@ export default function HrCandidatesPage() {
         </div>
       ) : null}
 
-      {access.hasPaidAccess && Number.isFinite(access.studentDbViewLimit) ? (
+      {studentDbUsage ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-[13px] font-semibold text-indigo-800 shadow-sm">
           <span>
-            Student DB trial views: {access.studentDbViewsUsed ?? summary.studentDbViewsUsed ?? 0}/{access.studentDbViewLimit}
+            {access.activePlanName || 'Current plan'} candidate views: {studentDbUsage.used}/{studentDbUsage.limit}
           </span>
           <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-indigo-700">
-            {access.studentDbViewsRemaining ?? summary.studentDbViewsRemaining ?? 0} left
+            {studentDbUsage.remaining} left
           </span>
         </div>
       ) : null}
@@ -434,6 +513,19 @@ export default function HrCandidatesPage() {
               Send bulk request
             </button>
 
+            {studentDbUsage ? (
+              <span className="inline-flex items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-[12px] font-bold text-indigo-800">
+                <FiEye size={13} />
+                Candidate views {studentDbUsage.used}/{studentDbUsage.limit}
+                <span className="rounded-full bg-white px-2 py-0.5 text-[11px] text-indigo-700">{studentDbUsage.remaining} left</span>
+              </span>
+            ) : access.hasPaidAccess ? (
+              <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-[12px] font-bold text-emerald-700">
+                <FiEye size={13} />
+                Candidate views unlimited
+              </span>
+            ) : null}
+
             <span className="ml-auto text-[13px] font-semibold text-slate-500">
               {selectedCount} selected
             </span>
@@ -491,6 +583,7 @@ export default function HrCandidatesPage() {
                     actionState={actionState}
                     onSelect={() => handleSelect(candidate.id)}
                     onShortlist={() => toggleShortlist(candidate)}
+                    onViewResume={() => handleViewResume(candidate)}
                     onInterest={() => {
                       setInterestModal(candidate);
                       setInterestMessage('');
@@ -622,10 +715,11 @@ function Field({ label, value, onChange, placeholder, type = 'text' }) {
   );
 }
 
-function CandidateCard({ candidate, selected, selectingEnabled, actionState, onSelect, onShortlist, onInterest }) {
+function CandidateCard({ candidate, selected, selectingEnabled, actionState, onSelect, onShortlist, onViewResume, onInterest }) {
   const interestStatus = candidate.crm?.interestStatus;
   const shortlistLoading = actionState[`shortlist_${candidate.id}`] === 'saving';
   const interestLoading = actionState[candidate.id] === 'sending';
+  const resumeLoading = actionState[`resume_${candidate.id}`] === 'opening';
   const verification = candidate.verification || {};
 
   return (
@@ -719,14 +813,14 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 text-slate-700"><FiUser size={13} /> {candidate.user?.email || 'Email unavailable'}</span>
                 <span className="inline-flex items-center gap-1.5 text-slate-700"><FiSend size={13} /> {candidate.user?.mobile || 'Mobile unavailable'}</span>
-                <ResumeAction candidate={candidate} />
+                <ResumeAction candidate={candidate} loading={resumeLoading} onViewResume={onViewResume} />
               </div>
             ) : (
               <div className="flex items-start gap-2">
                 <FiEye size={14} className="mt-0.5 shrink-0 text-brand-600" />
                 <div className="space-y-1">
                   <p>{candidate.access?.blurReason || 'Contact details unlock after the student accepts your connection request.'}</p>
-                  <ResumeAction candidate={candidate} />
+                  <ResumeAction candidate={candidate} loading={resumeLoading} onViewResume={onViewResume} />
                 </div>
               </div>
             )}

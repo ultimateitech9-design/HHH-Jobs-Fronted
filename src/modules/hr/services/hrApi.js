@@ -571,14 +571,30 @@ export const sendCandidateInterest = async (studentId, { message = '', templateI
   strictRequest({
     path: `/hr/candidates/${studentId}/interest`,
     options: { method: 'POST', body: JSON.stringify({ message, templateId, campaignLabel }) },
-    extract: (payload) => payload?.interest || payload
+    extract: (payload) => ({
+      interest: payload?.interest || payload,
+      access: payload?.access || null
+    })
+  });
+
+export const viewHrCandidateResume = async (studentId) =>
+  strictRequest({
+    path: `/hr/candidates/${studentId}/resume-view`,
+    options: { method: 'POST', body: JSON.stringify({}) },
+    extract: (payload) => ({
+      access: payload?.access || null,
+      resume: payload?.resume || null
+    })
   });
 
 export const sendBulkCandidateInterest = async (studentIds, { message = '', templateId = '', campaignLabel = '' } = {}) =>
   strictRequest({
     path: '/hr/candidates/bulk-interest',
     options: { method: 'POST', body: JSON.stringify({ studentIds, message, templateId, campaignLabel }) },
-    extract: (payload) => ({ sentCount: payload?.sentCount || 0 })
+    extract: (payload) => ({
+      access: payload?.access || null,
+      sentCount: payload?.sentCount || 0
+    })
   });
 
 export const getHrCandidateMessageTemplates = async () =>
