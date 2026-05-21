@@ -438,91 +438,91 @@ function DriveApplicantsView({ driveId, onBack }) {
               </button>
             ))}
           </div>
+
+          <div className="mt-5 border-t border-slate-100 pt-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-sm font-bold text-navy">Bulk Round Handling</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Select applicants, assign a shared round, and update them together.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={toggleSelectAllFiltered}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                >
+                  {allFilteredSelected ? 'Unselect all students' : 'Select all students'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds([])}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                >
+                  Clear selection
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_1fr_auto]">
+              <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                Round
+                <select
+                  value={bulkRound}
+                  onChange={(e) => setBulkRound(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-300"
+                >
+                  <option value="">Virtual Interview</option>
+                  {ROUNDS.map((round) => <option key={round} value={round}>{round}</option>)}
+                </select>
+              </label>
+              <label className="grid gap-1 text-xs font-semibold text-slate-600">
+                Notes
+                <input
+                  type="text"
+                  value={bulkNotes}
+                  onChange={(e) => setBulkNotes(e.target.value)}
+                  placeholder="Optional note for all selected applicants"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-300"
+                />
+              </label>
+              <div className="rounded-xl bg-slate-50 px-4 py-3 text-xs font-bold text-slate-600">
+                {selectedCount} selected
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => runBulkRoundUpdate('selected')}
+                disabled={updating}
+                className="rounded-full bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                Move selected to round
+              </button>
+              <button
+                type="button"
+                onClick={() => runBulkStatusUpdate('selected')}
+                disabled={updating}
+                className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                Select selected
+              </button>
+              <button
+                type="button"
+                onClick={() => runBulkStatusUpdate('rejected')}
+                disabled={updating}
+                className="rounded-full bg-red-500 px-4 py-2 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                Reject selected
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-medium text-red-600">{error}</p>}
-
-      <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-bold text-navy">Bulk Round Handling</p>
-            <p className="mt-1 text-xs text-slate-500">
-              Select one or many applicants, assign the same round, and push them together. This is the fastest way to handle multiple candidates in one or many rounds.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={toggleSelectAllFiltered}
-              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
-            >
-              {allFilteredSelected ? 'Unselect all students' : 'Select all students'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedIds([])}
-              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
-            >
-              Clear selection
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_1fr_auto]">
-          <label className="grid gap-1 text-xs font-semibold text-slate-600">
-            Round
-            <select
-              value={bulkRound}
-              onChange={(e) => setBulkRound(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-300"
-            >
-              <option value="">Virtual Interview</option>
-              {ROUNDS.map((round) => <option key={round} value={round}>{round}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1 text-xs font-semibold text-slate-600">
-            Notes
-            <input
-              type="text"
-              value={bulkNotes}
-              onChange={(e) => setBulkNotes(e.target.value)}
-              placeholder="Optional note for all selected applicants"
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-300"
-            />
-          </label>
-          <div className="rounded-xl bg-slate-50 px-4 py-3 text-xs font-bold text-slate-600">
-            {selectedCount} selected
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => runBulkRoundUpdate('selected')}
-            disabled={updating}
-            className="rounded-full bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
-          >
-            Move selected to round
-          </button>
-          <button
-            type="button"
-            onClick={() => runBulkStatusUpdate('selected')}
-            disabled={updating}
-            className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
-          >
-            Select selected
-          </button>
-          <button
-            type="button"
-            onClick={() => runBulkStatusUpdate('rejected')}
-            disabled={updating}
-            className="rounded-full bg-red-500 px-4 py-2 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
-          >
-            Reject selected
-          </button>
-        </div>
-      </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
