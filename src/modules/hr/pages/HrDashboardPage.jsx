@@ -45,6 +45,22 @@ const sortLatest = (items = []) =>
   [...items].sort((left, right) => getTimeValue(right.time || right.createdAt) - getTimeValue(left.time || left.createdAt));
 
 const pluralize = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
+const UPCOMING_INTERVIEW_STATUSES = new Set(['scheduled', 'rescheduled']);
+
+const getInterviewScheduledTime = (interview = {}) => {
+  const time = new Date(interview.scheduled_at || interview.scheduledAt || '').getTime();
+  return Number.isFinite(time) ? time : 0;
+};
+
+const isUpcomingInterview = (interview = {}, now = Date.now()) => {
+  const status = String(interview.status || 'scheduled').toLowerCase();
+  const roomStatus = String(interview.roomStatus || interview.room_status || '').toLowerCase();
+
+  if (!UPCOMING_INTERVIEW_STATUSES.has(status)) return false;
+  if (['cancelled', 'completed', 'no_show', 'ended'].includes(roomStatus)) return false;
+
+  return getInterviewScheduledTime(interview) >= now;
+};
 
 const getCandidateName = (application = {}) =>
   application?.applicant?.name
@@ -175,6 +191,12 @@ const HrDashboardPage = () => {
   const jobPostingsRoute = '/portal/hr/jobs?tab=jobs';
   const hrReportsRoute = '/portal/hr/analytics';
   const applicantHubRoute = '/portal/hr/applications';
+  const upcomingInterviews = useMemo(
+    () => state.interviews
+      .filter((interview) => isUpcomingInterview(interview))
+      .sort((left, right) => getInterviewScheduledTime(left) - getInterviewScheduledTime(right)),
+    [state.interviews]
+  );
 
   const latestApplicants = useMemo(() => {
     const jobApplicants = state.jobApplications.map((application, index) => ({
@@ -491,7 +513,7 @@ const HrDashboardPage = () => {
             </span>
             <div>
               <h2 className="text-[15px] font-bold text-slate-900">Upcoming Interviews</h2>
-              <p className="text-[11px] text-slate-400">{state.interviews.length > 0 ? `${state.interviews.length} scheduled` : 'None scheduled'}</p>
+              <p className="text-[11px] text-slate-400">{upcomingInterviews.length > 0 ? `${upcomingInterviews.length} upcoming` : 'None upcoming'}</p>
             </div>
           </div>
           <FeatureGate feature="hr.interview_scheduling" featureLabel="Interview Scheduling" inline>
@@ -509,7 +531,7 @@ const HrDashboardPage = () => {
                 <div className="h-2.5 w-44 animate-pulse rounded bg-slate-50" />
               </div>
             </div>
-          )) : state.interviews.slice(0, 4).length > 0 ? state.interviews.slice(0, 4).map((interview, index) => (
+          )) : upcomingInterviews.slice(0, 4).length > 0 ? upcomingInterviews.slice(0, 4).map((interview, index) => (
             <Link
               key={interview.id || `interview-${index}`}
               to="/portal/hr/interviews"
@@ -532,8 +554,8 @@ const HrDashboardPage = () => {
           )) : (
             <div className="px-5 py-10 text-center sm:col-span-2">
               <FiCalendar className="mx-auto text-slate-300" size={28} />
-              <p className="mt-2 text-[13px] font-medium text-slate-400">No interviews scheduled</p>
-              <p className="mt-1 text-[11px] text-slate-400">Schedule interviews from the Candidates page</p>
+              <p className="mt-2 text-[13px] font-medium text-slate-400">No upcoming interviews</p>
+              <p className="mt-1 text-[11px] text-slate-400">Schedule a future interview from the Interviews page</p>
             </div>
           )}
         </div>
