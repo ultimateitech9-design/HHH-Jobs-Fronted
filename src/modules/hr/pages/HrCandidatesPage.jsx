@@ -67,6 +67,56 @@ const renderTemplateMessage = (template, candidate) => {
     .replaceAll('{{collegeName}}', candidate?.education?.college || 'your college');
 };
 
+const isOpenableResumeUrl = (value = '') => /^https?:\/\//i.test(String(value || '')) || /^data:/i.test(String(value || ''));
+
+const openResumeText = (candidate) => {
+  const resumeText = String(candidate?.profile?.resumeText || '').trim();
+  if (!resumeText) return;
+
+  const title = `${candidate?.user?.name || 'Candidate'} Resume`;
+  const doc = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${title.replace(/[<>&"]/g, '')}</title>
+  <style>
+    body { margin: 0; padding: 32px; font-family: Arial, sans-serif; color: #0f172a; background: #f8fafc; }
+    main { max-width: 900px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; padding: 28px; }
+    h1 { margin: 0 0 18px; font-size: 24px; }
+    pre { white-space: pre-wrap; word-break: break-word; font: 14px/1.6 Arial, sans-serif; }
+  </style>
+</head>
+<body><main><h1>${title.replace(/[<>&"]/g, '')}</h1><pre>${resumeText.replace(/[<>&]/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[char]))}</pre></main></body>
+</html>`;
+  const blobUrl = URL.createObjectURL(new Blob([doc], { type: 'text/html;charset=utf-8' }));
+  window.open(blobUrl, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+};
+
+function ResumeAction({ candidate }) {
+  if (!candidate?.access?.canViewResume || !candidate?.profile?.hasResume) return null;
+
+  if (isOpenableResumeUrl(candidate.profile.resumeUrl)) {
+    return (
+      <a href={candidate.profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline">
+        <FiFileText size={13} />
+        View resume
+      </a>
+    );
+  }
+
+  if (String(candidate.profile.resumeText || '').trim()) {
+    return (
+      <button type="button" onClick={() => openResumeText(candidate)} className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline">
+        <FiFileText size={13} />
+        View resume
+      </button>
+    );
+  }
+
+  return null;
+}
+
 export default function HrCandidatesPage() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [loading, setLoading] = useState(true);
@@ -669,24 +719,14 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 text-slate-700"><FiUser size={13} /> {candidate.user?.email || 'Email unavailable'}</span>
                 <span className="inline-flex items-center gap-1.5 text-slate-700"><FiSend size={13} /> {candidate.user?.mobile || 'Mobile unavailable'}</span>
-                {candidate.profile?.resumeUrl ? (
-                  <a href={candidate.profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline">
-                    <FiFileText size={13} />
-                    View resume
-                  </a>
-                ) : null}
+                <ResumeAction candidate={candidate} />
               </div>
             ) : (
               <div className="flex items-start gap-2">
                 <FiEye size={14} className="mt-0.5 shrink-0 text-brand-600" />
                 <div className="space-y-1">
                   <p>{candidate.access?.blurReason || 'Contact details unlock after the student accepts your connection request.'}</p>
-                  {candidate.access?.canViewResume && candidate.profile?.resumeUrl ? (
-                    <a href={candidate.profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline">
-                      <FiFileText size={13} />
-                      View resume
-                    </a>
-                  ) : null}
+                  <ResumeAction candidate={candidate} />
                 </div>
               </div>
             )}
