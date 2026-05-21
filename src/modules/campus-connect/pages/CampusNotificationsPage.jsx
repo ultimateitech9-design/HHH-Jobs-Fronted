@@ -583,18 +583,6 @@ const CampusNotificationsPage = () => {
                           <h3 className="mt-3 text-lg font-bold text-navy">{notification.title || 'Notification'}</h3>
                           <p className="mt-2 text-sm leading-6 text-slate-600">{notification.message || 'No details available yet.'}</p>
 
-                          {matchedCompany ? (
-                            <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Recommended next move</p>
-                              <p className="mt-2 text-sm font-semibold text-navy">
-                                {matchedCompany.hasDrive
-                                  ? `Refresh the active workflow with ${matchedCompany.companyName}`
-                                  : `Launch the first campus drive with ${matchedCompany.companyName}`}
-                              </p>
-                              <p className="mt-1 text-xs leading-5 text-slate-500">{matchedCompany.recommendation}</p>
-                            </div>
-                          ) : null}
-
                           <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-400">
                             <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1">
                               <FiClock size={12} />

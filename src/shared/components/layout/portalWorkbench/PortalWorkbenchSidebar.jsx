@@ -35,8 +35,11 @@ const PortalWorkbenchSidebar = ({
   const isCollapsed = viewport === 'desktop' ? collapsed : false;
   const avatarLetter = String(user?.name || user?.email || 'U').trim().slice(0, 1).toUpperCase();
   const avatarUrl = user?.avatarUrl || user?.avatar_url || '';
-  const profileShortcutLabel = String(portalLabel || '').toLowerCase().includes('hr')
+  const normalizedPortalLabel = String(portalLabel || '').toLowerCase();
+  const profileShortcutLabel = normalizedPortalLabel.includes('hr')
     ? 'Company Profile'
+    : normalizedPortalLabel.includes('campus')
+      ? 'College Profile'
     : 'My Profile';
   const groupedItemKeys = useMemo(
     () => navItems
