@@ -69,14 +69,15 @@ export const FEATURE_REQUIREMENTS = Object.freeze({
   'student.company_insights':     2,
   'student.unlimited_ats':        3,
   // Campus Connect features
+  'campus.connect_service':      1,
   'campus.drive_creation':       1,
   'campus.company_connections':  1,
-  'campus.bulk_student_upload':  2,
-  'campus.analytics_advanced':   2,
-  'campus.reports_export':       2,
-  'campus.unlimited_drives':     3,
-  'campus.priority_placement':   3,
-  'campus.dedicated_support':    3
+  'campus.bulk_student_upload':  1,
+  'campus.analytics_advanced':   1,
+  'campus.reports_export':       1,
+  'campus.unlimited_drives':     1,
+  'campus.priority_placement':   1,
+  'campus.dedicated_support':    1
 });
 
 // ── Plan Catalog ────────────────────────────────────────────────────────────
@@ -236,66 +237,26 @@ export const STUDENT_PLANS = Object.freeze([
 export const CAMPUS_PLANS = Object.freeze([
   {
     slug: 'campus_basic',
-    name: 'Starter',
+    name: 'Campus Connect',
     tier: 1,
-    listPrice: 1599,
-    price: 899,
-    priceAfterTrial: 899,
-    durationDays: 30,
-    trialDays: TRIAL_DAYS.campus_connect,
-    billingCycle: 'month',
-    includedJobCredits: 0,
-    isFeatured: false,
-    tagline: '1 month free trial, then ₹899/month',
-    features: [
-      'Create campus drives',
-      'Company connection requests',
-      'Student management',
-      'Basic placement stats',
-      'Drive application tracking'
-    ]
-  },
-  {
-    slug: 'campus_growth',
-    name: 'Growth',
-    tier: 2,
     listPrice: 2999,
     price: 1599,
     priceAfterTrial: 1599,
     durationDays: 30,
-    trialDays: 0,
+    trialDays: TRIAL_DAYS.campus_connect,
     billingCycle: 'month',
     includedJobCredits: 0,
     isFeatured: true,
-    tagline: 'Discounted growth plan, no free trial',
+    tagline: '1 month free trial, then ₹1,599/month',
     features: [
-      'Everything in Basic',
+      'Create campus drives',
+      'Company connection requests',
+      'Student management',
       'Bulk student CSV upload',
       'Advanced analytics dashboard',
       'Placement report export',
       'Multiple drive management',
       'Company directory access'
-    ]
-  },
-  {
-    slug: 'campus_enterprise',
-    name: 'Enterprise',
-    tier: 3,
-    price: 9999,
-    priceAfterTrial: 9999,
-    durationDays: 30,
-    trialDays: TRIAL_DAYS.campus_connect,
-    billingCycle: 'month',
-    includedJobCredits: 0,
-    isFeatured: false,
-    tagline: 'Institutional-level access',
-    features: [
-      'Everything in Growth',
-      'Unlimited campus drives',
-      'Priority placement pipeline',
-      'Dedicated support manager',
-      'Custom branding & reports',
-      'API integration for ERP'
     ]
   }
 ]);

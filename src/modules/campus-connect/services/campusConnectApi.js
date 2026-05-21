@@ -259,3 +259,20 @@ export const getCurrentCampusRoleSubscription = () =>
     emptyData: null,
     extract: (payload) => payload?.subscription || null
   });
+
+export const getCampusRolePlanPurchases = () =>
+  safeRequest({
+    path: '/pricing/role-plan-purchases?audienceRole=campus_connect',
+    emptyData: [],
+    extract: (payload) => payload?.purchases || []
+  });
+
+export const cancelCampusRoleSubscription = ({ subscriptionId, reason = '' }) =>
+  strictRequest({
+    path: `/pricing/role-subscriptions/${subscriptionId}/cancel`,
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ reason })
+    },
+    extract: (payload) => payload
+  });

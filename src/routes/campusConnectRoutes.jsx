@@ -12,6 +12,7 @@ const CampusConnectionsPage = lazy(() => import('../modules/campus-connect/pages
 const CampusRelationshipActivityPage = lazy(() => import('../modules/campus-connect/pages/CampusRelationshipActivityPage'));
 const CampusReportsPage = lazy(() => import('../modules/campus-connect/pages/CampusReportsPage'));
 const CampusProfilePage = lazy(() => import('../modules/campus-connect/pages/CampusProfilePage'));
+const CampusBillingPage = lazy(() => import('../modules/campus-connect/pages/CampusBillingPage'));
 
 const campusConnectRoutes = [
   {
@@ -31,6 +32,7 @@ const campusConnectRoutes = [
       { path: 'relationship-activity', element: <Navigate to="sent" replace /> },
       { path: 'relationship-activity/:view', element: <CampusRelationshipActivityPage /> },
       { path: 'reports', element: <CampusReportsPage /> },
+      { path: 'billing', element: <CampusBillingPage /> },
       { path: 'profile', element: <CampusProfilePage /> }
     ]
   }
