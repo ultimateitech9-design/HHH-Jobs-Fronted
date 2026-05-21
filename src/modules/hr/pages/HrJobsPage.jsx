@@ -63,9 +63,34 @@ const toSafeNumber = (value, fallback = 0) => {
 };
 
 const isFreePlan = (plan = {}) => {
-  if (plan.isFree === true) return true;
+  if (plan.isFree !== undefined) return Boolean(plan.isFree);
   if (String(plan.slug || '').toLowerCase() === 'free') return true;
-  return toSafeNumber(plan.price, 0) <= 0;
+  return false;
+};
+
+const isDisabledPostingPlan = (plan = {}) => String(plan.slug || '').toLowerCase() === 'free';
+
+const isUsableRoleSubscription = (subscription = null) => {
+  if (!subscription) return false;
+  const status = String(subscription.status || '').toLowerCase();
+  if (!['active', 'trialing'].includes(status)) return false;
+  if (!subscription.autopay_enabled) return false;
+  if (!subscription.ends_at) return true;
+  return new Date(subscription.ends_at).getTime() >= Date.now();
+};
+
+const getJobCreditBuckets = (plan = {}, multiplier = 1) => {
+  const buckets = plan?.meta?.jobPostingCredits || {};
+  return [
+    { slug: 'standard', label: 'Normal', value: buckets.standard },
+    { slug: 'hot_vacancy', label: 'Hot Vacancy', value: buckets.hot_vacancy },
+    { slug: 'premium', label: 'Premium', value: buckets.premium }
+  ]
+    .map((bucket) => ({
+      ...bucket,
+      value: Math.max(0, Number(bucket.value || 0) * Math.max(1, Number(multiplier || 1)))
+    }))
+    .filter((bucket) => bucket.value > 0);
 };
 
 const formatMoney = (currency = 'INR', amount = 0) => `${currency} ${Number(amount || 0).toLocaleString('en-IN')}`;
@@ -166,15 +191,16 @@ const HrJobsPage = () => {
     [plans]
   );
 
-  const paidPlans = useMemo(() => normalizedPlans.filter((plan) => !plan.isFreeNormalized), [normalizedPlans]);
+  const postablePlans = useMemo(() => normalizedPlans.filter((plan) => !isDisabledPostingPlan(plan)), [normalizedPlans]);
+  const paidPlans = useMemo(() => postablePlans.filter((plan) => !plan.isFreeNormalized && Number(plan.price || 0) > 0), [postablePlans]);
 
   const selectedPlan = useMemo(
     () =>
       normalizedPlans.find((plan) => plan.slug === draft.planSlug)
-      || normalizedPlans.find((plan) => plan.slug === 'free')
-      || normalizedPlans[0]
+      || postablePlans.find((plan) => plan.slug === 'standard')
+      || postablePlans[0]
       || null,
-    [normalizedPlans, draft.planSlug]
+    [normalizedPlans, postablePlans, draft.planSlug]
   );
 
   const checkoutPlan = useMemo(
@@ -225,6 +251,10 @@ const HrJobsPage = () => {
     if (!selectedPlan) return 0;
     return Number(creditsSummary?.byPlan?.[selectedPlan.slug]?.remaining || 0);
   }, [selectedPlan, creditsSummary]);
+  const hasUsableRecruiterPlan = useMemo(
+    () => isUsableRoleSubscription(currentRoleSubscription),
+    [currentRoleSubscription]
+  );
 
   const planNameBySlug = useMemo(
     () => Object.fromEntries(normalizedPlans.map((plan) => [plan.slug, plan.name || plan.slug])),
@@ -335,11 +365,11 @@ const HrJobsPage = () => {
       };
     });
 
-    const freePlan = nextPlans.find((plan) => plan.slug === 'free') || nextPlans[0];
-    if (freePlan) {
+    const firstPostingPlan = nextPlans.find((plan) => plan.slug === 'standard') || nextPlans.find((plan) => !isDisabledPostingPlan(plan)) || nextPlans[0];
+    if (firstPostingPlan) {
       setDraft((current) => ({
         ...current,
-        planSlug: nextPlans.some((plan) => plan.slug === current.planSlug) ? current.planSlug : freePlan.slug
+        planSlug: nextPlans.some((plan) => plan.slug === current.planSlug && !isDisabledPostingPlan(plan)) ? current.planSlug : firstPostingPlan.slug
       }));
     }
   };
@@ -496,7 +526,7 @@ const HrJobsPage = () => {
 
   const resetForm = () => {
     setEditingJobId('');
-    setDraft({ ...getEmptyJobDraft(), planSlug: selectedPlan?.slug || 'free' });
+    setDraft({ ...getEmptyJobDraft(), planSlug: selectedPlan?.slug || 'standard' });
     setCompanyInputMode('select');
     setActiveTab('jobs');
   };
@@ -507,6 +537,10 @@ const HrJobsPage = () => {
 
     if (missing.length > 0) {
       return `Missing required fields: ${missing.join(', ')}`;
+    }
+
+    if (!editingJobId && !hasUsableRecruiterPlan) {
+      return 'Start a recruiter plan and enable Razorpay auto-pay before posting jobs.';
     }
 
     const resolvedLocations = resolveDraftLocations();
@@ -527,7 +561,11 @@ const HrJobsPage = () => {
     }
 
     if (selectedPlan) {
-      if (!editingJobId && !selectedPlan.isFreeNormalized && selectedPlanCredits <= 0) {
+      if (!editingJobId && isDisabledPostingPlan(selectedPlan)) {
+        return 'Free job posting is disabled. Use recruiter plan credits.';
+      }
+
+      if (!editingJobId && selectedPlanCredits <= 0) {
         return `No remaining ${selectedPlan.name} credits. Purchase credits before posting.`;
       }
     }
@@ -891,7 +929,7 @@ const HrJobsPage = () => {
                 <div>
                   <label className="text-sm font-bold text-neutral-700 block mb-1">Pricing Plan to Use</label>
                   <select value={draft.planSlug} disabled={Boolean(editingJobId)} onChange={(e) => updateDraftField('planSlug', e.target.value)} className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 disabled:opacity-50 font-medium">
-                    {plans.map((plan) => (
+                    {postablePlans.map((plan) => (
                       <option key={plan.slug} value={plan.slug}>{plan.name} ({plan.currency || 'INR'} {plan.price})</option>
                     ))}
                   </select>
@@ -909,7 +947,7 @@ const HrJobsPage = () => {
                     <span>Max Locations: 1</span>
                     <span>Description Limit: {Math.min(JOB_POSTING_DESCRIPTION_LIMIT, Number(selectedPlan.maxDescriptionChars || JOB_POSTING_DESCRIPTION_LIMIT) || JOB_POSTING_DESCRIPTION_LIMIT)}</span>
                     <span>Contact Visible: {selectedPlan.contactDetailsVisible ? 'Yes' : 'No'}</span>
-                    <span>Credits Remaining: {selectedPlan.isFreeNormalized ? 'Unlimited' : selectedPlanCredits}</span>
+                    <span>Credits Remaining: {selectedPlanCredits}</span>
                   </div>
                 )}
               </div>
@@ -1069,6 +1107,7 @@ const HrJobsPage = () => {
                     const listPrice = getRolePlanListPrice(plan);
                     const renewalPrice = getRolePlanRenewalPrice(plan);
                     const discountLabel = getRolePlanDiscountLabel(plan);
+                    const creditBuckets = getJobCreditBuckets(plan);
                     return (
                       <div key={plan.slug} className={`rounded-xl border p-4 transition-all ${isActivePlan ? 'border-brand-400 bg-brand-50/50 ring-1 ring-brand-300' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
                         <div className="flex items-center justify-between gap-2 mb-2">
@@ -1096,6 +1135,15 @@ const HrJobsPage = () => {
                           <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.includedJobCredits || 0} credits</span>
                           <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.trialDays || 0}d trial</span>
                         </div>
+                        {creditBuckets.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold text-slate-600">
+                            {creditBuckets.map((bucket) => (
+                              <span key={bucket.slug} className="rounded-md border border-neutral-200 bg-white px-2 py-1">
+                                {bucket.label}: {bucket.value}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
                     );
                   })}
@@ -1120,7 +1168,7 @@ const HrJobsPage = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-neutral-500 mb-1 block">Seats</label>
+                    <label className="text-xs font-semibold text-neutral-500 mb-1 block">Plan Quantity</label>
                     <input type="number" min="1" value={roleCheckoutForm.quantity} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, quantity: e.target.value })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-400" />
                   </div>
                   <div>
@@ -1136,6 +1184,11 @@ const HrJobsPage = () => {
                       <div className="flex justify-between text-emerald-600"><span>Discount:</span><span>-{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.discountAmount).toFixed(2)}</span></div>
                       <div className="flex justify-between text-neutral-600"><span>GST:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.gstAmount).toFixed(2)}</span></div>
                       <div className="flex justify-between text-neutral-600"><span>Job credits:</span><span>{roleQuoteDisplay.includedJobCredits}</span></div>
+                      {getJobCreditBuckets(selectedRolePlan, roleCheckoutQuantity).map((bucket) => (
+                        <div key={bucket.slug} className="flex justify-between text-neutral-500">
+                          <span>{bucket.label}:</span><span>{bucket.value}</span>
+                        </div>
+                      ))}
                       <div className="border-t border-neutral-200 pt-1.5 flex justify-between font-bold text-sm text-brand-700"><span>Total:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.totalAmount).toFixed(2)}</span></div>
                     </div>
                   )}

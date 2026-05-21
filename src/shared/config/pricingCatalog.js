@@ -12,7 +12,7 @@ export const hrStarterPricing = {
 export const jobPostingPlans = [
   {
     title: 'Premium',
-    slug: 'hot_vacancy',
+    slug: 'premium',
     tone: 'premium',
     price: '₹999',
     numericPrice: 999,
@@ -35,8 +35,8 @@ export const jobPostingPlans = [
     validity: 'Job validity 30 days'
   },
   {
-    title: 'Pro',
-    slug: 'classified',
+    title: 'Hot Vacancy',
+    slug: 'hot_vacancy',
     tone: 'pro',
     price: '₹699',
     numericPrice: 699,

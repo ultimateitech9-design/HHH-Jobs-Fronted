@@ -45,7 +45,7 @@ const buildQueryString = (params = {}) => {
 
 const defaultJobDraft = {
   jobTitle: '',
-  planSlug: 'free',
+  planSlug: 'standard',
   targetAudience: 'all',
   companyName: '',
   minPrice: '',
