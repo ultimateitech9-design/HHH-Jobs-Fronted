@@ -105,6 +105,16 @@ const getPurchaseQuantityRule = (plan = {}) => ({
 
 const formatMoney = (currency = 'INR', amount = 0) => `${currency} ${Number(amount || 0).toLocaleString('en-IN')}`;
 
+const formatDurationLabel = (days = 0) => {
+  const value = Number(days || 0);
+  if (!Number.isFinite(value) || value <= 0) return '0 days';
+  if (value % 30 === 0) {
+    const months = value / 30;
+    return `${months} ${months === 1 ? 'month' : 'months'}`;
+  }
+  return `${value} days`;
+};
+
 const getRolePlanListPrice = (plan = {}) =>
   Number(plan?.meta?.listPrice || (plan.slug === hrStarterPricing.slug ? hrStarterPricing.listPrice : plan.price) || 0);
 
@@ -128,6 +138,10 @@ const JOB_POSTING_DESCRIPTION_LIMIT = 250;
 const JOB_POSTING_LOCATION_LIMIT = 1;
 const OTHER_COMPANY_VALUE = '__other_company__';
 const PRIVATE_COMPANY_PATTERN = /\b(private|pvt|limited|ltd|llp)\b/i;
+const TRACKED_JOB_PLAN_SLUGS = ['standard', 'hot_vacancy', 'premium'];
+
+const getJobPlanSlug = (job = {}) =>
+  String(job.planSlug || job.plan_slug || job.pricingPlanSlug || job.pricing_plan_slug || job.plan?.slug || '').trim().toLowerCase();
 
 const getStatusColor = (status) => {
   const s = String(status || '').toLowerCase();
@@ -276,6 +290,18 @@ const HrJobsPage = () => {
     if (!selectedPlan) return 0;
     return Number(creditsSummary?.byPlan?.[selectedPlan.slug]?.remaining || 0);
   }, [selectedPlan, creditsSummary]);
+  const postedJobCountsByPlan = useMemo(() => {
+    const counts = Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug) => [slug, 0]));
+    for (const job of jobs) {
+      const slug = getJobPlanSlug(job);
+      if (counts[slug] !== undefined) counts[slug] += 1;
+    }
+    return counts;
+  }, [jobs]);
+  const selectedPlanPostedCount = useMemo(
+    () => postedJobCountsByPlan[String(selectedPlan?.slug || '').toLowerCase()] || 0,
+    [postedJobCountsByPlan, selectedPlan]
+  );
   const hasUsableRecruiterPlan = useMemo(
     () => isUsableRoleSubscription(currentRoleSubscription),
     [currentRoleSubscription]
@@ -288,6 +314,14 @@ const HrJobsPage = () => {
   const rolePlanNameBySlug = useMemo(
     () => Object.fromEntries(rolePlans.map((plan) => [plan.slug, plan.name || plan.slug])),
     [rolePlans]
+  );
+  const trackedJobPlanStats = useMemo(
+    () => TRACKED_JOB_PLAN_SLUGS.map((slug) => ({
+      slug,
+      label: planNameBySlug[slug] || (slug === 'standard' ? 'Normal' : slug.replace(/_/g, ' ')),
+      count: postedJobCountsByPlan[slug] || 0
+    })),
+    [planNameBySlug, postedJobCountsByPlan]
   );
 
   const requestedAudience = useMemo(() => {
@@ -994,7 +1028,9 @@ const HrJobsPage = () => {
                   <label className="text-sm font-bold text-neutral-700 block mb-1">Pricing Plan to Use</label>
                   <select value={draft.planSlug} disabled={Boolean(editingJobId)} onChange={(e) => updateDraftField('planSlug', e.target.value)} className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 disabled:opacity-50 font-medium">
                     {postablePlans.map((plan) => (
-                      <option key={plan.slug} value={plan.slug}>{plan.name} ({plan.currency || 'INR'} {plan.price})</option>
+                      <option key={plan.slug} value={plan.slug}>
+                        {plan.name} ({plan.currency || 'INR'} {plan.price} / {formatDurationLabel(plan.jobValidityDays)})
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -1007,13 +1043,24 @@ const HrJobsPage = () => {
                   </select>
                 </div>
                 {selectedPlan && (
-                  <div className="md:col-span-2 text-xs font-bold text-brand-700 bg-brand-50 p-3 rounded-lg flex gap-4">
-                    <span>Max Locations: 1</span>
+                  <div className="md:col-span-2 text-xs font-bold text-brand-700 bg-brand-50 p-3 rounded-lg flex flex-wrap gap-3">
+                    <span>Validity: {formatDurationLabel(selectedPlan.jobValidityDays)}</span>
+                    <span>Max Locations: {Number(selectedPlan.maxLocations || JOB_POSTING_LOCATION_LIMIT) || JOB_POSTING_LOCATION_LIMIT}</span>
                     <span>Description Limit: {Math.min(JOB_POSTING_DESCRIPTION_LIMIT, Number(selectedPlan.maxDescriptionChars || JOB_POSTING_DESCRIPTION_LIMIT) || JOB_POSTING_DESCRIPTION_LIMIT)}</span>
                     <span>Contact Visible: {selectedPlan.contactDetailsVisible ? 'Yes' : 'No'}</span>
                     <span>Credits Remaining: {selectedPlanCredits}</span>
+                    <span>Posted on this plan: {selectedPlanPostedCount}</span>
                   </div>
                 )}
+                <div className="md:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {trackedJobPlanStats.map((stat) => (
+                    <div key={stat.slug} className="rounded-xl border border-neutral-200 bg-white px-3 py-2">
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-neutral-400">{stat.label}</p>
+                      <p className="mt-1 text-lg font-extrabold text-slate-900">{stat.count}</p>
+                      <p className="text-[11px] font-semibold text-neutral-500">jobs posted</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -1184,7 +1231,7 @@ const HrJobsPage = () => {
                         <p className="text-xs text-neutral-500 mb-3 line-clamp-2">{plan.description || 'Commercial recruiter plan'}</p>
                         <p className="text-xl font-extrabold text-slate-900">
                           {contactSalesPlan ? 'Contact Sales' : formatMoney(plan.currency, listPrice)}
-                          {!contactSalesPlan && <span className="text-xs font-medium text-neutral-400 ml-1">/{plan.durationDays}d</span>}
+                          {!contactSalesPlan && <span className="text-xs font-medium text-neutral-400 ml-1">/{formatDurationLabel(plan.durationDays)}</span>}
                         </p>
                         {!contactSalesPlan && renewalPrice < listPrice ? (
                           <p className="mt-1 text-xs font-bold text-emerald-700">
@@ -1304,7 +1351,7 @@ const HrJobsPage = () => {
                       </div>
                       <p className="text-lg font-extrabold text-slate-900">
                         {plan.currency} {plan.price}
-                        <span className="text-xs font-medium text-neutral-400 ml-1">/ {plan.jobValidityDays}d</span>
+                        <span className="text-xs font-medium text-neutral-400 ml-1">/ {formatDurationLabel(plan.jobValidityDays)}</span>
                       </p>
                       <div className="mt-3 rounded-lg bg-neutral-50 p-2.5">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Credits</p>

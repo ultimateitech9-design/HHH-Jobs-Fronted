@@ -310,7 +310,9 @@ const PortalWorkbenchHeader = ({
         </div>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
-          {support?.to ? (
+          {support?.headerAction ? (
+            support.headerAction
+          ) : support?.to ? (
             <Link
               to={support.to}
               className="hidden rounded-full border border-brand-200 bg-brand-50 px-3.5 py-1 text-[13px] font-semibold text-brand-700 transition-colors hover:bg-brand-100 xl:inline-flex"
