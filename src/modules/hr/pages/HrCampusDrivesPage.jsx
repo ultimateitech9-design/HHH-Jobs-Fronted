@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   FiArrowLeft,
   FiBriefcase,
@@ -533,10 +534,26 @@ function DriveApplicantsView({ driveId, onBack }) {
 // ── Main Page ───────────────────────────────────────────────────────────────
 
 export default function HrCampusDrivesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [drives, setDrives] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedDriveId, setSelectedDriveId] = useState(null);
+  const [selectedDriveId, setSelectedDriveId] = useState(searchParams.get('driveId'));
+
+  const selectDrive = (driveId) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('driveId', driveId);
+    setSearchParams(next);
+    setSelectedDriveId(driveId);
+  };
+
+  const clearSelectedDrive = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('driveId');
+    next.delete('applicationId');
+    setSearchParams(next);
+    setSelectedDriveId(null);
+  };
 
   useEffect(() => {
     (async () => {
@@ -556,7 +573,7 @@ export default function HrCampusDrivesPage() {
       <div className="space-y-5">
         <DriveApplicantsView
           driveId={selectedDriveId}
-          onBack={() => setSelectedDriveId(null)}
+          onBack={clearSelectedDrive}
         />
       </div>
     );
@@ -591,7 +608,7 @@ export default function HrCampusDrivesPage() {
             <DriveCard
               key={drive.id}
               drive={drive}
-              onSelect={() => setSelectedDriveId(drive.id)}
+              onSelect={() => selectDrive(drive.id)}
             />
           ))}
         </div>

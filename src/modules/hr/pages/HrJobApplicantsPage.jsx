@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   FiArrowLeft,
   FiClock,
@@ -61,6 +61,8 @@ const getApplicationId = (application = {}) => application.id || application._id
 
 const HrJobApplicantsPage = () => {
   const { jobId } = useParams();
+  const [searchParams] = useSearchParams();
+  const requestedApplicationId = searchParams.get('applicationId') || '';
   const [state, setState] = useState({ loading: true, error: '', applicants: [], jobs: [] });
   const [message, setMessage] = useState('');
   const [activeApplicantId, setActiveApplicantId] = useState(null);
@@ -110,7 +112,8 @@ const HrJobApplicantsPage = () => {
       setInterviewDrafts(nextInterview);
 
       if (applicants.length > 0) {
-        setActiveApplicantId(getApplicationId(applicants[0]));
+        const requestedApplicant = applicants.find((item) => getApplicationId(item) === requestedApplicationId);
+        setActiveApplicantId(getApplicationId(requestedApplicant || applicants[0]));
       }
     };
 
@@ -119,7 +122,7 @@ const HrJobApplicantsPage = () => {
     return () => {
       mounted = false;
     };
-  }, [jobId]);
+  }, [jobId, requestedApplicationId]);
 
   const targetJob = useMemo(() => state.jobs.find((job) => (job.id || job._id) === jobId), [state.jobs, jobId]);
   const activeApplicant = useMemo(

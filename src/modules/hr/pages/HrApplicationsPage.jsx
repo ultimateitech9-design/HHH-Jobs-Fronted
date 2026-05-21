@@ -6,6 +6,7 @@ import {
   FiBriefcase,
   FiCalendar,
   FiExternalLink,
+  FiFileText,
   FiMail,
   FiRefreshCw,
   FiSearch,
@@ -15,7 +16,6 @@ import StatusPill from '../../../shared/components/StatusPill';
 import {
   fetchHrCampusDriveApplications,
   fetchHrCampusDrives,
-  formatDateTime,
   getApplicantsForJob,
   getHrJobs
 } from '../services/hrApi';
@@ -77,6 +77,30 @@ const getJobApplicantsRoute = (job) => {
   return jobId ? `/portal/hr/jobs/${jobId}/applicants` : '/portal/hr/jobs';
 };
 
+const getJobApplicationRoute = (job, applicationId) => {
+  const baseRoute = getJobApplicantsRoute(job);
+  return applicationId ? `${baseRoute}?applicationId=${encodeURIComponent(applicationId)}` : baseRoute;
+};
+
+const getCampusDriveRoute = (drive, applicationId) => {
+  const driveId = drive?.id || drive?._id || '';
+  const query = new URLSearchParams();
+  if (driveId) query.set('driveId', driveId);
+  if (applicationId) query.set('applicationId', applicationId);
+  const queryString = query.toString();
+  return `/portal/hr/campus-drives${queryString ? `?${queryString}` : ''}`;
+};
+
+const formatApplicationDate = (value) => {
+  if (!value) return { date: '-', time: '' };
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { date: String(value), time: '' };
+  return {
+    date: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+    time: date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+  };
+};
+
 const getInitials = (name = '') =>
   String(name || 'A')
     .split(' ')
@@ -102,7 +126,7 @@ const normalizeJobApplication = (application, job, index) => ({
   notes: application.hrNotes || application.notes || '-',
   appliedAt: getApplicationTime(application),
   resumeUrl: application.resumeUrl || application.applicant?.resumeUrl || application.applicant?.resume_url || '',
-  to: getJobApplicantsRoute(job)
+  to: getJobApplicationRoute(job, application.id || application._id)
 });
 
 const normalizeCampusApplication = (application, drive, index) => ({
@@ -120,7 +144,7 @@ const normalizeCampusApplication = (application, drive, index) => ({
   notes: application.notes || '-',
   appliedAt: getApplicationTime(application),
   resumeUrl: application.resumeUrl || application.candidate?.resumeUrl || '',
-  to: '/portal/hr/campus-drives'
+  to: getCampusDriveRoute(drive, application.id || application._id)
 });
 
 const loadJobApplications = async (jobs = []) => {
@@ -323,17 +347,17 @@ export default function HrApplicationsPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[1040px] w-full text-left">
+          <table className="min-w-[1120px] w-full table-fixed text-left">
             <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-slate-400">
               <tr>
-                <th className="px-4 py-3">Applicant</th>
-                <th className="px-4 py-3">Source</th>
-                <th className="px-4 py-3">Role / Drive</th>
-                <th className="px-4 py-3">Organization</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Round</th>
-                <th className="px-4 py-3">Applied On</th>
-                <th className="px-4 py-3 text-right">Action</th>
+                <th className="w-[300px] px-4 py-3">Applicant</th>
+                <th className="w-[126px] px-4 py-3">Source</th>
+                <th className="w-[170px] px-4 py-3">Role / Drive</th>
+                <th className="w-[170px] px-4 py-3">Organization</th>
+                <th className="w-[210px] px-4 py-3">Status</th>
+                <th className="w-[130px] px-4 py-3">Round</th>
+                <th className="w-[130px] px-4 py-3">Applied On</th>
+                <th className="w-[190px] px-4 py-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -348,7 +372,10 @@ export default function HrApplicationsPage() {
                   <td className="px-4 py-4"><div className="h-4 w-28 animate-pulse rounded bg-slate-100" /></td>
                   <td className="px-4 py-4"><div className="ml-auto h-8 w-20 animate-pulse rounded bg-slate-100" /></td>
                 </tr>
-              )) : filteredApplications.length > 0 ? filteredApplications.map((application) => (
+              )) : filteredApplications.length > 0 ? filteredApplications.map((application) => {
+                const appliedAt = formatApplicationDate(application.appliedAt);
+
+                return (
                 <tr key={application.id} className="transition hover:bg-slate-50/60">
                   <td className="px-4 py-4">
                     <div className="flex min-w-0 items-center gap-3">
@@ -364,37 +391,41 @@ export default function HrApplicationsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${application.sourceType === 'campus' ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-indigo-700'}`}>
+                    <span className={`inline-flex min-w-[86px] justify-center whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold ${application.sourceType === 'campus' ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-indigo-700'}`}>
                       {application.sourceLabel}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-[13px] font-semibold text-slate-800">{application.title}</td>
-                  <td className="px-4 py-4 text-[13px] text-slate-500">{application.organization}</td>
+                  <td className="px-4 py-4 text-[13px] font-semibold text-slate-800"><span className="line-clamp-2">{application.title}</span></td>
+                  <td className="px-4 py-4 text-[13px] text-slate-500"><span className="line-clamp-2">{application.organization}</span></td>
                   <td className="px-4 py-4"><StatusPill value={application.status} /></td>
-                  <td className="px-4 py-4 text-[13px] text-slate-500">{application.round}</td>
-                  <td className="px-4 py-4 text-[13px] text-slate-500">{formatDateTime(application.appliedAt)}</td>
+                  <td className="px-4 py-4 text-[13px] text-slate-500"><span className="line-clamp-2">{application.round}</span></td>
+                  <td className="px-4 py-4 text-[13px] text-slate-500">
+                    <span className="block whitespace-nowrap font-semibold text-slate-600">{appliedAt.date}</span>
+                    {appliedAt.time && <span className="mt-0.5 block whitespace-nowrap text-[11px] text-slate-400">{appliedAt.time}</span>}
+                  </td>
                   <td className="px-4 py-4 text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 whitespace-nowrap">
                       {application.resumeUrl ? (
                         <a
                           href={application.resumeUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-600 transition hover:bg-slate-50"
+                          className="inline-flex h-9 min-w-[82px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
                         >
-                          Resume <FiExternalLink size={11} />
+                          <FiFileText size={13} /> Resume
                         </a>
                       ) : null}
                       <Link
                         to={application.to}
-                        className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-slate-800"
+                        className="inline-flex h-9 min-w-[72px] items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3 text-[11px] font-bold text-white transition hover:bg-slate-800"
                       >
-                        Open <FiExternalLink size={11} />
+                        Open <FiExternalLink size={12} />
                       </Link>
                     </div>
                   </td>
                 </tr>
-              )) : (
+              );
+              }) : (
                 <tr>
                   <td colSpan="8" className="px-4 py-12 text-center">
                     <FiUsers className="mx-auto text-slate-300" size={30} />
