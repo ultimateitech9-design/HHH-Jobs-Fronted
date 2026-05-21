@@ -37,6 +37,8 @@ const statusTabs = [
   { key: 'rejected', label: 'Rejected' }
 ];
 
+const pageSizes = [6, 10, 20, 50];
+
 const getTimeValue = (value) => {
   const time = value ? new Date(value).getTime() : 0;
   return Number.isFinite(time) ? time : 0;
@@ -210,6 +212,8 @@ export default function HrApplicationsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useState({ loading: true, error: '', applications: [] });
   const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
 
   const selectedSource = searchParams.get('source') || 'all';
   const selectedStatus = searchParams.get('status') || 'all';
@@ -295,6 +299,30 @@ export default function HrApplicationsPage() {
     campus: state.applications.filter((item) => item.sourceType === 'campus').length,
     shortlisted: state.applications.filter((item) => ['shortlisted', 'interview_scheduled', 'interviewed', 'offered', 'hired', 'selected'].includes(item.status)).length
   }), [state.applications]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / pageSize));
+  const paginationStart = filteredApplications.length ? ((page - 1) * pageSize) + 1 : 0;
+  const paginationEnd = Math.min(page * pageSize, filteredApplications.length);
+
+  const paginatedApplications = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredApplications.slice(start, start + pageSize);
+  }, [filteredApplications, page, pageSize]);
+
+  const pageNumbers = useMemo(() => {
+    const visiblePages = new Set([1, totalPages, page - 1, page, page + 1]);
+    return [...visiblePages]
+      .filter((item) => item >= 1 && item <= totalPages)
+      .sort((left, right) => left - right);
+  }, [page, totalPages]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, selectedSource, selectedStatus, pageSize]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(Math.max(current, 1), totalPages));
+  }, [totalPages]);
 
   return (
     <div className="space-y-4 pb-6">
@@ -403,7 +431,7 @@ export default function HrApplicationsPage() {
                   <td className="px-2.5 py-3"><div className="h-4 w-16 animate-pulse rounded bg-slate-100" /></td>
                   <td className="px-2.5 py-3"><div className="ml-auto h-8 w-24 animate-pulse rounded bg-slate-100" /></td>
                 </tr>
-              )) : filteredApplications.length > 0 ? filteredApplications.map((application) => {
+              )) : filteredApplications.length > 0 ? paginatedApplications.map((application) => {
                 const appliedAt = formatApplicationDate(application.appliedAt);
                 const sourceLabel = application.sourceType === 'campus' ? 'Campus' : 'Job';
 
@@ -481,6 +509,62 @@ export default function HrApplicationsPage() {
             </tbody>
           </table>
         </div>
+
+        {!state.loading && filteredApplications.length > 0 && (
+          <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-3 text-[12px] sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-semibold text-slate-500">
+              Showing <span className="text-slate-900">{paginationStart}-{paginationEnd}</span> of <span className="text-slate-900">{filteredApplications.length}</span>
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-2 font-semibold text-slate-500">
+                Rows
+                <select
+                  value={pageSize}
+                  onChange={(event) => setPageSize(Number(event.target.value))}
+                  className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[12px] font-bold text-slate-700 outline-none transition focus:border-indigo-200 focus:ring-4 focus:ring-indigo-50"
+                >
+                  {pageSizes.map((size) => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  disabled={page === 1}
+                  className="h-8 rounded-lg border border-slate-200 bg-white px-3 font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  Prev
+                </button>
+                {pageNumbers.map((pageNumber, index) => (
+                  <div key={pageNumber} className="flex items-center gap-1">
+                    {index > 0 && pageNumber - pageNumbers[index - 1] > 1 && (
+                      <span className="px-1 font-bold text-slate-300">...</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setPage(pageNumber)}
+                      className={`h-8 min-w-8 rounded-lg border px-2 font-bold transition ${page === pageNumber ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+                    >
+                      {pageNumber}
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                  disabled={page === totalPages}
+                  className="h-8 rounded-lg border border-slate-200 bg-white px-3 font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );
