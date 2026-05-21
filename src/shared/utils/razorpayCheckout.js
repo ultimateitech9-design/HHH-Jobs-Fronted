@@ -41,6 +41,14 @@ const normalizeRazorpaySession = (session = {}) => ({
 
 export const preloadRazorpayCheckout = () => loadRazorpayScript();
 
+const getCheckoutImage = (image) => {
+  if (image) return image;
+  if (typeof window === 'undefined') return undefined;
+  const host = String(window.location.hostname || '').toLowerCase();
+  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')) return undefined;
+  return `${window.location.origin}/hhh-job-logo.png`;
+};
+
 export const openRazorpaySubscriptionCheckout = async (session = {}) => {
   const normalizedSession = normalizeRazorpaySession(session);
   if (!normalizedSession.keyId) {
@@ -60,7 +68,7 @@ export const openRazorpaySubscriptionCheckout = async (session = {}) => {
         subscription_id: normalizedSession.subscriptionId,
         name: normalizedSession.name || 'HHH Jobs',
         description: normalizedSession.description || 'Enable auto-pay after your trial period.',
-        image: normalizedSession.image || '/hhh-job-logo.png',
+        image: getCheckoutImage(normalizedSession.image),
         prefill: normalizedSession.prefill || {},
         notes: normalizedSession.notes || {},
         theme: { color: '#2563eb' },
@@ -108,8 +116,8 @@ export const openRazorpayOrderCheckout = async (session = {}) => {
         amount: normalizedSession.amount,
         currency: normalizedSession.currency || 'INR',
         name: normalizedSession.name || 'HHH Jobs',
-        description: normalizedSession.description || 'Buy job posting credits.',
-        image: normalizedSession.image || '/hhh-job-logo.png',
+        description: normalizedSession.description || 'Recruiter plan checkout.',
+        image: getCheckoutImage(normalizedSession.image),
         prefill: normalizedSession.prefill || {},
         notes: normalizedSession.notes || {},
         theme: { color: '#2563eb' },

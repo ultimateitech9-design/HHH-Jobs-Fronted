@@ -1,1 +1,0 @@
-import{bH as t}from"./index-Bf2AzVLo.js";import{F as r}from"./FooterContentPage-CqhtSK7f.js";import"./PublicPageHero-lo1Ahv-_.js";import"./AnimatedSection-DikLnrYL.js";import"./PublicSectionHeader-BRT4g89T.js";import"./PublicCallToAction-DD9XT3Ae.js";const s=()=>t.jsx(r,{pageKey:"fraud-alert"});export{s as default};

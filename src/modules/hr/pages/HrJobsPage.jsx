@@ -17,39 +17,25 @@ import {
   checkoutRolePlan,
   closeHrJob,
   contactSalesForRolePlan,
-  createJobCreditPaymentOrder,
   createHrJob,
   deleteHrJob,
   formatDateTime,
   getCurrentRolePlanSubscription,
   getEmptyJobDraft,
   getHrJobs,
-  getHrPricingCredits,
-  getHrPricingPurchases,
   getJobDraftFromJob,
-  getPricingPlanQuote,
   getPricingPlans,
   reopenHrJob,
   getRolePlanPurchases,
   getRolePlanSubscriptions,
   getRolePricingPlanQuote,
   getRolePricingPlans,
-  verifyJobCreditPayment,
   verifyRolePlanAutopay,
   updateHrJob
 } from '../services/hrApi';
-import { openRazorpayOrderCheckout, openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpayCheckout';
+import { openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpayCheckout';
 import { hrStarterPricing } from '../../../shared/config/pricingCatalog';
 import { getPublicCompanies } from '../../common/services/companyDirectoryApi';
-
-const initialCheckoutForm = {
-  planSlug: '',
-  quantity: 1,
-  provider: 'manual',
-  referenceId: '',
-  note: '',
-  paymentStatus: 'pending'
-};
 
 const initialRoleCheckoutForm = {
   planSlug: '',
@@ -76,12 +62,13 @@ const isUsableRoleSubscription = (subscription = null) => {
   if (!subscription) return false;
   const status = String(subscription.status || '').toLowerCase();
   if (!['active', 'trialing'].includes(status)) return false;
-  if (!subscription.autopay_enabled) return false;
+  if (subscription?.meta?.pendingAutopaySetup || subscription?.meta?.pendingPlanChangeSetup) return false;
+  if (!subscription.autopay_enabled && (status === 'trialing' || subscription?.meta?.isTrial)) return false;
   if (!subscription.ends_at) return true;
   return new Date(subscription.ends_at).getTime() >= Date.now();
 };
 
-const getJobCreditBuckets = (plan = {}, multiplier = 1) => {
+const getPlanPostingBuckets = (plan = {}, multiplier = 1) => {
   const buckets = plan?.meta?.jobPostingCredits || {};
   return [
     { slug: 'standard', label: 'Normal', value: buckets.standard },
@@ -94,14 +81,6 @@ const getJobCreditBuckets = (plan = {}, multiplier = 1) => {
     }))
     .filter((bucket) => bucket.value > 0);
 };
-
-const getPurchaseQuantityRule = (plan = {}) => ({
-  min: Math.max(1, Number(plan?.meta?.minPurchaseQuantity || 1)),
-  max: Math.max(
-    Math.max(1, Number(plan?.meta?.minPurchaseQuantity || 1)),
-    Number(plan?.meta?.maxPurchaseQuantity || 1000)
-  )
-});
 
 const formatMoney = (currency = 'INR', amount = 0) => `${currency} ${Number(amount || 0).toLocaleString('en-IN')}`;
 
@@ -130,7 +109,7 @@ const isContactSalesRolePlan = (plan = {}) =>
 const isCurrentRoleSubscriptionPlan = (subscription = null, plan = null) => {
   if (!subscription || !plan) return false;
   const status = String(subscription.status || '').toLowerCase();
-  if (!['active', 'trialing', 'pending'].includes(status)) return false;
+  if (!['active', 'trialing', 'pending', 'paid'].includes(status)) return false;
   return String(subscription.role_plan_slug || '').toLowerCase() === String(plan.slug || '').toLowerCase();
 };
 
@@ -142,6 +121,9 @@ const JOB_PLAN_PRIORITY = Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug, i
 
 const getJobPlanSlug = (job = {}) =>
   String(job.planSlug || job.plan_slug || job.pricingPlanSlug || job.pricing_plan_slug || job.plan?.slug || '').trim().toLowerCase();
+
+const getJobCreatedAt = (job = {}) =>
+  job.createdAt || job.created_at || job.postingDate || job.posting_date || '';
 
 const sortByJobPlanPriority = (a = {}, b = {}) => {
   const aRank = JOB_PLAN_PRIORITY[String(a.slug || '').toLowerCase()] ?? 99;
@@ -188,7 +170,7 @@ const HrJobsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('jobs'); // 'jobs', 'post', 'billing'
-  const [billingSubTab, setBillingSubTab] = useState('subscription'); // 'subscription', 'credits', 'history'
+  const [billingSubTab, setBillingSubTab] = useState('subscription'); // 'subscription', 'history'
 
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -202,14 +184,6 @@ const HrJobsPage = () => {
   const [companyInputMode, setCompanyInputMode] = useState('select');
 
   const [plans, setPlans] = useState([]);
-  const [creditsSummary, setCreditsSummary] = useState({ credits: [], byPlan: {}, totals: { total: 0, used: 0, remaining: 0 } });
-  const [purchases, setPurchases] = useState([]);
-  const [pricingError, setPricingError] = useState('');
-  const [checkoutForm, setCheckoutForm] = useState(initialCheckoutForm);
-  const [checkoutSaving, setCheckoutSaving] = useState(false);
-  const [quote, setQuote] = useState(null);
-  const [quoteLoading, setQuoteLoading] = useState(false);
-  const [quoteError, setQuoteError] = useState('');
   const [rolePlans, setRolePlans] = useState([]);
   const [roleSubscriptions, setRoleSubscriptions] = useState([]);
   const [currentRoleSubscription, setCurrentRoleSubscription] = useState(null);
@@ -236,7 +210,6 @@ const HrJobsPage = () => {
     () => [...normalizedPlans.filter((plan) => !isDisabledPostingPlan(plan))].sort(sortByJobPlanPriority),
     [normalizedPlans]
   );
-  const paidPlans = useMemo(() => postablePlans.filter((plan) => !plan.isFreeNormalized && Number(plan.price || 0) > 0), [postablePlans]);
 
   const selectedPlan = useMemo(
     () =>
@@ -246,13 +219,13 @@ const HrJobsPage = () => {
     [normalizedPlans, postablePlans, draft.planSlug]
   );
 
-  const checkoutPlan = useMemo(
-    () => normalizedPlans.find((plan) => plan.slug === checkoutForm.planSlug) || paidPlans[0] || null,
-    [normalizedPlans, paidPlans, checkoutForm.planSlug]
-  );
   const selectedRolePlan = useMemo(
     () => rolePlans.find((plan) => plan.slug === roleCheckoutForm.planSlug) || rolePlans[0] || null,
     [rolePlans, roleCheckoutForm.planSlug]
+  );
+  const currentRolePlan = useMemo(
+    () => rolePlans.find((plan) => String(plan.slug || '').toLowerCase() === String(currentRoleSubscription?.role_plan_slug || '').toLowerCase()) || null,
+    [rolePlans, currentRoleSubscription]
   );
   const selectedRolePlanRequiresSales = useMemo(
     () => isContactSalesRolePlan(selectedRolePlan),
@@ -263,13 +236,6 @@ const HrJobsPage = () => {
     [currentRoleSubscription, selectedRolePlan]
   );
 
-  const checkoutQuantity = useMemo(() => {
-    const parsed = Number(checkoutForm.quantity);
-    if (!Number.isFinite(parsed) || parsed < 1) return 1;
-    return Math.floor(parsed);
-  }, [checkoutForm.quantity]);
-  const checkoutQuantityRule = useMemo(() => getPurchaseQuantityRule(checkoutPlan), [checkoutPlan]);
-
   const roleCheckoutQuantity = 1;
 
   const roleQuoteDisplay = useMemo(() => {
@@ -279,37 +245,81 @@ const HrJobsPage = () => {
     const renewalUnitPrice = getRolePlanRenewalPrice(selectedRolePlan);
     const listUnitPrice = getRolePlanListPrice(selectedRolePlan);
     const listSubtotal = listUnitPrice * roleCheckoutQuantity;
-    const taxableAmount = renewalUnitPrice * roleCheckoutQuantity;
-    const discountAmount = Math.max(listSubtotal - taxableAmount, 0);
+    const baseTaxableAmount = roleQuote?.subtotal ?? (renewalUnitPrice * roleCheckoutQuantity);
+    const taxableAmount = roleQuote?.taxableAmount ?? baseTaxableAmount;
+    const regularDiscountAmount = Math.max(listSubtotal - baseTaxableAmount, 0);
+    const discountAmount = roleQuote
+      ? Math.max(regularDiscountAmount + (roleQuote.couponDiscountAmount || 0), 0)
+      : Math.max(listSubtotal - taxableAmount, 0);
     const gstRate = Number(roleQuote?.gstRate ?? selectedRolePlan.gstRate ?? 18);
-    const gstAmount = taxableAmount * (gstRate / 100);
-    const totalAmount = taxableAmount + gstAmount;
+    const gstAmount = roleQuote?.gstAmount ?? (taxableAmount * (gstRate / 100));
+    const totalAmount = roleQuote?.totalAmount ?? (taxableAmount + gstAmount);
 
     return {
       currency,
       subtotal: listSubtotal,
       discountAmount,
+      couponDiscountAmount: roleQuote?.couponDiscountAmount || 0,
+      upgradeCreditAmount: roleQuote?.upgradeCreditAmount || 0,
+      upgradeCredit: roleQuote?.upgradeCredit || null,
       gstAmount,
       totalAmount,
-      includedJobCredits: roleQuote?.includedJobCredits ?? ((selectedRolePlan.includedJobCredits || 0) * roleCheckoutQuantity)
+      includedJobPosts: roleQuote?.includedJobCredits ?? ((selectedRolePlan.includedJobCredits || 0) * roleCheckoutQuantity)
     };
   }, [selectedRolePlan, selectedRolePlanRequiresSales, selectedRolePlanIsCurrent, roleQuote, roleCheckoutQuantity]);
 
-  const selectedPlanCredits = useMemo(() => {
-    if (!selectedPlan) return 0;
-    return Number(creditsSummary?.byPlan?.[selectedPlan.slug]?.remaining || 0);
-  }, [selectedPlan, creditsSummary]);
   const postedJobCountsByPlan = useMemo(() => {
     const counts = Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug) => [slug, 0]));
+    const periodStart = currentRoleSubscription?.starts_at || currentRoleSubscription?.created_at || '';
+    const periodEnd = currentRoleSubscription?.ends_at || '';
+    const startTime = periodStart ? new Date(periodStart).getTime() : 0;
+    const endTime = periodEnd ? new Date(periodEnd).getTime() : 0;
+
     for (const job of jobs) {
       const slug = getJobPlanSlug(job);
+      const createdAt = getJobCreatedAt(job);
+      const createdTime = createdAt ? new Date(createdAt).getTime() : 0;
+      if (startTime && createdTime && createdTime < startTime) continue;
+      if (endTime && createdTime && createdTime > endTime) continue;
       if (counts[slug] !== undefined) counts[slug] += 1;
     }
     return counts;
-  }, [jobs]);
+  }, [jobs, currentRoleSubscription]);
   const hasUsableRecruiterPlan = useMemo(
     () => isUsableRoleSubscription(currentRoleSubscription),
     [currentRoleSubscription]
+  );
+  const hasExistingRecruiterPlan = useMemo(() => {
+    const status = String(currentRoleSubscription?.status || '').toLowerCase();
+    const currentSlug = String(currentRoleSubscription?.role_plan_slug || '').trim();
+    return Boolean(currentRoleSubscription && currentSlug && !['pending', 'cancelled', 'canceled', 'expired'].includes(status));
+  }, [currentRoleSubscription]);
+  const selectedRolePlanChangeType = useMemo(() => {
+    if (!hasExistingRecruiterPlan || !currentRolePlan || !selectedRolePlan || selectedRolePlanIsCurrent) return 'new';
+    const currentPrice = getRolePlanRenewalPrice(currentRolePlan) || getRolePlanListPrice(currentRolePlan);
+    const selectedPrice = getRolePlanRenewalPrice(selectedRolePlan) || getRolePlanListPrice(selectedRolePlan);
+    if (selectedPrice > currentPrice) return 'upgrade';
+    if (selectedPrice < currentPrice) return 'downgrade';
+    return 'change';
+  }, [currentRolePlan, hasExistingRecruiterPlan, selectedRolePlan, selectedRolePlanIsCurrent]);
+  const postingUsageByPlan = useMemo(() => {
+    const usage = Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug) => [slug, {
+      limit: 0,
+      used: postedJobCountsByPlan[slug] || 0,
+      remaining: 0
+    }]));
+
+    for (const bucket of getPlanPostingBuckets(currentRolePlan)) {
+      if (!usage[bucket.slug]) usage[bucket.slug] = { limit: 0, used: postedJobCountsByPlan[bucket.slug] || 0, remaining: 0 };
+      usage[bucket.slug].limit = bucket.value;
+      usage[bucket.slug].remaining = Math.max(bucket.value - usage[bucket.slug].used, 0);
+    }
+
+    return usage;
+  }, [currentRolePlan, postedJobCountsByPlan]);
+  const selectedPlanPostingUsage = useMemo(
+    () => postingUsageByPlan[String(selectedPlan?.slug || '').toLowerCase()] || { limit: 0, used: 0, remaining: 0 },
+    [postingUsageByPlan, selectedPlan]
   );
 
   const planNameBySlug = useMemo(
@@ -324,10 +334,20 @@ const HrJobsPage = () => {
     () => TRACKED_JOB_PLAN_SLUGS.map((slug) => ({
       slug,
       label: planNameBySlug[slug] || (slug === 'standard' ? 'Normal' : slug.replace(/_/g, ' ')),
-      count: postedJobCountsByPlan[slug] || 0
+      count: postedJobCountsByPlan[slug] || 0,
+      limit: postingUsageByPlan[slug]?.limit || 0,
+      remaining: postingUsageByPlan[slug]?.remaining || 0
     })),
-    [planNameBySlug, postedJobCountsByPlan]
+    [planNameBySlug, postedJobCountsByPlan, postingUsageByPlan]
   );
+  const roleCheckoutActionLabel = useMemo(() => {
+    if (selectedRolePlanIsCurrent) return 'Current Plan Active';
+    if (selectedRolePlanRequiresSales) return 'Contact Sales';
+    if (!hasExistingRecruiterPlan) return 'Enable Auto-pay + Start Trial';
+    if (selectedRolePlanChangeType === 'downgrade') return 'Downgrade Plan';
+    if (selectedRolePlanChangeType === 'upgrade') return 'Upgrade Plan';
+    return 'Change Plan';
+  }, [hasExistingRecruiterPlan, selectedRolePlanChangeType, selectedRolePlanIsCurrent, selectedRolePlanRequiresSales]);
 
   const requestedAudience = useMemo(() => {
     const value = new URLSearchParams(location.search).get('audience');
@@ -406,35 +426,21 @@ const HrJobsPage = () => {
   };
 
   const loadPricingState = async () => {
-    const [plansRes, creditsRes, purchasesRes] = await Promise.all([
-      getPricingPlans(),
-      getHrPricingCredits(),
-      getHrPricingPurchases({ status: '' })
-    ]);
+    const plansRes = await getPricingPlans();
 
     const nextPlans = plansRes.data || [];
 
     setPlans(nextPlans);
-    setCreditsSummary(creditsRes.data || { credits: [], byPlan: {}, totals: { total: 0, used: 0, remaining: 0 } });
-    setPurchases(purchasesRes.data || []);
-    setPricingError([plansRes.error, creditsRes.error, purchasesRes.error].filter(Boolean).join(' | '));
+    if (plansRes.error) setError(plansRes.error);
 
     const nextPostablePlans = [...nextPlans.filter((plan) => !isDisabledPostingPlan(plan))].sort(sortByJobPlanPriority);
-    const firstPaidPlan = nextPostablePlans.find((plan) => !isFreePlan(plan));
-
-    setCheckoutForm((current) => {
-      const currentPlanIsValidPaid = nextPlans.some((plan) => plan.slug === current.planSlug && !isFreePlan(plan));
-      return {
-        ...current,
-        planSlug: currentPlanIsValidPaid ? current.planSlug : (firstPaidPlan?.slug || '')
-      };
-    });
-
     const firstPostingPlan = nextPostablePlans[0] || nextPlans[0];
     if (firstPostingPlan) {
       setDraft((current) => ({
         ...current,
-        planSlug: nextPlans.some((plan) => plan.slug === current.planSlug && !isDisabledPostingPlan(plan)) ? current.planSlug : firstPostingPlan.slug
+        planSlug: current.planSlug && current.planSlug !== 'standard' && nextPlans.some((plan) => plan.slug === current.planSlug && !isDisabledPostingPlan(plan))
+          ? current.planSlug
+          : firstPostingPlan.slug
       }));
     }
   };
@@ -508,53 +514,6 @@ const HrJobsPage = () => {
       mounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    if (checkoutPlan && (checkoutQuantity < checkoutQuantityRule.min || checkoutQuantity > checkoutQuantityRule.max)) {
-      setCheckoutForm((current) => ({
-        ...current,
-        quantity: checkoutQuantityRule.min
-      }));
-      return () => {
-        active = false;
-      };
-    }
-
-    const loadQuote = async () => {
-      if (!checkoutPlan || checkoutPlan.isFreeNormalized) {
-        setQuote(null);
-        setQuoteError('');
-        return;
-      }
-
-      setQuoteLoading(true);
-      setQuoteError('');
-
-      try {
-        const response = await getPricingPlanQuote({
-          planSlug: checkoutPlan.slug,
-          quantity: checkoutQuantity
-        });
-
-        if (!active) return;
-        setQuote(response);
-      } catch (quoteRequestError) {
-        if (!active) return;
-        setQuote(null);
-        setQuoteError(String(quoteRequestError.message || 'Unable to fetch quote from backend.'));
-      } finally {
-        if (active) setQuoteLoading(false);
-      }
-    };
-
-    loadQuote();
-
-    return () => {
-      active = false;
-    };
-  }, [checkoutPlan, checkoutQuantity, checkoutQuantityRule.min, checkoutQuantityRule.max]);
 
   useEffect(() => {
     let active = true;
@@ -643,11 +602,11 @@ const HrJobsPage = () => {
 
     if (selectedPlan) {
       if (!editingJobId && isDisabledPostingPlan(selectedPlan)) {
-        return 'Free job posting is disabled. Use recruiter plan credits.';
+        return 'Free job posting is disabled. Use your active recruiter plan.';
       }
 
-      if (!editingJobId && selectedPlanCredits <= 0) {
-        return `No remaining ${selectedPlan.name} credits. Purchase credits before posting.`;
+      if (!editingJobId && selectedPlanPostingUsage.remaining <= 0) {
+        return `No ${selectedPlan.name} job posts left in your current plan. Upgrade your plan to post more.`;
       }
     }
 
@@ -676,7 +635,6 @@ const HrJobsPage = () => {
         const created = await createHrJob(draft);
         setJobs((current) => [created, ...current]);
         setMessage(`Job created successfully on ${selectedPlan?.name || 'selected'} plan.`);
-        await loadPricingState();
       }
 
       resetForm();
@@ -723,62 +681,6 @@ const HrJobsPage = () => {
     }
   };
 
-  const handleCheckout = async (event) => {
-    event.preventDefault();
-    setMessage('');
-    setError('');
-
-    if (!paidPlans.length) {
-      setError('No paid plans available right now. Contact admin to configure pricing plans.');
-      return;
-    }
-
-    if (!checkoutPlan || checkoutPlan.isFreeNormalized) {
-      setError('Select a paid plan to purchase credits.');
-      return;
-    }
-
-    if (!Number.isFinite(checkoutQuantity) || checkoutQuantity < checkoutQuantityRule.min || checkoutQuantity > checkoutQuantityRule.max) {
-      setError(`${checkoutPlan.name} credits must be purchased between ${checkoutQuantityRule.min} and ${checkoutQuantityRule.max} at a time.`);
-      return;
-    }
-
-    setCheckoutSaving(true);
-
-    try {
-      const order = await createJobCreditPaymentOrder({
-        planSlug: checkoutPlan.slug,
-        quantity: checkoutQuantity
-      });
-
-      const checkoutResult = await openRazorpayOrderCheckout({
-        ...order,
-        name: 'HHH Jobs Credits',
-        description: `${checkoutPlan.name} job posting credits`
-      });
-
-      if (checkoutResult.dismissed) {
-        setMessage('Checkout was closed before payment completed.');
-        return;
-      }
-
-      await verifyJobCreditPayment(checkoutResult);
-      await loadPricingState();
-      setMessage('Credits purchased and activated successfully.');
-      setCheckoutForm((current) => ({
-        ...current,
-        quantity: checkoutQuantityRule.min,
-        referenceId: '',
-        note: ''
-      }));
-    } catch (checkoutError) {
-      const errText = String(checkoutError.message || 'Unable to create purchase.');
-      setError(errText);
-    } finally {
-      setCheckoutSaving(false);
-    }
-  };
-
   const handleRolePlanCheckout = async (event) => {
     event.preventDefault();
     setMessage('');
@@ -818,7 +720,9 @@ const HrJobsPage = () => {
       if (response?.alreadyAuthorized) {
         await loadRolePricingState();
         await loadPricingState();
-        setMessage('Recruiter auto-pay is already enabled. The trial will move into recurring billing automatically.');
+        setMessage(hasExistingRecruiterPlan
+          ? 'Recruiter auto-pay is already enabled for this plan.'
+          : 'Recruiter auto-pay is already enabled. The trial will move into recurring billing automatically.');
         return;
       }
 
@@ -826,7 +730,9 @@ const HrJobsPage = () => {
         const checkoutResult = await openRazorpaySubscriptionCheckout({
           ...response.paymentSession,
           name: 'HHH Jobs Recruiter Plan',
-          description: 'Enable Razorpay auto-pay first, then start your HR free trial.'
+          description: hasExistingRecruiterPlan
+            ? `Authorise Razorpay auto-pay to ${selectedRolePlanChangeType === 'downgrade' ? 'downgrade' : selectedRolePlanChangeType === 'upgrade' ? 'upgrade' : 'change'} your recruiter plan.`
+            : 'Enable Razorpay auto-pay first, then start your HR free trial.'
         });
 
         if (checkoutResult.dismissed) {
@@ -844,7 +750,9 @@ const HrJobsPage = () => {
 
         await loadRolePricingState();
         await loadPricingState();
-        setMessage('HR trial is active and Razorpay auto-pay is now enabled for renewal.');
+        setMessage(hasExistingRecruiterPlan
+          ? `Recruiter plan ${selectedRolePlanChangeType === 'downgrade' ? 'downgraded' : selectedRolePlanChangeType === 'upgrade' ? 'upgraded' : 'changed'} successfully. No new trial was applied.`
+          : 'HR trial is active and Razorpay auto-pay is now enabled for renewal.');
         setRoleCheckoutForm((current) => ({
           ...current,
           quantity: 1,
@@ -883,7 +791,7 @@ const HrJobsPage = () => {
           {[
             { key: 'jobs', label: 'My Jobs', icon: FiBriefcase, action: () => { setActiveTab('jobs'); setEditingJobId(''); } },
             { key: 'post', label: 'Post a Job', icon: FiPlus, action: () => setActiveTab('post') },
-            { key: 'billing', label: 'Billing & Credits', icon: FiCreditCard, action: () => { setActiveTab('billing'); setEditingJobId(''); } }
+            { key: 'billing', label: 'Billing & Plans', icon: FiCreditCard, action: () => { setActiveTab('billing'); setEditingJobId(''); } }
           ].map(({ key, label, icon: Icon, action }) => (
             <button
               key={key}
@@ -1053,7 +961,7 @@ const HrJobsPage = () => {
                         value: `${Math.min(JOB_POSTING_DESCRIPTION_LIMIT, Number(selectedPlan.maxDescriptionChars || JOB_POSTING_DESCRIPTION_LIMIT) || JOB_POSTING_DESCRIPTION_LIMIT)} chars`
                       },
                       { label: 'Contact', value: selectedPlan.contactDetailsVisible ? 'Visible' : 'Hidden' },
-                      { label: 'Credits left', value: selectedPlanCredits }
+                      { label: 'Posts left', value: selectedPlanPostingUsage.remaining }
                     ].map((item) => (
                       <div key={item.label} className="rounded-lg bg-brand-50/70 px-3 py-2">
                         <p className="text-[10px] font-black uppercase tracking-[0.14em] text-brand-500">{item.label}</p>
@@ -1163,14 +1071,13 @@ const HrJobsPage = () => {
         </div>
       )}
 
-      {/* BILLING & CREDITS TAB */}
+      {/* BILLING & PLANS TAB */}
       {activeTab === 'billing' && (
         <div className="space-y-6 animate-fade-in">
           {/* Billing Sub-Tabs */}
           <div className="flex gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1 w-full sm:w-auto overflow-x-auto">
             {[
               { key: 'subscription', label: 'Subscription' },
-              { key: 'credits', label: 'Job Credits' },
               { key: 'history', label: 'Purchase History' }
             ].map(({ key, label }) => (
               <button
@@ -1210,7 +1117,8 @@ const HrJobsPage = () => {
                     {trackedJobPlanStats.map((stat) => (
                       <div key={stat.slug} className="rounded-lg border border-white/80 bg-white/85 px-3 py-2 shadow-sm">
                         <p className="truncate text-[10px] font-black uppercase tracking-[0.12em] text-neutral-400">{stat.label}</p>
-                        <p className="mt-0.5 text-base font-extrabold text-slate-900">{stat.count}</p>
+                        <p className="mt-0.5 text-base font-extrabold text-slate-900">{stat.count} / {stat.limit}</p>
+                        <p className="text-[10px] font-semibold text-emerald-700">{stat.remaining} left</p>
                       </div>
                     ))}
                   </div>
@@ -1228,7 +1136,7 @@ const HrJobsPage = () => {
                     const listPrice = getRolePlanListPrice(plan);
                     const renewalPrice = getRolePlanRenewalPrice(plan);
                     const discountLabel = getRolePlanDiscountLabel(plan);
-                    const creditBuckets = getJobCreditBuckets(plan);
+                    const postingBuckets = getPlanPostingBuckets(plan);
                     return (
                       <div key={plan.slug} className={`rounded-xl border p-4 transition-all ${isActivePlan ? 'border-brand-400 bg-brand-50/50 ring-1 ring-brand-300' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
                         <div className="flex items-center justify-between gap-2 mb-2">
@@ -1244,7 +1152,7 @@ const HrJobsPage = () => {
                         </p>
                         {!contactSalesPlan && renewalPrice < listPrice ? (
                           <p className="mt-1 text-xs font-bold text-emerald-700">
-                            After trial {formatMoney(plan.currency, renewalPrice)}/month
+                            {hasExistingRecruiterPlan ? 'Renews at' : 'After trial'} {formatMoney(plan.currency, renewalPrice)}/month
                           </p>
                         ) : null}
                         {discountLabel ? (
@@ -1257,14 +1165,16 @@ const HrJobsPage = () => {
                             <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">Custom rollout</span>
                           ) : (
                             <>
-                              <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.includedJobCredits || 0} credits</span>
-                              <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.trialDays || 0}d trial</span>
+                              <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">{plan.includedJobCredits || 0} job posts</span>
+                              <span className="rounded-md bg-neutral-50 px-2 py-1 font-semibold text-neutral-600">
+                                {hasExistingRecruiterPlan ? 'No trial on plan change' : `${plan.trialDays || 0}d trial`}
+                              </span>
                             </>
                           )}
                         </div>
-                        {creditBuckets.length > 0 ? (
+                        {postingBuckets.length > 0 ? (
                           <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold text-slate-600">
-                            {creditBuckets.map((bucket) => (
+                            {postingBuckets.map((bucket) => (
                               <span key={bucket.slug} className="rounded-md border border-neutral-200 bg-white px-2 py-1">
                                 {bucket.label}: {bucket.value}
                               </span>
@@ -1308,7 +1218,7 @@ const HrJobsPage = () => {
 
                   {selectedRolePlanRequiresSales && !selectedRolePlanIsCurrent ? (
                     <div className="rounded-lg border border-brand-100 bg-brand-50 p-3 text-xs font-medium text-brand-700">
-                      Enterprise is a custom plan. Share your interest with sales for pricing, credits, and rollout.
+                      Enterprise is a custom plan. Share your interest with sales for pricing, job-post limits, and rollout.
                     </div>
                   ) : null}
                   {!selectedRolePlanRequiresSales && !selectedRolePlanIsCurrent && roleQuoteError && <p className="text-xs font-medium text-red-600">{roleQuoteError}</p>}
@@ -1317,9 +1227,14 @@ const HrJobsPage = () => {
                     <div className="rounded-lg bg-neutral-50 border border-neutral-100 p-3 space-y-1.5 text-xs">
                       <div className="flex justify-between text-neutral-600"><span>Subtotal:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.subtotal).toFixed(2)}</span></div>
                       <div className="flex justify-between text-emerald-600"><span>Discount:</span><span>-{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.discountAmount).toFixed(2)}</span></div>
+                      {roleQuoteDisplay.upgradeCreditAmount > 0 ? (
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Current plan credit:</span><span>-{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.upgradeCreditAmount).toFixed(2)}</span>
+                        </div>
+                      ) : null}
                       <div className="flex justify-between text-neutral-600"><span>GST:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.gstAmount).toFixed(2)}</span></div>
-                      <div className="flex justify-between text-neutral-600"><span>Job credits:</span><span>{roleQuoteDisplay.includedJobCredits}</span></div>
-                      {getJobCreditBuckets(selectedRolePlan, roleCheckoutQuantity).map((bucket) => (
+                      <div className="flex justify-between text-neutral-600"><span>Job posts:</span><span>{roleQuoteDisplay.includedJobPosts}</span></div>
+                      {getPlanPostingBuckets(selectedRolePlan, roleCheckoutQuantity).map((bucket) => (
                         <div key={bucket.slug} className="flex justify-between text-neutral-500">
                           <span>{bucket.label}:</span><span>{bucket.value}</span>
                         </div>
@@ -1333,81 +1248,17 @@ const HrJobsPage = () => {
                       ? 'Your current plan stays active until its listed expiry date.'
                       : selectedRolePlanRequiresSales
                       ? 'No auto-pay is started for Enterprise. A sales lead is created for manual follow-up.'
+                      : hasExistingRecruiterPlan
+                      ? selectedRolePlanChangeType === 'downgrade'
+                        ? 'Existing recruiters downgrade without another free trial. Razorpay auto-pay authorisation is required for the lower plan.'
+                        : selectedRolePlanChangeType === 'upgrade'
+                        ? 'Existing recruiters upgrade without another free trial. Razorpay auto-pay authorisation is required for the new plan.'
+                        : 'Existing recruiters change plans without another free trial. Razorpay auto-pay authorisation is required for the new plan.'
                       : 'Checkout authorises Razorpay auto-pay first. Your free trial starts only after authorisation succeeds.'}
                   </p>
 
                   <button type="submit" disabled={roleCheckoutSaving || rolePlans.length === 0 || selectedRolePlanIsCurrent} className="w-full py-2.5 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50">
-                    {roleCheckoutSaving ? 'Processing...' : (selectedRolePlanIsCurrent ? 'Current Plan Active' : (selectedRolePlanRequiresSales ? 'Contact Sales' : 'Enable Auto-pay + Start Trial'))}
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* --- SUB-TAB: Job Credits --- */}
-          {billingSubTab === 'credits' && (
-            <div className="space-y-6">
-              {/* Credit Plan Summary Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {plans.map(plan => {
-                  const planCredits = creditsSummary?.byPlan?.[plan.slug] || { total: 0, used: 0, remaining: 0 };
-                  const isFree = isFreePlan(plan);
-                  return (
-                    <div key={plan.slug} className="rounded-xl border border-neutral-200 bg-white p-4 hover:border-neutral-300 transition-all">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-bold text-slate-900">{plan.name}</p>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isFree ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-700'}`}>{isFree ? 'Free' : 'Paid'}</span>
-                      </div>
-                      <p className="text-lg font-extrabold text-slate-900">
-                        {plan.currency} {plan.price}
-                        <span className="text-xs font-medium text-neutral-400 ml-1">/ {formatDurationLabel(plan.jobValidityDays)}</span>
-                      </p>
-                      <div className="mt-3 rounded-lg bg-neutral-50 p-2.5">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Credits</p>
-                        <p className="text-base font-extrabold text-brand-600 mt-0.5">{isFree ? 'Unlimited' : planCredits.remaining}</p>
-                        {!isFree && <p className="text-[10px] text-neutral-400 mt-0.5">Used: {planCredits.used} / {planCredits.total}</p>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Buy Credits Form */}
-              <div className="max-w-md rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm">
-                <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-                  <FiCreditCard size={16} className="text-brand-500" /> Buy Job Credits
-                </h3>
-                <form onSubmit={handleCheckout} className="space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold text-neutral-500 mb-1 block">Plan</label>
-                    <select value={checkoutForm.planSlug} onChange={e => setCheckoutForm({ ...checkoutForm, planSlug: e.target.value })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-400" disabled={paidPlans.length === 0}>
-                      {paidPlans.map(plan => <option key={plan.slug} value={plan.slug}>{plan.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-neutral-500 mb-1 block">Quantity</label>
-                    <input
-                      type="number"
-                      min={checkoutQuantityRule.min}
-                      max={checkoutQuantityRule.max}
-                      value={checkoutForm.quantity}
-                      onChange={e => setCheckoutForm({ ...checkoutForm, quantity: e.target.value })}
-                      className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-400"
-                    />
-                    <p className="mt-1 text-[11px] font-medium text-neutral-400">
-                      Min {checkoutQuantityRule.min}, max {checkoutQuantityRule.max} credits per purchase.
-                    </p>
-                  </div>
-                  {quote && (
-                    <div className="rounded-lg bg-neutral-50 border border-neutral-100 p-3 space-y-1.5 text-xs">
-                      <div className="flex justify-between text-neutral-600"><span>Subtotal:</span><span>{quote.currency} {Number(quote.subtotal).toFixed(2)}</span></div>
-                      <div className="flex justify-between text-emerald-600"><span>Discount:</span><span>-{quote.currency} {Number(quote.discountAmount).toFixed(2)}</span></div>
-                      <div className="flex justify-between text-neutral-600"><span>GST:</span><span>{quote.currency} {Number(quote.gstAmount).toFixed(2)}</span></div>
-                      <div className="border-t border-neutral-200 pt-1.5 flex justify-between font-bold text-sm text-brand-700"><span>Total:</span><span>{quote.currency} {Number(quote.totalAmount).toFixed(2)}</span></div>
-                    </div>
-                  )}
-                  <button type="submit" disabled={checkoutSaving || paidPlans.length === 0} className="w-full py-2.5 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50">
-                    {checkoutSaving ? 'Processing...' : 'Checkout'}
+                    {roleCheckoutSaving ? 'Processing...' : roleCheckoutActionLabel}
                   </button>
                 </form>
               </div>
@@ -1450,39 +1301,6 @@ const HrJobsPage = () => {
                   </div>
                 ) : (
                   <div className="py-8 text-center text-xs font-medium text-neutral-400 bg-neutral-50 rounded-xl border border-dashed border-neutral-200">No recruiter plan purchases yet.</div>
-                )}
-              </div>
-
-              {/* Job Credit Purchases */}
-              <div className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm">
-                <h3 className="text-sm font-bold text-slate-900 mb-4">Job Credit Purchases</h3>
-                {purchases.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[560px] text-left">
-                      <thead>
-                        <tr className="border-b border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                          <th className="pb-3 pr-3">Plan</th>
-                          <th className="pb-3 px-3">Qty</th>
-                          <th className="pb-3 px-3">Amount</th>
-                          <th className="pb-3 px-3">Status</th>
-                          <th className="pb-3 pl-3 text-right">Date</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-xs">
-                        {purchases.slice(0, 15).map((purchase, i) => (
-                          <tr key={purchase.id || i} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50 transition-colors">
-                            <td className="py-3 pr-3 font-bold text-slate-800">{planNameBySlug[purchase.plan_slug] || purchase.plan_slug}</td>
-                            <td className="py-3 px-3 text-neutral-600">{purchase.quantity}</td>
-                            <td className="py-3 px-3 font-semibold text-slate-700">{purchase.currency || 'INR'} {purchase.total_amount}</td>
-                            <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold border ${getStatusColor(purchase.status)}`}>{purchase.status}</span></td>
-                            <td className="py-3 pl-3 text-right text-neutral-500">{formatDateTime(purchase.created_at || purchase.createdAt).split(' ')[0]}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="py-8 text-center text-xs font-medium text-neutral-400 bg-neutral-50 rounded-xl border border-dashed border-neutral-200">No credit purchases yet.</div>
                 )}
               </div>
             </div>

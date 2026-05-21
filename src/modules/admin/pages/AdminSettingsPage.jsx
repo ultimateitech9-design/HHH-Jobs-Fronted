@@ -231,7 +231,7 @@ const AdminSettingsPage = () => {
         <SectionHeader
           eyebrow="Pricing Plans"
           title="Configure Job Posting Plans"
-          subtitle="These plans directly control HR posting limits, credits, and billing quote logic."
+          subtitle="These plans directly control HR posting limits and billing quote logic."
         />
 
         <div className="student-job-grid">

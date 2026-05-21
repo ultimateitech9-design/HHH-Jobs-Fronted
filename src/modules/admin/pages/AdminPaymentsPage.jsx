@@ -491,7 +491,7 @@ const AdminPaymentsPage = () => {
                       <input value={draftValues.durationDays || ''} onChange={(e) => handleRolePlanDraftChange(plan.slug, 'durationDays', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 font-semibold" />
                     </label>
                     <label className="space-y-1">
-                      <span className="block text-xs font-bold uppercase tracking-wide text-neutral-500">Included Credits</span>
+                      <span className="block text-xs font-bold uppercase tracking-wide text-neutral-500">Included Job Posts</span>
                       <input value={draftValues.includedJobCredits || ''} onChange={(e) => handleRolePlanDraftChange(plan.slug, 'includedJobCredits', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 font-semibold" />
                     </label>
                     <label className="space-y-1">
@@ -740,7 +740,7 @@ const AdminPaymentsPage = () => {
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 <FiCreditCard className="text-brand-400" /> B2B Subscription Underwriting
               </h2>
-              <p className="text-indigo-200 text-sm mt-1">Approve recruiter plan purchases to activate ecosystem hiring credits.</p>
+              <p className="text-indigo-200 text-sm mt-1">Approve recruiter plan purchases to activate ecosystem hiring allowances.</p>
             </div>
           </div>
         </div>
@@ -789,7 +789,7 @@ const AdminPaymentsPage = () => {
                         Tier: {purchase.plan_slug}
                       </div>
                       <div className="font-medium text-indigo-200 text-xs">
-                        Qty: <span className="text-white font-bold">{purchase.quantity}</span> &times; Credits: <span className="text-white font-bold">{purchase.credits}</span>
+                        Qty: <span className="text-white font-bold">{purchase.quantity}</span> &times; Posts: <span className="text-white font-bold">{purchase.credits}</span>
                       </div>
                     </td>
                     

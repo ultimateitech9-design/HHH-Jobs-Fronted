@@ -17,7 +17,7 @@ export const jobPostingPlans = [
     price: '₹699',
     numericPrice: 699,
     previousPrice: '',
-    discountText: 'Add-on credit',
+    discountText: 'Plan post',
     taxNote: '*GST as applicable',
     features: [
       { label: 'Detailed job description', included: true },
@@ -28,8 +28,8 @@ export const jobPostingPlans = [
       { label: 'Boost on Job Search Page', included: true },
       { label: 'Job Branding', included: true }
     ],
-    offerText: 'Buy 2 to 5 premium credits after plan credits are used',
-    ctaLabel: 'Buy credits',
+    offerText: 'Premium posts are managed through recruiter plans',
+    ctaLabel: 'View plans',
     ctaTo: '/sign-up?plan=hot_vacancy&role=hr',
     withQuantity: true,
     validity: 'Job validity 30 days'
@@ -41,7 +41,7 @@ export const jobPostingPlans = [
     price: '₹299',
     numericPrice: 299,
     previousPrice: '',
-    discountText: 'Add-on credit',
+    discountText: 'Plan post',
     taxNote: '*GST as applicable',
     features: [
       { label: 'Upto 250 character job description', included: true },
@@ -52,7 +52,7 @@ export const jobPostingPlans = [
       { label: 'Boost on Job Search Page', included: false },
       { label: 'Job Branding', included: false }
     ],
-    offerText: 'Buy 2 to 10 hot vacancy credits after plan credits are used',
+    offerText: 'Hot vacancy posts are managed through recruiter plans',
     ctaLabel: 'Buy now',
     ctaTo: '/sign-up?plan=classified&role=hr',
     withQuantity: true,
@@ -65,7 +65,7 @@ export const jobPostingPlans = [
     price: '₹99',
     numericPrice: 99,
     previousPrice: '',
-    discountText: 'Add-on credit',
+    discountText: 'Plan post',
     taxNote: '*GST as applicable',
     features: [
       { label: 'Upto 250 character job description', included: true },
@@ -76,8 +76,8 @@ export const jobPostingPlans = [
       { label: 'Boost on Job Search Page', included: false },
       { label: 'Job Branding', included: false }
     ],
-    offerText: 'Buy 5 to 15 normal credits after plan credits are used',
-    ctaLabel: 'Buy credits',
+    offerText: 'Normal posts are managed through recruiter plans',
+    ctaLabel: 'View plans',
     ctaTo: '/sign-up?plan=standard&role=hr',
     withQuantity: true,
     validity: 'Job validity 15 days'
