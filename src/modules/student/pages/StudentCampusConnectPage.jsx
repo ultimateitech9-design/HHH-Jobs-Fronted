@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiBookOpen,
@@ -155,68 +155,12 @@ const StudentCampusConnectPage = () => {
     }
   };
 
-  const stats = useMemo(() => {
-    if (!campusData.connected || !student || !college) {
-      return [
-        { label: 'Campus Linked', value: 'No', helper: 'This student profile is not attached to a campus yet' },
-        { label: 'Eligible Drives', value: '0', helper: 'Upcoming campus drives will appear here once linked' },
-        { label: 'Placement Status', value: 'Open', helper: 'Student profile is still open for placement activity' }
-      ];
-    }
-
-    return [
-      { label: 'Campus Linked', value: 'Yes', helper: college.name || 'Campus attached', icon: FiBookOpen, tone: 'success' },
-      { label: 'Eligible Drives', value: String(campusData.counts?.eligibleUpcomingDrives || 0), helper: 'Filtered by your branch and CGPA', icon: FiCalendar, tone: 'accent' },
-      { label: 'Placement Status', value: student.isPlaced ? 'Placed' : 'Seeking', helper: student.isPlaced ? 'Campus record already marked placed' : 'Visible for ongoing campus placements', icon: FiTrendingUp, tone: 'info' }
-    ];
-  }, [campusData, college, student]);
-
   return (
     <StudentPageShell
       showHero={false}
     >
       {state.error ? <StudentNotice type="error" text={state.error} /> : null}
       {actionNotice.text ? <StudentNotice type={actionNotice.type || 'success'} text={actionNotice.text} /> : null}
-
-      <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#1e3558_0%,#27436f_56%,#e6c184_100%)] px-5 py-5 text-white shadow-[0_20px_55px_rgba(15,23,42,0.12)] sm:px-6 sm:py-6">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_360px] xl:items-start">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-white/70">Campus Connect</p>
-              <span className="rounded-full border border-white/20 bg-white/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/82">
-                Student Access
-              </span>
-            </div>
-            <h1 className="mt-3 max-w-3xl text-[1.9rem] font-semibold leading-tight tracking-[-0.02em] text-white sm:text-[2.2rem]">
-              Campus profile and eligible drives in one simple workspace
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78 sm:text-[15px]">
-              Confirm your attached campus, review placement status, and track every campus pool that is open for your profile without switching between multiple screens.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2.5">
-              <Link to="/portal/student/companies" className={compactSecondaryButtonClassName}>
-                Explore Companies
-              </Link>
-              <Link to="/portal/student/notifications" className={compactPrimaryButtonClassName}>
-                View Notifications
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid gap-2.5 sm:grid-cols-3 xl:grid-cols-1">
-            {stats.map((metric) => (
-              <article
-                key={metric.label}
-                className="rounded-[1.45rem] border border-white/14 bg-white/8 px-4 py-3.5 backdrop-blur-sm"
-              >
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/66">{metric.label}</p>
-                <p className="mt-1 text-[1.95rem] font-semibold leading-none text-white">{metric.value}</p>
-                <p className="mt-2 text-[13px] leading-5 text-white/72">{metric.helper}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {state.loading ? (
         <div className="grid gap-3 lg:grid-cols-2">

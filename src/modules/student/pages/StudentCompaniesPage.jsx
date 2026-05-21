@@ -20,7 +20,7 @@ const FILTER_OPTIONS = [
   { key: 'all', label: 'All companies' },
   { key: 'premium', label: 'Premium' },
   { key: 'portal', label: 'Portal employers' },
-  { key: 'live-feed', label: 'Live feed' }
+  { key: 'subscribed', label: 'Subscribed companies' }
 ];
 
 const COMPANIES_PER_PAGE = 12;
@@ -72,7 +72,7 @@ const StudentCompaniesPage = () => {
     if (!matchesSearch) return false;
     if (filter === 'premium') return company.premium;
     if (filter === 'portal') return company.portalProfile || company.portalJobs > 0;
-    if (filter === 'live-feed') return company.liveFeed;
+    if (filter === 'subscribed') return Boolean(company.subscription?.subscribed);
     return true;
   }), [filter, search, state.companies]);
 

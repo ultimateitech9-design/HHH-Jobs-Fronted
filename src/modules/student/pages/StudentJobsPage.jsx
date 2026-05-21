@@ -7,7 +7,6 @@ import {
   FiFilter,
   FiGlobe,
   FiMapPin,
-  FiRefreshCw,
   FiSearch,
   FiTarget
 } from 'react-icons/fi';
@@ -171,7 +170,6 @@ const StudentJobsPage = ({
     sources: []
   });
   const [actionFeedback, setActionFeedback] = useState({ type: '', text: '', ctaTo: '', ctaLabel: '' });
-  const [reloadKey, setReloadKey] = useState(0);
   const lastJobsRequestKeyRef = useRef('');
 
   useEffect(() => {
@@ -181,7 +179,7 @@ const StudentJobsPage = ({
 
   useEffect(() => {
     let mounted = true;
-    const requestKey = JSON.stringify({ effectiveAudience, filters, reloadKey });
+    const requestKey = JSON.stringify({ effectiveAudience, filters });
 
     if (lastJobsRequestKeyRef.current === requestKey) {
       return () => {
@@ -257,7 +255,7 @@ const StudentJobsPage = ({
     return () => {
       mounted = false;
     };
-  }, [effectiveAudience, filters, reloadKey]);
+  }, [effectiveAudience, filters]);
 
   const totalJobs = jobsState.jobs.length;
   const totalPages = Math.max(1, Math.ceil(totalJobs / jobsPerPage));
@@ -324,22 +322,11 @@ const StudentJobsPage = ({
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-brand-700">{eyebrow}</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-bold text-navy">{title}</h1>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-semibold text-slate-600">
-              {totalJobs} roles
-            </span>
           </div>
           {subtitle ? <p className="mt-2 text-sm text-slate-500">{subtitle}</p> : null}
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            className={studentSecondaryButtonClassName}
-            onClick={() => setReloadKey((current) => current + 1)}
-          >
-            <FiRefreshCw size={15} />
-            Refresh
-          </button>
           <Link to="/portal/student/saved-jobs" className={studentSecondaryButtonClassName}>
             <FiBookmark size={15} />
             Saved Jobs

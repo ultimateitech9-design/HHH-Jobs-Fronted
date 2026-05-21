@@ -8,7 +8,6 @@ import {
   FiChevronRight,
   FiClock,
   FiFileText,
-  FiFilter,
   FiTarget,
   FiTrendingUp,
   FiUser,
@@ -244,68 +243,6 @@ const StudentApplicationsPage = () => {
         </aside>
 
         <div className="space-y-4">
-          <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_14px_34px_-30px_rgba(15,23,42,0.35)]">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-brand-700">
-                    Applications
-                  </span>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
-                    Pipeline board
-                  </span>
-                </div>
-                <h2 className="mt-3 max-w-2xl text-2xl font-black leading-tight text-navy">Track every application with a cleaner dashboard flow</h2>
-                <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500">
-                  Filter the pipeline fast, see which roles are moving, and keep each application readable without the oversized old dashboard wrapper.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 grid gap-2.5 md:grid-cols-3">
-              {[
-                { label: 'Tracked', value: counts.total, helper: 'Everything currently in your pipeline' },
-                { label: 'Shortlisted', value: counts.shortlisted, helper: 'Moved beyond first review' },
-                { label: 'Interview stage', value: counts.interviews, helper: 'Close to recruiter conversations' }
-              ].map((stat) => (
-                <article key={stat.label} className="rounded-[1rem] border border-slate-200 bg-slate-50 px-3 py-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{stat.label}</p>
-                  <p className="mt-2 text-2xl font-black text-navy">{stat.value}</p>
-                  <p className="mt-1.5 text-xs leading-4 text-slate-500">{stat.helper}</p>
-                </article>
-              ))}
-            </div>
-
-            <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-                  <FiFilter size={15} />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-slate-700">Filter by status</p>
-                  <p className="text-xs leading-4 text-slate-500">Review only the stage you want to act on today.</p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {STATUS_FILTERS.map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => setStatusFilter(status)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                      statusFilter === status
-                        ? 'bg-navy text-white shadow-sm'
-                        : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700'
-                    }`}
-                  >
-                    {getStatusLabel(status)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
           <StudentSurfaceCard
             eyebrow="Live pipeline"
             title={statusFilter === 'all' ? 'All applications' : `${getStatusLabel(statusFilter)} applications`}

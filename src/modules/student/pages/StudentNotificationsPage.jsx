@@ -15,10 +15,8 @@ import {
 } from 'react-icons/fi';
 import useNotificationStore from '../../../core/notifications/notificationStore';
 import {
-  deleteAllNotificationsRequest,
   deleteNotificationRequest,
   fetchNotifications,
-  markAllNotificationsReadRequest,
   markNotificationReadRequest
 } from '../../../core/notifications/notificationApi';
 import {
@@ -156,9 +154,7 @@ const StudentNotificationsPage = () => {
   const replaceNotifications = useNotificationStore((state) => state.replaceNotifications);
   const setLoading = useNotificationStore((state) => state.setLoading);
   const markNotificationReadLocally = useNotificationStore((state) => state.markNotificationReadLocally);
-  const markAllNotificationsReadLocally = useNotificationStore((state) => state.markAllNotificationsReadLocally);
   const removeNotificationLocally = useNotificationStore((state) => state.removeNotificationLocally);
-  const removeNotificationsLocally = useNotificationStore((state) => state.removeNotificationsLocally);
   const upsertNotification = useNotificationStore((state) => state.upsertNotification);
 
   const [filter, setFilter] = useState('all');
@@ -243,22 +239,6 @@ const StudentNotificationsPage = () => {
     }
   };
 
-  const handleMarkAllRead = async () => {
-    setMessage('');
-    const previousNotifications = [...notifications];
-
-    markAllNotificationsReadLocally();
-
-    try {
-      await markAllNotificationsReadRequest();
-      setMessage('All notifications marked as read.');
-      window.setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      replaceNotifications(previousNotifications);
-      setMessage(error.message || 'Unable to mark all as read.');
-    }
-  };
-
   const handleDeleteNotification = async (notificationId) => {
     setMessage('');
     const previousNotifications = [...notifications];
@@ -272,24 +252,6 @@ const StudentNotificationsPage = () => {
     } catch (error) {
       replaceNotifications(previousNotifications);
       setMessage(error.message || 'Unable to remove notification.');
-    }
-  };
-
-  const handleClearAll = async () => {
-    if (notifications.length === 0) return;
-
-    setMessage('');
-    const previousNotifications = [...notifications];
-    removeNotificationsLocally();
-    setExpandedNotifications([]);
-
-    try {
-      await deleteAllNotificationsRequest();
-      setMessage('All notifications cleared.');
-      window.setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      replaceNotifications(previousNotifications);
-      setMessage(error.message || 'Unable to clear notifications.');
     }
   };
 
@@ -363,82 +325,26 @@ const StudentNotificationsPage = () => {
         </aside>
 
         <div className="space-y-4 min-w-0">
-          <div className="rounded-[1.9rem] border border-slate-200 bg-white p-5 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.35)]">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-brand-700">
-                    Student notifications
-                  </span>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                    {notifications.length} total updates
-                  </span>
-                </div>
-                <h2 className="mt-4 text-[2rem] font-bold leading-tight text-navy">Keep every recruiter update in one clean feed</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                  Interview calls, application changes, and platform reminders now stay inside a dedicated inbox built in the same style as your student dashboard.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {unreadCount > 0 ? (
-                  <button type="button" onClick={handleMarkAllRead} className={studentGhostButtonClassName}>
-                    <FiCheck size={15} />
-                    Mark all as read
-                  </button>
-                ) : null}
-                {notifications.length > 0 ? (
-                  <button type="button" onClick={handleClearAll} className={studentGhostButtonClassName}>
-                    <FiTrash2 size={15} />
-                    Clear all
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-2.5 md:grid-cols-3">
-              {[
-                { label: 'Unread', value: unreadCount, helper: 'Needs your attention now' },
-                { label: 'With action', value: actionableCount, helper: 'Contain direct links or next steps' },
-                { label: 'Today', value: todayCount, helper: 'Fresh updates added since morning' }
-              ].map((stat) => (
-                <article key={stat.label} className="rounded-[1.2rem] border border-slate-200 bg-slate-50 px-3.5 py-3">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{stat.label}</p>
-                  <p className="mt-2 text-[1.8rem] leading-none font-bold text-navy">{stat.value}</p>
-                  <p className="mt-1.5 text-[13px] leading-5 text-slate-500">{stat.helper}</p>
-                </article>
-              ))}
-            </div>
-
-            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex w-full rounded-full border border-slate-200 bg-slate-50 p-1 sm:w-auto">
-                {NOTIFICATION_FILTERS.map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setFilter(item.key)}
-                    className={`flex-1 rounded-full px-5 py-2 text-sm font-bold transition sm:flex-none ${filter === item.key ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:text-navy'
-                      }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-
-              <Link to="/portal/student/applications" className={studentSecondaryButtonClassName}>
-                <FiArrowRight size={15} />
-                Open applications
-              </Link>
-            </div>
-          </div>
-
           <StudentSurfaceCard
-            eyebrow="Live feed"
+            eyebrow="Updates"
             title={filter === 'unread' ? 'Unread updates' : filter === 'actionable' ? 'Action-ready updates' : 'All updates'}
             subtitle="Every item stays readable, timestamped, and ready for action without leaving the student workspace feel."
             className="xl:p-5"
             bodyClassName="space-y-3"
           >
+            <div className="mb-4 flex w-full rounded-full border border-slate-200 bg-slate-50 p-1 sm:w-auto">
+              {NOTIFICATION_FILTERS.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setFilter(item.key)}
+                  className={`flex-1 rounded-full px-5 py-2 text-sm font-bold transition sm:flex-none ${filter === item.key ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:text-navy'
+                    }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
             {isLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((item) => (
