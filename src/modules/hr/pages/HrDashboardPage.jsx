@@ -126,10 +126,10 @@ const HrDashboardPage = () => {
           )),
           Promise.all(drivesWithApplicants.map((drive) =>
             fetchHrCampusDriveApplications(drive.id, { all: true, limit: 100 })
-              .then((response) => (response.data?.applications || []).map((application) => ({
+              .then((response) => (response.applications || []).map((application) => ({
                 ...application,
                 sourceType: 'campus',
-                drive: response.data?.drive || drive
+                drive: response.drive || drive
               })))
               .catch(() => [])
           ))
@@ -174,7 +174,7 @@ const HrDashboardPage = () => {
   const totalInterviews = state.interviews.length || 0;
   const jobPostingsRoute = '/portal/hr/jobs?tab=jobs';
   const hrReportsRoute = '/portal/hr/analytics';
-  const applicantHubRoute = jobPostingsRoute;
+  const applicantHubRoute = '/portal/hr/applications';
 
   const latestApplicants = useMemo(() => {
     const jobApplicants = state.jobApplications.map((application, index) => ({
@@ -277,11 +277,11 @@ const HrDashboardPage = () => {
     );
 
     return [
-      { key: 'applied', label: 'Applied', count: Number(pipeline.applied || 0), to: applicantHubRoute },
-      { key: 'shortlisted', label: 'Shortlisted', count: Number(pipeline.shortlisted || 0), to: applicantHubRoute },
+      { key: 'applied', label: 'Applied', count: Number(pipeline.applied || 0), to: `${applicantHubRoute}?status=applied` },
+      { key: 'shortlisted', label: 'Shortlisted', count: Number(pipeline.shortlisted || 0), to: `${applicantHubRoute}?status=shortlisted` },
       { key: 'interview', label: 'Interviewing', count: interviewCount, to: '/portal/hr/interviews' },
-      { key: 'offer', label: 'Offered', count: Number(pipeline.offered || 0), to: applicantHubRoute },
-      { key: 'hired', label: 'Hired', count: Number(pipeline.hired || 0), to: applicantHubRoute }
+      { key: 'offer', label: 'Offered', count: Number(pipeline.offered || 0), to: `${applicantHubRoute}?status=offered` },
+      { key: 'hired', label: 'Hired', count: Number(pipeline.hired || 0), to: `${applicantHubRoute}?status=hired` }
     ];
   }, [applicantHubRoute, combinedPipeline, totalInterviews]);
 

@@ -8,6 +8,7 @@ const HrDashboardPage = lazy(() => import('../modules/hr/pages/HrDashboardPage')
 const HrProfilePage = lazy(() => import('../modules/hr/pages/HrProfilePage'));
 const HrJobsPage = lazy(() => import('../modules/hr/pages/HrJobsPage'));
 const HrJobApplicantsPage = lazy(() => import('../modules/hr/pages/HrJobApplicantsPage'));
+const HrApplicationsPage = lazy(() => import('../modules/hr/pages/HrApplicationsPage'));
 const HrCandidatesPage = lazy(() => import('../modules/hr/pages/HrCandidatesPage'));
 const HrShortlistedPage = lazy(() => import('../modules/hr/pages/HrShortlistedPage'));
 const HrInterestsPage = lazy(() => import('../modules/hr/pages/HrInterestsPage'));
@@ -35,6 +36,7 @@ const hrRoutes = [
       { path: 'profile', element: <HrProfilePage /> },
       { path: 'jobs', element: <HrJobsPage /> },
       { path: 'jobs/:jobId/applicants', element: <HrJobApplicantsPage /> },
+      { path: 'applications', element: <HrApplicationsPage /> },
       { path: 'candidates', element: <HrCandidatesPage /> },
       { path: 'shortlisted', element: <HrShortlistedPage /> },
       { path: 'interests', element: <HrInterestsPage /> },
