@@ -45,9 +45,33 @@ const formatDate = (value) => {
 
 const capitalize = (s = '') => s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ') : '';
 
+const toPackageNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+};
+
+const formatPackageAmount = (value) => {
+  const numeric = toPackageNumber(value);
+  if (!numeric) return '';
+  const lpaValue = numeric >= 1000 ? numeric / 100000 : numeric;
+  return `₹${Number(lpaValue).toLocaleString('en-IN', {
+    maximumFractionDigits: lpaValue % 1 === 0 ? 0 : 1
+  })} LPA`;
+};
+
+const formatPackageRange = (drive = {}) => {
+  const min = formatPackageAmount(drive.packageMin);
+  const max = formatPackageAmount(drive.packageMax);
+  if (min && max) return `${min} - ${max}`;
+  return min || max || '';
+};
+
 // ── Drive List View ─────────────────────────────────────────────────────────
 
 function DriveCard({ drive, onSelect }) {
+  const packageRange = formatPackageRange(drive);
+
   return (
     <button
       type="button"
@@ -76,11 +100,9 @@ function DriveCard({ drive, onSelect }) {
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-slate-500">
         <span className="flex items-center gap-1"><FiCalendar size={12} /> {formatDate(drive.driveDate)}</span>
         <span className="flex items-center gap-1"><FiMapPin size={12} /> {drive.driveMode}{drive.location ? ` · ${drive.location}` : ''}</span>
-        {drive.packageMin || drive.packageMax ? (
+        {packageRange ? (
           <span className="font-medium text-slate-600">
-            {drive.packageMin ? `₹${(drive.packageMin / 100000).toFixed(1)}L` : ''}
-            {drive.packageMin && drive.packageMax ? ' – ' : ''}
-            {drive.packageMax ? `₹${(drive.packageMax / 100000).toFixed(1)}L` : ''}
+            {packageRange}
           </span>
         ) : null}
       </div>
@@ -384,7 +406,7 @@ function DriveApplicantsView({ driveId, onBack }) {
           <p className="text-sm text-slate-500">{drive.collegeName} · {formatDate(drive.driveDate)}</p>
           {String(drive.driveMode || '').toLowerCase() === 'virtual' && (
             <p className="mt-2 rounded-xl bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700">
-              Virtual drive: use round updates here, including "Virtual Interview". No separate interview room is created from this screen.
+              Virtual drive: use round updates here, including &quot;Virtual Interview&quot;. No separate interview room is created from this screen.
             </p>
           )}
 
@@ -436,7 +458,7 @@ function DriveApplicantsView({ driveId, onBack }) {
               onClick={toggleSelectAllFiltered}
               className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
             >
-              {allFilteredSelected ? 'Unselect filtered' : 'Select filtered'}
+              {allFilteredSelected ? 'Unselect all students' : 'Select all students'}
             </button>
             <button
               type="button"
