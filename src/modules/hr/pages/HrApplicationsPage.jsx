@@ -12,7 +12,6 @@ import {
   FiSearch,
   FiUsers
 } from 'react-icons/fi';
-import StatusPill from '../../../shared/components/StatusPill';
 import {
   fetchHrCampusDriveApplications,
   fetchHrCampusDrives,
@@ -96,7 +95,7 @@ const formatApplicationDate = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return { date: String(value), time: '' };
   return {
-    date: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+    date: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
     time: date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
   };
 };
@@ -110,6 +109,38 @@ const getInitials = (name = '') =>
     .toUpperCase();
 
 const normalizeStatus = (status = '') => String(status || 'applied').toLowerCase();
+
+const statusStyles = {
+  applied: 'border-slate-200 bg-slate-50 text-slate-700',
+  shortlisted: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  interview_scheduled: 'border-amber-200 bg-amber-50 text-amber-700',
+  interviewed: 'border-orange-200 bg-orange-50 text-orange-700',
+  offered: 'border-blue-200 bg-blue-50 text-blue-700',
+  hired: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  selected: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  rejected: 'border-red-200 bg-red-50 text-red-700'
+};
+
+const statusLabels = {
+  interview_scheduled: 'Interview'
+};
+
+const formatStatusLabel = (status = '') => {
+  const normalized = normalizeStatus(status);
+  return statusLabels[normalized] || normalized.replaceAll('_', ' ');
+};
+
+const CompactStatusPill = ({ value }) => {
+  const normalized = normalizeStatus(value);
+  return (
+    <span
+      title={normalized.replaceAll('_', ' ')}
+      className={`inline-flex max-w-full items-center justify-center truncate rounded-full border px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide ${statusStyles[normalized] || statusStyles.applied}`}
+    >
+      {formatStatusLabel(normalized)}
+    </span>
+  );
+};
 
 const normalizeJobApplication = (application, job, index) => ({
   id: `job-${application.id || application._id || index}`,
@@ -332,7 +363,7 @@ export default function HrApplicationsPage() {
             </div>
           </div>
 
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-3 flex flex-wrap gap-2 pb-1">
             {statusTabs.map((tab) => (
               <button
                 key={tab.key}
@@ -346,80 +377,93 @@ export default function HrApplicationsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-[1120px] w-full table-fixed text-left">
-            <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+        <div className="overflow-hidden">
+          <table className="w-full table-fixed text-left">
+            <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400">
               <tr>
-                <th className="w-[300px] px-4 py-3">Applicant</th>
-                <th className="w-[126px] px-4 py-3">Source</th>
-                <th className="w-[170px] px-4 py-3">Role / Drive</th>
-                <th className="w-[170px] px-4 py-3">Organization</th>
-                <th className="w-[210px] px-4 py-3">Status</th>
-                <th className="w-[130px] px-4 py-3">Round</th>
-                <th className="w-[130px] px-4 py-3">Applied On</th>
-                <th className="w-[190px] px-4 py-3 text-right">Action</th>
+                <th className="w-[22%] px-2.5 py-3">Applicant</th>
+                <th className="w-[8%] px-2.5 py-3">Source</th>
+                <th className="w-[14%] px-2.5 py-3">Role</th>
+                <th className="w-[13%] px-2.5 py-3">Org</th>
+                <th className="w-[14%] px-2.5 py-3">Status</th>
+                <th className="w-[8%] px-2.5 py-3">Round</th>
+                <th className="w-[10%] px-2.5 py-3">Applied</th>
+                <th className="w-[11%] px-2.5 py-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {state.loading ? [1, 2, 3, 4, 5].map((item) => (
                 <tr key={item}>
-                  <td className="px-4 py-4"><div className="h-4 w-40 animate-pulse rounded bg-slate-100" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-24 animate-pulse rounded bg-slate-100" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-44 animate-pulse rounded bg-slate-100" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-32 animate-pulse rounded bg-slate-100" /></td>
-                  <td className="px-4 py-4"><div className="h-6 w-28 animate-pulse rounded-full bg-slate-100" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-24 animate-pulse rounded bg-slate-100" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-28 animate-pulse rounded bg-slate-100" /></td>
-                  <td className="px-4 py-4"><div className="ml-auto h-8 w-20 animate-pulse rounded bg-slate-100" /></td>
+                  <td className="px-2.5 py-3"><div className="h-4 w-32 animate-pulse rounded bg-slate-100" /></td>
+                  <td className="px-2.5 py-3"><div className="h-4 w-14 animate-pulse rounded bg-slate-100" /></td>
+                  <td className="px-2.5 py-3"><div className="h-4 w-28 animate-pulse rounded bg-slate-100" /></td>
+                  <td className="px-2.5 py-3"><div className="h-4 w-24 animate-pulse rounded bg-slate-100" /></td>
+                  <td className="px-2.5 py-3"><div className="h-6 w-20 animate-pulse rounded-full bg-slate-100" /></td>
+                  <td className="px-2.5 py-3"><div className="h-4 w-16 animate-pulse rounded bg-slate-100" /></td>
+                  <td className="px-2.5 py-3"><div className="h-4 w-16 animate-pulse rounded bg-slate-100" /></td>
+                  <td className="px-2.5 py-3"><div className="ml-auto h-8 w-24 animate-pulse rounded bg-slate-100" /></td>
                 </tr>
               )) : filteredApplications.length > 0 ? filteredApplications.map((application) => {
                 const appliedAt = formatApplicationDate(application.appliedAt);
+                const sourceLabel = application.sourceType === 'campus' ? 'Campus' : 'Job';
 
                 return (
                 <tr key={application.id} className="transition hover:bg-slate-50/60">
-                  <td className="px-4 py-4">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${application.sourceType === 'campus' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                  <td className="px-2.5 py-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold ${application.sourceType === 'campus' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
                         {getInitials(application.candidateName)}
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate text-[13px] font-bold text-slate-900">{application.candidateName}</p>
-                        <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-slate-400">
+                        <p className="truncate text-[12px] font-bold text-slate-900">{application.candidateName}</p>
+                        <p className="mt-0.5 flex items-center gap-1 truncate text-[10px] text-slate-400">
                           <FiMail size={10} /> {application.email}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    <span className={`inline-flex min-w-[86px] justify-center whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold ${application.sourceType === 'campus' ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-indigo-700'}`}>
-                      {application.sourceLabel}
+                  <td className="px-2.5 py-3">
+                    <span
+                      title={application.sourceLabel}
+                      className={`inline-flex max-w-full justify-center truncate rounded-full px-2 py-1 text-[10px] font-bold ${application.sourceType === 'campus' ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-indigo-700'}`}
+                    >
+                      {sourceLabel}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-[13px] font-semibold text-slate-800"><span className="line-clamp-2">{application.title}</span></td>
-                  <td className="px-4 py-4 text-[13px] text-slate-500"><span className="line-clamp-2">{application.organization}</span></td>
-                  <td className="px-4 py-4"><StatusPill value={application.status} /></td>
-                  <td className="px-4 py-4 text-[13px] text-slate-500"><span className="line-clamp-2">{application.round}</span></td>
-                  <td className="px-4 py-4 text-[13px] text-slate-500">
-                    <span className="block whitespace-nowrap font-semibold text-slate-600">{appliedAt.date}</span>
-                    {appliedAt.time && <span className="mt-0.5 block whitespace-nowrap text-[11px] text-slate-400">{appliedAt.time}</span>}
+                  <td className="px-2.5 py-3 text-[12px] font-semibold text-slate-800"><span className="line-clamp-2">{application.title}</span></td>
+                  <td className="px-2.5 py-3 text-[12px] text-slate-500"><span className="line-clamp-2">{application.organization}</span></td>
+                  <td className="px-2.5 py-3"><CompactStatusPill value={application.status} /></td>
+                  <td className="px-2.5 py-3 text-[12px] text-slate-500"><span className="line-clamp-2">{application.round}</span></td>
+                  <td className="px-2.5 py-3 text-[12px] text-slate-500">
+                    <span className="block truncate font-semibold text-slate-600">{appliedAt.date}</span>
+                    {appliedAt.time && <span className="mt-0.5 block truncate text-[10px] text-slate-400">{appliedAt.time}</span>}
                   </td>
-                  <td className="px-4 py-4 text-right">
-                    <div className="flex justify-end gap-2 whitespace-nowrap">
+                  <td className="px-2.5 py-3 text-right">
+                    <div className="flex justify-end gap-1.5 whitespace-nowrap">
                       {application.resumeUrl ? (
                         <a
                           href={application.resumeUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex h-9 min-w-[82px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                          title="Open resume"
+                          className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-bold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
                         >
-                          <FiFileText size={13} /> Resume
+                          <FiFileText size={12} /> CV
                         </a>
-                      ) : null}
+                      ) : (
+                        <span
+                          title="Resume not available"
+                          className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-slate-100 bg-slate-50 px-2 text-[10px] font-bold text-slate-300"
+                        >
+                          <FiFileText size={12} /> CV
+                        </span>
+                      )}
                       <Link
                         to={application.to}
-                        className="inline-flex h-9 min-w-[72px] items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3 text-[11px] font-bold text-white transition hover:bg-slate-800"
+                        title="Open application"
+                        className="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-slate-900 px-2 text-[10px] font-bold text-white transition hover:bg-slate-800"
                       >
-                        Open <FiExternalLink size={12} />
+                        Open <FiExternalLink size={11} />
                       </Link>
                     </div>
                   </td>
