@@ -133,6 +133,7 @@ const isCurrentRoleSubscriptionPlan = (subscription = null, plan = null) => {
 
 const JOB_POSTING_DESCRIPTION_LIMIT = 250;
 const TRACKED_JOB_PLAN_SLUGS = ['premium', 'hot_vacancy', 'standard'];
+const AUTO_JOB_PLAN_SLUGS = ['standard', 'hot_vacancy', 'premium'];
 const JOB_PLAN_PRIORITY = Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug, index) => [slug, index]));
 
 const getJobPlanSlug = (job = {}) =>
@@ -317,6 +318,15 @@ const HrJobsPage = () => {
     () => postingUsageByPlan[String(selectedPlan?.slug || '').toLowerCase()] || { limit: 0, used: 0, remaining: 0 },
     [postingUsageByPlan, selectedPlan]
   );
+  const autoPostingPlan = useMemo(() => {
+    const planBySlug = new Map(postablePlans.map((plan) => [String(plan.slug || '').toLowerCase(), plan]));
+    const orderedPlans = AUTO_JOB_PLAN_SLUGS.map((slug) => planBySlug.get(slug)).filter(Boolean);
+    return orderedPlans.find((plan) => (postingUsageByPlan[String(plan.slug || '').toLowerCase()]?.remaining || 0) > 0)
+      || orderedPlans.find((plan) => (postingUsageByPlan[String(plan.slug || '').toLowerCase()]?.limit || 0) > 0)
+      || orderedPlans[0]
+      || postablePlans[0]
+      || null;
+  }, [postablePlans, postingUsageByPlan]);
 
   const planNameBySlug = useMemo(
     () => Object.fromEntries(normalizedPlans.map((plan) => [plan.slug, plan.name || plan.slug])),
@@ -428,7 +438,7 @@ const HrJobsPage = () => {
     if (plansRes.error) setError(plansRes.error);
 
     const nextPostablePlans = [...nextPlans.filter((plan) => !isDisabledPostingPlan(plan))].sort(sortByJobPlanPriority);
-    const firstPostingPlan = nextPostablePlans[0] || nextPlans[0];
+    const firstPostingPlan = nextPostablePlans.find((plan) => String(plan.slug || '').toLowerCase() === 'standard') || nextPostablePlans[0] || nextPlans[0];
     if (firstPostingPlan) {
       setDraft((current) => ({
         ...current,
@@ -547,6 +557,16 @@ const HrJobsPage = () => {
     setDraft((current) => ({ ...current, targetAudience: requestedAudience }));
   }, [requestedAudience, editingJobId]);
 
+  useEffect(() => {
+    if (editingJobId || !autoPostingPlan) return;
+
+    setDraft((current) => (
+      current.planSlug === autoPostingPlan.slug
+        ? current
+        : { ...current, planSlug: autoPostingPlan.slug }
+    ));
+  }, [autoPostingPlan, editingJobId]);
+
   const filteredJobs = useMemo(() => {
     if (statusFilter === 'all') return jobs;
     return jobs.filter((job) => String(job.status || '').toLowerCase() === statusFilter);
@@ -558,7 +578,7 @@ const HrJobsPage = () => {
 
   const resetForm = () => {
     setEditingJobId('');
-    setDraft({ ...getEmptyJobDraft(), planSlug: selectedPlan?.slug || 'standard' });
+    setDraft({ ...getEmptyJobDraft(), planSlug: autoPostingPlan?.slug || selectedPlan?.slug || 'standard' });
     setActiveTab('jobs');
   };
 
@@ -925,45 +945,13 @@ const HrJobsPage = () => {
 
           <form onSubmit={handleSubmitJob} className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
 
-            <div className="space-y-1.5 md:col-span-2 p-6 bg-neutral-50 rounded-2xl border border-neutral-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm font-bold text-neutral-700 block mb-1">Pricing Plan to Use</label>
-                  <select value={draft.planSlug} disabled={Boolean(editingJobId)} onChange={(e) => updateDraftField('planSlug', e.target.value)} className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 disabled:opacity-50 font-medium">
-                    {postablePlans.map((plan) => (
-                      <option key={plan.slug} value={plan.slug}>
-                        {plan.name} ({plan.currency || 'INR'} {plan.price} / {formatDurationLabel(plan.jobValidityDays)})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm font-bold text-neutral-700 block mb-1">Target Audience</label>
-                  <select value={draft.targetAudience} onChange={(e) => updateDraftField('targetAudience', e.target.value)} className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium">
-                    <option value="all">All Candidates</option>
-                    <option value="student">Only Students / Freshers</option>
-                    <option value="retired_employee">Only Retired Professionals</option>
-                  </select>
-                </div>
-                {selectedPlan && (
-                  <div className="md:col-span-2 grid grid-cols-2 gap-2 rounded-xl border border-brand-100 bg-white p-2 shadow-sm sm:grid-cols-4">
-                    {[
-                      { label: 'Validity', value: formatDurationLabel(selectedPlan.jobValidityDays) },
-                      {
-                        label: 'Description',
-                        value: `${Math.min(JOB_POSTING_DESCRIPTION_LIMIT, Number(selectedPlan.maxDescriptionChars || JOB_POSTING_DESCRIPTION_LIMIT) || JOB_POSTING_DESCRIPTION_LIMIT)} chars`
-                      },
-                      { label: 'Contact', value: selectedPlan.contactDetailsVisible ? 'Visible' : 'Hidden' },
-                      { label: 'Posts left', value: selectedPlanPostingUsage.remaining }
-                    ].map((item) => (
-                      <div key={item.label} className="rounded-lg bg-brand-50/70 px-3 py-2">
-                        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-brand-500">{item.label}</p>
-                        <p className="mt-0.5 text-sm font-extrabold text-slate-900">{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-sm font-bold text-neutral-700 block mb-1">Target Audience</label>
+              <select value={draft.targetAudience} onChange={(e) => updateDraftField('targetAudience', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium">
+                <option value="all">All Candidates</option>
+                <option value="student">Only Students / Freshers</option>
+                <option value="retired_employee">Only Retired Professionals</option>
+              </select>
             </div>
 
             <div className="space-y-1.5">
