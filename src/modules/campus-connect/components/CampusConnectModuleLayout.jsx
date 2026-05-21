@@ -56,8 +56,10 @@ const CampusPlanStatusAction = () => {
     return (
       <Link
         to="/portal/campus-connect/billing"
-        className="hidden rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1 text-[13px] font-bold text-amber-700 transition-colors hover:bg-amber-100 md:inline-flex"
+        aria-label="Open Campus Connect billing"
+        className="hidden cursor-pointer items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1 text-[13px] font-bold text-amber-700 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 md:inline-flex"
       >
+        <FiCreditCard size={13} />
         Upgrade
       </Link>
     );
@@ -66,13 +68,15 @@ const CampusPlanStatusAction = () => {
   return (
     <Link
       to="/portal/campus-connect/billing"
-      className={`hidden rounded-full border px-3.5 py-1 text-[12px] font-bold transition-colors md:inline-flex ${
+      aria-label="Open Campus Connect billing"
+      className={`hidden cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-1 text-[12px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 md:inline-flex ${
         isTrial
-          ? 'border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100'
-          : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+          ? 'border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 focus-visible:ring-sky-300'
+          : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 focus-visible:ring-emerald-300'
       }`}
       title={subscription?.ends_at ? `Valid till ${new Date(subscription.ends_at).toLocaleDateString('en-IN')}` : planName}
     >
+      <FiCreditCard size={13} />
       {isTrial
         ? `Trial: ${trialDaysRemaining || subscriptionDaysRemaining || 0} days left`
         : `Active: ${planName}`}
