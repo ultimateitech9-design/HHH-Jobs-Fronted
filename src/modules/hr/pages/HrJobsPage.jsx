@@ -218,11 +218,7 @@ const HrJobsPage = () => {
     return Math.floor(parsed);
   }, [checkoutForm.quantity]);
 
-  const roleCheckoutQuantity = useMemo(() => {
-    const parsed = Number(roleCheckoutForm.quantity);
-    if (!Number.isFinite(parsed) || parsed < 1) return 1;
-    return Math.floor(parsed);
-  }, [roleCheckoutForm.quantity]);
+  const roleCheckoutQuantity = 1;
 
   const roleQuoteDisplay = useMemo(() => {
     if (!selectedRolePlan) return null;
@@ -1166,10 +1162,6 @@ const HrJobsPage = () => {
                     >
                       {rolePlans.map((plan) => <option key={plan.slug} value={plan.slug}>{plan.name}</option>)}
                     </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-neutral-500 mb-1 block">Plan Quantity</label>
-                    <input type="number" min="1" value={roleCheckoutForm.quantity} onChange={(e) => setRoleCheckoutForm({ ...roleCheckoutForm, quantity: e.target.value })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-400" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-neutral-500 mb-1 block">Coupon Code</label>
