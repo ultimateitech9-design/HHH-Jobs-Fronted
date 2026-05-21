@@ -1,7 +1,6 @@
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FiArrowRight,
   FiBriefcase,
   FiLink,
   FiMail,
@@ -327,17 +326,6 @@ export default function CampusConnectionsPage() {
     [directory.companies]
   );
 
-  const activationReadyCount = useMemo(
-    () => connectedActivationCompanies.filter((company) => !company.hasDrive && company.hasStudentPool).length,
-    [connectedActivationCompanies]
-  );
-
-  const connectedDriveCount = useMemo(
-    () => connectedActivationCompanies.filter((company) => company.hasDrive).length,
-    [connectedActivationCompanies]
-  );
-
-  const topActivationCompany = connectedActivationCompanies[0] || null;
   const allVisibleSelected = Boolean(
     visibleInviteableIds.length && visibleInviteableIds.every((id) => selectedCompanyIds.includes(id))
   );
@@ -520,100 +508,6 @@ export default function CampusConnectionsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.65fr)]">
-            <article className="rounded-[1.6rem] border border-slate-200 bg-[linear-gradient(135deg,#fff9ef,#ffffff)] p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Connected activation board</p>
-              <h2 className="mt-2 text-2xl font-bold text-navy">
-                {topActivationCompany
-                  ? `${topActivationCompany.companyName} is your next business move`
-                  : 'Convert accepted companies into live hiring workflows'}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                {topActivationCompany
-                  ? topActivationCompany.recommendation
-                  : 'As soon as a company is connected, you should be able to launch a drive or prepare an eligible pool directly from this workspace.'}
-              </p>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
-                  {connected.length} connected companies
-                </span>
-                <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
-                  {stats.totalStudents || 0} students in pool
-                </span>
-                <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
-                  {drives.length} total drive workflows
-                </span>
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                {topActivationCompany ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => (
-                        topActivationCompany.hasStudentPool
-                          ? openDriveWorkspace(topActivationCompany)
-                          : openPoolWorkspace(topActivationCompany)
-                      )}
-                      className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
-                    >
-                      {topActivationCompany.hasStudentPool ? <FiBriefcase size={14} /> : <FiUsers size={14} />}
-                      {topActivationCompany.hasStudentPool
-                        ? (topActivationCompany.hasDrive ? 'Refresh Drive Workspace' : 'Launch Drive Workspace')
-                        : 'Prepare Eligible Pool'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openPoolWorkspace(topActivationCompany)}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                    >
-                      <FiUsers size={14} />
-                      Open Pool Workspace
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => navigate('/portal/campus-connect/relationship-activity/incoming')}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
-                  >
-                    <FiArrowRight size={14} />
-                    Review Company Requests
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/portal/campus-connect/relationship-activity/connected')}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  <FiLink size={14} />
-                  Review Connected Partners
-                </button>
-              </div>
-            </article>
-
-            <article className="rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-              <h2 className="text-lg font-bold text-navy">Activation summary</h2>
-              <div className="mt-4 space-y-3">
-                {[
-                  { label: 'Ready to launch', value: activationReadyCount, helper: 'Connected companies with pool support and no live drive yet' },
-                  { label: 'Drive-linked partners', value: connectedDriveCount, helper: 'Connected companies already mapped to a drive workflow' },
-                  { label: 'Pool status', value: stats.totalStudents ? 'Ready' : 'Empty', helper: stats.totalStudents ? 'Student pool can support connected company activation' : 'Import students before launching new partnerships' }
-                ].map((item) => (
-                  <div key={item.label} className="rounded-[1.1rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-slate-700">{item.label}</p>
-                      <p className="text-lg font-bold text-navy">{item.value}</p>
-                    </div>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">{item.helper}</p>
-                  </div>
-                ))}
-              </div>
-            </article>
-          </section>
-
           <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
