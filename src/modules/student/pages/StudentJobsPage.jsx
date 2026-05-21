@@ -245,20 +245,6 @@ const StudentJobsPage = ({
     };
   }, [effectiveAudience, filters, reloadKey]);
 
-  useEffect(() => {
-    const handleFocus = () => setReloadKey((current) => current + 1);
-    const intervalId = window.setInterval(() => {
-      setReloadKey((current) => current + 1);
-    }, 30000);
-
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      window.clearInterval(intervalId);
-    };
-  }, []);
-
   const totalJobs = jobsState.jobs.length;
   const totalPages = Math.max(1, Math.ceil(totalJobs / jobsPerPage));
   const paginatedJobs = useMemo(() => {
