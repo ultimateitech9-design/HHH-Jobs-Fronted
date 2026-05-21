@@ -10,6 +10,7 @@ import {
   markNotificationReadRequest
 } from '../../../../core/notifications/notificationApi';
 import useNotificationStore from '../../../../core/notifications/notificationStore';
+import { resolveNotificationLink } from '../../../utils/notificationLinks';
 
 const JOB_NOTIFICATION_KEYWORDS = [
   'job',
@@ -209,6 +210,7 @@ const PortalNotificationsDrawer = ({
                           {items.map((notification) => {
                             const title = notification.title || notification.subject || notification.type || 'Job alert';
                             const message = notification.message || notification.description || 'Alerts bhej';
+                            const notificationLink = resolveNotificationLink(notification);
 
                             return (
                               <article
@@ -241,9 +243,9 @@ const PortalNotificationsDrawer = ({
                                           Seen
                                         </span>
                                       )}
-                                      {notification.link ? (
+                                      {notificationLink ? (
                                         <Link
-                                          to={notification.link}
+                                          to={notificationLink}
                                           onClick={() => {
                                             if (notification.id && !notification.is_read) {
                                               markNotificationReadLocally(notification.id);

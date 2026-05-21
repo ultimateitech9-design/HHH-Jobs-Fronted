@@ -10,6 +10,7 @@ import {
   markNotificationReadRequest
 } from '../../../core/notifications/notificationApi';
 import { formatDateTime } from '../services/hrApi';
+import { resolveNotificationLink } from '../../../shared/utils/notificationLinks';
 
 const HrNotificationsPage = () => {
   const notifications = useNotificationStore((state) => state.notifications);
@@ -189,48 +190,53 @@ const HrNotificationsPage = () => {
 
         <div className="mt-3 max-h-[calc(100vh-260px)] space-y-1.5 overflow-y-auto">
           {filteredNotifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={`flex items-start justify-between gap-3 rounded-lg border px-3 py-2.5 transition ${
-                notification.is_read
-                  ? 'border-slate-100 bg-white'
-                  : 'border-brand-100 bg-brand-50/30'
-              }`}
-            >
-              <div className="min-w-0 flex-1">
-                <h4 className="text-[13px] font-semibold text-navy">{notification.title || 'Notification'}</h4>
-                <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">{notification.message || '-'}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-3">
-                  <p className="text-[11px] text-slate-400">{formatDateTime(notification.created_at || notification.createdAt)}</p>
-                  {notification.link ? (
-                    <Link to={notification.link} className="text-[11px] font-semibold text-brand-600 hover:text-brand-700">
-                      Open linked page
-                    </Link>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="flex shrink-0 items-center gap-2">
-                {!notification.is_read ? (
-                  <button
-                    type="button"
-                    className="rounded-md bg-brand-50 px-2 py-1 text-[11px] font-semibold text-brand-600 transition hover:bg-brand-100"
-                    onClick={() => handleMarkRead(notification.id)}
-                  >
-                    Read
-                  </button>
-                ) : (
-                  <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-400">Read</span>
-                )}
-                <button
-                  type="button"
-                  className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                  onClick={() => handleDeleteNotification(notification.id)}
+            (() => {
+              const notificationLink = resolveNotificationLink(notification);
+              return (
+                <div
+                  key={notification.id}
+                  className={`flex items-start justify-between gap-3 rounded-lg border px-3 py-2.5 transition ${
+                    notification.is_read
+                      ? 'border-slate-100 bg-white'
+                      : 'border-brand-100 bg-brand-50/30'
+                  }`}
                 >
-                  Delete
-                </button>
-              </div>
-            </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-[13px] font-semibold text-navy">{notification.title || 'Notification'}</h4>
+                    <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">{notification.message || '-'}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-3">
+                      <p className="text-[11px] text-slate-400">{formatDateTime(notification.created_at || notification.createdAt)}</p>
+                      {notificationLink ? (
+                        <Link to={notificationLink} className="text-[11px] font-semibold text-brand-600 hover:text-brand-700">
+                          Open linked page
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    {!notification.is_read ? (
+                      <button
+                        type="button"
+                        className="rounded-md bg-brand-50 px-2 py-1 text-[11px] font-semibold text-brand-600 transition hover:bg-brand-100"
+                        onClick={() => handleMarkRead(notification.id)}
+                      >
+                        Read
+                      </button>
+                    ) : (
+                      <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-400">Read</span>
+                    )}
+                    <button
+                      type="button"
+                      className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                      onClick={() => handleDeleteNotification(notification.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })()
           ))}
           {(!loading || hydrated) && filteredNotifications.length === 0 ? (
             <div className="py-10 text-center">

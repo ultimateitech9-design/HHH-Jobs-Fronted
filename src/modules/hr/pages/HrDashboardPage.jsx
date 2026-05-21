@@ -6,7 +6,7 @@ import FeatureGate from '../../../shared/components/FeatureGate';
 import {
   fetchHrCampusDriveApplications,
   fetchHrCampusDrives,
-  formatDateTime,
+  formatInterviewDateTime,
   getApplicantsForJob,
   getHrAnalytics,
   getHrInterviews,
@@ -186,7 +186,6 @@ const HrDashboardPage = () => {
     pipeline: { applied: 0, shortlisted: 0, rejected: 0, hired: 0 }
   };
 
-  const totalInterviews = state.interviews.length || 0;
   const jobPostingsRoute = '/portal/hr/jobs?tab=jobs';
   const hrReportsRoute = '/portal/hr/analytics';
   const applicantHubRoute = '/portal/hr/applications';
@@ -196,6 +195,7 @@ const HrDashboardPage = () => {
       .sort((left, right) => getInterviewScheduledTime(left) - getInterviewScheduledTime(right)),
     [state.interviews]
   );
+  const scheduledInterviewCount = upcomingInterviews.length;
 
   const latestApplicants = useMemo(() => {
     const jobApplicants = state.jobApplications.map((application, index) => ({
@@ -257,7 +257,7 @@ const HrDashboardPage = () => {
     const interviewActivities = state.interviews.slice(0, 8).map((interview, index) => ({
       id: `interview-${interview.id || index}`,
       title: pickCandidateName(interview, 'Candidate'),
-      subtitle: `Interview · ${pickCandidateRole(interview, 'Role')} · ${formatDateTime(interview.scheduled_at || interview.scheduledAt)}`,
+      subtitle: `Interview · ${pickCandidateRole(interview, 'Role')} · ${formatInterviewDateTime(interview)}`,
       status: interview.status || 'scheduled',
       time: interview.updatedAt || interview.createdAt || interview.scheduled_at || interview.scheduledAt,
       to: '/portal/hr/interviews',
@@ -268,14 +268,19 @@ const HrDashboardPage = () => {
   }, [latestApplicants, state.campusDrives, state.interviews, state.jobs]);
 
   const campusPipeline = useMemo(() => {
+    const activeScheduledCampusApplicationIds = new Set(
+      upcomingInterviews
+        .map((interview) => interview.campus_application_id || interview.campusApplicationId)
+        .filter(Boolean)
+    );
     const next = { applied: 0, shortlisted: 0, interview_scheduled: 0, interviewed: 0, offered: 0, rejected: 0, hired: 0, selected: 0 };
     state.campusApplications.forEach((application) => {
       const status = mapCampusStatusToPipeline(application.status);
       if (next[status] !== undefined) next[status] += 1;
-      if (application.currentRound && status !== 'hired' && status !== 'rejected') next.interview_scheduled += 1;
+      if (activeScheduledCampusApplicationIds.has(application.id)) next.interview_scheduled += 1;
     });
     return next;
-  }, [state.campusApplications]);
+  }, [state.campusApplications, upcomingInterviews]);
 
   const combinedPipeline = useMemo(() => {
     const hrPipeline = normalizePipeline(analytics.pipeline);
@@ -292,10 +297,7 @@ const HrDashboardPage = () => {
 
   const pipelineColumns = useMemo(() => {
     const pipeline = combinedPipeline;
-    const interviewCount = Math.max(
-      totalInterviews,
-      Number(pipeline.interview_scheduled || 0) + Number(pipeline.interviewed || 0)
-    );
+    const interviewCount = Math.max(scheduledInterviewCount, Number(pipeline.interview_scheduled || 0));
 
     return [
       { key: 'applied', label: 'Applied', count: Number(pipeline.applied || 0), to: `${applicantHubRoute}?status=applied` },
@@ -304,7 +306,7 @@ const HrDashboardPage = () => {
       { key: 'offer', label: 'Offered', count: Number(pipeline.offered || 0), to: `${applicantHubRoute}?status=offered` },
       { key: 'hired', label: 'Hired', count: Number(pipeline.hired || 0), to: `${applicantHubRoute}?status=hired` }
     ];
-  }, [applicantHubRoute, combinedPipeline, totalInterviews]);
+  }, [applicantHubRoute, combinedPipeline, scheduledInterviewCount]);
 
   const pipelineTotal = pipelineColumns.reduce((sum, col) => sum + col.count, 0) || 1;
   const campusApplicantTotal = useMemo(
@@ -354,7 +356,7 @@ const HrDashboardPage = () => {
         {[
           { label: 'Open Roles', val: analytics.openJobs || analytics.totalJobs || 0, icon: FiBriefcase, accent: 'text-blue-600', bg: 'bg-blue-50', to: jobPostingsRoute },
           { label: 'Total Applicants', val: totalApplicantCount, icon: FiUsers, accent: 'text-emerald-600', bg: 'bg-emerald-50', to: applicantHubRoute },
-          { label: 'Interviews', val: totalInterviews, icon: FiCalendar, accent: 'text-violet-600', bg: 'bg-violet-50', to: '/portal/hr/interviews' },
+          { label: 'Scheduled Interviews', val: scheduledInterviewCount, icon: FiCalendar, accent: 'text-violet-600', bg: 'bg-violet-50', to: '/portal/hr/interviews' },
           { label: 'Hired', val: combinedPipeline.hired || 0, icon: FiTrendingUp, accent: 'text-amber-600', bg: 'bg-amber-50', to: applicantHubRoute }
         ].map((metric) => (
           <Link
@@ -515,11 +517,16 @@ const HrDashboardPage = () => {
               <p className="text-[11px] text-slate-400">{upcomingInterviews.length > 0 ? `${upcomingInterviews.length} upcoming` : 'None upcoming'}</p>
             </div>
           </div>
-          <FeatureGate feature="hr.interview_scheduling" featureLabel="Interview Scheduling" inline>
-            <Link to="/portal/hr/interviews" className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-slate-800">
-              <FiPlus size={11} /> Schedule
+          <div className="flex items-center gap-2">
+            <FeatureGate feature="hr.interview_scheduling" featureLabel="Interview Scheduling" inline>
+              <Link to="/portal/hr/interviews" className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-slate-800">
+                <FiPlus size={11} /> Schedule
+              </Link>
+            </FeatureGate>
+            <Link to="/portal/hr/interviews" className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50">
+              View all <FiArrowRight size={11} />
             </Link>
-          </FeatureGate>
+          </div>
         </div>
         <div className="grid sm:grid-cols-2">
           {state.loading ? [1, 2].map((item) => (
@@ -541,10 +548,10 @@ const HrDashboardPage = () => {
                   {(pickCandidateName(interview, 'C') || 'C')[0].toUpperCase()}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold text-slate-800">{pickCandidateName(interview, 'Candidate')}</p>
+                  <p className="truncate text-[13px] font-semibold text-slate-800">{interview.title || `${pickCandidateRole(interview, 'Role')} Interview`}</p>
                   <p className="flex items-center gap-1 truncate text-[11px] text-slate-400">
                     <FiClock size={10} className="shrink-0" />
-                    {pickCandidateRole(interview, 'Role')} &middot; {formatDateTime(interview.scheduled_at || interview.scheduledAt)}
+                    {pickCandidateName(interview, 'Candidate')} &middot; {formatInterviewDateTime(interview)}
                   </p>
                 </div>
               </div>

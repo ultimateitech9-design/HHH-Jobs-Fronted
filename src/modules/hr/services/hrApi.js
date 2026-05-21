@@ -686,11 +686,26 @@ export const getEmptyJobDraft = () => clone(defaultJobDraft);
 export const getJobDraftFromJob = (job) => hydrateJobDraftFromJob(job);
 export const getSkillsArrayFromInput = (value = '') => parseSkillsInput(value);
 
-export const formatDateTime = (value) => {
+export const formatDateTime = (value, options = {}) => {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleString();
+  if (!options || Object.keys(options).length === 0) return date.toLocaleString();
+
+  try {
+    return new Intl.DateTimeFormat('en-IN', options).format(date);
+  } catch (_error) {
+    return date.toLocaleString();
+  }
+};
+
+export const formatInterviewDateTime = (interview = {}) => {
+  const value = interview.scheduled_at || interview.scheduledAt;
+  return formatDateTime(value, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: interview.timezone || 'Asia/Kolkata'
+  });
 };
 
 // ── HR Campus Drives ────────────────────────────────────────────────────────

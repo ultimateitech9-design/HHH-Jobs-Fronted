@@ -17,7 +17,7 @@ import {
   createHrInterview,
   fetchHrCampusDriveApplications,
   fetchHrCampusDrives,
-  formatDateTime,
+  formatInterviewDateTime,
   getApplicantsForJob,
   getHrInterviews,
   getHrJobs,
@@ -90,6 +90,20 @@ const getStatusBadge = (status) => {
   return 'border-sky-200 bg-sky-50 text-sky-700';
 };
 
+const getInterviewTimeValue = (interview = {}) => {
+  const value = interview.scheduled_at || interview.scheduledAt;
+  const parsed = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const isScheduledInterview = (interview = {}, now = Date.now()) => {
+  const status = String(interview.status || 'scheduled').toLowerCase();
+  const roomStatus = String(interview.room_status || interview.roomStatus || '').toLowerCase();
+  if (!['scheduled', 'rescheduled'].includes(status)) return false;
+  if (['cancelled', 'completed', 'no_show', 'ended'].includes(roomStatus)) return false;
+  return getInterviewTimeValue(interview) >= now;
+};
+
 const HrInterviewsPage = () => {
   const [jobs, setJobs] = useState([]);
   const [campusDrives, setCampusDrives] = useState([]);
@@ -115,6 +129,14 @@ const HrInterviewsPage = () => {
     pagination: defaultCampusApplicantPagination,
     availableRounds: []
   });
+  const {
+    search: campusApplicantSearch,
+    status: campusApplicantStatus,
+    round: campusApplicantRound,
+    readyOnly: campusApplicantReadyOnly,
+    page: campusApplicantPage,
+    limit: campusApplicantLimit
+  } = campusApplicantQuery;
 
   useEffect(() => {
     let mounted = true;
@@ -199,7 +221,14 @@ const HrInterviewsPage = () => {
 
       setCampusApplicantMeta((current) => ({ ...current, loading: true }));
       try {
-        const response = await fetchHrCampusDriveApplications(form.campusDriveId, campusApplicantQuery);
+        const response = await fetchHrCampusDriveApplications(form.campusDriveId, {
+          search: campusApplicantSearch,
+          status: campusApplicantStatus,
+          round: campusApplicantRound,
+          readyOnly: campusApplicantReadyOnly,
+          page: campusApplicantPage,
+          limit: campusApplicantLimit
+        });
         if (!mounted) return;
 
         setCampusApplicants(response.applications || []);
@@ -226,12 +255,12 @@ const HrInterviewsPage = () => {
     loadCampusApplicants();
     return () => { mounted = false; };
   }, [
-    campusApplicantQuery.limit,
-    campusApplicantQuery.page,
-    campusApplicantQuery.readyOnly,
-    campusApplicantQuery.round,
-    campusApplicantQuery.search,
-    campusApplicantQuery.status,
+    campusApplicantLimit,
+    campusApplicantPage,
+    campusApplicantReadyOnly,
+    campusApplicantRound,
+    campusApplicantSearch,
+    campusApplicantStatus,
     form.campusDriveId,
     form.sourceType
   ]);
@@ -276,7 +305,7 @@ const HrInterviewsPage = () => {
 
   const filteredInterviews = useMemo(() => groupedInterviews.filter((interview) => {
     const normalized = String(interview.status || 'scheduled').toLowerCase();
-    if (activeTab === 'upcoming') return ['scheduled', 'rescheduled'].includes(normalized);
+    if (activeTab === 'upcoming') return isScheduledInterview(interview);
     if (activeTab === 'completed') return normalized === 'completed';
     return normalized === 'cancelled' || normalized === 'no_show';
   }), [activeTab, groupedInterviews]);
@@ -404,7 +433,7 @@ const HrInterviewsPage = () => {
   const labelClass = 'block text-[10px] font-semibold uppercase tracking-wide text-slate-500';
 
   const tabCounts = useMemo(() => ({
-    upcoming: groupedInterviews.filter((i) => ['scheduled', 'rescheduled'].includes(String(i.status || 'scheduled').toLowerCase())).length,
+    upcoming: groupedInterviews.filter((i) => isScheduledInterview(i)).length,
     completed: groupedInterviews.filter((i) => String(i.status || '').toLowerCase() === 'completed').length,
     attention: groupedInterviews.filter((i) => ['cancelled', 'no_show'].includes(String(i.status || '').toLowerCase())).length
   }), [groupedInterviews]);
@@ -789,7 +818,7 @@ const HrInterviewsPage = () => {
                         <p className="mt-1 truncate text-[11px] text-slate-400">{interview.room_participant_names.slice(0, 4).join(', ')}</p>
                       )}
                       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-400">
-                        <span className="inline-flex items-center gap-1"><FiClock size={11} /> {formatDateTime(interview.scheduled_at || interview.scheduledAt)}</span>
+                        <span className="inline-flex items-center gap-1"><FiClock size={11} /> {formatInterviewDateTime(interview)}</span>
                         <span className="inline-flex items-center gap-1"><FiVideo size={11} /> {interview.mode === 'onsite' ? 'On-site' : interview.mode === 'phone' ? 'Phone' : 'Video room'}</span>
                         {interview.panel_mode && <span className="inline-flex items-center gap-1"><FiUsers size={11} /> Panel</span>}
                         {interview.candidate_recording_consent && <span className="inline-flex items-center gap-1"><FiStar size={11} /> Consent given</span>}
