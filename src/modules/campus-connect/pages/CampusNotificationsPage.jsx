@@ -10,7 +10,6 @@ import {
   FiFileText,
   FiLink,
   FiTrash2,
-  FiTrendingUp,
   FiUsers
 } from 'react-icons/fi';
 import useNotificationStore from '../../../core/notifications/notificationStore';
@@ -372,38 +371,6 @@ const CampusNotificationsPage = () => {
     [connectedPartnerships]
   );
 
-  const nextBusinessMove = useMemo(() => {
-    if (workspace.stats?.totalStudents === 0) {
-      return {
-        title: 'Import student pool first',
-        helper: 'No student pool is available yet, so the next business step is to onboard eligible candidates.',
-        to: '/portal/campus-connect/students',
-        label: 'Import Students'
-      };
-    }
-
-    const firstOpportunity = connectedPartnerships[0];
-    if (firstOpportunity) {
-      return {
-        title: `${firstOpportunity.companyName} is ready for activation`,
-        helper: firstOpportunity.recommendation,
-        to: '/portal/campus-connect/drives',
-        state: {
-          autoOpenDriveForm: true,
-          prefillDrive: buildDriveDraft(firstOpportunity)
-        },
-        label: firstOpportunity.hasDrive ? 'Refresh Drive Workflow' : 'Launch First Drive'
-      };
-    }
-
-    return {
-      title: 'Review incoming company requests',
-      helper: 'Accept a strong company request first, then launch a drive from the partnership.',
-      to: '/portal/campus-connect/relationship-activity/incoming',
-      label: 'Review Requests'
-    };
-  }, [connectedPartnerships, workspace.stats]);
-
   const handleMarkRead = async (notificationId) => {
     setMessage('');
     const previousNotification = notifications.find((item) => item.id === notificationId);
@@ -499,25 +466,6 @@ const CampusNotificationsPage = () => {
             </div>
           </article>
         ))}
-      </section>
-
-      <section className="rounded-[1.75rem] border border-slate-100 bg-[linear-gradient(135deg,#fff9ef,#ffffff)] p-5 shadow-[0_10px_28px_-18px_rgba(15,23,42,0.18)]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Business signal</p>
-            <h2 className="mt-2 text-2xl font-bold text-navy">{nextBusinessMove.title}</h2>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">{nextBusinessMove.helper}</p>
-          </div>
-
-          <Link
-            to={nextBusinessMove.to}
-            state={nextBusinessMove.state}
-            className="inline-flex items-center gap-2 rounded-full bg-[#ff6b3d] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#ef5c30]"
-          >
-            <FiTrendingUp size={15} />
-            {nextBusinessMove.label}
-          </Link>
-        </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
