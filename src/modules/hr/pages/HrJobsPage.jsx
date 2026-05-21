@@ -461,12 +461,9 @@ const HrJobsPage = () => {
       });
     }
 
-    const options = Array.from(byKey.values());
-    const privateOptions = options.filter((company) => company.privateWeight > 0);
-    const visibleOptions = privateOptions.length ? privateOptions : options;
-
-    return visibleOptions.sort((left, right) => {
+    return Array.from(byKey.values()).sort((left, right) => {
       if (right.portalWeight !== left.portalWeight) return right.portalWeight - left.portalWeight;
+      if (right.privateWeight !== left.privateWeight) return right.privateWeight - left.privateWeight;
       if (right.jobs !== left.jobs) return right.jobs - left.jobs;
       return left.name.localeCompare(right.name);
     });
@@ -573,7 +570,7 @@ const HrJobsPage = () => {
       await loadPricingState();
       await loadRolePricingState();
 
-      const companiesRes = await getPublicCompanies();
+      const companiesRes = await getPublicCompanies({ includeAll: true });
       if (!mounted) return;
       if (!companiesRes.error) {
         setKnownCompanies(companiesRes.data?.companies || []);

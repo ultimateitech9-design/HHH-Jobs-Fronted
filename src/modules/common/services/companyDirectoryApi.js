@@ -268,6 +268,7 @@ const normalizeCompanyJobs = (jobs = {}) => ({
 export const getPublicCompanies = async (filters = {}) => {
   const params = new URLSearchParams();
   if (filters.search) params.set('search', filters.search);
+  if (filters.includeAll) params.set('includeAll', 'true');
 
   const query = params.toString();
   const path = query ? `/companies?${query}` : '/companies';
