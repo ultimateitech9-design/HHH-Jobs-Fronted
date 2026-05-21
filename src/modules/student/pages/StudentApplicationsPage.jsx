@@ -249,7 +249,7 @@ const StudentApplicationsPage = () => {
             subtitle="Every card shows movement, current stage, and the next best context in one place."
             className="!rounded-[1.35rem] !border-slate-200/80 !bg-white !p-4 !shadow-[0_16px_42px_rgba(15,23,42,0.06)] [&>div:first-of-type]:!mb-4 [&_h2]:!text-xl [&_h2]:!font-black [&_p]:!text-xs"
           >
-            <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mb-4 grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
               {SECTION_FILTERS.map((section) => {
                 const value = section.key === 'all'
                   ? counts.total
@@ -265,24 +265,19 @@ const StudentApplicationsPage = () => {
                     key={section.key}
                     type="button"
                     onClick={() => setStatusFilter(section.key)}
-                    className={`group/section rounded-[0.95rem] border px-3 py-2.5 text-left transition ${
+                    className={`group/section min-w-0 rounded-full border px-2.5 py-2 text-left transition ${
                       isActive
                         ? 'border-brand-300 bg-brand-50 shadow-[0_10px_24px_rgba(45,91,255,0.12)]'
                         : 'border-slate-200 bg-slate-50/70 hover:border-brand-200 hover:bg-white hover:shadow-sm'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className={`text-[10px] font-black uppercase tracking-[0.16em] ${
+                    <div className="flex min-w-0 items-center justify-between gap-2">
+                      <p className={`min-w-0 truncate text-[10px] font-black uppercase tracking-[0.12em] ${
                           isActive ? 'text-brand-700' : 'text-slate-500'
                         }`}>
-                          {section.label}
-                        </p>
-                        <p className="mt-1 text-[11px] font-semibold leading-4 text-slate-500">
-                          {section.helper}
-                        </p>
-                      </div>
-                      <span className={`flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-xs font-black ${
+                        {section.label}
+                      </p>
+                      <span className={`flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-black ${
                         isActive ? 'bg-brand-600 text-white' : 'bg-white text-navy ring-1 ring-slate-200'
                       }`}>
                         {value}
