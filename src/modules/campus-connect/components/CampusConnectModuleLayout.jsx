@@ -2,7 +2,6 @@ import {
   FiBarChart2,
   FiBell,
   FiBriefcase,
-  FiClock,
   FiFileText,
   FiLink,
   FiUsers
@@ -15,7 +14,6 @@ const campusNavItems = [
   { to: '/portal/campus-connect/drives', label: 'Campus Drives', icon: FiBriefcase },
   { to: '/portal/campus-connect/notifications', label: 'Notifications', icon: FiBell },
   { to: '/portal/campus-connect/connections', label: 'Company Connections', icon: FiLink },
-  { to: '/portal/campus-connect/relationship-activity/sent', label: 'Relationship Activity', icon: FiClock },
   { to: '/portal/campus-connect/reports', label: 'Placement Reports', icon: FiFileText }
 ];
 
