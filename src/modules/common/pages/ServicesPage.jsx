@@ -283,7 +283,7 @@ const ServicesPage = () => {
                             isDark ? 'bg-white text-navy' : 'gradient-gold text-primary shadow-lg shadow-gold/20'
                           }`}
                         >
-                          {isContactSales ? 'Contact sales' : hasTrial ? 'Enable auto-pay + start trial' : 'Choose plan'}
+                          {isContactSales ? 'Contact sales' : hasTrial ? 'Start trial' : 'Choose plan'}
                         </Link>
                       </div>
                     </article>

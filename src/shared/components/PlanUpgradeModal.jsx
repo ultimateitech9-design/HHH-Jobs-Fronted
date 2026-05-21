@@ -129,7 +129,7 @@ const PlanUpgradeModal = ({
               className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FiCreditCard size={15} />
-              {loading ? 'Processing...' : selectedHasTrial ? `Enable auto-pay + start ${selectedPlan?.trialDays || TRIAL_DAYS[audienceRole] || 15}-day trial` : 'Continue to checkout'}
+              {loading ? 'Processing...' : selectedHasTrial ? 'Start trial' : 'Continue to checkout'}
             </button>
           </aside>
         </div>
