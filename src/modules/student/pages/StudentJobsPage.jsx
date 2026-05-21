@@ -20,7 +20,7 @@ import {
   studentPrimaryButtonClassName,
   studentSecondaryButtonClassName
 } from '../components/StudentExperience';
-import { ExternalJobCard } from './StudentExternalJobsPage';
+import { ExternalJobCard, ExternalJobCardSkeleton } from './StudentExternalJobsPage';
 import { getStudentJobs } from '../services/studentApi';
 import { getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
 
@@ -453,8 +453,8 @@ const StudentJobsPage = ({
         <div className="space-y-4">
           {jobsState.loading ? (
             <div className="student-job-grid">
-              {[1, 2, 3, 4, 5, 6].map((item) => (
-                <div key={item} className="h-52 animate-pulse rounded-[1.45rem] bg-slate-100" />
+              {Array.from({ length: Math.min(jobsPerPage, 8) }, (_, index) => (
+                <ExternalJobCardSkeleton key={index} />
               ))}
             </div>
           ) : totalJobs > 0 ? (

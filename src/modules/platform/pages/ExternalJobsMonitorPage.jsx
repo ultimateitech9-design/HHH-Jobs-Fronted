@@ -142,7 +142,7 @@ export default function ExternalJobsMonitorPage() {
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">External Jobs Monitor</h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Monitor live ingestion from official company career sites and curated global boards. Auto-syncs every 30 minutes.
+            Monitor live ingestion from official company career sites and curated global boards. Auto-syncs daily at 6 AM IST.
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">

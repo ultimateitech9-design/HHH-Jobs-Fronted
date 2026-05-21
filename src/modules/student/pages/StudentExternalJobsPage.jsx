@@ -211,6 +211,40 @@ export const ExternalJobCard = ({
   );
 };
 
+export const ExternalJobCardSkeleton = () => (
+  <article className="relative flex min-h-[236px] animate-pulse flex-col justify-between overflow-hidden rounded-[24px] border border-slate-200/60 bg-white/60 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl">
+    <div className="flex items-start gap-4">
+      <div className="h-[52px] w-[52px] shrink-0 rounded-[16px] border border-slate-100 bg-slate-100" />
+      <div className="min-w-0 flex-1 space-y-2 pt-0.5">
+        <div className="flex gap-2">
+          <div className="h-5 w-24 rounded-full bg-slate-100" />
+          <div className="h-5 w-16 rounded-full bg-slate-100" />
+        </div>
+        <div className="h-4 w-4/5 rounded bg-slate-100" />
+        <div className="h-3 w-1/2 rounded bg-slate-100" />
+      </div>
+      <div className="h-5 w-5 shrink-0 rounded-full bg-slate-100" />
+    </div>
+
+    <div className="mt-5 space-y-3 border-t border-slate-100/60 pt-4">
+      <div className="flex items-center gap-2.5">
+        <div className="h-4 w-4 rounded bg-slate-100" />
+        <div className="h-3 w-32 rounded bg-slate-100" />
+      </div>
+      <div className="flex items-center gap-2.5">
+        <div className="h-4 w-4 rounded bg-slate-100" />
+        <div className="h-3 w-40 rounded bg-slate-100" />
+      </div>
+    </div>
+
+    <div className="mt-4 flex flex-wrap gap-2">
+      <div className="h-6 w-20 rounded-lg bg-slate-100" />
+      <div className="h-6 w-24 rounded-lg bg-slate-100" />
+      <div className="h-6 w-16 rounded-lg bg-slate-100" />
+    </div>
+  </article>
+);
+
 const StudentExternalJobsPage = ({ embedded = false }) => {
   const { user } = useAuthStore();
   const isAuthenticated = Boolean(user);
@@ -316,7 +350,7 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
     {
       label: 'Tracked Sources',
       value: formatCount(sources.length),
-      helper: 'Feeds refreshed every 30 min.'
+      helper: 'Feeds refreshed daily at 6 AM.'
     },
     {
       label: 'Remote On Page',
@@ -490,8 +524,10 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
       ) : null}
 
       {jobsState.loading ? (
-        <div className="flex items-center justify-center py-24">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-200 border-t-brand-500" />
+        <div className="student-job-grid mt-6">
+          {Array.from({ length: filters.limit || 8 }, (_, index) => (
+            <ExternalJobCardSkeleton key={index} />
+          ))}
         </div>
       ) : (
         <>
@@ -514,7 +550,7 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
               </div>
               <h3 className="mt-5 text-2xl font-black text-navy">No jobs match your filters</h3>
               <p className="mt-3 text-sm leading-7 text-slate-500">
-                Try broadening your search or clearing filters. Fresh verified roles keep flowing in every 30 minutes.
+                Try broadening your search or clearing filters. Fresh verified roles refresh daily at 6 AM.
               </p>
               <button
                 type="button"

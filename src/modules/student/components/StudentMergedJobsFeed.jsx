@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import useNotificationStore from '../../../core/notifications/notificationStore';
 import { getCurrentUser } from '../../../utils/auth';
 import { getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
-import { ExternalJobCard } from '../pages/StudentExternalJobsPage';
+import { ExternalJobCard, ExternalJobCardSkeleton } from '../pages/StudentExternalJobsPage';
 import {
   getStudentJobs,
   getStudentRecommendations,
@@ -666,8 +666,8 @@ const StudentMergedJobsFeed = () => {
 
         {state.loading ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
-              <div key={item} className="h-64 animate-pulse rounded-[1.2rem] bg-slate-100" />
+            {Array.from({ length: 8 }, (_, index) => (
+              <ExternalJobCardSkeleton key={index} />
             ))}
           </div>
         ) : totalJobs > 0 ? (
