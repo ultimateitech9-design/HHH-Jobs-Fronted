@@ -69,6 +69,13 @@ const renderTemplateMessage = (template, candidate) => {
 };
 
 const isOpenableResumeUrl = (value = '') => /^https?:\/\//i.test(String(value || '')) || /^data:/i.test(String(value || ''));
+const escapeHtml = (value = '') =>
+  String(value || '').replace(/[<>&"]/g, (char) => ({
+    '<': '&lt;',
+    '>': '&gt;',
+    '&': '&amp;',
+    '"': '&quot;'
+  }[char]));
 
 const getStudentDbUsage = (access = {}, summary = {}) => {
   const limit = access.studentDbViewLimit ?? summary.studentDbViewLimit;
@@ -79,40 +86,65 @@ const getStudentDbUsage = (access = {}, summary = {}) => {
   return { limit: numericLimit, used, remaining };
 };
 
-const openResumeText = ({ candidateName = 'Candidate', resumeText = '' } = {}) => {
-  if (!resumeText) return;
+const writeResumeWindow = (targetWindow, html) => {
+  if (!targetWindow || targetWindow.closed) return false;
+  targetWindow.document.open();
+  targetWindow.document.write(html);
+  targetWindow.document.close();
+  targetWindow.focus();
+  return true;
+};
 
-  const title = `${candidateName || 'Candidate'} Resume`;
-  const doc = `<!doctype html>
+const buildResumeDocument = ({ title = 'Candidate Resume', bodyHtml = '' } = {}) => `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>${title.replace(/[<>&"]/g, '')}</title>
+  <title>${escapeHtml(title)}</title>
   <style>
     body { margin: 0; padding: 32px; font-family: Arial, sans-serif; color: #0f172a; background: #f8fafc; }
     main { max-width: 900px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; padding: 28px; }
     h1 { margin: 0 0 18px; font-size: 24px; }
+    p { color: #475569; font-size: 14px; line-height: 1.6; }
     pre { white-space: pre-wrap; word-break: break-word; font: 14px/1.6 Arial, sans-serif; }
   </style>
 </head>
-<body><main><h1>${title.replace(/[<>&"]/g, '')}</h1><pre>${resumeText.replace(/[<>&]/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[char]))}</pre></main></body>
+<body><main><h1>${escapeHtml(title)}</h1>${bodyHtml}</main></body>
 </html>`;
+
+const openResumeText = ({ candidateName = 'Candidate', resumeText = '', targetWindow = null } = {}) => {
+  if (!resumeText) return;
+
+  const title = `${candidateName || 'Candidate'} Resume`;
+  const doc = buildResumeDocument({ title, bodyHtml: `<pre>${escapeHtml(resumeText)}</pre>` });
+  if (writeResumeWindow(targetWindow, doc)) return true;
+
   const blobUrl = URL.createObjectURL(new Blob([doc], { type: 'text/html;charset=utf-8' }));
   window.open(blobUrl, '_blank', 'noopener,noreferrer');
   window.setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+  return true;
 };
 
-const openResume = ({ candidate, resume }) => {
+const openResume = ({ candidate, resume, targetWindow = null }) => {
   const candidateName = resume?.candidateName || candidate?.user?.name || 'Candidate';
   const resumeUrl = resume?.resumeUrl || candidate?.profile?.resumeUrl || '';
   const resumeText = String(resume?.resumeText || candidate?.profile?.resumeText || '').trim();
 
   if (isOpenableResumeUrl(resumeUrl)) {
-    window.open(resumeUrl, '_blank', 'noopener,noreferrer');
-    return;
+    if (targetWindow && !targetWindow.closed) {
+      targetWindow.location.href = resumeUrl;
+    } else {
+      window.open(resumeUrl, '_blank', 'noopener,noreferrer');
+    }
+    return true;
   }
 
-  if (resumeText) openResumeText({ candidateName, resumeText });
+  if (resumeText) return openResumeText({ candidateName, resumeText, targetWindow });
+
+  writeResumeWindow(targetWindow, buildResumeDocument({
+    title: `${candidateName} Resume`,
+    bodyHtml: '<p>Resume file is not available in a browser-openable format for this candidate.</p>'
+  }));
+  return false;
 };
 
 function ResumeAction({ candidate, loading, onViewResume }) {
@@ -318,10 +350,16 @@ export default function HrCandidatesPage() {
 
     const hasEmbeddedResume = isOpenableResumeUrl(candidate.profile?.resumeUrl) || String(candidate.profile?.resumeText || '').trim();
     if (hasEmbeddedResume && !candidate.access?.resumeRequiresTracking) {
-      openResume({ candidate });
+      const resumeWindow = window.open('', '_blank');
+      openResume({ candidate, targetWindow: resumeWindow });
       return;
     }
 
+    const resumeWindow = window.open('', '_blank');
+    writeResumeWindow(resumeWindow, buildResumeDocument({
+      title: `${candidate.user?.name || 'Candidate'} Resume`,
+      bodyHtml: '<p>Loading resume...</p>'
+    }));
     setActionState((current) => ({ ...current, [`resume_${candidate.id}`]: 'opening' }));
     setError('');
 
@@ -356,9 +394,13 @@ export default function HrCandidatesPage() {
             : item
         )
       );
-      openResume({ candidate, resume: response.resume });
+      openResume({ candidate, resume: response.resume, targetWindow: resumeWindow });
     } catch (resumeError) {
       setError(resumeError.message || 'Unable to open resume.');
+      writeResumeWindow(resumeWindow, buildResumeDocument({
+        title: `${candidate.user?.name || 'Candidate'} Resume`,
+        bodyHtml: `<p>${escapeHtml(resumeError.message || 'Unable to open resume.')}</p>`
+      }));
     } finally {
       setActionState((current) => ({ ...current, [`resume_${candidate.id}`]: '' }));
     }
