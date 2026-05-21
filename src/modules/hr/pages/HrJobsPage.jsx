@@ -35,7 +35,7 @@ import {
 } from '../services/hrApi';
 import { openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpayCheckout';
 import { hrStarterPricing } from '../../../shared/config/pricingCatalog';
-import { getPublicCompanies } from '../../common/services/companyDirectoryApi';
+import { getPublicCompanies, searchRegisteredCompanies } from '../../common/services/companyDirectoryApi';
 
 const initialRoleCheckoutForm = {
   planSlug: '',
@@ -214,6 +214,9 @@ const HrJobsPage = () => {
   const [roleQuoteLoading, setRoleQuoteLoading] = useState(false);
   const [roleQuoteError, setRoleQuoteError] = useState('');
   const [knownCompanies, setKnownCompanies] = useState([]);
+  const [registryCompanies, setRegistryCompanies] = useState([]);
+  const [companySearch, setCompanySearch] = useState('');
+  const [companySearchLoading, setCompanySearchLoading] = useState(false);
 
   const normalizedPlans = useMemo(
     () => plans.map((plan) => ({
@@ -433,7 +436,7 @@ const HrJobsPage = () => {
   const companyOptions = useMemo(() => {
     const byKey = new Map();
 
-    for (const company of knownCompanies) {
+    for (const company of [...knownCompanies, ...registryCompanies]) {
       const option = toCompanyOption(company);
       if (!option.name) continue;
 
@@ -467,7 +470,7 @@ const HrJobsPage = () => {
       if (right.jobs !== left.jobs) return right.jobs - left.jobs;
       return left.name.localeCompare(right.name);
     });
-  }, [jobs, knownCompanies]);
+  }, [jobs, knownCompanies, registryCompanies]);
 
   const selectedCompanyValue = useMemo(() => {
     if (companyInputMode === 'other') return OTHER_COMPANY_VALUE;
@@ -583,6 +586,32 @@ const HrJobsPage = () => {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const query = companySearch.trim();
+    let active = true;
+
+    if (query.length < 2) {
+      setRegistryCompanies([]);
+      setCompanySearchLoading(false);
+      return undefined;
+    }
+
+    setCompanySearchLoading(true);
+
+    const timer = window.setTimeout(async () => {
+      const response = await searchRegisteredCompanies({ search: query, limit: 25 });
+      if (!active) return;
+
+      setRegistryCompanies(response.error ? [] : (response.data?.companies || []));
+      setCompanySearchLoading(false);
+    }, 350);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [companySearch]);
 
   useEffect(() => {
     let active = true;
@@ -1056,6 +1085,15 @@ const HrJobsPage = () => {
 
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-neutral-700">Company Name</label>
+              <input
+                value={companySearch}
+                onChange={(event) => setCompanySearch(event.target.value)}
+                className="w-full px-4 py-3 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium"
+                placeholder="Search Pvt Ltd / registered company"
+              />
+              <p className="text-[11px] font-semibold text-neutral-400">
+                {companySearchLoading ? 'Searching registered company API...' : 'Type at least 2 letters to search registered companies.'}
+              </p>
               <select
                 required
                 value={selectedCompanyValue}
@@ -1064,10 +1102,12 @@ const HrJobsPage = () => {
                   if (value === OTHER_COMPANY_VALUE) {
                     setCompanyInputMode('other');
                     updateDraftField('companyName', '');
+                    setCompanySearch('');
                     return;
                   }
                   setCompanyInputMode('select');
                   updateDraftField('companyName', value);
+                  setCompanySearch(value);
                 }}
                 className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium"
               >
