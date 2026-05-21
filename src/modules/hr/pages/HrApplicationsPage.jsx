@@ -332,7 +332,6 @@ export default function HrApplicationsPage() {
             <FiArrowLeft size={13} /> Back to dashboard
           </Link>
           <h1 className="mt-2 text-[24px] font-extrabold tracking-tight text-slate-950">All Applications</h1>
-          <p className="mt-1 text-[13px] text-slate-500">Job-post and campus-drive applicants in one place.</p>
         </div>
         <Link to="/portal/hr/jobs?tab=post" className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-[13px] font-bold text-white transition hover:bg-slate-800">
           <FiBriefcase size={14} /> Post Job
