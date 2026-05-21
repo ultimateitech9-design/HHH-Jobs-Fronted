@@ -60,15 +60,7 @@ const openApplyDestination = (url) => {
 };
 
 const interleaveJobs = (internalJobs = [], externalJobs = []) => {
-  const merged = [];
-  const maxLength = Math.max(internalJobs.length, externalJobs.length);
-
-  for (let index = 0; index < maxLength; index += 1) {
-    if (internalJobs[index]) merged.push(internalJobs[index]);
-    if (externalJobs[index]) merged.push(externalJobs[index]);
-  }
-
-  return merged;
+  return [...internalJobs, ...externalJobs];
 };
 
 const mapInternalJobToMarketplaceCard = (job = {}) => ({

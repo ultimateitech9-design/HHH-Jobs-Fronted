@@ -98,6 +98,8 @@ const openApplyDestination = (url) => {
   }
 };
 
+const externalJobCardClassName = 'group relative flex min-h-[246px] cursor-pointer flex-col justify-between overflow-hidden rounded-[24px] border border-slate-200/60 bg-white/60 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-brand-200/80 hover:bg-white hover:shadow-[0_16px_40px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-brand-400';
+
 export const ExternalJobCard = ({
   isAuthenticated,
   job,
@@ -130,7 +132,7 @@ export const ExternalJobCard = ({
       role="link"
       tabIndex={0}
       onClick={() => onApply(job, sourceName)}
-      className="group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-[24px] border border-slate-200/60 bg-white/60 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-brand-200/80 hover:bg-white hover:shadow-[0_16px_40px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-brand-400"
+      className={externalJobCardClassName}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-slate-50/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
 
@@ -212,21 +214,23 @@ export const ExternalJobCard = ({
 };
 
 export const ExternalJobCardSkeleton = () => (
-  <article className="relative flex min-h-[236px] animate-pulse flex-col justify-between overflow-hidden rounded-[24px] border border-slate-200/60 bg-white/60 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl">
-    <div className="flex items-start gap-4">
-      <div className="h-[52px] w-[52px] shrink-0 rounded-[16px] border border-slate-100 bg-slate-100" />
+  <article className={`${externalJobCardClassName} animate-pulse hover:translate-y-0 hover:border-slate-200/60 hover:bg-white/60 hover:shadow-[0_8px_24px_rgba(15,23,42,0.04)]`}>
+    <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/80 to-slate-50/30 opacity-100" />
+
+    <div className="relative z-10 flex items-start gap-4">
+      <div className="h-[52px] w-[52px] shrink-0 rounded-[16px] border border-slate-100 bg-slate-100 shadow-[0_4px_12px_rgba(15,23,42,0.04)]" />
       <div className="min-w-0 flex-1 space-y-2 pt-0.5">
-        <div className="flex gap-2">
+        <div className="mb-1.5 flex flex-wrap gap-2">
           <div className="h-5 w-24 rounded-full bg-slate-100" />
           <div className="h-5 w-16 rounded-full bg-slate-100" />
         </div>
-        <div className="h-4 w-4/5 rounded bg-slate-100" />
-        <div className="h-3 w-1/2 rounded bg-slate-100" />
+        <div className="h-4 w-[82%] rounded bg-slate-100" />
+        <div className="h-3 w-[54%] rounded bg-slate-100" />
       </div>
-      <div className="h-5 w-5 shrink-0 rounded-full bg-slate-100" />
+      <div className="h-5 w-5 shrink-0 rounded bg-slate-100" />
     </div>
 
-    <div className="mt-5 space-y-3 border-t border-slate-100/60 pt-4">
+    <div className="relative z-10 mt-5 space-y-3 border-t border-slate-100/60 pt-4">
       <div className="flex items-center gap-2.5">
         <div className="h-4 w-4 rounded bg-slate-100" />
         <div className="h-3 w-32 rounded bg-slate-100" />
@@ -237,7 +241,7 @@ export const ExternalJobCardSkeleton = () => (
       </div>
     </div>
 
-    <div className="mt-4 flex flex-wrap gap-2">
+    <div className="relative z-10 mt-4 flex flex-wrap gap-2">
       <div className="h-6 w-20 rounded-lg bg-slate-100" />
       <div className="h-6 w-24 rounded-lg bg-slate-100" />
       <div className="h-6 w-16 rounded-lg bg-slate-100" />

@@ -52,15 +52,7 @@ const sourceMapFromList = (sources = []) => ({
 });
 
 const interleaveJobs = (internalJobs = [], externalJobs = []) => {
-  const merged = [];
-  const maxLength = Math.max(internalJobs.length, externalJobs.length);
-
-  for (let index = 0; index < maxLength; index += 1) {
-    if (internalJobs[index]) merged.push(internalJobs[index]);
-    if (externalJobs[index]) merged.push(externalJobs[index]);
-  }
-
-  return merged;
+  return [...internalJobs, ...externalJobs];
 };
 
 const buildCompanySourceKey = (companyName = '') => {
@@ -453,7 +445,7 @@ const StudentJobsPage = ({
         <div className="space-y-4">
           {jobsState.loading ? (
             <div className="student-job-grid">
-              {Array.from({ length: Math.min(jobsPerPage, 8) }, (_, index) => (
+              {Array.from({ length: jobsPerPage }, (_, index) => (
                 <ExternalJobCardSkeleton key={index} />
               ))}
             </div>

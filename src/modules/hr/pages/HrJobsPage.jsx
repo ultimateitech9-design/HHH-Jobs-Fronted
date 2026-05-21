@@ -38,6 +38,7 @@ import {
 } from '../services/hrApi';
 import { openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpayCheckout';
 import { hrStarterPricing } from '../../../shared/config/pricingCatalog';
+import { getPublicCompanies } from '../../common/services/companyDirectoryApi';
 
 const initialCheckoutForm = {
   planSlug: '',
@@ -80,6 +81,8 @@ const getRolePlanDiscountLabel = (plan = {}) =>
 
 const JOB_POSTING_DESCRIPTION_LIMIT = 250;
 const JOB_POSTING_LOCATION_LIMIT = 1;
+const OTHER_COMPANY_VALUE = '__other_company__';
+const PRIVATE_COMPANY_PATTERN = /\b(private|pvt|limited|ltd|llp)\b/i;
 
 const getStatusColor = (status) => {
   const s = String(status || '').toLowerCase();
@@ -92,6 +95,28 @@ const getStatusColor = (status) => {
     default: return 'bg-neutral-100 text-neutral-700 border-neutral-200';
   }
 };
+
+const normalizeCompanyOptionKey = (value = '') =>
+  String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+const isPrivateLimitedCompany = (company = {}) => {
+  const haystack = [
+    company.name,
+    company.companyType,
+    company.headline,
+    company.description,
+    company.websiteHost
+  ].join(' ');
+
+  return PRIVATE_COMPANY_PATTERN.test(haystack);
+};
+
+const toCompanyOption = (company = {}) => ({
+  name: String(company.name || '').trim(),
+  portalWeight: Number(Boolean(company.portalProfile || Number(company.portalJobs || 0) > 0)),
+  jobs: Number(company.totalJobs || 0),
+  privateWeight: Number(isPrivateLimitedCompany(company))
+});
 
 const HrJobsPage = () => {
   const location = useLocation();
@@ -108,6 +133,7 @@ const HrJobsPage = () => {
   const [draft, setDraft] = useState(getEmptyJobDraft());
   const [editingJobId, setEditingJobId] = useState('');
   const [saving, setSaving] = useState(false);
+  const [companyInputMode, setCompanyInputMode] = useState('select');
 
   const [plans, setPlans] = useState([]);
   const [creditsSummary, setCreditsSummary] = useState({ credits: [], byPlan: {}, totals: { total: 0, used: 0, remaining: 0 } });
@@ -128,6 +154,7 @@ const HrJobsPage = () => {
   const [roleQuote, setRoleQuote] = useState(null);
   const [roleQuoteLoading, setRoleQuoteLoading] = useState(false);
   const [roleQuoteError, setRoleQuoteError] = useState('');
+  const [knownCompanies, setKnownCompanies] = useState([]);
 
   const normalizedPlans = useMemo(
     () => plans.map((plan) => ({
@@ -216,6 +243,57 @@ const HrJobsPage = () => {
     const value = new URLSearchParams(location.search).get('tab');
     return ['jobs', 'post', 'billing'].includes(value) ? value : '';
   }, [location.search]);
+
+  const companyOptions = useMemo(() => {
+    const byKey = new Map();
+
+    for (const company of knownCompanies) {
+      const option = toCompanyOption(company);
+      if (!option.name) continue;
+
+      const existing = byKey.get(normalizeCompanyOptionKey(option.name));
+      byKey.set(normalizeCompanyOptionKey(option.name), {
+        ...existing,
+        ...option,
+        portalWeight: Math.max(existing?.portalWeight || 0, option.portalWeight),
+        jobs: Math.max(existing?.jobs || 0, option.jobs),
+        privateWeight: Math.max(existing?.privateWeight || 0, option.privateWeight)
+      });
+    }
+
+    for (const job of jobs) {
+      const companyName = String(job.companyName || '').trim();
+      if (!companyName) continue;
+
+      const key = normalizeCompanyOptionKey(companyName);
+      const existing = byKey.get(key);
+      byKey.set(key, {
+        name: existing?.name || companyName,
+        portalWeight: 1,
+        jobs: Math.max(existing?.jobs || 0, 1),
+        privateWeight: Math.max(existing?.privateWeight || 0, Number(PRIVATE_COMPANY_PATTERN.test(companyName)))
+      });
+    }
+
+    const options = Array.from(byKey.values());
+    const privateOptions = options.filter((company) => company.privateWeight > 0);
+    const visibleOptions = privateOptions.length ? privateOptions : options;
+
+    return visibleOptions.sort((left, right) => {
+      if (right.portalWeight !== left.portalWeight) return right.portalWeight - left.portalWeight;
+      if (right.jobs !== left.jobs) return right.jobs - left.jobs;
+      return left.name.localeCompare(right.name);
+    });
+  }, [jobs, knownCompanies]);
+
+  const selectedCompanyValue = useMemo(() => {
+    if (companyInputMode === 'other') return OTHER_COMPANY_VALUE;
+    const currentName = String(draft.companyName || '').trim();
+    if (!currentName) return '';
+    return companyOptions.some((company) => normalizeCompanyOptionKey(company.name) === normalizeCompanyOptionKey(currentName))
+      ? currentName
+      : OTHER_COMPANY_VALUE;
+  }, [companyInputMode, companyOptions, draft.companyName]);
 
   useEffect(() => {
     if (requestedTab) {
@@ -312,6 +390,12 @@ const HrJobsPage = () => {
 
       await loadPricingState();
       await loadRolePricingState();
+
+      const companiesRes = await getPublicCompanies();
+      if (!mounted) return;
+      if (!companiesRes.error) {
+        setKnownCompanies(companiesRes.data?.companies || []);
+      }
     };
 
     loadAll();
@@ -413,6 +497,7 @@ const HrJobsPage = () => {
   const resetForm = () => {
     setEditingJobId('');
     setDraft({ ...getEmptyJobDraft(), planSlug: selectedPlan?.slug || 'free' });
+    setCompanyInputMode('select');
     setActiveTab('jobs');
   };
 
@@ -486,6 +571,7 @@ const HrJobsPage = () => {
   const startEdit = (job) => {
     setEditingJobId(job.id || job._id);
     setDraft(getJobDraftFromJob(job));
+    setCompanyInputMode('select');
     setActiveTab('post');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -836,7 +922,38 @@ const HrJobsPage = () => {
 
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-neutral-700">Company Name</label>
-              <input required value={draft.companyName} onChange={(e) => updateDraftField('companyName', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. TechCorp Inc" />
+              <select
+                required
+                value={selectedCompanyValue}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (value === OTHER_COMPANY_VALUE) {
+                    setCompanyInputMode('other');
+                    updateDraftField('companyName', '');
+                    return;
+                  }
+                  setCompanyInputMode('select');
+                  updateDraftField('companyName', value);
+                }}
+                className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium"
+              >
+                <option value="">Select Pvt Ltd / registered company</option>
+                {companyOptions.map((company) => (
+                  <option key={normalizeCompanyOptionKey(company.name)} value={company.name}>
+                    {company.name}
+                  </option>
+                ))}
+                <option value={OTHER_COMPANY_VALUE}>Other company</option>
+              </select>
+              {companyInputMode === 'other' || selectedCompanyValue === OTHER_COMPANY_VALUE || (!selectedCompanyValue && companyOptions.length === 0) ? (
+                <input
+                  required
+                  value={draft.companyName}
+                  onChange={(e) => updateDraftField('companyName', e.target.value)}
+                  className="mt-2 w-full px-4 py-3 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium"
+                  placeholder="Write company name"
+                />
+              ) : null}
             </div>
 
             <div className="space-y-1.5">

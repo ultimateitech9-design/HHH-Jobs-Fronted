@@ -150,6 +150,9 @@ const buildUnifiedJobs = (jobs = {}) => {
   }));
 
   return [...portalJobs, ...externalJobs].sort((left, right) => {
+    if (left.sourceType !== right.sourceType) {
+      return left.sourceType === 'portal' ? -1 : 1;
+    }
     if (Number(right.isFeatured) !== Number(left.isFeatured)) {
       return Number(right.isFeatured) - Number(left.isFeatured);
     }
