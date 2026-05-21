@@ -45,7 +45,7 @@ const makeDefaultFilters = () => ({
   source: '',
   remote: false,
   page: 1,
-  limit: 16
+  limit: 20
 });
 
 const isRemoteLike = (value = '') => /remote|work from home|wfh/i.test(String(value || ''));
@@ -337,7 +337,7 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
       error: ''
     }));
     const page = Number(currentFilters.page || 1);
-    const limit = Number(currentFilters.limit || 16);
+    const limit = Number(currentFilters.limit || 20);
     const shouldLoadPortalJobs = !currentFilters.source;
     let portalResponse = { data: { jobs: [], pagination: { total: 0, totalPages: 0 } }, error: '' };
     let externalResponse = { data: { jobs: [], pagination: { total: 0, totalPages: 0 } }, error: '' };
@@ -352,37 +352,42 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
         limit
       });
       const portalPagination = portalMetaResponse.data?.pagination || { total: 0, totalPages: 0 };
-      const portalTotalPages = Number(portalPagination.totalPages || 0);
-      const externalPage = Math.max(1, page - portalTotalPages);
+      const portalTotal = Number(portalPagination.total || 0);
+      const globalStartIndex = Math.max(0, (page - 1) * limit);
+      const globalEndIndex = globalStartIndex + limit;
+      const portalPage = Math.floor(globalStartIndex / limit) + 1;
+      const portalJobsNeeded = Math.max(0, Math.min(globalEndIndex, portalTotal) - globalStartIndex);
 
-      const [nextPortalResponse, nextExternalResponse] = await Promise.all([
-        page <= portalTotalPages
-          ? (page === 1 ? Promise.resolve(portalMetaResponse) : getStudentJobs({
+      portalResponse = portalJobsNeeded > 0 && portalPage === 1
+        ? portalMetaResponse
+        : portalJobsNeeded > 0
+          ? await getStudentJobs({
             search: currentFilters.search,
             location: currentFilters.location,
             category: currentFilters.category,
-            page,
+            page: portalPage,
             limit
-          }))
-          : Promise.resolve({ data: { jobs: [], pagination: portalPagination }, error: '' }),
-        getExternalJobs({
-          ...currentFilters,
-          page: page <= portalTotalPages ? 1 : externalPage,
-          limit: page <= portalTotalPages ? 1 : limit
-        })
-      ]);
+          })
+          : { data: { jobs: [], pagination: portalPagination }, error: '' };
 
-      portalResponse = nextPortalResponse;
-      externalResponse = nextExternalResponse;
+      const portalJobCount = (portalResponse.data?.jobs || []).length;
+      const remainingSlots = Math.max(0, limit - portalJobCount);
+      const externalStartIndex = Math.max(0, globalStartIndex - portalTotal);
+      const externalFetchLimit = Math.max(1, externalStartIndex + remainingSlots);
+
+      externalResponse = await getExternalJobs({
+        ...currentFilters,
+        page: 1,
+        limit: externalFetchLimit
+      });
 
       const externalPagination = externalResponse.data?.pagination || { total: 0, totalPages: 0 };
-      const total = Number(portalPagination.total || 0) + Number(externalPagination.total || 0);
-      const externalTotalPages = Math.ceil(Number(externalPagination.total || 0) / limit);
+      const total = portalTotal + Number(externalPagination.total || 0);
       combinedPagination = {
         page,
         limit,
         total,
-        totalPages: Math.max(1, portalTotalPages + externalTotalPages)
+        totalPages: Math.max(1, Math.ceil(total / limit))
       };
     } else {
       externalResponse = await getExternalJobs(currentFilters);
@@ -390,9 +395,12 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
     }
 
     const portalJobs = (portalResponse.data?.jobs || []).map(mapPortalJobToExternalCard);
-    const externalJobs = shouldLoadPortalJobs && page <= Number(portalResponse.data?.pagination?.totalPages || 0)
-      ? []
-      : (externalResponse.data?.jobs || []).map((job) => ({ ...job, __kind: 'external' }));
+    const externalStartIndex = shouldLoadPortalJobs
+      ? Math.max(0, ((combinedPagination?.page || page) - 1) * (combinedPagination?.limit || limit) - Number(portalResponse.data?.pagination?.total || 0))
+      : 0;
+    const externalJobs = (externalResponse.data?.jobs || [])
+      .slice(externalStartIndex, externalStartIndex + Math.max(0, limit - portalJobs.length))
+      .map((job) => ({ ...job, __kind: 'external' }));
 
     setJobsState({
       jobs: [...portalJobs, ...externalJobs],
