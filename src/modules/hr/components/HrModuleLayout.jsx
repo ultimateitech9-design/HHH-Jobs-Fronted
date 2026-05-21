@@ -15,7 +15,6 @@ import {
   FiFileText,
   FiX
 } from 'react-icons/fi';
-import { FaBuilding } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
 import usePlanAccess from '../../../shared/hooks/usePlanAccess';
@@ -32,8 +31,7 @@ const hrNavItems = [
   { to: '/portal/hr/campus-drives', label: 'Campus Drives', icon: FiBook },
   { to: '/portal/hr/notifications', label: 'Notifications', icon: FiBell },
   { to: '/portal/hr/analytics', label: 'Reports', icon: FiFileText },
-  { to: '/portal/hr/employee-verification', label: 'Employee Verification', icon: FiCheckSquare },
-  { to: '/portal/hr/profile', label: 'Company Profile', icon: FaBuilding }
+  { to: '/portal/hr/employee-verification', label: 'Employee Verification', icon: FiCheckSquare }
 ];
 
 const trackedJobPlanSlugs = ['premium', 'hot_vacancy', 'standard'];
