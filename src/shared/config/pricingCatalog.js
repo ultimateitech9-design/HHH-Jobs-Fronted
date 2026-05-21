@@ -14,10 +14,10 @@ export const jobPostingPlans = [
     title: 'Premium',
     slug: 'premium',
     tone: 'premium',
-    price: '₹999',
-    numericPrice: 999,
-    previousPrice: '₹1,600',
-    discountText: 'Launch offer',
+    price: '₹699',
+    numericPrice: 699,
+    previousPrice: '',
+    discountText: 'Add-on credit',
     taxNote: '*GST as applicable',
     features: [
       { label: 'Detailed job description', included: true },
@@ -28,8 +28,8 @@ export const jobPostingPlans = [
       { label: 'Boost on Job Search Page', included: true },
       { label: 'Job Branding', included: true }
     ],
-    offerText: 'Trial starts today · renewal at ₹499/month for HR Starter',
-    ctaLabel: 'Start trial',
+    offerText: 'Buy 2 to 5 premium credits after plan credits are used',
+    ctaLabel: 'Buy credits',
     ctaTo: '/sign-up?plan=hot_vacancy&role=hr',
     withQuantity: true,
     validity: 'Job validity 30 days'
@@ -38,10 +38,10 @@ export const jobPostingPlans = [
     title: 'Hot Vacancy',
     slug: 'hot_vacancy',
     tone: 'pro',
-    price: '₹699',
-    numericPrice: 699,
-    previousPrice: '₹1,100',
-    discountText: 'Launch offer',
+    price: '₹299',
+    numericPrice: 299,
+    previousPrice: '',
+    discountText: 'Add-on credit',
     taxNote: '*GST as applicable',
     features: [
       { label: 'Upto 250 character job description', included: true },
@@ -52,20 +52,20 @@ export const jobPostingPlans = [
       { label: 'Boost on Job Search Page', included: false },
       { label: 'Job Branding', included: false }
     ],
-    offerText: 'Flat 10% OFF on 5 Job Postings or more',
+    offerText: 'Buy 2 to 10 hot vacancy credits after plan credits are used',
     ctaLabel: 'Buy now',
     ctaTo: '/sign-up?plan=classified&role=hr',
     withQuantity: true,
     validity: 'Job validity 30 days'
   },
   {
-    title: 'Standard',
+    title: 'Normal',
     slug: 'standard',
     tone: 'standard',
-    price: '₹399',
-    numericPrice: 399,
-    previousPrice: '₹999',
-    discountText: 'After-trial price',
+    price: '₹99',
+    numericPrice: 99,
+    previousPrice: '',
+    discountText: 'Add-on credit',
     taxNote: '*GST as applicable',
     features: [
       { label: 'Upto 250 character job description', included: true },
@@ -76,8 +76,8 @@ export const jobPostingPlans = [
       { label: 'Boost on Job Search Page', included: false },
       { label: 'Job Branding', included: false }
     ],
-    offerText: 'Best entry paid plan after free trial',
-    ctaLabel: 'Start trial',
+    offerText: 'Buy 5 to 15 normal credits after plan credits are used',
+    ctaLabel: 'Buy credits',
     ctaTo: '/sign-up?plan=standard&role=hr',
     withQuantity: true,
     validity: 'Job validity 15 days'

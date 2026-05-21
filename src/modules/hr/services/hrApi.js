@@ -197,6 +197,36 @@ export const checkoutPlanCredits = async ({
     extract: (payload) => payload
   });
 
+export const createJobCreditPaymentOrder = async ({ planSlug, quantity }) =>
+  strictRequest({
+    path: '/payments/create-order',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ planSlug, quantity })
+    },
+    extract: (payload) => payload
+  });
+
+export const verifyJobCreditPayment = async ({
+  purchaseId,
+  razorpayOrderId,
+  razorpayPaymentId,
+  razorpaySignature
+}) =>
+  strictRequest({
+    path: '/payments/verify-payment',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({
+        purchaseId,
+        razorpayOrderId,
+        razorpayPaymentId,
+        razorpaySignature
+      })
+    },
+    extract: (payload) => payload
+  });
+
 export const getHrPricingCredits = async () =>
   safeRequest({
     path: '/pricing/credits',

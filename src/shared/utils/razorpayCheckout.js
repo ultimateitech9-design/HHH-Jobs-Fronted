@@ -81,3 +81,53 @@ export const openRazorpaySubscriptionCheckout = async (session = {}) => {
     }
   });
 };
+
+export const openRazorpayOrderCheckout = async (session = {}) => {
+  const normalizedSession = {
+    ...session,
+    keyId: session.keyId || session.key_id || session.razorpayKeyId || session.razorpay_key_id || '',
+    orderId: session.orderId || session.order_id || session.razorpayOrderId || session.razorpay_order_id || '',
+    purchaseId: session.purchaseId || session.purchase_id || ''
+  };
+
+  if (!normalizedSession.keyId) {
+    throw new Error('Razorpay key is missing from checkout session.');
+  }
+
+  if (!normalizedSession.orderId) {
+    throw new Error('Razorpay order id is missing from checkout session.');
+  }
+
+  const Razorpay = await loadRazorpayScript();
+
+  return new Promise((resolve, reject) => {
+    try {
+      const checkout = new Razorpay({
+        key: normalizedSession.keyId,
+        order_id: normalizedSession.orderId,
+        amount: normalizedSession.amount,
+        currency: normalizedSession.currency || 'INR',
+        name: normalizedSession.name || 'HHH Jobs',
+        description: normalizedSession.description || 'Buy job posting credits.',
+        image: normalizedSession.image || '/hhh-job-logo.png',
+        prefill: normalizedSession.prefill || {},
+        notes: normalizedSession.notes || {},
+        theme: { color: '#2563eb' },
+        modal: {
+          ondismiss: () => resolve({ dismissed: true })
+        },
+        handler: (response) => resolve({
+          dismissed: false,
+          purchaseId: normalizedSession.purchaseId,
+          razorpayOrderId: response?.razorpay_order_id || normalizedSession.orderId,
+          razorpayPaymentId: response?.razorpay_payment_id || '',
+          razorpaySignature: response?.razorpay_signature || ''
+        })
+      });
+
+      checkout.open();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};

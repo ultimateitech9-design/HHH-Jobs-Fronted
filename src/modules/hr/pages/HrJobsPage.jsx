@@ -15,8 +15,8 @@ import {
 } from 'react-icons/fi';
 import {
   checkoutRolePlan,
-  checkoutPlanCredits,
   closeHrJob,
+  createJobCreditPaymentOrder,
   createHrJob,
   deleteHrJob,
   formatDateTime,
@@ -33,10 +33,11 @@ import {
   getRolePlanSubscriptions,
   getRolePricingPlanQuote,
   getRolePricingPlans,
+  verifyJobCreditPayment,
   verifyRolePlanAutopay,
   updateHrJob
 } from '../services/hrApi';
-import { openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpayCheckout';
+import { openRazorpayOrderCheckout, openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpayCheckout';
 import { hrStarterPricing } from '../../../shared/config/pricingCatalog';
 import { getPublicCompanies } from '../../common/services/companyDirectoryApi';
 
@@ -92,6 +93,14 @@ const getJobCreditBuckets = (plan = {}, multiplier = 1) => {
     }))
     .filter((bucket) => bucket.value > 0);
 };
+
+const getPurchaseQuantityRule = (plan = {}) => ({
+  min: Math.max(1, Number(plan?.meta?.minPurchaseQuantity || 1)),
+  max: Math.max(
+    Math.max(1, Number(plan?.meta?.minPurchaseQuantity || 1)),
+    Number(plan?.meta?.maxPurchaseQuantity || 1000)
+  )
+});
 
 const formatMoney = (currency = 'INR', amount = 0) => `${currency} ${Number(amount || 0).toLocaleString('en-IN')}`;
 
@@ -217,6 +226,7 @@ const HrJobsPage = () => {
     if (!Number.isFinite(parsed) || parsed < 1) return 1;
     return Math.floor(parsed);
   }, [checkoutForm.quantity]);
+  const checkoutQuantityRule = useMemo(() => getPurchaseQuantityRule(checkoutPlan), [checkoutPlan]);
 
   const roleCheckoutQuantity = 1;
 
@@ -434,6 +444,16 @@ const HrJobsPage = () => {
   useEffect(() => {
     let active = true;
 
+    if (checkoutPlan && (checkoutQuantity < checkoutQuantityRule.min || checkoutQuantity > checkoutQuantityRule.max)) {
+      setCheckoutForm((current) => ({
+        ...current,
+        quantity: checkoutQuantityRule.min
+      }));
+      return () => {
+        active = false;
+      };
+    }
+
     const loadQuote = async () => {
       if (!checkoutPlan || checkoutPlan.isFreeNormalized) {
         setQuote(null);
@@ -466,7 +486,7 @@ const HrJobsPage = () => {
     return () => {
       active = false;
     };
-  }, [checkoutPlan, checkoutQuantity]);
+  }, [checkoutPlan, checkoutQuantity, checkoutQuantityRule.min, checkoutQuantityRule.max]);
 
   useEffect(() => {
     let active = true;
@@ -653,32 +673,36 @@ const HrJobsPage = () => {
       return;
     }
 
-    if (!Number.isFinite(checkoutQuantity) || checkoutQuantity < 1) {
-      setError('Quantity must be at least 1.');
+    if (!Number.isFinite(checkoutQuantity) || checkoutQuantity < checkoutQuantityRule.min || checkoutQuantity > checkoutQuantityRule.max) {
+      setError(`${checkoutPlan.name} credits must be purchased between ${checkoutQuantityRule.min} and ${checkoutQuantityRule.max} at a time.`);
       return;
     }
 
     setCheckoutSaving(true);
 
     try {
-      const response = await checkoutPlanCredits({
+      const order = await createJobCreditPaymentOrder({
         planSlug: checkoutPlan.slug,
-        quantity: checkoutQuantity,
-        provider: checkoutForm.provider,
-        referenceId: checkoutForm.referenceId,
-        note: checkoutForm.note,
-        paymentStatus: checkoutForm.paymentStatus
+        quantity: checkoutQuantity
       });
 
+      const checkoutResult = await openRazorpayOrderCheckout({
+        ...order,
+        name: 'HHH Jobs Credits',
+        description: `${checkoutPlan.name} job posting credits`
+      });
+
+      if (checkoutResult.dismissed) {
+        setMessage('Checkout was closed before payment completed.');
+        return;
+      }
+
+      await verifyJobCreditPayment(checkoutResult);
       await loadPricingState();
-      setMessage(
-        response?.purchase?.status === 'paid'
-          ? 'Credits purchased and activated successfully.'
-          : 'Purchase created in pending state. Admin approval is required to activate credits.'
-      );
+      setMessage('Credits purchased and activated successfully.');
       setCheckoutForm((current) => ({
         ...current,
-        quantity: 1,
+        quantity: checkoutQuantityRule.min,
         referenceId: '',
         note: ''
       }));
@@ -1237,7 +1261,17 @@ const HrJobsPage = () => {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-neutral-500 mb-1 block">Quantity</label>
-                    <input type="number" min="1" value={checkoutForm.quantity} onChange={e => setCheckoutForm({ ...checkoutForm, quantity: e.target.value })} className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-400" />
+                    <input
+                      type="number"
+                      min={checkoutQuantityRule.min}
+                      max={checkoutQuantityRule.max}
+                      value={checkoutForm.quantity}
+                      onChange={e => setCheckoutForm({ ...checkoutForm, quantity: e.target.value })}
+                      className="w-full p-2.5 bg-neutral-50 rounded-lg border border-neutral-200 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-400"
+                    />
+                    <p className="mt-1 text-[11px] font-medium text-neutral-400">
+                      Min {checkoutQuantityRule.min}, max {checkoutQuantityRule.max} credits per purchase.
+                    </p>
                   </div>
                   {quote && (
                     <div className="rounded-lg bg-neutral-50 border border-neutral-100 p-3 space-y-1.5 text-xs">
