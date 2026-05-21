@@ -44,7 +44,8 @@ const EMPTY_FILTERS = {
   verifiedOnly: false
 };
 
-const DEFAULT_PAGE_SIZE = 6;
+const DEFAULT_PAGE_SIZE = 24;
+const CANDIDATE_PAGE_SIZES = [12, 24, 48, 96];
 
 const statusStyles = {
   pending: 'border-amber-200 bg-amber-50 text-amber-700',
@@ -74,6 +75,7 @@ export default function HrCandidatesPage() {
   const [summary, setSummary] = useState({ total: 0, blurred: 0, connected: 0, availableNow: 0, verified: 0 });
   const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0, totalPages: 1, count: 0 });
   const [candidates, setCandidates] = useState([]);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [templates, setTemplates] = useState([]);
   const [actionState, setActionState] = useState({});
@@ -86,7 +88,7 @@ export default function HrCandidatesPage() {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const searchRequestRef = useRef(0);
 
-  const runSearch = useCallback(async (activeFilters = EMPTY_FILTERS, requestedPage = 1) => {
+  const runSearch = useCallback(async (activeFilters = EMPTY_FILTERS, requestedPage = 1, requestedLimit = DEFAULT_PAGE_SIZE) => {
     const requestId = searchRequestRef.current + 1;
     searchRequestRef.current = requestId;
     setLoading(true);
@@ -94,13 +96,15 @@ export default function HrCandidatesPage() {
     const response = await searchHrCandidatesV2({
       ...activeFilters,
       page: requestedPage,
-      limit: DEFAULT_PAGE_SIZE
+      limit: requestedLimit
     });
     if (requestId !== searchRequestRef.current) return;
     const payload = response.data || {};
+    const nextPagination = payload.pagination || { page: requestedPage, limit: requestedLimit, total: 0, totalPages: 1, count: 0 };
     setAccess(payload.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanName: 'Free' });
     setSummary(payload.summary || { total: 0, blurred: 0, connected: 0, availableNow: 0, verified: 0 });
-    setPagination(payload.pagination || { page: 1, limit: DEFAULT_PAGE_SIZE, total: 0, totalPages: 1, count: 0 });
+    setPagination(nextPagination);
+    setPageSize(Number(nextPagination.limit || requestedLimit));
     setCandidates(payload.candidates || []);
     setError(response.error || '');
     setLoading(false);
@@ -114,7 +118,7 @@ export default function HrCandidatesPage() {
   };
 
   useEffect(() => {
-    runSearch(EMPTY_FILTERS, 1);
+    runSearch(EMPTY_FILTERS, 1, DEFAULT_PAGE_SIZE);
     loadTemplates();
   }, [runSearch]);
 
@@ -125,6 +129,10 @@ export default function HrCandidatesPage() {
 
   const selectableCandidates = candidates.filter((candidate) => !candidate.crm?.interestStatus && candidate.access?.canSendInterest);
   const selectedCount = selectedIds.size;
+  const visibleStart = (pagination.total || summary.total) && candidates.length
+    ? ((pagination.page - 1) * (pagination.limit || pageSize)) + 1
+    : 0;
+  const visibleEnd = candidates.length ? visibleStart + candidates.length - 1 : 0;
 
   const updateFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }));
 
@@ -301,7 +309,7 @@ export default function HrCandidatesPage() {
                 type="button"
                 onClick={() => {
                   setFilters(EMPTY_FILTERS);
-                  runSearch(EMPTY_FILTERS, 1);
+                  runSearch(EMPTY_FILTERS, 1, pageSize);
                 }}
                 className="text-xs font-bold text-slate-500 transition hover:text-secondary-700"
               >
@@ -343,7 +351,7 @@ export default function HrCandidatesPage() {
 
             <button
               type="button"
-              onClick={() => runSearch(filters, 1)}
+              onClick={() => runSearch(filters, 1, pageSize)}
               className={`${primaryButtonClass} w-full`}
             >
               {loading ? <FiRefreshCw size={14} className="animate-spin" /> : <FiSearch size={14} />}
@@ -397,7 +405,7 @@ export default function HrCandidatesPage() {
             <div className="space-y-3">
               <div className="admin-ops-pagination rounded-2xl border border-slate-200 bg-slate-50 text-[13px] text-slate-500">
                 <span>
-                  Showing <strong className="text-navy">{candidates.length}</strong> of <strong className="text-navy">{pagination.total || summary.total}</strong> candidates
+                  Showing <strong className="text-navy">{visibleStart}-{visibleEnd}</strong> of <strong className="text-navy">{pagination.total || summary.total}</strong> candidates
                 </span>
                 <span>
                   Verified <strong className="text-navy">{summary.verified || 0}</strong>
@@ -405,6 +413,22 @@ export default function HrCandidatesPage() {
                 <span>
                   Page <strong className="text-navy">{pagination.page}</strong> of <strong className="text-navy">{pagination.totalPages}</strong>
                 </span>
+                <label className="inline-flex items-center gap-2 font-semibold text-slate-500">
+                  Rows
+                  <select
+                    value={pageSize}
+                    onChange={(event) => {
+                      const nextLimit = Number(event.target.value);
+                      setPageSize(nextLimit);
+                      runSearch(filters, 1, nextLimit);
+                    }}
+                    className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[12px] font-bold text-slate-700 outline-none transition focus:border-secondary-300 focus:ring-4 focus:ring-secondary-100/80"
+                  >
+                    {CANDIDATE_PAGE_SIZES.map((size) => (
+                      <option key={size} value={size}>{size}</option>
+                    ))}
+                  </select>
+                </label>
               </div>
 
               <div className="grid gap-3 xl:grid-cols-2">
@@ -430,7 +454,7 @@ export default function HrCandidatesPage() {
                 <button
                   type="button"
                   disabled={loading || pagination.page <= 1}
-                  onClick={() => runSearch(filters, Math.max(1, pagination.page - 1))}
+                  onClick={() => runSearch(filters, Math.max(1, pagination.page - 1), pageSize)}
                   className="min-h-11 rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Previous
@@ -443,7 +467,7 @@ export default function HrCandidatesPage() {
                 <button
                   type="button"
                   disabled={loading || pagination.page >= pagination.totalPages}
-                  onClick={() => runSearch(filters, pagination.page + 1)}
+                  onClick={() => runSearch(filters, pagination.page + 1, pageSize)}
                   className="min-h-11 rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Next
