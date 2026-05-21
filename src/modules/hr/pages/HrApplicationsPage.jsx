@@ -276,8 +276,7 @@ export default function HrApplicationsPage() {
     return state.applications.filter((application) => {
       const sourceMatch = selectedSource === 'all' || application.sourceType === selectedSource;
       const statusMatch = selectedStatus === 'all'
-        || application.status === selectedStatus
-        || (selectedStatus === 'hired' && application.status === 'selected');
+        || application.status === selectedStatus;
       const queryMatch = !query || [
         application.candidateName,
         application.email,

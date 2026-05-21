@@ -79,7 +79,6 @@ const getApplicationTime = (application = {}) =>
 
 const mapCampusStatusToPipeline = (status = '') => {
   const normalized = String(status || '').toLowerCase();
-  if (normalized === 'selected') return 'hired';
   if (normalized === 'withdrawn') return 'rejected';
   return normalized;
 };
@@ -91,7 +90,7 @@ const normalizePipeline = (pipeline = {}) => ({
   interviewed: Number(pipeline.interviewed || 0),
   offered: Number(pipeline.offered || 0),
   rejected: Number(pipeline.rejected || 0),
-  hired: Number(pipeline.hired || pipeline.selected || 0)
+  hired: Number(pipeline.hired || 0)
 });
 
 const HrDashboardPage = () => {
@@ -269,7 +268,7 @@ const HrDashboardPage = () => {
   }, [latestApplicants, state.campusDrives, state.interviews, state.jobs]);
 
   const campusPipeline = useMemo(() => {
-    const next = { applied: 0, shortlisted: 0, interview_scheduled: 0, interviewed: 0, offered: 0, rejected: 0, hired: 0 };
+    const next = { applied: 0, shortlisted: 0, interview_scheduled: 0, interviewed: 0, offered: 0, rejected: 0, hired: 0, selected: 0 };
     state.campusApplications.forEach((application) => {
       const status = mapCampusStatusToPipeline(application.status);
       if (next[status] !== undefined) next[status] += 1;
