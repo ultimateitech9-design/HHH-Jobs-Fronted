@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   FiBriefcase,
@@ -41,6 +41,7 @@ const EMPTY_FORM = {
 const BRANCH_OPTIONS = ['CSE', 'IT', 'ECE', 'EEE', 'ME', 'CE', 'MBA', 'MCA', 'All Branches'];
 const APPLICATION_STATUS_OPTIONS = ['applied', 'shortlisted', 'selected', 'rejected', 'withdrawn'];
 const APPLICATION_PAGE_SIZES = [25, 50, 100];
+const noopSummaryChange = () => {};
 
 const getLocalIsoDate = () => {
   const now = new Date();
@@ -455,7 +456,8 @@ const DriveFormModal = ({ initial, onClose, onSaved }) => {
   );
 };
 
-const ApplicantsModal = ({ drive, onClose, onSummaryChange }) => {
+export const CampusDriveApplicantsPanel = ({ drive, onClose, onSummaryChange = noopSummaryChange, pageMode = false }) => {
+  const [loadedDrive, setLoadedDrive] = useState(drive);
   const [state, setState] = useState({
     loading: true,
     error: '',
@@ -476,6 +478,7 @@ const ApplicantsModal = ({ drive, onClose, onSummaryChange }) => {
     currentRound: '',
     notes: ''
   });
+  const displayDrive = loadedDrive || drive;
 
   useEffect(() => {
     let active = true;
@@ -485,6 +488,9 @@ const ApplicantsModal = ({ drive, onClose, onSummaryChange }) => {
       if (!active) return;
 
       const applications = response.data?.applications || [];
+      if (response.data?.drive) {
+        setLoadedDrive(response.data.drive);
+      }
       setState({
         loading: false,
         error: response.error || '',
@@ -646,19 +652,21 @@ const ApplicantsModal = ({ drive, onClose, onSummaryChange }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 p-4 backdrop-blur-sm"
-      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      className={pageMode ? '' : 'fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 p-4 backdrop-blur-sm'}
+      onClick={pageMode ? undefined : (event) => { if (event.target === event.currentTarget && onClose) onClose(); }}
     >
-      <div className="w-full max-w-7xl max-h-[92vh] overflow-y-auto rounded-[1.75rem] bg-white p-6 shadow-2xl">
+      <div className={pageMode ? 'rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[0_10px_28px_-22px_rgba(15,23,42,0.25)]' : 'w-full max-w-7xl max-h-[92vh] overflow-y-auto rounded-[1.75rem] bg-white p-6 shadow-2xl'}>
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-700">Applicants</p>
-            <h3 className="mt-2 text-2xl font-bold text-navy">{drive.company_name} · {drive.job_title}</h3>
+            <h3 className="mt-2 text-2xl font-bold text-navy">{displayDrive.company_name || 'Company'} · {displayDrive.job_title || 'Campus Drive'}</h3>
             <p className="mt-1 text-sm text-slate-500">
-              {drive.visibility_scope === 'platform_open' ? 'Open to all platform students' : 'Campus-only pool'} · Deadline {formatDateLabel(drive.application_deadline || drive.drive_date)}
+              {displayDrive.visibility_scope === 'platform_open' ? 'Open to all platform students' : 'Campus-only pool'} · Deadline {formatDateLabel(displayDrive.application_deadline || displayDrive.drive_date)}
             </p>
           </div>
-          <button type="button" onClick={onClose}><FiX size={20} className="text-slate-400" /></button>
+          {onClose ? (
+            <button type="button" onClick={onClose}><FiX size={20} className="text-slate-400" /></button>
+          ) : null}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-5">
@@ -959,7 +967,6 @@ export default function CampusDrivesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingDrive, setEditingDrive] = useState(null);
   const [draftDrive, setDraftDrive] = useState(null);
-  const [selectedDrive, setSelectedDrive] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -1015,19 +1022,6 @@ export default function CampusDrivesPage() {
     }
   };
 
-  const handleSummaryChange = useCallback((driveId, summary) => {
-    setDrives((current) => current.map((drive) => (
-      drive.id === driveId
-        ? {
-            ...drive,
-            applicant_count: summary.total || 0,
-            shortlisted_count: summary.shortlisted || 0,
-            selected_count: summary.selected || 0
-          }
-        : drive
-    )));
-  }, []);
-
   const upcoming = useMemo(
     () => drives.filter((drive) => ['upcoming', 'ongoing'].includes(getDriveDisplayStatus(drive))),
     [drives]
@@ -1056,14 +1050,6 @@ export default function CampusDrivesPage() {
           initial={editingDrive || draftDrive}
           onClose={() => { setShowForm(false); setEditingDrive(null); setDraftDrive(null); }}
           onSaved={handleSaved}
-        />
-      ) : null}
-
-      {selectedDrive ? (
-        <ApplicantsModal
-          drive={selectedDrive}
-          onClose={() => setSelectedDrive(null)}
-          onSummaryChange={handleSummaryChange}
         />
       ) : null}
 
@@ -1139,7 +1125,7 @@ export default function CampusDrivesPage() {
                     drive={drive}
                     onEdit={() => { setDraftDrive(null); setEditingDrive(drive); }}
                     onDelete={() => handleDelete(drive.id)}
-                    onApplicants={() => setSelectedDrive(drive)}
+                    onApplicants={() => navigate(`/portal/campus-connect/drives/${drive.id}/applicants`)}
                   />
                 ))}
               </div>
@@ -1161,7 +1147,7 @@ export default function CampusDrivesPage() {
                     drive={drive}
                     onEdit={() => { setDraftDrive(null); setEditingDrive(drive); }}
                     onDelete={() => handleDelete(drive.id)}
-                    onApplicants={() => setSelectedDrive(drive)}
+                    onApplicants={() => navigate(`/portal/campus-connect/drives/${drive.id}/applicants`)}
                   />
                 ))}
               </div>
