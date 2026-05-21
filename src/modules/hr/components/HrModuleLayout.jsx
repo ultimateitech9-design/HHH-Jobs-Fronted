@@ -19,7 +19,7 @@ import { FaBuilding } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
 import usePlanAccess from '../../../shared/hooks/usePlanAccess';
-import { getHrJobs, getHrPricingCredits, getPricingPlans } from '../services/hrApi';
+import { getHrJobs, getPricingPlans } from '../services/hrApi';
 
 const hrNavItems = [
   { to: '/portal/hr/dashboard', label: 'Dashboard', icon: FiHome },
@@ -55,8 +55,7 @@ const HrModuleLayout = () => {
     stats: trackedJobPlanSlugs.map((slug) => ({
       slug,
       label: fallbackPlanNames[slug],
-      posted: 0,
-      remaining: 0
+      posted: 0
     }))
   });
   const popoverRef = useRef(null);
@@ -73,10 +72,6 @@ const HrModuleLayout = () => {
 
   const totalPostedJobs = useMemo(
     () => planUsage.stats.reduce((sum, item) => sum + Number(item.posted || 0), 0),
-    [planUsage.stats]
-  );
-  const totalRemainingCredits = useMemo(
-    () => planUsage.stats.reduce((sum, item) => sum + Number(item.remaining || 0), 0),
     [planUsage.stats]
   );
 
@@ -100,9 +95,8 @@ const HrModuleLayout = () => {
     setPlanUsage((current) => ({ ...current, loading: true, error: '' }));
 
     const loadUsage = async () => {
-      const [jobsRes, creditsRes, plansRes] = await Promise.all([
+      const [jobsRes, plansRes] = await Promise.all([
         getHrJobs(),
-        getHrPricingCredits(),
         getPricingPlans()
       ]);
       if (!mounted) return;
@@ -117,13 +111,12 @@ const HrModuleLayout = () => {
       const stats = trackedJobPlanSlugs.map((slug) => ({
         slug,
         label: planNameBySlug[slug] || fallbackPlanNames[slug],
-        posted: jobCounts[slug] || 0,
-        remaining: Number(creditsRes.data?.byPlan?.[slug]?.remaining || 0)
+        posted: jobCounts[slug] || 0
       }));
 
       setPlanUsage({
         loading: false,
-        error: [jobsRes.error, creditsRes.error, plansRes.error].filter(Boolean).join(' | '),
+        error: [jobsRes.error, plansRes.error].filter(Boolean).join(' | '),
         stats
       });
     };
@@ -172,28 +165,18 @@ const HrModuleLayout = () => {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-xl bg-neutral-50 px-3 py-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-neutral-400">Posted</p>
-                    <p className="mt-0.5 text-lg font-extrabold text-slate-900">{totalPostedJobs}</p>
-                  </div>
-                  <div className="rounded-xl bg-neutral-50 px-3 py-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-neutral-400">Credits Left</p>
-                    <p className="mt-0.5 text-lg font-extrabold text-slate-900">{totalRemainingCredits}</p>
-                  </div>
+                <div className="rounded-xl bg-neutral-50 px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-neutral-400">Jobs Posted</p>
+                  <p className="mt-0.5 text-lg font-extrabold text-slate-900">{totalPostedJobs}</p>
                 </div>
 
                 <div className="mt-3 space-y-2">
                   {planUsage.stats.map((item) => (
-                    <div key={item.slug} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl border border-neutral-100 px-3 py-2">
+                    <div key={item.slug} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-neutral-100 px-3 py-2">
                       <p className="truncate text-xs font-bold text-slate-800">{item.label}</p>
                       <div className="text-right">
                         <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-400">Posted</p>
                         <p className="text-sm font-extrabold text-slate-900">{item.posted}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-400">Left</p>
-                        <p className="text-sm font-extrabold text-emerald-700">{item.remaining}</p>
                       </div>
                     </div>
                   ))}
