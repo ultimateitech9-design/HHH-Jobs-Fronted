@@ -553,7 +553,9 @@ const StudentAtsPage = () => {
       title="Resume ATS analyzer"
       subtitle="Search real platform jobs, compare your resume against the selected job profile, and get normal plus edge-case feedback before you apply."
       stats={stats}
-      heroSize="compact"
+      heroSize="mini"
+      statsLayout="inline"
+      heroClassName="!rounded-[1.55rem] md:!px-5 md:!py-4"
       bodyClassName="mx-auto max-w-[1240px] pb-6"
     >
       {state.error ? <StudentNotice type="error" text={state.error} /> : null}

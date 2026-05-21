@@ -63,10 +63,12 @@ export const StudentPageShell = ({
   heroClassName = '',
   bodyClassName = '',
   showHero = true,
-  heroSize = 'default'
+  heroSize = 'default',
+  statsLayout = 'stacked'
 }) => {
   const isCompactHero = heroSize === 'compact';
   const isMiniHero = heroSize === 'mini';
+  const hasInlineStats = statsLayout === 'inline';
 
   return (
     <div className={`space-y-4 pb-8 sm:space-y-6 ${bodyClassName}`.trim()}>
@@ -80,7 +82,7 @@ export const StudentPageShell = ({
           <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-white/8 blur-3xl" />
           <div className="pointer-events-none absolute -right-16 top-0 h-56 w-56 rounded-full bg-brand-200/20 blur-3xl" />
 
-          <div className={`relative grid xl:grid-cols-[minmax(0,1.18fr)_minmax(250px,0.78fr)] xl:items-start ${isMiniHero ? 'gap-2.5' : isCompactHero ? 'gap-4' : 'gap-5 sm:gap-6'}`}>
+          <div className={`relative grid ${hasInlineStats ? 'xl:grid-cols-1' : 'xl:grid-cols-[minmax(0,1.18fr)_minmax(250px,0.78fr)]'} xl:items-start ${isMiniHero ? 'gap-2.5' : isCompactHero ? 'gap-4' : 'gap-5 sm:gap-6'}`}>
             <div>
               <div className={`flex flex-wrap items-center ${isMiniHero ? 'gap-2' : 'gap-2.5 sm:gap-3'}`}>
                 {eyebrow ? (
@@ -107,7 +109,7 @@ export const StudentPageShell = ({
             </div>
 
             {stats.length > 0 ? (
-                <div className={`grid ${isMiniHero ? 'gap-2.5 sm:grid-cols-3 xl:grid-cols-1' : 'gap-3 sm:grid-cols-2 xl:grid-cols-1'}`}>
+                <div className={`grid ${hasInlineStats ? 'gap-2.5 sm:grid-cols-3' : isMiniHero ? 'gap-2.5 sm:grid-cols-3 xl:grid-cols-1' : 'gap-3 sm:grid-cols-2 xl:grid-cols-1'}`}>
                 {stats.map((metric) => (
                   <article
                     key={metric.label}
