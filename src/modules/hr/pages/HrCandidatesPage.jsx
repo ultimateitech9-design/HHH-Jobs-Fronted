@@ -679,7 +679,15 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
             ) : (
               <div className="flex items-start gap-2">
                 <FiEye size={14} className="mt-0.5 shrink-0 text-brand-600" />
-                <p>{candidate.access?.blurReason || 'Contact details unlock after the student accepts your connection request.'}</p>
+                <div className="space-y-1">
+                  <p>{candidate.access?.blurReason || 'Contact details unlock after the student accepts your connection request.'}</p>
+                  {candidate.access?.canViewResume && candidate.profile?.resumeUrl ? (
+                    <a href={candidate.profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline">
+                      <FiFileText size={13} />
+                      View resume
+                    </a>
+                  ) : null}
+                </div>
               </div>
             )}
           </div>
