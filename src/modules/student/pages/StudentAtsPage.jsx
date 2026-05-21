@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FiActivity,
-  FiAlertTriangle,
   FiBarChart2,
   FiCheck,
   FiCheckCircle,
@@ -81,17 +80,6 @@ const getScoreTone = (score) => {
 
 const getWordCount = (value = '') => String(value || '').trim().split(/\s+/).filter(Boolean).length;
 
-const CASE_COVERAGE = [
-  'Profile resume',
-  'Custom PDF/DOC/DOCX/TXT',
-  'Pasted resume text',
-  'Live platform job',
-  'Manual job description',
-  'Missing resume guard',
-  'Large/invalid file guard',
-  'AI fallback handling'
-];
-
 const scoreCards = [
   { key: 'mustHaveScore', label: 'Core skill fit', icon: FiZap },
   { key: 'similarityScore', label: 'Role evidence', icon: FiTrendingUp },
@@ -99,6 +87,24 @@ const scoreCards = [
   { key: 'seniorityScore', label: 'Seniority fit', icon: FiActivity },
   { key: 'formatScore', label: 'Format', icon: FiCheckCircle },
   { key: 'impactScore', label: 'Impact', icon: FiBarChart2 }
+];
+
+const SCORING_MODEL = [
+  { label: 'Core skills', weight: '22%', key: 'mustHaveScore' },
+  { label: 'Keywords', weight: '18%', key: 'keywordScore' },
+  { label: 'Role evidence', weight: '18%', key: 'similarityScore' },
+  { label: 'Seniority', weight: '10%', key: 'seniorityScore' },
+  { label: 'Title', weight: '8%', key: 'titleScore' },
+  { label: 'Benchmark', weight: '8%', key: 'benchmarkScore' },
+  { label: 'Format', weight: '8%', key: 'formatScore' },
+  { label: 'Impact', weight: '8%', key: 'impactScore' }
+];
+
+const AI_PIPELINE_STEPS = [
+  { label: 'Parse', text: 'Resume text + selected job evidence' },
+  { label: 'Score', text: 'Weighted ATS and business-fit model' },
+  { label: 'Calibrate', text: 'OpenAI bounded review, no invented claims' },
+  { label: 'Report', text: 'Action plan, gaps, and rewrite guidance' }
 ];
 
 const BUSINESS_FLAG_LABELS = {
@@ -139,12 +145,24 @@ const normalizeResult = (result = {}) => ({
   priorityActions: Array.isArray(result.priorityActions) ? result.priorityActions : [],
   aiStrengths: Array.isArray(result.aiStrengths) ? result.aiStrengths : [],
   aiPriorityEdits: Array.isArray(result.aiPriorityEdits) ? result.aiPriorityEdits : [],
+  aiRewriteBullets: Array.isArray(result.aiRewriteBullets) ? result.aiRewriteBullets : [],
+  aiKeywordPlacement: Array.isArray(result.aiKeywordPlacement) ? result.aiKeywordPlacement : [],
   benchmarkKeywords: Array.isArray(result.benchmarkKeywords) ? result.benchmarkKeywords : [],
   seniorityInsights: String(result.seniorityInsights || '').trim(),
+  aiInterviewReadiness: String(result.aiInterviewReadiness || '').trim(),
+  aiFirstFix: String(result.aiFirstFix || '').trim(),
   aiCalibrationReason: String(result.aiCalibrationReason || '').trim(),
   aiSeniorityAssessment: String(result.aiSeniorityAssessment || '').trim(),
   aiBusinessVerdict: String(result.aiBusinessVerdict || '').trim()
 });
+
+const getReportVerdict = (score = 0) => {
+  const value = Number(score || 0);
+  if (value >= 85) return { label: 'Apply confidently', text: 'Resume and role evidence look strong.', className: 'border-emerald-200 bg-emerald-50 text-emerald-700' };
+  if (value >= 72) return { label: 'Good to apply', text: 'Make the top edits, then apply.', className: 'border-sky-200 bg-sky-50 text-sky-700' };
+  if (value >= 58) return { label: 'Edit before applying', text: 'Fix missing role evidence first.', className: 'border-amber-200 bg-amber-50 text-amber-700' };
+  return { label: 'Not ready yet', text: 'Rewrite the resume for this role before applying.', className: 'border-rose-200 bg-rose-50 text-rose-700' };
+};
 
 const ChipList = ({ items = [], tone = 'slate', emptyText }) => {
   const palette = {
@@ -303,6 +321,25 @@ const StudentAtsPage = () => {
   ];
 
   const scoreTone = useMemo(() => getScoreTone(result?.score), [result?.score]);
+  const reportVerdict = useMemo(() => getReportVerdict(result?.score), [result?.score]);
+  const scoreFocusCards = useMemo(() => (
+    result
+      ? scoreCards
+        .map((item) => ({ ...item, value: Number(result[item.key] || 0) }))
+        .sort((left, right) => left.value - right.value)
+      : []
+  ), [result]);
+  const topActions = useMemo(() => {
+    if (!result) return [];
+    return [
+      result.aiFirstFix,
+      ...(result.aiPriorityEdits || []),
+      ...(result.priorityActions || []),
+      ...(result.suggestions || [])
+    ].map((item) => String(item || '').trim()).filter(Boolean)
+      .filter((item, index, list) => list.indexOf(item) === index)
+      .slice(0, 5);
+  }, [result]);
 
   const preflight = useMemo(() => {
     const errors = [];
@@ -564,9 +601,9 @@ const StudentAtsPage = () => {
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.9fr)]">
         <StudentSurfaceCard
           eyebrow="Scan setup"
-          title="Choose job and resume"
-          subtitle="Use the searchable dropdown for jobs already available on the platform."
-          className="w-full p-4 xl:p-5 [&>div:first-child]:mb-4 [&_h2]:text-[1.55rem] [&_p]:max-w-none"
+          title="Role-fit command center"
+          subtitle="Select one target role, choose the resume version, then run a scored ATS report with AI-calibrated edits."
+          className="w-full p-4 xl:p-5 [&>div:first-child]:mb-4 [&_h2]:text-[1.5rem] [&_p]:max-w-none"
         >
           {state.loading ? (
             <div className="h-72 animate-pulse rounded-[1rem] bg-slate-100" />
@@ -760,13 +797,19 @@ const StudentAtsPage = () => {
                 <span className="mt-1 block text-right text-xs font-semibold text-slate-400">{resumeTextWordCount} words</span>
               </label>
 
-              <div className="grid gap-2 rounded-[1rem] border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
-                {CASE_COVERAGE.map((item) => (
-                  <span key={item} className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
-                    <FiCheckCircle className="text-emerald-500" size={14} />
-                    {item}
-                  </span>
-                ))}
+              <div className="rounded-[1rem] border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">AI scoring flow</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-4">
+                  {AI_PIPELINE_STEPS.map((item, index) => (
+                    <div key={item.label} className="rounded-[0.85rem] bg-white px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-[10px] font-black text-white">{index + 1}</span>
+                        <p className="text-xs font-black text-navy">{item.label}</p>
+                      </div>
+                      <p className="mt-1 text-[11px] leading-4 text-slate-500">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {preflight.warnings.length > 0 ? (
@@ -792,8 +835,8 @@ const StudentAtsPage = () => {
         {result ? (
           <StudentSurfaceCard
             eyebrow="Result"
-            title={result.fitLevel || `${selectedJobTitle} fit scan`}
-            subtitle="AI and heuristic checks combined into practical resume actions."
+            title={`${result.fitLevel || 'ATS report'} for ${selectedJobTitle}`}
+            subtitle="Weighted ATS scoring, business-fit checks, and OpenAI calibrated resume guidance in one report."
             className="w-full p-4 xl:p-5 [&>div:first-child]:mb-4 [&_h2]:text-[1.55rem] [&_p]:max-w-none"
           >
             <div className="space-y-4">
@@ -806,9 +849,12 @@ const StudentAtsPage = () => {
                       <span className={`mb-1 rounded-full border px-3 py-1 text-xs font-bold ${scoreTone.badge}`}>
                         {result.aiPowered ? 'AI on' : 'AI fallback'}
                       </span>
+                      <span className={`mb-1 rounded-full border px-3 py-1 text-xs font-bold ${reportVerdict.className}`}>
+                        {result.aiInterviewReadiness || reportVerdict.label}
+                      </span>
                     </div>
                     <p className="mt-1 text-sm font-medium text-slate-600">
-                      Confidence {result.confidenceScore || 0}% · {result.resumeWordCount || 0} resume words analyzed
+                      {reportVerdict.text} Confidence {result.confidenceScore || 0}% · {result.resumeWordCount || 0} resume words analyzed
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <span className="rounded-full border border-white/80 bg-white px-3 py-1 text-xs font-bold text-slate-700">
@@ -835,22 +881,62 @@ const StudentAtsPage = () => {
                 </div>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2">
-                {scoreCards.map((item) => {
+              <div className="grid gap-3 xl:grid-cols-[1fr,0.85fr]">
+                <div className="rounded-[1rem] border border-slate-200 bg-white p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-black text-navy">Score focus map</p>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">Lowest first</span>
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {scoreFocusCards.map((item) => {
                   const Icon = item.icon;
-                  const value = Number(result[item.key] || 0);
+                  const value = Number(item.value || 0);
                   const tone = getScoreTone(value);
                   return (
-                    <div key={item.key} className="rounded-[1rem] border border-slate-200 bg-white p-3">
+                    <div key={item.key} className="rounded-[0.9rem] border border-slate-100 bg-slate-50 p-2.5">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-xs font-bold uppercase text-slate-400">{item.label}</p>
                         <Icon className="text-slate-400" size={15} />
                       </div>
-                      <p className="mt-2 font-heading text-2xl font-black text-navy">{Math.round(value)}%</p>
+                      <p className="mt-1 font-heading text-xl font-black text-navy">{Math.round(value)}%</p>
                       <div className="mt-2"><ScoreBar value={value} tone={tone} /></div>
                     </div>
                   );
                 })}
+                  </div>
+                </div>
+
+                <div className="rounded-[1rem] border border-slate-200 bg-white p-3">
+                  <p className="text-sm font-black text-navy">Scoring model</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {SCORING_MODEL.map((item) => (
+                      <div key={item.key} className="rounded-[0.85rem] bg-slate-50 px-2.5 py-2">
+                        <p className="truncate text-[11px] font-bold text-slate-500">{item.label}</p>
+                        <p className="mt-0.5 text-sm font-black text-navy">{item.weight}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-slate-500">
+                    OpenAI can adjust the final score only within a bounded range after checking evidence quality, seniority, and recruiter risk.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-[1rem] border border-violet-200 bg-violet-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-black text-navy">Priority action plan</p>
+                  <span className="rounded-full border border-violet-200 bg-white px-2.5 py-1 text-[11px] font-bold text-violet-700">
+                    Do these before applying
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-2">
+                  {(topActions.length ? topActions : ['Run the check, then apply the first 3 priority edits before sending your resume.']).map((item, index) => (
+                    <div key={item} className="flex gap-3 rounded-[0.9rem] bg-white px-3 py-2 text-sm leading-5 text-slate-700">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-600 text-xs font-black text-white">{index + 1}</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="grid gap-3 xl:grid-cols-[1.15fr,0.85fr]">
@@ -930,6 +1016,25 @@ const StudentAtsPage = () => {
                 </div>
               </div>
 
+              {(result.aiRewriteBullets.length > 0 || result.aiKeywordPlacement.length > 0) ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-[1rem] border border-indigo-200 bg-indigo-50 p-3">
+                    <p className="mb-2 text-xs font-bold uppercase text-indigo-700">Resume bullet rewrites</p>
+                    <ul className="space-y-2 text-sm leading-6 text-slate-700">
+                      {result.aiRewriteBullets.length === 0 ? <li>No rewrite bullets returned.</li> : null}
+                      {result.aiRewriteBullets.map((item) => <li key={item} className="rounded-[0.8rem] bg-white px-3 py-2">{item}</li>)}
+                    </ul>
+                  </div>
+                  <div className="rounded-[1rem] border border-amber-200 bg-amber-50 p-3">
+                    <p className="mb-2 text-xs font-bold uppercase text-amber-700">Keyword placement plan</p>
+                    <ul className="space-y-2 text-sm leading-6 text-slate-700">
+                      {result.aiKeywordPlacement.length === 0 ? <li>No placement plan returned.</li> : null}
+                      {result.aiKeywordPlacement.map((item) => <li key={item} className="rounded-[0.8rem] bg-white px-3 py-2">{item}</li>)}
+                    </ul>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50 p-3">
                   <p className="mb-2 text-xs font-bold uppercase text-emerald-700">Matched role signals</p>
@@ -976,22 +1081,22 @@ const StudentAtsPage = () => {
         ) : (
           <StudentSurfaceCard
             eyebrow="Result"
-            title="Ready for analysis"
-            subtitle="Your ATS score, AI coach, missing keywords, and edge-case warnings will appear here."
+            title="Professional ATS report"
+            subtitle="The report will explain the score, the reason behind it, and the exact edits to make before applying."
             className="w-full p-4 xl:p-5 [&>div:first-child]:mb-4 [&_h2]:text-[1.55rem] [&_p]:max-w-none"
           >
             <StudentEmptyState
               icon={FiFileText}
-              title="Select a job and run ATS"
-              description="The analyzer will compare resume text against the chosen job profile, not a generic role only."
-              className="border-none bg-slate-50 py-8"
+              title="Select a role, then run analysis"
+              description="HHH Jobs compares your resume against the selected job, then OpenAI reviews the result for practical recruiter-facing edits."
+              className="border-none bg-slate-50 py-6"
             />
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {[
-                { icon: FiSearch, text: 'Search live platform jobs' },
-                { icon: FiUploadCloud, text: 'Upload or paste resume' },
-                { icon: FiAlertTriangle, text: 'Catch edge cases early' },
-                { icon: FiClock, text: 'Save history for job checks' }
+                { icon: FiSearch, text: 'Job-specific keyword and role benchmark' },
+                { icon: FiBarChart2, text: 'Weighted score breakdown with weakest areas first' },
+                { icon: FiZap, text: 'OpenAI bounded calibration and first fix' },
+                { icon: FiClock, text: 'History saved for selected platform jobs' }
               ].map((item) => {
                 const Icon = item.icon;
                 return (
@@ -1001,6 +1106,17 @@ const StudentAtsPage = () => {
                   </div>
                 );
               })}
+            </div>
+            <div className="mt-3 rounded-[1rem] border border-slate-200 bg-white p-3">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Score formula</p>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {SCORING_MODEL.map((item) => (
+                  <div key={item.key} className="rounded-[0.85rem] bg-slate-50 px-2.5 py-2">
+                    <p className="truncate text-[11px] font-bold text-slate-500">{item.label}</p>
+                    <p className="text-sm font-black text-navy">{item.weight}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </StudentSurfaceCard>
         )}
