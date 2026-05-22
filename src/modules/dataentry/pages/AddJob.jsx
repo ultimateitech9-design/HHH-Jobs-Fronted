@@ -6,6 +6,7 @@ import {
   defaultJobEntryDraft,
   formatJobEntryPayload,
   getDataEntryEntryById,
+  getRegisteredJobCompanies,
   updateDataEntry
 } from '../services/dataentryApi';
 
@@ -29,6 +30,14 @@ const buildDraftFromEntry = (entry = {}) => {
 const fieldLabelClassName = 'block text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500';
 const fieldControlClassName = 'mt-1.5 w-full rounded-[1rem] border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-medium text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brand-300 focus:ring-2 focus:ring-brand-100';
 const textareaClassName = `${fieldControlClassName} min-h-[136px] resize-y`;
+const registeredCompaniesListId = 'dataentry-registered-job-companies';
+
+const normalizeCompanyKey = (value = '') =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 
 const AddJob = () => {
   const [searchParams] = useSearchParams();
@@ -36,6 +45,9 @@ const AddJob = () => {
   const [draft, setDraft] = useState(defaultJobEntryDraft);
   const [existingEntry, setExistingEntry] = useState(null);
   const [loadingEntry, setLoadingEntry] = useState(false);
+  const [registeredCompanies, setRegisteredCompanies] = useState([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(true);
+  const [companiesError, setCompaniesError] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -44,6 +56,28 @@ const AddJob = () => {
   const setField = (field, value) => {
     setDraft((current) => ({ ...current, [field]: value }));
   };
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCompanies = async () => {
+      setLoadingCompanies(true);
+      setCompaniesError('');
+
+      const response = await getRegisteredJobCompanies();
+      if (!active) return;
+
+      setRegisteredCompanies(Array.isArray(response.data) ? response.data : []);
+      setCompaniesError(response.error || '');
+      setLoadingCompanies(false);
+    };
+
+    loadCompanies();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!entryId) {
@@ -85,14 +119,35 @@ const AddJob = () => {
 
   const submitLabel = useMemo(() => (
     saving
-      ? (isEditMode ? 'Updating...' : 'Saving...')
-      : (isEditMode ? 'Update Job Entry' : 'Save Job Entry')
+      ? (isEditMode ? 'Updating...' : 'Posting...')
+      : (isEditMode ? 'Update Job Post' : 'Post Job')
   ), [isEditMode, saving]);
+  const registeredCompany = useMemo(() => {
+    const companyKey = normalizeCompanyKey(draft.companyName);
+    if (!companyKey) return null;
+
+    return registeredCompanies.find((company) => normalizeCompanyKey(company.companyName) === companyKey) || null;
+  }, [draft.companyName, registeredCompanies]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!draft.title || !draft.companyName || !draft.location) {
-      setError('Title, company name, and location are required.');
+    if (!draft.title || !draft.companyName || !draft.location || !draft.salaryMax || !draft.description) {
+      setError('Title, registered company, location, max salary, and description are required before posting.');
+      return;
+    }
+
+    if (loadingCompanies) {
+      setError('Registered companies are still loading. Try again in a moment.');
+      return;
+    }
+
+    if (companiesError) {
+      setError(`Unable to check registered companies. ${companiesError}`);
+      return;
+    }
+
+    if (!registeredCompany) {
+      setError('Select a registered company from the employer portal list before saving this job entry.');
       return;
     }
 
@@ -101,7 +156,11 @@ const AddJob = () => {
     setMessage('');
 
     try {
-      const payload = formatJobEntryPayload(draft);
+      const registeredDraft = {
+        ...draft,
+        companyName: registeredCompany.companyName
+      };
+      const payload = formatJobEntryPayload(registeredDraft);
 
       if (isEditMode) {
         const saved = await updateDataEntry(entryId, {
@@ -113,10 +172,10 @@ const AddJob = () => {
         });
         setExistingEntry(saved);
         setDraft(buildDraftFromEntry(saved));
-        setMessage(`Job entry ${saved.id || draft.title} updated successfully.`);
+        setMessage(`Job post ${saved.id || draft.title} updated in the HR account.`);
       } else {
-        const saved = await createJobEntry(draft);
-        setMessage(`Job entry ${saved.id || draft.title} saved successfully.`);
+        const saved = await createJobEntry(registeredDraft);
+        setMessage(`Job ${saved.id || draft.title} posted to the registered HR account.`);
         setDraft(defaultJobEntryDraft);
       }
     } catch (actionError) {
@@ -155,7 +214,20 @@ const AddJob = () => {
             </label>
             <label className="grid gap-0.5">
               <span className={fieldLabelClassName}>Company Name</span>
-              <input className={fieldControlClassName} value={draft.companyName} onChange={(event) => setField('companyName', event.target.value)} />
+              <input
+                className={fieldControlClassName}
+                list={registeredCompaniesListId}
+                value={draft.companyName}
+                placeholder={loadingCompanies ? 'Loading registered companies...' : 'Select registered company'}
+                autoComplete="off"
+                onChange={(event) => setField('companyName', event.target.value)}
+              />
+              <datalist id={registeredCompaniesListId}>
+                {registeredCompanies.map((company) => (
+                  <option key={company.id || company.companyName} value={company.companyName} />
+                ))}
+              </datalist>
+              {companiesError ? <span className="text-xs font-medium text-rose-600">{companiesError}</span> : null}
             </label>
             <label className="grid gap-0.5">
               <span className={fieldLabelClassName}>Location</span>
@@ -192,7 +264,7 @@ const AddJob = () => {
             </label>
             <label className="grid gap-0.5 md:col-span-2">
               <span className={fieldLabelClassName}>Description</span>
-              <textarea className={textareaClassName} rows="4" value={draft.description} onChange={(event) => setField('description', event.target.value)} />
+              <textarea className={textareaClassName} rows="4" maxLength="250" value={draft.description} onChange={(event) => setField('description', event.target.value)} />
             </label>
             <div className="md:col-span-2 mt-2 flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">
               <button

@@ -444,6 +444,13 @@ export const updateHrInterview = async (interviewId, payload) =>
     extract: (responsePayload) => responsePayload?.interview || responsePayload
   });
 
+export const deleteHrInterview = async (interviewId) =>
+  strictRequest({
+    path: `/hr/interviews/${interviewId}`,
+    options: { method: 'DELETE' },
+    extract: (responsePayload) => responsePayload
+  });
+
 export const getHrNotifications = async () =>
   safeRequest({
     path: '/notifications',

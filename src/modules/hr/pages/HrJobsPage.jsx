@@ -416,17 +416,22 @@ const HrJobsPage = () => {
     const value = new URLSearchParams(location.search).get('tab');
     return ['jobs', 'post', 'billing'].includes(value) ? value : '';
   }, [location.search]);
+  const requestedBillingSubTab = useMemo(() => {
+    const value = new URLSearchParams(location.search).get('billingTab');
+    return ['subscription', 'credits', 'history'].includes(value) ? value : '';
+  }, [location.search]);
 
   useEffect(() => {
     if (requestedTab) {
       setActiveTab(requestedTab);
-      return;
-    }
-
-    if (requestedAudience === 'retired_employee') {
+    } else if (requestedAudience === 'retired_employee') {
       setActiveTab('post');
     }
-  }, [requestedAudience, requestedTab]);
+
+    if (requestedBillingSubTab) {
+      setBillingSubTab(requestedBillingSubTab);
+    }
+  }, [requestedAudience, requestedBillingSubTab, requestedTab]);
 
   const resolveDraftLocations = (jobDraft = draft) => {
     const primaryLocation = String(jobDraft.jobLocation || '').trim();

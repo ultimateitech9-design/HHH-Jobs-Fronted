@@ -445,17 +445,6 @@ export default function HrCandidatesPage() {
         </div>
       ) : null}
 
-      {studentDbUsage ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-[13px] font-semibold text-indigo-800 shadow-sm">
-          <span>
-            {access.activePlanName || 'Current plan'} candidate views: {studentDbUsage.used}/{studentDbUsage.limit}
-          </span>
-          <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-indigo-700">
-            {studentDbUsage.remaining} left
-          </span>
-        </div>
-      ) : null}
-
       <UpgradePlanModal
         isOpen={upgradeModalOpen}
         onClose={() => setUpgradeModalOpen(false)}

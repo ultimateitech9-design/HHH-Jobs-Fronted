@@ -238,6 +238,13 @@ export const getDataEntryEntries = async (filters = {}) =>
     emptyData: []
   });
 
+export const getRegisteredJobCompanies = async () =>
+  readCollection({
+    path: `${DATA_ENTRY_BASE}/registered-companies`,
+    key: 'companies',
+    emptyData: []
+  });
+
 export const getDataEntryEntryById = async (entryId) =>
   safeRequest({
     path: `${DATA_ENTRY_BASE}/entries/${entryId}`,
@@ -257,6 +264,13 @@ export const createPropertyEntry = async (draft) =>
     path: `${DATA_ENTRY_BASE}/properties`,
     key: 'entry',
     body: formatPropertyEntryPayload(draft)
+  });
+
+export const createDataEntryUserId = async (payload) =>
+  createItem({
+    path: `${DATA_ENTRY_BASE}/users`,
+    key: 'user',
+    body: payload
   });
 
 export const updateDataEntry = async (entryId, payload) =>

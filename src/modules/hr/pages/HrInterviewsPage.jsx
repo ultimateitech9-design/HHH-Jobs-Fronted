@@ -15,6 +15,7 @@ import {
 } from 'react-icons/fi';
 import {
   createHrInterview,
+  deleteHrInterview,
   fetchHrCampusDriveApplications,
   fetchHrCampusDrives,
   formatInterviewDateTime,
@@ -420,13 +421,26 @@ const HrInterviewsPage = () => {
     }
   };
 
-  const handleDeleteInterview = (interview) => {
-    const targetRoomId = interview.room_interview_id || interview.id;
-    setInterviews((current) => current.filter((item) => {
-      const itemRoomId = item.room_interview_id || item.id;
-      return item.id !== interview.id && itemRoomId !== targetRoomId;
-    }));
-    setState((current) => ({ ...current, error: '', message: 'Interview removed from this list.' }));
+  const handleDeleteInterview = async (interview) => {
+    try {
+      const deleted = await deleteHrInterview(interview.id);
+      const deletedIds = Array.isArray(deleted.deletedIds) ? deleted.deletedIds : [];
+      if (deletedIds.length === 0) {
+        throw new Error('Interview was not deleted. Refresh and try again.');
+      }
+
+      const refreshed = await getHrInterviews();
+      if (refreshed.error) {
+        throw new Error(refreshed.error);
+      }
+
+      setInterviews((refreshed.data || []).sort(
+        (left, right) => new Date(right.scheduled_at || right.scheduledAt) - new Date(left.scheduled_at || left.scheduledAt)
+      ));
+      setState((current) => ({ ...current, error: '', message: 'Interview deleted.' }));
+    } catch (error) {
+      setState((current) => ({ ...current, error: error.message || 'Unable to delete interview.' }));
+    }
   };
 
   const inputClass = 'mt-1 w-full rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] text-slate-700 shadow-sm transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none';
