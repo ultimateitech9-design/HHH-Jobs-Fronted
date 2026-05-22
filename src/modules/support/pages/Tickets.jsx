@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import SupportHeader from '../components/SupportHeader';
 import TicketFilterBar from '../components/TicketFilterBar';
 import TicketTable from '../components/TicketTable';
@@ -5,7 +6,26 @@ import SupportStatsCards from '../components/SupportStatsCards';
 import useTickets from '../hooks/useTickets';
 
 const Tickets = () => {
-  const { filteredTickets, filters, setFilters, loading, error, isDemo } = useTickets();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { filteredTickets, filters, setFilters, loading, error, isDemo } = useTickets({
+    status: searchParams.get('status') || ''
+  });
+
+  const updateFilter = (field, value) => {
+    setFilters((current) => ({ ...current, [field]: value }));
+
+    if (field !== 'status') return;
+
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      if (value) {
+        next.set('status', value);
+      } else {
+        next.delete('status');
+      }
+      return next;
+    }, { replace: true });
+  };
 
   const cards = [
     { label: 'Visible Tickets', value: String(filteredTickets.length), helper: 'Current filtered support queue', tone: 'info' },
@@ -28,7 +48,7 @@ const Tickets = () => {
           </div>
         </div>
         <div className="px-4 py-4 sm:px-5 sm:py-5">
-          <TicketFilterBar filters={filters} onChange={(field, value) => setFilters((current) => ({ ...current, [field]: value }))} />
+          <TicketFilterBar filters={filters} onChange={updateFilter} />
           {loading ? <p className="module-note">Loading tickets...</p> : null}
           <TicketTable rows={filteredTickets} />
         </div>

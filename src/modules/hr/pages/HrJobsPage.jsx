@@ -168,7 +168,7 @@ const HrJobsPage = () => {
   const [billingSubTab, setBillingSubTab] = useState('subscription'); // 'subscription', 'history'
 
   const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -859,7 +859,7 @@ const HrJobsPage = () => {
               </div>
             </div>
             <div className="text-sm font-bold text-neutral-500">
-              {filteredJobs.length} Jobs Found
+              {loading ? 'Loading Jobs' : `${filteredJobs.length} Jobs Found`}
             </div>
           </div>
 

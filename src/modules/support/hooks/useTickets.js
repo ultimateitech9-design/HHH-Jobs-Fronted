@@ -9,9 +9,9 @@ const initialFilters = {
   category: ''
 };
 
-const useTickets = () => {
+const useTickets = (defaultFilters = {}) => {
   const [tickets, setTickets] = useState([]);
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters] = useState(() => ({ ...initialFilters, ...defaultFilters }));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState(false);

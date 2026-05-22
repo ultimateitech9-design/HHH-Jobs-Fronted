@@ -3,13 +3,15 @@ import { Link } from 'react-router-dom';
 import { FiAlertCircle, FiClock, FiMessageCircle, FiShield } from 'react-icons/fi';
 import StatusPill from '../../../shared/components/StatusPill';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
-import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
 import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import useSupportStats from '../hooks/useSupportStats';
 import useTickets from '../hooks/useTickets';
 import { formatDateTime } from '../utils/formatDate';
 import { getTicketDisplayId } from '../utils/ticketHelpers';
+
+const TICKET_QUEUE_ROUTE = '/portal/support/tickets';
+const ticketStatusRoute = (status) => `${TICKET_QUEUE_ROUTE}?status=${status}`;
 
 const SupportDashboard = () => {
   const { stats, loading, error, isDemo } = useSupportStats();
@@ -18,10 +20,10 @@ const SupportDashboard = () => {
   const cards = useMemo(() => {
     const data = stats || {};
     return [
-      { label: 'Total Tickets', value: String(data.totalTickets || 0), helper: `${data.openTickets || 0} open`, tone: 'info', icon: FiShield },
-      { label: 'Resolved', value: String(data.resolvedTickets || 0), helper: `${data.avgResolutionHours || 0} hrs avg resolution`, tone: 'success', icon: FiClock },
-      { label: 'Escalations', value: String(data.escalatedTickets || 0), helper: `${data.pendingTickets || 0} pending`, tone: 'warning', icon: FiAlertCircle },
-      { label: 'Live Chat', value: String(data.liveChats || 0), helper: `${data.feedbackItems || 0} feedback items`, tone: 'default', icon: FiMessageCircle }
+      { label: 'Total Tickets', value: String(data.totalTickets || 0), helper: `${data.openTickets || 0} open`, tone: 'info', icon: FiShield, to: TICKET_QUEUE_ROUTE, ctaLabel: 'Open tickets' },
+      { label: 'Resolved', value: String(data.resolvedTickets || 0), helper: `${data.avgResolutionHours || 0} hrs avg resolution`, tone: 'success', icon: FiClock, to: ticketStatusRoute('resolved'), ctaLabel: 'Open resolved tickets' },
+      { label: 'Escalations', value: String(data.escalatedTickets || 0), helper: `${data.pendingTickets || 0} pending`, tone: 'warning', icon: FiAlertCircle, to: ticketStatusRoute('escalated'), ctaLabel: 'Open escalations' },
+      { label: 'Live Chat', value: String(data.liveChats || 0), helper: `${data.feedbackItems || 0} feedback items`, tone: 'default', icon: FiMessageCircle, to: '/portal/support/live-chat', ctaLabel: 'Open live chat' }
     ];
   }, [stats]);
 
@@ -33,18 +35,21 @@ const SupportDashboard = () => {
         description:
           Number(data.escalatedTickets || 0) > 0
             ? `${data.escalatedTickets} escalated tickets require fast triage and owner confirmation.`
-            : 'No escalated queue pressure right now.'
+            : 'No escalated queue pressure right now.',
+        to: ticketStatusRoute('escalated')
       },
       {
         title: Number(data.pendingTickets || 0) > 0 ? 'Clear pending follow-ups' : 'Pending follow-ups are under control',
         description:
           Number(data.pendingTickets || 0) > 0
             ? `${data.pendingTickets} tickets are waiting on customer or internal response.`
-            : 'Customer follow-up backlog is low.'
+            : 'Customer follow-up backlog is low.',
+        to: ticketStatusRoute('pending')
       },
       {
         title: 'Keep knowledge links ready',
-        description: 'Use FAQ and knowledge base responses to reduce repetitive handling time.'
+        description: 'Use FAQ and knowledge base responses to reduce repetitive handling time.',
+        to: '/portal/support/knowledge-base'
       }
     ];
   }, [stats]);
@@ -58,65 +63,6 @@ const SupportDashboard = () => {
     return bucket;
   }, [tickets]);
 
-  const quickActions = useMemo(() => ([
-    {
-      to: '/portal/support/tickets',
-      title: 'Tickets',
-      description: 'Open, assign, and resolve customer issues from the central queue.',
-      tone: 'brand',
-      ctaLabel: 'Open ticket desk'
-    },
-    {
-      to: '/portal/support/create-ticket',
-      title: 'Create Ticket',
-      description: 'Create a new support case directly from the dashboard when needed.',
-      tone: 'accent',
-      ctaLabel: 'Create ticket'
-    },
-    {
-      to: '/portal/support/live-chat',
-      title: 'Live Chat',
-      description: 'Handle real-time conversations before they become escalations.',
-      tone: 'info',
-      ctaLabel: 'Open live chat'
-    },
-    {
-      to: '/portal/support/faq',
-      title: 'FAQ',
-      description: 'Open common answers and customer-facing issue guidance.',
-      tone: 'neutral',
-      ctaLabel: 'Open FAQ'
-    },
-    {
-      to: '/portal/support/complaints',
-      title: 'Complaints',
-      description: 'Review complaint cases and sensitive escalations requiring oversight.',
-      tone: 'warning',
-      ctaLabel: 'Open complaints'
-    },
-    {
-      to: '/portal/support/feedback',
-      title: 'Feedback',
-      description: 'Check service feedback and recent customer sentiment inputs.',
-      tone: 'success',
-      ctaLabel: 'Open feedback'
-    },
-    {
-      to: '/portal/support/knowledge-base',
-      title: 'Knowledge Base',
-      description: 'Route common issues toward reusable answers and guides.',
-      tone: 'success',
-      ctaLabel: 'Open knowledge base'
-    },
-    {
-      to: '/portal/support/reports',
-      title: 'Reports',
-      description: 'Review queue performance, response time, and service reporting.',
-      tone: 'info',
-      ctaLabel: 'Open reports'
-    }
-  ]), []);
-
   return (
     <div className="space-y-3 pb-2">
       {isDemo ? <p className="module-note">Demo support data is shown because backend support endpoints are not connected.</p> : null}
@@ -128,19 +74,6 @@ const SupportDashboard = () => {
         <>
           <DashboardMetricCards cards={cards} />
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {quickActions.map((action) => (
-              <DashboardQuickActionCard
-                key={action.title}
-                to={action.to}
-                title={action.title}
-                description={action.description}
-                tone={action.tone}
-                ctaLabel={action.ctaLabel}
-              />
-            ))}
-          </div>
-
           <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
             <DashboardSectionCard
               eyebrow="Service Protocol"
@@ -149,14 +82,19 @@ const SupportDashboard = () => {
             >
               <ul className="space-y-3">
                 {supportChecklist.map((item, index) => (
-                  <li key={item.title} className="flex gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-black text-brand-700">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900">{item.title}</p>
-                      <p className="mt-1 text-sm text-slate-500">{item.description}</p>
-                    </div>
+                  <li key={item.title}>
+                    <Link
+                      to={item.to}
+                      className="flex gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4 transition hover:border-brand-200 hover:bg-brand-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-black text-brand-700">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">{item.title}</p>
+                        <p className="mt-1 text-sm text-slate-500">{item.description}</p>
+                      </div>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -169,15 +107,20 @@ const SupportDashboard = () => {
             >
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {[
-                  ['Open', queueMix.open],
-                  ['Pending', queueMix.pending],
-                  ['Escalated', queueMix.escalated],
-                  ['Resolved', queueMix.resolved]
-                ].map(([label, value]) => (
-                  <article key={label} className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
+                  ['Open', queueMix.open, ticketStatusRoute('open')],
+                  ['Pending', queueMix.pending, ticketStatusRoute('pending')],
+                  ['Escalated', queueMix.escalated, ticketStatusRoute('escalated')],
+                  ['Resolved', queueMix.resolved, ticketStatusRoute('resolved')]
+                ].map(([label, value, to]) => (
+                  <Link
+                    key={label}
+                    to={to}
+                    aria-label={`Open ${String(label).toLowerCase()} tickets`}
+                    className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4 transition hover:border-brand-200 hover:bg-brand-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+                  >
                     <p className="text-sm font-semibold text-slate-500">{label}</p>
                     <p className="mt-3 font-heading text-3xl font-bold text-navy">{value}</p>
-                  </article>
+                  </Link>
                 ))}
               </div>
             </DashboardSectionCard>

@@ -420,14 +420,6 @@ export default function HrCandidatesPage() {
 
   return (
     <div className="admin-ops-page text-slate-700">
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_18px_42px_-32px_rgba(15,23,42,0.32)]">
-        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Candidate Database</p>
-        <h1 className="mt-1 text-2xl font-black tracking-tight text-navy sm:text-3xl">Candidate DB</h1>
-        <p className="mt-1 max-w-2xl text-sm font-semibold text-slate-500">
-          Search student profiles, shortlist verified talent, and send candidate connection requests.
-        </p>
-      </div>
-
       {!access.hasPaidAccess ? (
         <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-sm">
           <div className="flex items-center gap-2 text-[13px] font-medium text-amber-800">
