@@ -260,41 +260,44 @@ const HrJobApplicantsPage = () => {
   }, [state.applicants]);
 
   return (
-    <div className="space-y-5 pb-10 h-full flex flex-col min-h-[calc(100vh-8rem)]">
+    <div className="space-y-6 pb-12 h-full flex flex-col min-h-[calc(100vh-8rem)]">
 
-      <header className="shrink-0 overflow-hidden rounded-[1.75rem] border border-amber-100 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
-        <div className="flex flex-col gap-5 p-4 md:flex-row md:items-center md:justify-between md:p-6">
-          <div className="flex min-w-0 items-center gap-4">
-          <Link to="/portal/hr/jobs" className="w-11 h-11 bg-amber-50 text-amber-700 rounded-2xl flex items-center justify-center hover:bg-amber-100 hover:text-amber-800 transition-colors shrink-0">
-            <FiArrowLeft size={20} />
-          </Link>
+      <header className="shrink-0">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-950 truncate max-w-sm md:max-w-xl">{targetJob?.jobTitle || 'Loading Job...'}</h1>
-              {targetJob && <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-800">{targetJob.employmentType || 'Full-Time'}</span>}
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Job Applications</p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <h1 className="truncate text-2xl font-extrabold tracking-tight text-navy">{targetJob?.jobTitle || 'Loading Job...'}</h1>
+              {targetJob && <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase text-slate-500">{targetJob.employmentType || 'Full-Time'}</span>}
             </div>
-            <p className="text-sm font-semibold text-slate-500">
-              Reviewing {state.applicants.length} {state.applicants.length === 1 ? 'applicant' : 'applicants'} pipeline
+            <p className="mt-1 text-sm text-slate-500">
+              Reviewing {state.applicants.length} {state.applicants.length === 1 ? 'applicant' : 'applicants'} across this hiring pipeline.
             </p>
           </div>
-        </div>
+
           <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/portal/hr/jobs"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <FiArrowLeft size={14} /> Back To Jobs
+            </Link>
             {[
               { label: 'Applicants', value: statusSummary.total, tone: 'border-slate-200 bg-slate-50 text-slate-700' },
               { label: 'Interviews', value: statusSummary.interview, tone: 'border-violet-200 bg-violet-50 text-violet-700' },
               { label: 'Selected', value: statusSummary.selected, tone: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
               { label: 'Rejected', value: statusSummary.rejected, tone: 'border-red-200 bg-red-50 text-red-700' }
             ].map((item) => (
-              <span key={item.label} className={`rounded-full border px-3 py-1.5 text-xs font-bold ${item.tone}`}>
+              <span key={item.label} className={`rounded-full border px-3 py-2 text-sm font-semibold ${item.tone}`}>
                 {item.value} {item.label}
               </span>
             ))}
             {!state.loading && state.applicants.length > 0 && (
               <button
                 onClick={exportToCsv}
-                className="ml-0 flex items-center gap-2 rounded-full border border-amber-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition-colors hover:bg-amber-50 md:ml-2"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
               >
-                <FiDownload size={15} /> Export CSV
+                <FiDownload size={14} /> Export CSV
               </button>
             )}
           </div>
@@ -318,39 +321,39 @@ const HrJobApplicantsPage = () => {
           <div className="w-10 h-10 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
         </div>
       ) : state.applicants.length > 0 ? (
-        <div className="flex-1 flex flex-col md:flex-row gap-5 min-h-0">
+        <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0">
 
           {/* Left Side: Applicant List */}
-          <div className="w-full md:w-[320px] xl:w-[340px] flex flex-col bg-white rounded-[1.25rem] border border-slate-200 shadow-sm overflow-hidden shrink-0">
-            <div className="px-3.5 py-3 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">
+          <div className="w-full md:w-[320px] xl:w-[340px] flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shrink-0">
+            <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
               <button
                 onClick={toggleSelectAll}
-                className="flex items-center gap-2 text-sm font-black text-slate-900 hover:text-amber-700 transition-colors"
+                className="flex items-center gap-2 text-sm font-semibold text-navy hover:text-brand-700 transition-colors"
               >
-                {allSelected ? <FiCheckSquare size={16} className="text-amber-700" /> : someSelected ? <FiCheckSquare size={16} className="text-amber-400" /> : <FiSquare size={16} />}
+                {allSelected ? <FiCheckSquare size={16} className="text-brand-700" /> : someSelected ? <FiCheckSquare size={16} className="text-brand-400" /> : <FiSquare size={16} />}
                 Applications ({state.applicants.length})
               </button>
               {selectedIds.size > 0 && (
-                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-black text-amber-800">{selectedIds.size} selected</span>
+                <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">{selectedIds.size} selected</span>
               )}
             </div>
 
             {/* Bulk Action Bar */}
             {selectedIds.size > 0 && (
-              <div className="p-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2 animate-fade-in">
-                <FiUsers size={14} className="text-amber-700 shrink-0" />
-                <span className="text-xs font-bold text-amber-800 flex-1">{selectedIds.size} selected</span>
+              <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2 animate-fade-in">
+                <FiUsers size={14} className="text-slate-500 shrink-0" />
+                <span className="text-xs font-semibold text-slate-600 flex-1">{selectedIds.size} selected</span>
                 <button
                   onClick={() => handleBulkAction('shortlist')}
                   disabled={bulkProcessing}
-                  className="px-3 py-1.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors text-xs disabled:opacity-50"
+                  className="rounded-full bg-navy px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-50"
                 >
                   {bulkProcessing ? '...' : 'Shortlist All'}
                 </button>
                 <button
                   onClick={() => handleBulkAction('reject')}
                   disabled={bulkProcessing}
-                  className="px-3 py-1.5 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition-colors text-xs disabled:opacity-50"
+                  className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
                 >
                   {bulkProcessing ? '...' : 'Reject All'}
                 </button>
@@ -363,7 +366,7 @@ const HrJobApplicantsPage = () => {
               </div>
             )}
 
-            <div className="overflow-y-auto flex-1 p-2 space-y-1.5 custom-scrollbar">
+            <div className="overflow-y-auto flex-1 divide-y divide-slate-100 custom-scrollbar">
               {state.applicants.map(app => {
                 const applicationId = getApplicationId(app);
                 const isActive = activeApplicantId === applicationId;
@@ -373,32 +376,32 @@ const HrJobApplicantsPage = () => {
                 const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
                 return (
-                  <div key={applicationId} className="flex items-start gap-1.5">
+                  <div key={applicationId} className="flex items-start gap-2 px-3 py-3">
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleSelect(applicationId); }}
-                      className={`mt-3 p-1 rounded transition-colors shrink-0 ${isSelected ? 'text-amber-700' : 'text-slate-300 hover:text-slate-500'}`}
+                      className={`mt-2 p-1 rounded transition-colors shrink-0 ${isSelected ? 'text-brand-700' : 'text-slate-300 hover:text-slate-500'}`}
                     >
                       {isSelected ? <FiCheckSquare size={14} /> : <FiSquare size={14} />}
                     </button>
                     <button
                       onClick={() => setActiveApplicantId(applicationId)}
-                      className={`flex-1 text-left px-2.5 py-2.5 rounded-xl transition-all flex items-start gap-2.5 ${isActive ? 'bg-amber-50 border border-amber-200 shadow-sm ring-1 ring-amber-100' : 'hover:bg-slate-50 border border-transparent'
+                      className={`flex-1 text-left rounded-xl transition-colors flex items-start gap-2.5 ${isActive ? 'text-navy' : 'text-slate-600 hover:text-navy'
                         }`}
                     >
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${isActive ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500'
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${isActive ? 'bg-navy text-white' : 'bg-slate-100 text-slate-500'
                         }`}>
                         {initials}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className={`text-sm font-black truncate ${isActive ? 'text-amber-800' : 'text-slate-900'}`}>{name}</h4>
-                          <span className="text-[11px] text-slate-400 font-bold shrink-0">
+                          <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-navy' : 'text-slate-900'}`}>{name}</h4>
+                          <span className="text-[11px] text-slate-400 font-semibold shrink-0">
                             {new Date(app.createdAt || new Date()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                           </span>
                         </div>
                         <p className="truncate text-[11px] font-medium text-slate-500">{email}</p>
-                        <div className="mt-1.5 flex items-center justify-between">
-                          <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase border ${getStatusColor(app.status)}`}>
+                        <div className="mt-1.5 flex items-center">
+                          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase ${getStatusColor(app.status)}`}>
                             {getStatusLabel(app.status || 'applied')}
                           </span>
                         </div>
@@ -411,27 +414,27 @@ const HrJobApplicantsPage = () => {
           </div>
 
           {/* Right Side: Active Applicant Details */}
-          <div className="flex-1 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm overflow-y-auto custom-scrollbar flex flex-col">
+          <div className="flex-1 rounded-2xl border border-slate-200 bg-white overflow-y-auto custom-scrollbar flex flex-col">
             {activeApplicant ? (
-              <div className="p-5 md:p-7 animate-fade-in flex flex-col min-h-full">
-                <div className="mb-5 rounded-2xl border border-amber-100 bg-gradient-to-r from-amber-50 via-white to-slate-50 p-4">
+              <div className="animate-fade-in flex flex-col min-h-full">
+                <div className="border-b border-slate-200 px-5 py-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="flex min-w-0 items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-amber-200 to-amber-50 text-amber-800 border border-amber-200 rounded-xl flex items-center justify-center text-lg font-black shrink-0 shadow-sm">
+                    <div className="w-11 h-11 bg-slate-100 text-navy rounded-full flex items-center justify-center text-base font-bold shrink-0">
                       {activeApplicant.applicant?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'CA'}
                     </div>
                     <div className="min-w-0">
                       <div className="mb-1 flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-xl font-black tracking-tight text-slate-950">
+                      <h2 className="truncate text-xl font-bold tracking-tight text-navy">
                         {activeApplicant.applicant?.name || activeApplicant.applicantEmail || 'Candidate Profile'}
                       </h2>
-                        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase ${getStatusColor(activeApplicant.status || 'applied')}`}>
+                        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase ${getStatusColor(activeApplicant.status || 'applied')}`}>
                           {getStatusLabel(activeApplicant.status || 'applied')}
                         </span>
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-semibold text-slate-500">
-                        <span className="flex items-center gap-1.5"><FiMail /> {activeApplicant.applicant?.email || activeApplicant.applicantEmail || 'N/A'}</span>
-                        <span className="flex items-center gap-1.5"><FiPhone /> {activeApplicant.applicant?.mobile || 'N/A'}</span>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                        <span className="flex items-center gap-1.5"><FiMail size={14} className="text-slate-400" /> {activeApplicant.applicant?.email || activeApplicant.applicantEmail || 'N/A'}</span>
+                        <span className="flex items-center gap-1.5"><FiPhone size={14} className="text-slate-400" /> {activeApplicant.applicant?.mobile || 'N/A'}</span>
                       </div>
                     </div>
                   </div>
@@ -443,7 +446,7 @@ const HrJobApplicantsPage = () => {
                         setStatusDrafts({ ...statusDrafts, [activeApplicant.id]: e.target.value });
                         setStatusInlineMessages((current) => ({ ...current, [activeApplicant.id]: null }));
                       }}
-                      className="h-10 w-full min-w-[190px] rounded-xl border border-amber-200 bg-white px-3 text-sm font-bold capitalize text-slate-900 shadow-sm focus:ring-2 focus:ring-amber-500 sm:w-[220px]"
+                      className="h-10 w-full min-w-[190px] rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold capitalize text-slate-700 focus:ring-2 focus:ring-brand-500 sm:w-[220px]"
                     >
                       <option value="" disabled>Choose next stage</option>
                       {APPLICATION_STATUS_OPTIONS.map((status) => (
@@ -453,7 +456,7 @@ const HrJobApplicantsPage = () => {
                     <button
                       type="button"
                       onClick={() => updateStatus(activeApplicant.id)}
-                      className="flex h-10 min-w-[88px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-700"
+                      className="inline-flex h-10 min-w-[88px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
                     >
                       <FiCheck /> Save
                     </button>
@@ -462,7 +465,7 @@ const HrJobApplicantsPage = () => {
                         href={activeApplicantResumeUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap px-4 bg-slate-950 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm"
+                        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-navy px-4 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
                       >
                         <FiFileText /> Open Resume
                       </a>
@@ -471,25 +474,25 @@ const HrJobApplicantsPage = () => {
                 </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-5 flex-1">
+                <div className="grid grid-cols-1 flex-1 divide-y divide-slate-200">
 
                   {/* Status & Notes */}
-                  <div className="space-y-5">
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                      <h3 className="text-lg font-black text-slate-950 mb-4 flex items-center gap-2">
-                        <FiFileText className="text-amber-600" /> Cover Letter
+                  <div>
+                    <section className="px-5 py-5">
+                      <h3 className="mb-3 flex items-center gap-2 text-base font-bold text-navy">
+                        <FiFileText className="text-brand-600" /> Cover Letter
                       </h3>
                       {activeApplicantCoverLetter ? (
-                        <div className="max-h-[360px] overflow-y-auto rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-4 text-sm leading-7 text-slate-700 whitespace-pre-wrap custom-scrollbar">
+                        <div className="max-h-[320px] overflow-y-auto text-sm leading-7 text-slate-600 whitespace-pre-wrap custom-scrollbar">
                           {activeApplicantCoverLetter}
                         </div>
                       ) : (
                         <p className="text-sm font-medium text-slate-500">No cover letter was submitted with this application.</p>
                       )}
-                    </div>
+                    </section>
 
-                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm">
-                      <h3 className="text-lg font-black text-slate-950 mb-4 flex items-center gap-2">
+                    <section className="px-5 py-5">
+                      <h3 className="mb-3 flex items-center gap-2 text-base font-bold text-navy">
                         <FiCheckCircle className="text-emerald-600" /> Internal HR Notes
                       </h3>
 
@@ -503,7 +506,7 @@ const HrJobApplicantsPage = () => {
                               setNotesDrafts({ ...notesDrafts, [activeApplicant.id]: e.target.value });
                               setStatusInlineMessages((current) => ({ ...current, [activeApplicant.id]: null }));
                             }}
-                            className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 font-medium text-sm text-slate-700 resize-none"
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 resize-none focus:ring-2 focus:ring-brand-500"
                           />
                         </div>
                         {statusInlineMessages[activeApplicant.id]?.text ? (
@@ -517,7 +520,7 @@ const HrJobApplicantsPage = () => {
                           </div>
                         ) : null}
                       </div>
-                    </div>
+                    </section>
                   </div>
 
                 </div>
