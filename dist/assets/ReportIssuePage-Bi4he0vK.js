@@ -1,0 +1,1 @@
+import{bG as o}from"./index-DDrKWFHW.js";import{F as t}from"./FooterContentPage-GIoN0DjS.js";import"./PublicPageHero-DwzmgadR.js";import"./AnimatedSection-B6Uf3v0w.js";import"./PublicSectionHeader-gDbH1UmU.js";import"./PublicCallToAction-LXB5grPe.js";const a=()=>o.jsx(t,{pageKey:"report-issue"});export{a as default};

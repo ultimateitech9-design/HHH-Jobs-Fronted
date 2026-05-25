@@ -378,25 +378,25 @@ function ActivityRow({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white/90 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.045)] transition hover:border-slate-200 hover:shadow-[0_22px_60px_rgba(15,23,42,0.07)]">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
+    <div className="rounded-xl border border-slate-100 bg-white/90 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)] transition hover:border-slate-200 hover:shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-lg font-extrabold tracking-tight text-navy">{college.name || 'Campus Partner'}</p>
-            <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+            <p className="text-base font-extrabold tracking-tight text-navy">{college.name || 'Campus Partner'}</p>
+            <span className="inline-flex h-5 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2 text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500">
               <span className={`h-1.5 w-1.5 rounded-full ${VIEW_DOT_COLORS[view] || VIEW_DOT_COLORS.closed}`} />
               {VIEW_META[view]?.label || view}
             </span>
           </div>
-          <p className="mt-2 text-sm font-medium text-slate-500">{statusCopy[view] || timestamp}</p>
+          <p className="mt-1.5 text-xs font-medium text-slate-500">{statusCopy[view] || timestamp}</p>
           {college.placementOfficerName ? (
-            <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-600">
-              <FiUser size={14} className="text-slate-400" />
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600">
+              <FiUser size={12} className="text-slate-400" />
               {college.placementOfficerName}
             </p>
           ) : null}
           {connection.message ? (
-            <p className="mt-4 max-w-5xl rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3 text-sm leading-7 text-slate-600">{connection.message}</p>
+            <p className="mt-3 max-w-5xl rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs leading-6 text-slate-600">{connection.message}</p>
           ) : null}
         </div>
 
@@ -404,19 +404,19 @@ function ActivityRow({
           {view === 'incoming' ? (
             <>
               <button
-                type="button"
-                onClick={onDecline}
-                disabled={Boolean(loadingState)}
-                className="inline-flex h-9 items-center gap-2 rounded-full border border-red-100 bg-white px-3.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+              type="button"
+              onClick={onDecline}
+              disabled={Boolean(loadingState)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-red-100 bg-white px-3 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
               >
                 {loadingState === 'rejected' ? <FiRefreshCw size={14} className="animate-spin" /> : <FiXCircle size={14} />}
                 Decline
               </button>
               <button
-                type="button"
-                onClick={onAccept}
-                disabled={Boolean(loadingState)}
-                className="inline-flex h-9 items-center gap-2 rounded-full bg-emerald-600 px-3.5 text-xs font-semibold text-white shadow-[0_10px_24px_rgba(16,185,129,0.18)] transition hover:bg-emerald-700 disabled:opacity-60"
+              type="button"
+              onClick={onAccept}
+              disabled={Boolean(loadingState)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-emerald-600 px-3 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(16,185,129,0.16)] transition hover:bg-emerald-700 disabled:opacity-60"
               >
                 {loadingState === 'accepted' ? <FiRefreshCw size={14} className="animate-spin" /> : <FiCheckCircle size={14} />}
                 Accept
@@ -429,7 +429,7 @@ function ActivityRow({
               type="button"
               onClick={onRequestAgain}
               disabled={!canRequestAgain}
-              className="inline-flex h-9 items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3.5 text-xs font-semibold text-brand-700 transition hover:border-brand-200 hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50 px-3 text-xs font-semibold text-brand-700 transition hover:border-brand-200 hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FiSend size={14} />
               {view === 'closed' ? 'Request again' : 'Send again'}
@@ -437,7 +437,7 @@ function ActivityRow({
           ) : null}
 
           {view === 'connected' ? (
-            <span className="inline-flex h-9 items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3.5 text-xs font-semibold text-emerald-700">
+            <span className="inline-flex h-8 items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
               <FiCheckCircle size={14} />
               Connected
             </span>
