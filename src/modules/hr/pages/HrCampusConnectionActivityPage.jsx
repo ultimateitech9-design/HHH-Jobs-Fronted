@@ -273,16 +273,16 @@ export default function HrCampusConnectionActivityPage() {
           <button
             type="button"
             onClick={() => navigate('/portal/hr/campus-connections')}
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-[0_10px_28px_rgba(15,23,42,0.06)] transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-[0_6px_18px_rgba(15,23,42,0.05)] transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
           >
             Back To Directory
           </button>
           <button
             type="button"
             onClick={handleRefresh}
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-[0_10px_28px_rgba(15,23,42,0.06)] transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-[0_6px_18px_rgba(15,23,42,0.05)] transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
           >
-            <FiRefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            <FiRefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
             Refresh
           </button>
         </div>

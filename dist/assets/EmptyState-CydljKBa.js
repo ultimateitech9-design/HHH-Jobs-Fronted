@@ -1,0 +1,1 @@
+import{bG as s}from"./index-BS2nwgaj.js";const e=({title:t="No records found.",description:o="Nothing to show right now."})=>s.jsxs("div",{className:"dash-list-empty",children:[s.jsx("strong",{children:t}),s.jsx("p",{children:o})]});export{e as E};
