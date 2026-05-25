@@ -35,15 +35,15 @@ const Leads = () => {
       const matchesStage = !filters.stage || String(item.stage || '').toLowerCase() === filters.stage;
       const matchesRole = !filters.targetRole || String(item.targetRole || '').toLowerCase() === filters.targetRole;
       const matchesOnboarding = !filters.onboardingStatus || String(item.onboardingStatus || '').toLowerCase() === filters.onboardingStatus;
-      const matchesSearch = !search || `${item.company} ${item.contactName} ${item.email}`.toLowerCase().includes(search);
+      const matchesSearch = !search || `${item.company} ${item.contactName} ${item.email} ${item.zone} ${item.location}`.toLowerCase().includes(search);
       return matchesStage && matchesRole && matchesOnboarding && matchesSearch;
     });
   }, [leads, filters]);
 
   const cards = useMemo(() => [
     { label: 'Visible Leads', value: String(rows.length), helper: 'Current lead queue', tone: 'info' },
-    { label: 'Qualified', value: String(rows.filter((item) => item.stage === 'qualified').length), helper: 'Ready for proposal', tone: 'success' },
-    { label: 'Proposals', value: String(rows.filter((item) => item.stage === 'proposal').length), helper: 'Commercial follow-up', tone: 'warning' },
+    { label: 'Plan Taken', value: String(rows.filter((item) => item.stage === 'converted' || item.onboardingStatus === 'active').length), helper: 'Client onboarded', tone: 'success' },
+    { label: 'Plan Pending', value: String(rows.filter((item) => item.stage !== 'converted' && item.onboardingStatus !== 'active').length), helper: 'Send plan or coupon', tone: 'warning' },
     { label: 'Expected Value', value: formatCompactCurrency(rows.reduce((sum, item) => sum + Number(item.expectedValue || 0), 0)), helper: 'Potential pipeline value', tone: 'default' }
   ], [rows]);
 
@@ -61,7 +61,7 @@ const Leads = () => {
 
   return (
     <div className="module-page module-page--platform">
-      <SectionHeader eyebrow="Sales" title="Leads" subtitle="Manage inbound sales opportunities, stage progression, and expected revenue potential." />
+      <SectionHeader eyebrow="Sales" title="Leads" subtitle="Manage assigned HR, campus, and student leads by plan status, owner, zone, and next follow-up." />
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="module-note">{message}</p> : null}
       <SalesStatCards cards={cards} />
@@ -69,7 +69,7 @@ const Leads = () => {
         <div className="admin-ops-panel-header">
           <div>
             <h2 className="admin-ops-panel-title">Commercial lead pipeline</h2>
-            <p className="admin-ops-panel-note">Review audience mix, stage progression, and onboarding readiness from one list.</p>
+            <p className="admin-ops-panel-note">Review audience mix, stage progression, zone, owner, and onboarding readiness from one list.</p>
           </div>
           {canSync ? (
             <button type="button" onClick={handleSync} className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 transition hover:bg-brand-100">
@@ -83,7 +83,7 @@ const Leads = () => {
               { key: 'stage', label: 'Stage', type: 'select', options: [{ value: '', label: 'All' }, { value: 'new', label: 'New' }, { value: 'qualified', label: 'Qualified' }, { value: 'proposal', label: 'Proposal' }] },
               { key: 'targetRole', label: 'Audience', type: 'select', options: [{ value: '', label: 'All' }, { value: 'hr', label: 'HR' }, { value: 'campus_connect', label: 'Campus Connect' }, { value: 'student', label: 'Student' }] },
               { key: 'onboardingStatus', label: 'Onboarding', type: 'select', options: [{ value: '', label: 'All' }, { value: 'prospect', label: 'Prospect' }, { value: 'negotiation', label: 'Negotiation' }, { value: 'active', label: 'Active' }, { value: 'onboarding', label: 'Onboarding' }] },
-              { key: 'search', label: 'Search', type: 'text', placeholder: 'Company, contact, email', fullWidth: true }
+              { key: 'search', label: 'Search', type: 'text', placeholder: 'Company, contact, email, zone', fullWidth: true }
             ]}
             values={filters}
             onChange={(key, value) => {

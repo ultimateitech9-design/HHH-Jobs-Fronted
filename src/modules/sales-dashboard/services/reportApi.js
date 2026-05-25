@@ -12,7 +12,9 @@ const emptyReports = {
   },
   topSources: [],
   conversion: [],
-  monthlyRevenue: []
+  monthlyRevenue: [],
+  zonePerformance: [],
+  ownerPerformance: []
 };
 
 export const getSalesReports = async () =>
@@ -33,7 +35,9 @@ export const getSalesReports = async () =>
         },
         topSources: reports.topSources || [],
         conversion: reports.conversion || [],
-        monthlyRevenue: reports.monthlyRevenue || []
+        monthlyRevenue: reports.monthlyRevenue || [],
+        zonePerformance: reports.zonePerformance || [],
+        ownerPerformance: reports.ownerPerformance || []
       };
     }
   });

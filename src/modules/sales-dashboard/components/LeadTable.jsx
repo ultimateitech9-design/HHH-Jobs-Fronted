@@ -20,6 +20,7 @@ const LeadTable = ({ rows = [] }) => {
     { key: 'company', label: 'Company' },
     { key: 'contactName', label: 'Contact' },
     { key: 'targetRole', label: 'Audience' },
+    { key: 'zone', label: 'Zone', render: (value, row) => value || row.location || '-' },
     { key: 'source', label: 'Source' },
     { key: 'assignedTo', label: 'Owner' },
     {

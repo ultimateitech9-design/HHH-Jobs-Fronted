@@ -9,6 +9,8 @@ export const mapSalesAgent = (agent = {}) => ({
   id: agent.id,
   name: agent.name || '-',
   email: agent.email || '-',
+  assignedLeads: Number(agent.assigned_leads || agent.assignedLeads || 0),
+  openLeads: Number(agent.open_leads || agent.openLeads || 0),
   dealsClosed: Number(agent.deals_closed || agent.dealsClosed || 0),
   revenue: Number(agent.revenue || 0),
   leadResponseRate: Number(agent.lead_response_rate || agent.leadResponseRate || 0),
@@ -38,6 +40,9 @@ export const mapSalesOrder = (order = {}) => {
     quantity: Array.isArray(order.items) ? (order.items.length || 1) : Number(order.quantity || 1),
     paymentMethod: order.payment_method || order.paymentMethod || '-',
     salesAgent: order.salesAgent || '-',
+    audienceRole: order.audienceRole || order.audience_role || '',
+    zone: order.zone || '',
+    location: order.location || '',
     status,
     paymentStatus: status,
     createdAt: order.createdAt || order.created_at || null
@@ -53,6 +58,9 @@ export const mapSalesLead = (lead = {}) => ({
   phone: lead.phone || lead.contact_phone || '-',
   source: lead.source || '-',
   assignedTo: lead.assignedTo || lead.assigned_name || '-',
+  assignedToId: lead.assignedToId || lead.assigned_to || '',
+  zone: lead.zone || '',
+  location: lead.location || '',
   expectedValue: Number(lead.expectedValue ?? lead.value ?? 0),
   stage: normalizeStatus(lead.stage || lead.status, 'new'),
   createdAt: lead.createdAt || lead.created_at || null,
@@ -63,6 +71,25 @@ export const mapSalesLead = (lead = {}) => ({
   planInterestSlug: lead.planInterestSlug || lead.plan_interest_slug || '',
   couponCode: lead.couponCode || lead.coupon_code || '',
   followupNotes: lead.followupNotes || lead.followup_notes || ''
+});
+
+export const mapCouponRequest = (request = {}) => ({
+  id: request.id,
+  requestedBy: request.requestedBy || request.requested_by_name || '-',
+  requestedById: request.requestedById || request.requested_by || '',
+  leadId: request.leadId || request.lead_id || '',
+  clientName: request.clientName || request.client_name || '-',
+  clientEmail: request.clientEmail || request.client_email || '-',
+  clientPhone: request.clientPhone || request.client_phone || '-',
+  audienceRole: request.audienceRole || request.audience_role || '',
+  planSlug: request.planSlug || request.plan_slug || '',
+  expectedValue: Number(request.expectedValue ?? request.expected_value ?? 0),
+  requestedDiscount: request.requestedDiscount || request.requested_discount || '',
+  reason: request.reason || '',
+  status: normalizeStatus(request.status, 'pending'),
+  adminNote: request.adminNote || request.admin_note || '',
+  couponCode: request.couponCode || request.coupon_code || '',
+  createdAt: request.createdAt || request.created_at || null
 });
 
 export const mapSalesCustomer = (customer = {}) => ({
@@ -77,7 +104,9 @@ export const mapSalesCustomer = (customer = {}) => ({
   createdAt: customer.createdAt || customer.created_at || null,
   audienceRole: customer.audienceRole || customer.audience_role || '',
   salesOwnerId: customer.salesOwnerId || customer.sales_owner_id || '',
-  subscriptionId: customer.subscriptionId || customer.subscription_id || ''
+  subscriptionId: customer.subscriptionId || customer.subscription_id || '',
+  zone: customer.zone || '',
+  location: customer.location || ''
 });
 
 export const mapSalesCoupon = (coupon = {}) => {

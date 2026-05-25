@@ -6,6 +6,8 @@ const SalesAgentTable = ({ rows = [] }) => {
   const columns = [
     { key: 'name', label: 'Agent' },
     { key: 'email', label: 'Email' },
+    { key: 'assignedLeads', label: 'Assigned' },
+    { key: 'openLeads', label: 'Open Leads' },
     { key: 'dealsClosed', label: 'Deals Closed' },
     {
       key: 'revenue',

@@ -23,6 +23,7 @@ const OrderTable = ({ rows = [] }) => {
       render: (value) => formatCurrency(value)
     },
     { key: 'quantity', label: 'Qty' },
+    { key: 'zone', label: 'Zone', render: (value, row) => value || row.location || '-' },
     { key: 'paymentMethod', label: 'Payment Method' },
     {
       key: 'status',

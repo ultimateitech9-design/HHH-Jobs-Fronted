@@ -20,7 +20,9 @@ const LeadDetails = () => {
     onboardingStatus: 'prospect',
     nextFollowupAt: '',
     followupNotes: '',
-    planInterestSlug: ''
+    planInterestSlug: '',
+    zone: '',
+    location: ''
   });
   const leadId = leadIdParam || searchParams.get('leadId') || searchParams.get('id') || '';
 
@@ -34,7 +36,9 @@ const LeadDetails = () => {
         onboardingStatus: response.data?.onboardingStatus || 'prospect',
         nextFollowupAt: response.data?.nextFollowupAt ? String(response.data.nextFollowupAt).slice(0, 16) : '',
         followupNotes: response.data?.followupNotes || '',
-        planInterestSlug: response.data?.planInterestSlug || ''
+        planInterestSlug: response.data?.planInterestSlug || '',
+        zone: response.data?.zone || '',
+        location: response.data?.location || ''
       });
       setFollowupHistory(response.data?.followupNotes ? [{
         id: `${response.data.id || 'lead'}-saved`,
@@ -63,7 +67,9 @@ const LeadDetails = () => {
         next_followup_at: draft.nextFollowupAt ? new Date(draft.nextFollowupAt).toISOString() : null,
         last_followup_at: savedAt,
         followup_notes: draft.followupNotes,
-        plan_interest_slug: draft.planInterestSlug
+        plan_interest_slug: draft.planInterestSlug,
+        zone: draft.zone,
+        location: draft.location
       });
       setLead(updated);
       setFollowupHistory((current) => [{
@@ -98,6 +104,8 @@ const LeadDetails = () => {
             <li><strong>Email</strong><span>{lead.email}</span></li>
             <li><strong>Phone</strong><span>{lead.phone}</span></li>
             <li><strong>Audience</strong><span>{lead.targetRole || '-'}</span></li>
+            <li><strong>Zone</strong><span>{lead.zone || '-'}</span></li>
+            <li><strong>Location</strong><span>{lead.location || '-'}</span></li>
             <li><strong>Source</strong><span>{lead.source}</span></li>
             <li><strong>Owner</strong><span>{lead.assignedTo}</span></li>
             <li><strong>Expected Value</strong><span>{formatCurrency(lead.expectedValue)}</span></li>
@@ -138,6 +146,14 @@ const LeadDetails = () => {
             <label className="space-y-1">
               <span className="text-sm font-semibold text-slate-600">Plan Interest</span>
               <input value={draft.planInterestSlug} onChange={(event) => setDraft((current) => ({ ...current, planInterestSlug: event.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+            </label>
+            <label className="space-y-1">
+              <span className="text-sm font-semibold text-slate-600">Zone</span>
+              <input value={draft.zone} onChange={(event) => setDraft((current) => ({ ...current, zone: event.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+            </label>
+            <label className="space-y-1">
+              <span className="text-sm font-semibold text-slate-600">Location</span>
+              <input value={draft.location} onChange={(event) => setDraft((current) => ({ ...current, location: event.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2" />
             </label>
             <label className="space-y-1 md:col-span-2">
               <span className="text-sm font-semibold text-slate-600">Follow-up Notes</span>

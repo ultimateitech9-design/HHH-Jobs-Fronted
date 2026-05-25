@@ -39,6 +39,12 @@ const Reports = () => {
       render: (value) => <StatusPill value={value || 'healthy'} />
     }
   ];
+  const performanceColumns = [
+    { key: 'label', label: 'Zone / Owner' },
+    { key: 'leads', label: 'Leads' },
+    { key: 'converted', label: 'Converted' },
+    { key: 'revenue', label: 'Revenue', render: (value) => formatCompactCurrency(value) }
+  ];
 
   return (
     <div className="module-page module-page--platform">
@@ -53,6 +59,16 @@ const Reports = () => {
         {loading ? <p className="module-note">Loading reports...</p> : null}
         <DataTable columns={sourceColumns} rows={report.topSources || []} />
       </section>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className="panel-card">
+          <h2 className="admin-ops-panel-title">Zone performance</h2>
+          <DataTable columns={performanceColumns} rows={report.zonePerformance || []} />
+        </section>
+        <section className="panel-card">
+          <h2 className="admin-ops-panel-title">Sales owner performance</h2>
+          <DataTable columns={performanceColumns} rows={report.ownerPerformance || []} />
+        </section>
+      </div>
     </div>
   );
 };

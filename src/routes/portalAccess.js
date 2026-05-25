@@ -4,7 +4,7 @@ export const PORTAL_ACCESS = Object.freeze({
   admin: Object.freeze(['admin']),
   superAdmin: Object.freeze(['super_admin']),
   accounts: Object.freeze(['accounts']),
-  sales: Object.freeze(['sales']),
+  sales: Object.freeze(['sales', 'admin', 'super_admin']),
   support: Object.freeze(['support']),
   platform: Object.freeze(['admin', 'super_admin', 'platform']),
   audit: Object.freeze(['admin', 'super_admin', 'audit']),
