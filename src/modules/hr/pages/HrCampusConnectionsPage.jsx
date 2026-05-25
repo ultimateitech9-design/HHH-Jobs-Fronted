@@ -427,9 +427,9 @@ function StatPill({ label, value, tone, onClick }) {
   return (
     <Component
       {...(onClick ? { type: 'button', onClick } : {})}
-      className={`inline-flex h-6 items-center gap-1 rounded-full border border-slate-200 bg-white px-2 text-[9px] font-semibold leading-none text-slate-600 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition ${onClick ? 'hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' : ''}`}
+      className={`inline-flex h-7 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 text-[10px] font-semibold leading-none text-slate-600 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition ${onClick ? 'hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' : ''}`}
     >
-      <span className={`h-1 w-1 shrink-0 rounded-full ${dotColors[tone] || dotColors.slate}`} />
+      <span className={`h-[5px] w-[5px] shrink-0 rounded-full ${dotColors[tone] || dotColors.slate}`} />
       <span>{label}</span>
       <span className="font-semibold text-slate-900">{value}</span>
     </Component>
