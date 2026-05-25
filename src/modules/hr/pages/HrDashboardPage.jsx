@@ -357,6 +357,7 @@ const HrDashboardPage = () => {
     offer: { color: '#d97706', soft: '#fffbeb' },
     hired: { color: '#059669', soft: '#ecfdf5' }
   };
+  const stageThemeList = Object.values(stageTheme);
   const firstName = (user?.name || user?.fullName || 'there').split(' ')[0];
 
   return (
@@ -482,14 +483,19 @@ const HrDashboardPage = () => {
                   <div className="h-2.5 w-48 animate-pulse rounded bg-slate-50" />
                 </div>
               </div>
-            )) : activityFeed.length > 0 ? activityFeed.map((activity, index) => (
+            )) : activityFeed.length > 0 ? activityFeed.map((activity, index) => {
+              const activityTheme = stageThemeList[index % stageThemeList.length];
+              return (
               <Link
                 key={activity.id}
                 to={activity.to}
                 className="flex items-center justify-between gap-3 border-b border-slate-50 px-5 py-3 transition hover:bg-slate-50/50 last:border-b-0"
               >
                 <div className="flex min-w-0 items-center gap-3.5">
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${stageBgColors[index % 5]} ${stageTextColors[index % 5]}`}>
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                    style={{ backgroundColor: activityTheme.soft, color: activityTheme.color }}
+                  >
                     {(activity.icon || activity.title || '?')[0].toUpperCase()}
                   </span>
                   <div className="min-w-0">
@@ -499,7 +505,8 @@ const HrDashboardPage = () => {
                 </div>
                 <StatusPill value={activity.status} />
               </Link>
-            )) : (
+              );
+            }) : (
               <div className="px-5 py-10 text-center">
                 <FiBriefcase className="mx-auto text-slate-300" size={28} />
                 <p className="mt-2 text-[13px] font-medium text-slate-400">No HR activity yet</p>
