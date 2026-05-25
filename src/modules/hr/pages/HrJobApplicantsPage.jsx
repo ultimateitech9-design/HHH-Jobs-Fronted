@@ -414,36 +414,36 @@ const HrJobApplicantsPage = () => {
           <div className="flex-1 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm overflow-y-auto custom-scrollbar flex flex-col">
             {activeApplicant ? (
               <div className="p-5 md:p-7 animate-fade-in flex flex-col min-h-full">
-                <div className="mb-6 rounded-[1.35rem] border border-amber-100 bg-gradient-to-r from-amber-50 via-white to-slate-50 p-5">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                  <div className="flex items-start gap-5">
-                    <div className="w-16 h-16 bg-gradient-to-br from-amber-200 to-amber-50 text-amber-800 border border-amber-200 rounded-2xl flex items-center justify-center text-xl font-black shrink-0 shadow-sm">
+                <div className="mb-5 rounded-2xl border border-amber-100 bg-gradient-to-r from-amber-50 via-white to-slate-50 p-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex min-w-0 items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-amber-200 to-amber-50 text-amber-800 border border-amber-200 rounded-xl flex items-center justify-center text-lg font-black shrink-0 shadow-sm">
                       {activeApplicant.applicant?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'CA'}
                     </div>
-                    <div>
-                      <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <h2 className="text-2xl font-black tracking-tight text-slate-950">
+                    <div className="min-w-0">
+                      <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-xl font-black tracking-tight text-slate-950">
                         {activeApplicant.applicant?.name || activeApplicant.applicantEmail || 'Candidate Profile'}
                       </h2>
                         <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase ${getStatusColor(activeApplicant.status || 'applied')}`}>
                           {getStatusLabel(activeApplicant.status || 'applied')}
                         </span>
                       </div>
-                      <div className="flex flex-wrap items-center gap-4 text-sm font-semibold text-slate-500">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-semibold text-slate-500">
                         <span className="flex items-center gap-1.5"><FiMail /> {activeApplicant.applicant?.email || activeApplicant.applicantEmail || 'N/A'}</span>
                         <span className="flex items-center gap-1.5"><FiPhone /> {activeApplicant.applicant?.mobile || 'N/A'}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                     <select
                       value={APPLICATION_STATUS_OPTIONS.includes(statusDrafts[activeApplicant.id]) ? statusDrafts[activeApplicant.id] : ''}
                       onChange={(e) => {
                         setStatusDrafts({ ...statusDrafts, [activeApplicant.id]: e.target.value });
                         setStatusInlineMessages((current) => ({ ...current, [activeApplicant.id]: null }));
                       }}
-                      className="h-11 min-w-[190px] rounded-xl border border-amber-200 bg-white px-3 text-sm font-bold capitalize text-slate-900 shadow-sm focus:ring-2 focus:ring-amber-500"
+                      className="h-10 w-full min-w-[190px] rounded-xl border border-amber-200 bg-white px-3 text-sm font-bold capitalize text-slate-900 shadow-sm focus:ring-2 focus:ring-amber-500 sm:w-[220px]"
                     >
                       <option value="" disabled>Choose next stage</option>
                       {APPLICATION_STATUS_OPTIONS.map((status) => (
@@ -453,7 +453,7 @@ const HrJobApplicantsPage = () => {
                     <button
                       type="button"
                       onClick={() => updateStatus(activeApplicant.id)}
-                      className="flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-700"
+                      className="flex h-10 min-w-[88px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-700"
                     >
                       <FiCheck /> Save
                     </button>
@@ -462,7 +462,7 @@ const HrJobApplicantsPage = () => {
                         href={activeApplicantResumeUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-11 items-center justify-center gap-2 px-5 bg-slate-950 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+                        className="flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap px-4 bg-slate-950 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm"
                       >
                         <FiFileText /> Open Resume
                       </a>
