@@ -1,0 +1,1 @@
+import{bG as r}from"./index-DfecQynW.js";import{A as e}from"./AudienceLandingPage-Ddhne08g.js";import"./PublicFeatureCard-5w4Kfr-w.js";import"./AnimatedSection-C3a6-e81.js";import"./PublicPageHero-CThvWu8E.js";import"./PublicSectionHeader-BNz62YBv.js";const p=()=>r.jsx(e,{audienceKey:"recruiters"});export{p as default};
