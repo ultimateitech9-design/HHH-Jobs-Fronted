@@ -436,16 +436,31 @@ const HrJobApplicantsPage = () => {
                     </div>
                   </div>
 
-                  {activeApplicantResumeUrl && (
-                    <a
-                      href={activeApplicantResumeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-5 py-2.5 bg-slate-950 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <select
+                      value={APPLICATION_STATUS_OPTIONS.includes(statusDrafts[activeApplicant.id]) ? statusDrafts[activeApplicant.id] : ''}
+                      onChange={(e) => {
+                        setStatusDrafts({ ...statusDrafts, [activeApplicant.id]: e.target.value });
+                        setStatusInlineMessages((current) => ({ ...current, [activeApplicant.id]: null }));
+                      }}
+                      className="h-11 min-w-[190px] rounded-xl border border-amber-200 bg-white px-3 text-sm font-bold capitalize text-slate-900 shadow-sm focus:ring-2 focus:ring-amber-500"
                     >
-                      <FiFileText /> Open Resume
-                    </a>
-                  )}
+                      <option value="" disabled>Choose next stage</option>
+                      {APPLICATION_STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>{getStatusLabel(status)}</option>
+                      ))}
+                    </select>
+                    {activeApplicantResumeUrl && (
+                      <a
+                        href={activeApplicantResumeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex h-11 items-center justify-center gap-2 px-5 bg-slate-950 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm shrink-0"
+                      >
+                        <FiFileText /> Open Resume
+                      </a>
+                    )}
+                  </div>
                 </div>
                 </div>
 
@@ -472,23 +487,6 @@ const HrJobApplicantsPage = () => {
                       </h3>
 
                       <div className="space-y-4">
-                        <div className="space-y-1.5">
-                          <label className="text-sm font-bold text-neutral-700">Current Stage</label>
-                          <select
-                            value={APPLICATION_STATUS_OPTIONS.includes(statusDrafts[activeApplicant.id]) ? statusDrafts[activeApplicant.id] : ''}
-                            onChange={(e) => {
-                              setStatusDrafts({ ...statusDrafts, [activeApplicant.id]: e.target.value });
-                              setStatusInlineMessages((current) => ({ ...current, [activeApplicant.id]: null }));
-                            }}
-                            className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 font-bold text-slate-900 capitalize"
-                          >
-                            <option value="" disabled>Choose next stage</option>
-                            {APPLICATION_STATUS_OPTIONS.map((status) => (
-                              <option key={status} value={status}>{getStatusLabel(status)}</option>
-                            ))}
-                          </select>
-                        </div>
-
                         <div className="space-y-1.5">
                           <label className="text-sm font-bold text-neutral-700">Internal HR Notes</label>
                           <textarea
