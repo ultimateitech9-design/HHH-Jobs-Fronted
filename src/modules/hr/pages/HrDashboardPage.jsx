@@ -350,9 +350,13 @@ const HrDashboardPage = () => {
     [state.campusDrives]
   );
   const totalApplicantCount = Number(analytics.totalApplications || 0) + campusApplicantTotal;
-  const stageColors = ['bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-amber-500', 'bg-emerald-500'];
-  const stageTextColors = ['text-blue-600', 'text-indigo-600', 'text-violet-600', 'text-amber-600', 'text-emerald-600'];
-  const stageBgColors = ['bg-blue-50', 'bg-indigo-50', 'bg-violet-50', 'bg-amber-50', 'bg-emerald-50'];
+  const stageTheme = {
+    applied: { color: '#2563eb', soft: '#eff6ff' },
+    shortlisted: { color: '#4f46e5', soft: '#eef2ff' },
+    interview: { color: '#7c3aed', soft: '#f5f3ff' },
+    offer: { color: '#d97706', soft: '#fffbeb' },
+    hired: { color: '#059669', soft: '#ecfdf5' }
+  };
   const firstName = (user?.name || user?.fullName || 'there').split(' ')[0];
 
   return (
@@ -424,9 +428,18 @@ const HrDashboardPage = () => {
 
         {!state.loading && (
           <div className="mx-5 mb-4 flex h-2 overflow-hidden rounded-full bg-slate-100">
-            {pipelineColumns.map((col, index) => {
+            {pipelineColumns.map((col) => {
               const pct = Math.max((col.count / pipelineTotal) * 100, col.count > 0 ? 4 : 0);
-              return <div key={col.key} className={`${stageColors[index]} transition-all duration-500`} style={{ width: `${pct}%` }} />;
+              return (
+                <div
+                  key={col.key}
+                  className="transition-all duration-500"
+                  style={{
+                    width: `${pct}%`,
+                    backgroundColor: col.count > 0 ? stageTheme[col.key].color : 'transparent'
+                  }}
+                />
+              );
             })}
           </div>
         )}
@@ -438,13 +451,14 @@ const HrDashboardPage = () => {
               <div className="mx-auto h-6 w-8 animate-pulse rounded bg-slate-100" />
               <div className="mx-auto mt-2 h-3 w-16 animate-pulse rounded bg-slate-50" />
             </div>
-          )) : pipelineColumns.map((col, index) => (
+          )) : pipelineColumns.map((col) => (
             <Link
               key={col.key}
               to={col.to}
-              className="group border-r border-slate-50 px-3 py-4 text-center transition hover:bg-slate-50/60 last:border-r-0"
+              className="group border-r border-slate-50 px-3 py-4 text-center transition last:border-r-0"
+              style={{ backgroundColor: stageTheme[col.key].soft }}
             >
-              <p className={`text-2xl font-extrabold ${stageTextColors[index]}`}>{col.count}</p>
+              <p className="text-2xl font-extrabold" style={{ color: stageTheme[col.key].color }}>{col.count}</p>
               <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-slate-600">{col.label}</p>
             </Link>
           ))}
