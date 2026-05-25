@@ -328,7 +328,7 @@ export default function HrCampusConnectionsPage() {
       </div>
 
       {/* Stat row */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         <StatPill label="Pending" value={incomingInvites.length} tone="amber" onClick={() => navigate('/portal/hr/campus-connections/activity/incoming')} />
         <StatPill label="Sent" value={outgoingRequests.length} tone="blue" onClick={() => navigate('/portal/hr/campus-connections/activity/sent')} />
         <StatPill label="Connected" value={activeConnections.length} tone="emerald" onClick={() => navigate('/portal/hr/campus-connections/activity/connected')} />
@@ -427,10 +427,11 @@ function StatPill({ label, value, tone, onClick }) {
   return (
     <Component
       {...(onClick ? { type: 'button', onClick } : {})}
-      className={`inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] font-semibold text-slate-700 transition ${onClick ? 'hover:bg-slate-50 hover:border-slate-300' : ''}`}
+      className={`inline-flex h-6 items-center gap-1 rounded-full border border-slate-200 bg-white px-2 text-[9px] font-semibold leading-none text-slate-600 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition ${onClick ? 'hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900' : ''}`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${dotColors[tone] || dotColors.slate}`} />
-      {label} <span className="font-bold">{value}</span>
+      <span className={`h-1 w-1 shrink-0 rounded-full ${dotColors[tone] || dotColors.slate}`} />
+      <span>{label}</span>
+      <span className="font-semibold text-slate-900">{value}</span>
     </Component>
   );
 }
