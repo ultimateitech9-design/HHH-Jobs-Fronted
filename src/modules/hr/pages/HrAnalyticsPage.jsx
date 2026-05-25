@@ -137,13 +137,13 @@ const HrAnalyticsPage = () => {
   const totalPipeline = Math.max(0, Object.values(pipeline).reduce((sum, value) => sum + Number(value || 0), 0));
 
   const stageColors = {
-    applied: 'from-blue-500 to-blue-400',
-    shortlisted: 'from-amber-500 to-orange-400',
-    interview_scheduled: 'from-yellow-500 to-amber-400',
-    interviewed: 'from-brand-500 to-cyan-400',
-    offered: 'from-emerald-500 to-teal-400',
-    rejected: 'from-red-400 to-rose-400',
-    hired: 'from-teal-500 to-emerald-400'
+    applied: '#2563eb',
+    shortlisted: '#f59e0b',
+    interview_scheduled: '#eab308',
+    interviewed: '#0891b2',
+    offered: '#10b981',
+    rejected: '#f87171',
+    hired: '#0d9488'
   };
 
   return (
@@ -192,7 +192,7 @@ const HrAnalyticsPage = () => {
               ? '<1%'
               : `${Math.round(exactPercentage)}%`;
             const visibleWidth = numericCount > 0
-              ? Math.max(exactPercentage, 1.5)
+              ? Math.max(exactPercentage, 5)
               : 0;
 
             return (
@@ -205,8 +205,11 @@ const HrAnalyticsPage = () => {
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-white shadow-inner">
                   <div
-                    className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ${stageColors[stage] || 'from-slate-400 to-slate-300'}`}
-                    style={{ width: `${Math.max(0, Math.min(100, visibleWidth))}%` }}
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, visibleWidth))}%`,
+                      backgroundColor: stageColors[stage] || '#94a3b8'
+                    }}
                   />
                 </div>
               </div>

@@ -1,0 +1,1 @@
+import{s,S as t,m as e,i as p}from"./salesApi-CiTW1_L7.js";const n=async()=>s({path:`${t}/coupons`,emptyData:[],extract:a=>(a?.coupons||[]).map(e)}),m=async()=>s({path:`${t}/refunds`,emptyData:[],extract:a=>(a?.refunds||[]).map(p)});export{m as a,n as g};
