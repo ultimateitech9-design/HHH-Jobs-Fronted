@@ -2,11 +2,6 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   FiArrowLeft,
-  FiClock,
-  FiMessageSquare,
-  FiVideo,
-  FiMapPin,
-  FiCalendar,
   FiPhone,
   FiMail,
   FiFileText,
@@ -21,21 +16,12 @@ import {
 } from 'react-icons/fi';
 import {
   bulkUpdateApplications,
-  createHrInterview,
   getApplicantsForJob,
   getHrJobs,
   updateApplicationStatus
 } from '../services/hrApi';
 
 const APPLICATION_STATUS_OPTIONS = ['shortlisted', 'interview_scheduled', 'interviewed', 'offered', 'rejected', 'hired'];
-
-const defaultInterviewDraft = {
-  scheduledAt: '',
-  mode: 'virtual',
-  meetingLink: '',
-  location: '',
-  note: ''
-};
 
 const getStatusColor = (status) => {
   const s = String(status || '').toLowerCase();
@@ -68,8 +54,6 @@ const HrJobApplicantsPage = () => {
   const [activeApplicantId, setActiveApplicantId] = useState(null);
   const [statusDrafts, setStatusDrafts] = useState({});
   const [notesDrafts, setNotesDrafts] = useState({});
-  const [interviewDrafts, setInterviewDrafts] = useState({});
-  const [interviewInlineErrors, setInterviewInlineErrors] = useState({});
   const [statusInlineMessages, setStatusInlineMessages] = useState({});
 
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -97,19 +81,16 @@ const HrJobApplicantsPage = () => {
 
       const nextStatus = {};
       const nextNotes = {};
-      const nextInterview = {};
 
       applicants.forEach((item) => {
         const applicationId = getApplicationId(item);
         if (!applicationId) return;
         nextStatus[applicationId] = item.status || 'applied';
         nextNotes[applicationId] = item.hrNotes || '';
-        nextInterview[applicationId] = { ...defaultInterviewDraft };
       });
 
       setStatusDrafts(nextStatus);
       setNotesDrafts(nextNotes);
-      setInterviewDrafts(nextInterview);
 
       if (applicants.length > 0) {
         const requestedApplicant = applicants.find((item) => getApplicationId(item) === requestedApplicationId);
@@ -166,52 +147,6 @@ const HrJobApplicantsPage = () => {
         ...current,
         [applicationId]: { type: 'error', text: String(error.message || 'Unable to update status.') }
       }));
-    }
-  };
-
-  const scheduleInterview = async (applicationId) => {
-    setMessage('');
-    setInterviewInlineErrors((current) => ({ ...current, [applicationId]: '' }));
-    const interview = interviewDrafts[applicationId] || defaultInterviewDraft;
-
-    if (!interview.scheduledAt) {
-      setInterviewInlineErrors((current) => ({
-        ...current,
-        [applicationId]: 'Please choose interview date and time.'
-      }));
-      return;
-    }
-
-    try {
-      await createHrInterview({ applicationId, ...interview });
-      setInterviewDrafts((current) => ({
-        ...current,
-        [applicationId]: { ...defaultInterviewDraft }
-      }));
-      showMessage('Interview scheduled successfully.');
-
-      if (!['interview_scheduled', 'interviewed', 'hired', 'offered'].includes(statusDrafts[applicationId])) {
-        setStatusDrafts((prev) => ({ ...prev, [applicationId]: 'interview_scheduled' }));
-        setState((current) => ({
-          ...current,
-          applicants: current.applicants.map((item) =>
-            item.id === applicationId ? { ...item, status: 'interview_scheduled' } : item
-          )
-        }));
-      }
-    } catch (error) {
-      showMessage(String(error.message || 'Unable to schedule interview.'));
-    }
-  };
-
-  const setInterviewField = (applicationId, key, value) => {
-    setInterviewDrafts((current) => ({
-      ...current,
-      [applicationId]: { ...(current[applicationId] || defaultInterviewDraft), [key]: value }
-    }));
-
-    if (key === 'scheduledAt' || key === 'mode') {
-      setInterviewInlineErrors((current) => ({ ...current, [applicationId]: '' }));
     }
   };
 
@@ -514,7 +449,7 @@ const HrJobApplicantsPage = () => {
                 </div>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.95fr] gap-5 flex-1">
+                <div className="grid grid-cols-1 gap-5 flex-1">
 
                   {/* Status & Notes */}
                   <div className="space-y-5">
@@ -586,104 +521,6 @@ const HrJobApplicantsPage = () => {
                           </div>
                         ) : null}
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Interview Scheduling */}
-                  <div className="space-y-5">
-                    <div className="bg-violet-50 p-5 rounded-2xl border border-violet-100 shadow-sm">
-                      <h3 className="text-lg font-black text-violet-950 mb-4 flex items-center gap-2">
-                        <FiVideo className="text-purple-600" /> Schedule Interview
-                      </h3>
-
-                      {(() => {
-                        const interview = interviewDrafts[activeApplicant.id] || defaultInterviewDraft;
-                        const interviewInlineError = interviewInlineErrors[activeApplicant.id] || '';
-                        return (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                                <label className="text-sm font-bold text-purple-900/70">Date & Time</label>
-                                <div className="relative">
-                                  <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400" />
-                                  <input
-                                    type="datetime-local"
-                                    value={interview.scheduledAt}
-                                    onChange={(e) => setInterviewField(activeApplicant.id, 'scheduledAt', e.target.value)}
-                                    className="w-full pl-9 pr-3 py-2.5 bg-white border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium text-sm text-purple-900"
-                                  />
-                                </div>
-                              </div>
-                              <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                                <label className="text-sm font-bold text-purple-900/70">Format</label>
-                                <select
-                                  value={interview.mode}
-                                  onChange={(e) => setInterviewField(activeApplicant.id, 'mode', e.target.value)}
-                                  className="w-full px-3 py-2.5 bg-white border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-bold text-purple-900 text-sm"
-                                >
-                                  <option value="virtual">Virtual (Video)</option>
-                                  <option value="phone">Phone Screening</option>
-                                  <option value="onsite">On-Site / Office</option>
-                                </select>
-                              </div>
-                            </div>
-
-                            {(interview.mode === 'virtual' || interview.mode === 'phone') && (
-                              <div className="space-y-1.5">
-                                <label className="text-sm font-bold text-purple-900/70">Meeting Link / Phone No.</label>
-                                <input
-                                  value={interview.meetingLink}
-                                  placeholder={interview.mode === 'virtual' ? 'https://meet.google.com/...' : '+91 9876543210'}
-                                  onChange={(e) => setInterviewField(activeApplicant.id, 'meetingLink', e.target.value)}
-                                  className="w-full px-4 py-2.5 bg-white border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium text-sm"
-                                />
-                              </div>
-                            )}
-
-                            {interview.mode === 'onsite' && (
-                              <div className="space-y-1.5">
-                                <label className="text-sm font-bold text-purple-900/70">Office Location</label>
-                                <div className="relative">
-                                  <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400" />
-                                  <input
-                                    value={interview.location}
-                                    placeholder="Full office address"
-                                    onChange={(e) => setInterviewField(activeApplicant.id, 'location', e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium text-sm"
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="space-y-1.5">
-                              <label className="text-sm font-bold text-purple-900/70">Message to Candidate</label>
-                              <div className="relative">
-                                <FiMessageSquare className="absolute left-3 top-3 text-purple-400" />
-                                <textarea
-                                  rows={2}
-                                  placeholder="E.g., Please prepare a portfolio presentation."
-                                  value={interview.note}
-                                  onChange={(e) => setInterviewField(activeApplicant.id, 'note', e.target.value)}
-                                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-medium text-sm resize-none"
-                                />
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => scheduleInterview(activeApplicant.id)}
-                              className="w-full py-3 bg-[#c97c09] text-white font-bold rounded-xl hover:bg-[#b86f07] transition-colors shadow-sm border border-[#c97c09] flex items-center justify-center gap-2"
-                            >
-                              <FiClock /> Schedule Invite
-                            </button>
-                            {interviewInlineError ? (
-                              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700">
-                                {interviewInlineError}
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })()}
                     </div>
                   </div>
 
