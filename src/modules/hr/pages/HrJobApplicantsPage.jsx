@@ -306,33 +306,64 @@ const HrJobApplicantsPage = () => {
     || activeApplicant?.applicant?.resume_url
     || '';
   const activeApplicantCoverLetter = String(activeApplicant?.coverLetter || '').trim();
+  const statusSummary = useMemo(() => {
+    const summary = {
+      total: state.applicants.length,
+      interview: 0,
+      selected: 0,
+      rejected: 0
+    };
+
+    state.applicants.forEach((app) => {
+      const status = String(app.status || '').toLowerCase();
+      if (status === 'interview_scheduled' || status === 'interviewed') summary.interview += 1;
+      if (status === 'hired' || status === 'offered') summary.selected += 1;
+      if (status === 'rejected') summary.rejected += 1;
+    });
+
+    return summary;
+  }, [state.applicants]);
 
   return (
-    <div className="space-y-6 pb-10 h-full flex flex-col min-h-[calc(100vh-8rem)]">
+    <div className="space-y-5 pb-10 h-full flex flex-col min-h-[calc(100vh-8rem)]">
 
-      <header className="shrink-0 flex items-center justify-between bg-white p-4 md:p-6 rounded-[2rem] border border-neutral-100 shadow-sm">
-        <div className="flex items-center gap-4">
-          <Link to="/portal/hr/jobs" className="w-10 h-10 bg-neutral-50 text-neutral-500 rounded-full flex items-center justify-center hover:bg-brand-50 hover:text-brand-600 transition-colors shrink-0">
+      <header className="shrink-0 overflow-hidden rounded-[1.75rem] border border-amber-100 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <div className="flex flex-col gap-5 p-4 md:flex-row md:items-center md:justify-between md:p-6">
+          <div className="flex min-w-0 items-center gap-4">
+          <Link to="/portal/hr/jobs" className="w-11 h-11 bg-amber-50 text-amber-700 rounded-2xl flex items-center justify-center hover:bg-amber-100 hover:text-amber-800 transition-colors shrink-0">
             <FiArrowLeft size={20} />
           </Link>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-xl md:text-2xl font-bold text-primary truncate max-w-sm md:max-w-xl">{targetJob?.jobTitle || 'Loading Job...'}</h1>
-              {targetJob && <span className="bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider">{targetJob.employmentType || 'Full-Time'}</span>}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-950 truncate max-w-sm md:max-w-xl">{targetJob?.jobTitle || 'Loading Job...'}</h1>
+              {targetJob && <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-800">{targetJob.employmentType || 'Full-Time'}</span>}
             </div>
-            <p className="text-sm font-bold text-neutral-400">
+            <p className="text-sm font-semibold text-slate-500">
               Reviewing {state.applicants.length} {state.applicants.length === 1 ? 'applicant' : 'applicants'} pipeline
             </p>
           </div>
         </div>
-        {!state.loading && state.applicants.length > 0 && (
-          <button
-            onClick={exportToCsv}
-            className="flex items-center gap-2 px-4 py-2.5 bg-neutral-50 text-neutral-700 font-bold rounded-xl hover:bg-neutral-100 transition-colors border border-neutral-200 text-sm shrink-0"
-          >
-            <FiDownload size={15} /> Export CSV
-          </button>
-        )}
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { label: 'Applicants', value: statusSummary.total, tone: 'border-slate-200 bg-slate-50 text-slate-700' },
+              { label: 'Interviews', value: statusSummary.interview, tone: 'border-violet-200 bg-violet-50 text-violet-700' },
+              { label: 'Selected', value: statusSummary.selected, tone: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+              { label: 'Rejected', value: statusSummary.rejected, tone: 'border-red-200 bg-red-50 text-red-700' }
+            ].map((item) => (
+              <span key={item.label} className={`rounded-full border px-3 py-1.5 text-xs font-bold ${item.tone}`}>
+                {item.value} {item.label}
+              </span>
+            ))}
+            {!state.loading && state.applicants.length > 0 && (
+              <button
+                onClick={exportToCsv}
+                className="ml-0 flex items-center gap-2 rounded-full border border-amber-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition-colors hover:bg-amber-50 md:ml-2"
+              >
+                <FiDownload size={15} /> Export CSV
+              </button>
+            )}
+          </div>
+        </div>
       </header>
 
       {state.error && (
@@ -352,28 +383,28 @@ const HrJobApplicantsPage = () => {
           <div className="w-10 h-10 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
         </div>
       ) : state.applicants.length > 0 ? (
-        <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0">
+        <div className="flex-1 flex flex-col md:flex-row gap-5 min-h-0">
 
           {/* Left Side: Applicant List */}
-          <div className="w-full md:w-1/3 flex flex-col bg-white rounded-[2rem] border border-neutral-100 shadow-sm overflow-hidden shrink-0">
-            <div className="p-4 border-b border-neutral-100 bg-neutral-50/50 flex items-center justify-between">
+          <div className="w-full md:w-[360px] xl:w-[380px] flex flex-col bg-white rounded-[1.5rem] border border-slate-200 shadow-sm overflow-hidden shrink-0">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">
               <button
                 onClick={toggleSelectAll}
-                className="flex items-center gap-2 text-sm font-bold text-primary hover:text-brand-600 transition-colors"
+                className="flex items-center gap-2 text-sm font-black text-slate-900 hover:text-amber-700 transition-colors"
               >
-                {allSelected ? <FiCheckSquare size={16} className="text-brand-600" /> : someSelected ? <FiCheckSquare size={16} className="text-brand-300" /> : <FiSquare size={16} />}
+                {allSelected ? <FiCheckSquare size={16} className="text-amber-700" /> : someSelected ? <FiCheckSquare size={16} className="text-amber-400" /> : <FiSquare size={16} />}
                 Applications ({state.applicants.length})
               </button>
               {selectedIds.size > 0 && (
-                <span className="text-xs font-bold text-brand-600">{selectedIds.size} selected</span>
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-black text-amber-800">{selectedIds.size} selected</span>
               )}
             </div>
 
             {/* Bulk Action Bar */}
             {selectedIds.size > 0 && (
-              <div className="p-3 bg-brand-50 border-b border-brand-100 flex items-center gap-2 animate-fade-in">
-                <FiUsers size={14} className="text-brand-600 shrink-0" />
-                <span className="text-xs font-bold text-brand-700 flex-1">{selectedIds.size} selected</span>
+              <div className="p-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2 animate-fade-in">
+                <FiUsers size={14} className="text-amber-700 shrink-0" />
+                <span className="text-xs font-bold text-amber-800 flex-1">{selectedIds.size} selected</span>
                 <button
                   onClick={() => handleBulkAction('shortlist')}
                   disabled={bulkProcessing}
@@ -397,39 +428,43 @@ const HrJobApplicantsPage = () => {
               </div>
             )}
 
-            <div className="overflow-y-auto flex-1 p-2 space-y-1 custom-scrollbar">
+            <div className="overflow-y-auto flex-1 p-3 space-y-2 custom-scrollbar">
               {state.applicants.map(app => {
                 const applicationId = getApplicationId(app);
                 const isActive = activeApplicantId === applicationId;
                 const isSelected = selectedIds.has(applicationId);
                 const name = app.applicant?.name || app.applicantEmail || 'Candidate';
+                const email = app.applicant?.email || app.applicantEmail || 'No email';
                 const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
                 return (
-                  <div key={applicationId} className="flex items-start gap-1.5">
+                  <div key={applicationId} className="flex items-start gap-2">
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleSelect(applicationId); }}
-                      className={`mt-3.5 p-1 rounded transition-colors shrink-0 ${isSelected ? 'text-brand-600' : 'text-neutral-300 hover:text-neutral-500'}`}
+                      className={`mt-4 p-1 rounded transition-colors shrink-0 ${isSelected ? 'text-amber-700' : 'text-slate-300 hover:text-slate-500'}`}
                     >
                       {isSelected ? <FiCheckSquare size={15} /> : <FiSquare size={15} />}
                     </button>
                     <button
                       onClick={() => setActiveApplicantId(applicationId)}
-                      className={`flex-1 text-left p-3 rounded-xl transition-all flex items-start gap-3 ${isActive ? 'bg-brand-50 border border-brand-200 shadow-sm' : 'hover:bg-neutral-50 border border-transparent'
+                      className={`flex-1 text-left p-3 rounded-2xl transition-all flex items-start gap-3 ${isActive ? 'bg-amber-50 border border-amber-200 shadow-sm ring-1 ring-amber-100' : 'hover:bg-slate-50 border border-transparent'
                         }`}
                     >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${isActive ? 'bg-brand-600 text-white' : 'bg-neutral-100 text-neutral-500'
+                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-xs shrink-0 ${isActive ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500'
                         }`}>
                         {initials}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h4 className={`font-bold truncate ${isActive ? 'text-brand-700' : 'text-primary'}`}>{name}</h4>
-                        <div className="mt-1 flex items-center justify-between">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className={`font-black truncate ${isActive ? 'text-amber-800' : 'text-slate-900'}`}>{name}</h4>
+                          <span className="text-xs text-slate-400 font-bold shrink-0">
+                            {new Date(app.createdAt || new Date()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 truncate text-xs font-medium text-slate-500">{email}</p>
+                        <div className="mt-2 flex items-center justify-between">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${getStatusColor(app.status)}`}>
                             {getStatusLabel(app.status || 'applied')}
-                          </span>
-                          <span className="text-xs text-neutral-400 font-bold">
-                            {new Date(app.createdAt || new Date()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                           </span>
                         </div>
                       </div>
@@ -441,19 +476,25 @@ const HrJobApplicantsPage = () => {
           </div>
 
           {/* Right Side: Active Applicant Details */}
-          <div className="flex-1 bg-white rounded-[2rem] border border-neutral-100 shadow-sm overflow-y-auto custom-scrollbar flex flex-col">
+          <div className="flex-1 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm overflow-y-auto custom-scrollbar flex flex-col">
             {activeApplicant ? (
-              <div className="p-6 md:p-8 animate-fade-in flex flex-col min-h-full">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8 border-b border-neutral-100 pb-8">
+              <div className="p-5 md:p-7 animate-fade-in flex flex-col min-h-full">
+                <div className="mb-6 rounded-[1.35rem] border border-amber-100 bg-gradient-to-r from-amber-50 via-white to-slate-50 p-5">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                   <div className="flex items-start gap-5">
-                    <div className="w-16 h-16 bg-gradient-to-br from-brand-100 to-brand-50 text-brand-600 border border-brand-200 rounded-2xl flex items-center justify-center text-xl font-black shrink-0">
+                    <div className="w-16 h-16 bg-gradient-to-br from-amber-200 to-amber-50 text-amber-800 border border-amber-200 rounded-2xl flex items-center justify-center text-xl font-black shrink-0 shadow-sm">
                       {activeApplicant.applicant?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'CA'}
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-primary mb-2">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <h2 className="text-2xl font-black tracking-tight text-slate-950">
                         {activeApplicant.applicant?.name || activeApplicant.applicantEmail || 'Candidate Profile'}
                       </h2>
-                      <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-neutral-500">
+                        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase ${getStatusColor(activeApplicant.status || 'applied')}`}>
+                          {getStatusLabel(activeApplicant.status || 'applied')}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4 text-sm font-semibold text-slate-500">
                         <span className="flex items-center gap-1.5"><FiMail /> {activeApplicant.applicant?.email || activeApplicant.applicantEmail || 'N/A'}</span>
                         <span className="flex items-center gap-1.5"><FiPhone /> {activeApplicant.applicant?.mobile || 'N/A'}</span>
                       </div>
@@ -465,33 +506,34 @@ const HrJobApplicantsPage = () => {
                       href={activeApplicantResumeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white font-bold rounded-xl hover:bg-neutral-800 transition-colors shadow-sm shrink-0"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-slate-950 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm shrink-0"
                     >
                       <FiFileText /> Open Resume
                     </a>
                   )}
                 </div>
+                </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1">
+                <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.95fr] gap-5 flex-1">
 
                   {/* Status & Notes */}
-                  <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-2xl border border-neutral-200">
-                      <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
-                        <FiFileText className="text-brand-500" /> Cover Letter
+                  <div className="space-y-5">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                      <h3 className="text-lg font-black text-slate-950 mb-4 flex items-center gap-2">
+                        <FiFileText className="text-amber-600" /> Cover Letter
                       </h3>
                       {activeApplicantCoverLetter ? (
-                        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-7 text-neutral-700 whitespace-pre-wrap">
+                        <div className="max-h-[360px] overflow-y-auto rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-4 text-sm leading-7 text-slate-700 whitespace-pre-wrap custom-scrollbar">
                           {activeApplicantCoverLetter}
                         </div>
                       ) : (
-                        <p className="text-sm font-medium text-neutral-500">No cover letter was submitted with this application.</p>
+                        <p className="text-sm font-medium text-slate-500">No cover letter was submitted with this application.</p>
                       )}
                     </div>
 
-                    <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-200">
-                      <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
-                        <FiCheckCircle className="text-brand-500" /> Application Status
+                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm">
+                      <h3 className="text-lg font-black text-slate-950 mb-4 flex items-center gap-2">
+                        <FiCheckCircle className="text-emerald-600" /> Application Status
                       </h3>
 
                       <div className="space-y-4">
@@ -503,7 +545,7 @@ const HrJobApplicantsPage = () => {
                               setStatusDrafts({ ...statusDrafts, [activeApplicant.id]: e.target.value });
                               setStatusInlineMessages((current) => ({ ...current, [activeApplicant.id]: null }));
                             }}
-                            className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 font-bold text-primary capitalize"
+                            className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 font-bold text-slate-900 capitalize"
                           >
                             <option value="" disabled>Choose next stage</option>
                             {APPLICATION_STATUS_OPTIONS.map((status) => (
@@ -522,14 +564,14 @@ const HrJobApplicantsPage = () => {
                               setNotesDrafts({ ...notesDrafts, [activeApplicant.id]: e.target.value });
                               setStatusInlineMessages((current) => ({ ...current, [activeApplicant.id]: null }));
                             }}
-                            className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium text-sm text-neutral-700 resize-none"
+                            className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 font-medium text-sm text-slate-700 resize-none"
                           />
                         </div>
 
                         <button
                           type="button"
                           onClick={() => updateStatus(activeApplicant.id)}
-                          className="w-full py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-500 transition-colors shadow-sm flex items-center justify-center gap-2"
+                          className="w-full py-3 bg-slate-950 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm flex items-center justify-center gap-2"
                         >
                           <FiCheck /> Save Evaluation
                         </button>
@@ -548,9 +590,9 @@ const HrJobApplicantsPage = () => {
                   </div>
 
                   {/* Interview Scheduling */}
-                  <div className="space-y-6">
-                    <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100">
-                      <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
+                  <div className="space-y-5">
+                    <div className="bg-violet-50 p-5 rounded-2xl border border-violet-100 shadow-sm">
+                      <h3 className="text-lg font-black text-violet-950 mb-4 flex items-center gap-2">
                         <FiVideo className="text-purple-600" /> Schedule Interview
                       </h3>
 
