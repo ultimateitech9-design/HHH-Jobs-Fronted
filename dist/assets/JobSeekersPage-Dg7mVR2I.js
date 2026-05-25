@@ -1,0 +1,1 @@
+import{bG as e}from"./index-BIF66vNq.js";import{A as o}from"./AudienceLandingPage-qIZfpQ9t.js";import"./PublicFeatureCard-CTzFHesP.js";import"./AnimatedSection-DylsNcOl.js";import"./PublicPageHero-BlojhwvZ.js";import"./PublicSectionHeader-ClkurJrB.js";const p=()=>e.jsx(o,{audienceKey:"job-seekers"});export{p as default};

@@ -1,0 +1,1 @@
+import{s as e,S as a,e as m}from"./salesApi-CsVfrAL-.js";const o=async()=>e({path:`${a}/customers`,emptyData:[],extract:s=>(s?.customers||[]).map(m)}),c=async s=>e({path:`${a}/customers/${s}`,emptyData:{},extract:t=>m(t?.customer||t||{})});export{o as a,c as g};

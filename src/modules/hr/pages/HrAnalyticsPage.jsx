@@ -137,13 +137,13 @@ const HrAnalyticsPage = () => {
   const totalPipeline = Math.max(0, Object.values(pipeline).reduce((sum, value) => sum + Number(value || 0), 0));
 
   const stageColors = {
-    applied: 'bg-blue-500',
-    shortlisted: 'bg-amber-500',
-    interview_scheduled: 'bg-yellow-500',
-    interviewed: 'bg-brand-500',
-    offered: 'bg-emerald-500',
-    rejected: 'bg-red-400',
-    hired: 'bg-teal-500'
+    applied: 'from-blue-500 to-blue-400',
+    shortlisted: 'from-amber-500 to-orange-400',
+    interview_scheduled: 'from-yellow-500 to-amber-400',
+    interviewed: 'from-brand-500 to-cyan-400',
+    offered: 'from-emerald-500 to-teal-400',
+    rejected: 'from-red-400 to-rose-400',
+    hired: 'from-teal-500 to-emerald-400'
   };
 
   return (
@@ -165,15 +165,18 @@ const HrAnalyticsPage = () => {
       </div>
 
       <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <SectionHeader eyebrow="Pipeline" title="Application Stage Distribution" />
-          <div className="flex flex-wrap gap-2">
+        <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Pipeline</p>
+            <h2 className="mt-1 text-lg font-extrabold leading-tight text-navy">Application Stage Distribution</h2>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
             {reportFilters.map((filter) => (
               <button
                 key={filter.key}
                 type="button"
                 onClick={() => setReportFilter(filter.key)}
-                className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition ${reportFilter === filter.key ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                className={`h-8 rounded-full px-3 text-[11px] font-bold transition ${reportFilter === filter.key ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
               >
                 {filter.label}
               </button>
@@ -181,7 +184,7 @@ const HrAnalyticsPage = () => {
           </div>
         </div>
 
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {Object.entries(pipeline).map(([stage, count]) => {
             const numericCount = Number(count || 0);
             const exactPercentage = totalPipeline > 0 ? (numericCount / totalPipeline) * 100 : 0;
@@ -193,14 +196,16 @@ const HrAnalyticsPage = () => {
               : 0;
 
             return (
-              <div key={stage} className="space-y-0.5">
-                <div className="flex items-center justify-between text-[13px]">
-                  <span className="font-medium text-slate-600">{stageLabels[stage] || stage}</span>
-                  <span className="font-semibold text-navy tabular-nums">{numericCount} ({displayPercentage})</span>
+              <div key={stage} className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2">
+                <div className="mb-1.5 flex items-center justify-between gap-3 text-[12px]">
+                  <span className="font-semibold text-slate-600">{stageLabels[stage] || stage}</span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-navy shadow-sm tabular-nums">
+                    {numericCount} ({displayPercentage})
+                  </span>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-white shadow-inner">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${stageColors[stage] || 'bg-slate-400'}`}
+                    className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ${stageColors[stage] || 'from-slate-400 to-slate-300'}`}
                     style={{ width: `${Math.max(0, Math.min(100, visibleWidth))}%` }}
                   />
                 </div>
