@@ -71,6 +71,141 @@ const compactCardClassName =
 const compactEmptyStateClassName =
   'bg-white py-10 [&_h3]:font-sans [&_h3]:text-[1.35rem] [&_h3]:font-semibold [&_p]:max-w-xl';
 
+const campusApplicationStatusMeta = {
+  applied: {
+    label: 'Applied',
+    className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    helper: 'Application submitted'
+  },
+  shortlisted: {
+    label: 'Shortlisted',
+    className: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+    helper: 'Application shortlisted'
+  },
+  selected: {
+    label: 'Selected',
+    className: 'border-teal-200 bg-teal-50 text-teal-700',
+    helper: 'Selected by campus'
+  },
+  rejected: {
+    label: 'Rejected',
+    className: 'border-red-200 bg-red-50 text-red-700',
+    helper: 'Application rejected'
+  },
+  withdrawn: {
+    label: 'Cancelled',
+    className: 'border-amber-200 bg-amber-50 text-amber-700',
+    helper: 'Application cancelled'
+  },
+  cancelled: {
+    label: 'Cancelled',
+    className: 'border-amber-200 bg-amber-50 text-amber-700',
+    helper: 'Application cancelled'
+  },
+  canceled: {
+    label: 'Cancelled',
+    className: 'border-amber-200 bg-amber-50 text-amber-700',
+    helper: 'Application cancelled'
+  }
+};
+
+const getCampusApplicationStatusMeta = (drive = {}) => {
+  const status = String(drive.applicationStatus || (drive.hasApplied ? 'applied' : '')).trim().toLowerCase();
+  return campusApplicationStatusMeta[status] || campusApplicationStatusMeta.applied;
+};
+
+const getCampusApplicationHelper = (drive = {}, fallback) => {
+  if (!drive.hasApplied) return fallback;
+
+  const statusMeta = getCampusApplicationStatusMeta(drive);
+  if (statusMeta.label === 'Applied') return `Applied ${formatDriveDate(drive.appliedAt)}`;
+  return statusMeta.helper;
+};
+
+const CampusApplicationStatusPill = ({ drive }) => {
+  const statusMeta = getCampusApplicationStatusMeta(drive);
+
+  return (
+    <span className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold ${statusMeta.className}`}>
+      {statusMeta.label}
+    </span>
+  );
+};
+
+const PlatformOpenPoolsSection = ({ drives, applyingDriveId, onApply }) => (
+  <StudentSurfaceCard
+    eyebrow="Platform Open Pools"
+    title="Campus pools open to all platform students"
+    subtitle="These pools were published by campuses in open mode, so any student using the platform can apply directly without waiting for a local campus import."
+    className={compactCardClassName}
+  >
+    {drives.length > 0 ? (
+      <div className="grid gap-3 lg:grid-cols-2">
+        {drives.map((drive) => (
+          <article
+            key={drive.id}
+            className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[1.05rem] font-semibold leading-7 text-navy">{drive.companyName || 'Campus pool'}</p>
+                <p className="mt-0.5 text-sm text-slate-500">{drive.jobTitle || 'Role details pending'}</p>
+              </div>
+              <span className="rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700">
+                Open Pool
+              </span>
+            </div>
+
+            <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+              <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-3.5 py-3">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Campus</p>
+                <p className="mt-1.5 text-sm font-medium text-slate-700">{drive.collegeName || 'Campus network'}</p>
+                <p className="mt-1 text-xs text-slate-500">{drive.collegeLocation || 'Location shared after shortlist'}</p>
+              </div>
+              <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-3.5 py-3">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Deadline</p>
+                <p className="mt-1.5 text-sm font-medium text-slate-700">{formatDriveDate(drive.applicationDeadline || drive.driveDate)}</p>
+              </div>
+            </div>
+
+            {drive.description ? (
+              <p className="mt-3 rounded-[1rem] bg-slate-50 px-3.5 py-3 text-sm leading-6 text-slate-600">
+                {drive.description}
+              </p>
+            ) : null}
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {getCampusApplicationHelper(drive, 'Apply directly from HHH Jobs')}
+              </p>
+
+              {drive.hasApplied ? (
+                <CampusApplicationStatusPill drive={drive} />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onApply(drive.id)}
+                  disabled={applyingDriveId === drive.id}
+                  className={`${compactPrimaryButtonClassName} min-w-[160px] justify-center disabled:cursor-not-allowed disabled:opacity-70`}
+                >
+                  {applyingDriveId === drive.id ? 'Applying...' : 'Apply from Platform'}
+                </button>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <StudentEmptyState
+        icon={FiBookOpen}
+        title="No platform-open campus pools live right now"
+        description="When any college publishes a pool in open mode, it will appear here so students can apply directly from the platform."
+        className={compactEmptyStateClassName}
+      />
+    )}
+  </StudentSurfaceCard>
+);
+
 const StudentCampusConnectPage = () => {
   const [state, setState] = useState(emptyCampusState);
   const [applyingDriveId, setApplyingDriveId] = useState('');
@@ -260,6 +395,12 @@ const StudentCampusConnectPage = () => {
                 </div>
               </StudentSurfaceCard>
 
+              <PlatformOpenPoolsSection
+                drives={platformDrives}
+                applyingDriveId={applyingDriveId}
+                onApply={handleApply}
+              />
+
               <StudentSurfaceCard
                 eyebrow="Eligible Drives"
                 title="Campus drives opened for your profile"
@@ -319,15 +460,11 @@ const StudentCampusConnectPage = () => {
 
                         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                            {drive.hasApplied
-                              ? `Applied ${formatDriveDate(drive.appliedAt)}`
-                              : 'Apply before the drive expires'}
+                            {getCampusApplicationHelper(drive, 'Apply before the drive expires')}
                           </p>
 
                           {drive.hasApplied ? (
-                            <span className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
-                              Applied
-                            </span>
+                            <CampusApplicationStatusPill drive={drive} />
                           ) : (
                             <button
                               type="button"
@@ -355,79 +492,13 @@ const StudentCampusConnectPage = () => {
             </>
           )}
 
-          <StudentSurfaceCard
-            eyebrow="Platform Open Pools"
-            title="Campus pools open to all platform students"
-            subtitle="These pools were published by campuses in open mode, so any student using the platform can apply directly without waiting for a local campus import."
-            className={compactCardClassName}
-          >
-            {platformDrives.length > 0 ? (
-              <div className="grid gap-3 lg:grid-cols-2">
-                {platformDrives.map((drive) => (
-                  <article
-                    key={drive.id}
-                    className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-[1.05rem] font-semibold leading-7 text-navy">{drive.companyName || 'Campus pool'}</p>
-                        <p className="mt-0.5 text-sm text-slate-500">{drive.jobTitle || 'Role details pending'}</p>
-                      </div>
-                      <span className="rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700">
-                        Open Pool
-                      </span>
-                    </div>
-
-                    <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-                      <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-3.5 py-3">
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Campus</p>
-                        <p className="mt-1.5 text-sm font-medium text-slate-700">{drive.collegeName || 'Campus network'}</p>
-                        <p className="mt-1 text-xs text-slate-500">{drive.collegeLocation || 'Location shared after shortlist'}</p>
-                      </div>
-                      <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-3.5 py-3">
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Deadline</p>
-                        <p className="mt-1.5 text-sm font-medium text-slate-700">{formatDriveDate(drive.applicationDeadline || drive.driveDate)}</p>
-                      </div>
-                    </div>
-
-                    {drive.description ? (
-                      <p className="mt-3 rounded-[1rem] bg-slate-50 px-3.5 py-3 text-sm leading-6 text-slate-600">
-                        {drive.description}
-                      </p>
-                    ) : null}
-
-                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {drive.hasApplied ? `Applied ${formatDriveDate(drive.appliedAt)}` : 'Apply directly from HHH Jobs'}
-                      </p>
-
-                      {drive.hasApplied ? (
-                        <span className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
-                          Applied
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleApply(drive.id)}
-                          disabled={applyingDriveId === drive.id}
-                          className={`${compactPrimaryButtonClassName} min-w-[160px] justify-center disabled:cursor-not-allowed disabled:opacity-70`}
-                        >
-                          {applyingDriveId === drive.id ? 'Applying...' : 'Apply from Platform'}
-                        </button>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <StudentEmptyState
-                icon={FiBookOpen}
-                title="No platform-open campus pools live right now"
-                description="When any college publishes a pool in open mode, it will appear here so students can apply directly from the platform."
-                className={compactEmptyStateClassName}
-              />
-            )}
-          </StudentSurfaceCard>
+          {!campusData.connected || !college || !student ? (
+            <PlatformOpenPoolsSection
+              drives={platformDrives}
+              applyingDriveId={applyingDriveId}
+              onApply={handleApply}
+            />
+          ) : null}
 
           {campusData.connected && student?.isPlaced ? (
             <StudentNotice

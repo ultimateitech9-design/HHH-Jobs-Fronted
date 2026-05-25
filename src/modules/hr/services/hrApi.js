@@ -362,6 +362,13 @@ export const getHrAnalytics = async () =>
     extract: (payload) => payload?.analytics || {}
   });
 
+export const getHrRecentActivity = async () =>
+  safeRequest({
+    path: '/hr/recent-activity',
+    emptyData: [],
+    extract: (payload) => payload?.activities || []
+  });
+
 export const searchHrCandidates = async (filters = {}) => {
   const params = new URLSearchParams();
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FiBookmark,
@@ -24,7 +24,7 @@ import { getStudentJobs } from '../services/studentApi';
 import { getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
 
 const FEED_PAGE_LIMIT = 50;
-const DEFAULT_JOBS_PER_PAGE = 10;
+const DEFAULT_JOBS_PER_PAGE = 12;
 const MAX_BACKGROUND_FEED_PAGES = 6;
 
 const makeDefaultFilters = (audience = '') => ({
@@ -84,7 +84,13 @@ const mapInternalJobToExternalCard = (job = {}) => ({
   details_id: job.id || job._id
 });
 
-const fetchAllPages = async (fetcher, filters = {}) => {
+const emptyFeedResponse = () => ({
+  jobs: [],
+  error: '',
+  totalPages: 1
+});
+
+const fetchFirstFeedPage = async (fetcher, filters = {}) => {
   const firstResponse = await fetcher({
     ...filters,
     page: 1,
@@ -94,20 +100,24 @@ const fetchAllPages = async (fetcher, filters = {}) => {
   if (firstResponse.error) {
     return {
       jobs: firstResponse.data?.jobs || [],
-      error: firstResponse.error || 'Unable to load jobs.'
+      error: firstResponse.error || 'Unable to load jobs.',
+      totalPages: 1
     };
   }
 
-  const firstJobs = firstResponse.data?.jobs || [];
-  const totalPages = Math.max(1, Number(firstResponse.data?.pagination?.totalPages || 1));
+  return {
+    jobs: firstResponse.data?.jobs || [],
+    error: '',
+    totalPages: Math.max(1, Number(firstResponse.data?.pagination?.totalPages || 1))
+  };
+};
 
-  if (totalPages === 1) {
-    return { jobs: firstJobs, error: '' };
-  }
+const fetchRemainingFeedPages = async (fetcher, filters = {}, totalPages = 1) => {
+  if (totalPages <= 1) return emptyFeedResponse();
 
   // Avoid blasting every external page at once just to render a client-paginated feed.
   const pagesToLoad = Math.min(totalPages, MAX_BACKGROUND_FEED_PAGES);
-  const collectedJobs = [...firstJobs];
+  const collectedJobs = [];
   let partialLoadError = '';
 
   for (let page = 2; page <= pagesToLoad; page += 1) {
@@ -127,7 +137,8 @@ const fetchAllPages = async (fetcher, filters = {}) => {
 
   return {
     jobs: collectedJobs,
-    error: partialLoadError
+    error: partialLoadError,
+    totalPages
   };
 };
 
@@ -170,8 +181,6 @@ const StudentJobsPage = ({
     sources: []
   });
   const [actionFeedback, setActionFeedback] = useState({ type: '', text: '', ctaTo: '', ctaLabel: '' });
-  const lastJobsRequestKeyRef = useRef('');
-
   useEffect(() => {
     setFilters(makeDefaultFilters(effectiveAudience));
     setCurrentPage(1);
@@ -179,15 +188,6 @@ const StudentJobsPage = ({
 
   useEffect(() => {
     let mounted = true;
-    const requestKey = JSON.stringify({ effectiveAudience, filters });
-
-    if (lastJobsRequestKeyRef.current === requestKey) {
-      return () => {
-        mounted = false;
-      };
-    }
-
-    lastJobsRequestKeyRef.current = requestKey;
 
     const loadJobs = async () => {
       setJobsState((current) => ({
@@ -199,31 +199,25 @@ const StudentJobsPage = ({
       const isInternalOnly = filters.source === 'hhh_jobs';
       const shouldLoadInternal = !filters.source || isInternalOnly;
       const shouldLoadExternal = !isInternalOnly;
+      const internalFilters = {
+        search: filters.search,
+        location: filters.location,
+        category: filters.category,
+        audience: effectiveAudience
+      };
+      const externalFilters = {
+        search: filters.search,
+        location: filters.location,
+        category: filters.category,
+        source: filters.source,
+        remote: filters.remote
+      };
+      const expectedFirstFeeds = Number(shouldLoadInternal) + Number(shouldLoadExternal);
+      let completedFirstFeeds = 0;
+      let internalFeed = emptyFeedResponse();
+      let externalFeed = emptyFeedResponse();
 
-      const [internalResponse, externalResponse, sourcesResponse] = await Promise.all([
-        shouldLoadInternal
-          ? fetchAllPages(getStudentJobs, {
-            search: filters.search,
-            location: filters.location,
-            category: filters.category,
-            audience: effectiveAudience
-          })
-          : Promise.resolve({ jobs: [], error: '' }),
-        shouldLoadExternal
-          ? fetchAllPages(getExternalJobs, {
-            search: filters.search,
-            location: filters.location,
-            category: filters.category,
-            source: filters.source,
-            remote: filters.remote
-          })
-          : Promise.resolve({ jobs: [], error: '' }),
-        getExternalJobSources()
-      ]);
-
-      if (!mounted) return;
-
-      const internalJobs = (internalResponse.jobs || [])
+      const normalizeInternalJobs = (jobs = []) => jobs
         .filter((job) => {
           if (filters.remote && !isRemoteLike(job.jobLocation)) return false;
           if (!matchesText(job.employmentType, filters.employmentType)) return false;
@@ -232,7 +226,7 @@ const StudentJobsPage = ({
         })
         .map((job) => ({ ...job, __kind: 'internal' }));
 
-      const externalJobs = (externalResponse.jobs || [])
+      const normalizeExternalJobs = (jobs = []) => jobs
         .filter((job) => {
           if (!matchesText(job.employment_type, filters.employmentType)) return false;
           if (!matchesText(job.experience_level, filters.experienceLevel)) return false;
@@ -240,14 +234,99 @@ const StudentJobsPage = ({
         })
         .map((job) => ({ ...job, __kind: 'external' }));
 
-      setJobsState({
-        jobs: interleaveJobs(internalJobs, externalJobs),
-        loading: false,
-        error: internalResponse.error || externalResponse.error || sourcesResponse.error || '',
-        internalCount: internalJobs.length,
-        externalCount: externalJobs.length,
-        sources: (sourcesResponse.data || []).filter((source) => source?.is_active)
-      });
+      const publishJobs = ({ loading = false } = {}) => {
+        if (!mounted) return;
+
+        const internalJobs = normalizeInternalJobs(internalFeed.jobs);
+        const externalJobs = normalizeExternalJobs(externalFeed.jobs);
+
+        setJobsState((current) => ({
+          ...current,
+          jobs: interleaveJobs(internalJobs, externalJobs),
+          loading,
+          error: internalFeed.error || externalFeed.error || '',
+          internalCount: internalJobs.length,
+          externalCount: externalJobs.length
+        }));
+      };
+
+      const loadSources = async () => {
+        const response = await getExternalJobSources();
+        if (!mounted) return;
+
+        setJobsState((current) => ({
+          ...current,
+          error: current.error || response.error || '',
+          sources: response.error
+            ? current.sources
+            : (response.data || []).filter((source) => source?.is_active)
+        }));
+      };
+
+      loadSources();
+
+      const loadFirstFeed = async ({ enabled, fetcher, fetchFilters, onLoaded }) => {
+        const response = enabled
+          ? await fetchFirstFeedPage(fetcher, fetchFilters)
+          : emptyFeedResponse();
+
+        if (!mounted) return response;
+
+        onLoaded(response);
+        if (enabled) completedFirstFeeds += 1;
+
+        const hasVisibleJobs = internalFeed.jobs.length > 0 || externalFeed.jobs.length > 0;
+        publishJobs({
+          loading: !hasVisibleJobs && completedFirstFeeds < expectedFirstFeeds
+        });
+
+        return response;
+      };
+
+      const [firstInternalFeed, firstExternalFeed] = await Promise.all([
+        loadFirstFeed({
+          enabled: shouldLoadInternal,
+          fetcher: getStudentJobs,
+          fetchFilters: internalFilters,
+          onLoaded: (response) => {
+            internalFeed = response;
+          }
+        }),
+        loadFirstFeed({
+          enabled: shouldLoadExternal,
+          fetcher: getExternalJobs,
+          fetchFilters: externalFilters,
+          onLoaded: (response) => {
+            externalFeed = response;
+          }
+        })
+      ]);
+
+      if (!mounted) return;
+      publishJobs({ loading: false });
+
+      const [remainingInternalFeed, remainingExternalFeed] = await Promise.all([
+        shouldLoadInternal
+          ? fetchRemainingFeedPages(getStudentJobs, internalFilters, firstInternalFeed.totalPages)
+          : emptyFeedResponse(),
+        shouldLoadExternal
+          ? fetchRemainingFeedPages(getExternalJobs, externalFilters, firstExternalFeed.totalPages)
+          : emptyFeedResponse()
+      ]);
+
+      if (!mounted) return;
+
+      internalFeed = {
+        ...internalFeed,
+        jobs: [...internalFeed.jobs, ...(remainingInternalFeed.jobs || [])],
+        error: internalFeed.error || remainingInternalFeed.error || ''
+      };
+      externalFeed = {
+        ...externalFeed,
+        jobs: [...externalFeed.jobs, ...(remainingExternalFeed.jobs || [])],
+        error: externalFeed.error || remainingExternalFeed.error || ''
+      };
+      publishJobs({ loading: false });
     };
 
     loadJobs();

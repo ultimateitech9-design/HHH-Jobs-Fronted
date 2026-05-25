@@ -10,7 +10,8 @@ import {
   getApplicantsForJob,
   getHrAnalytics,
   getHrInterviews,
-  getHrJobs
+  getHrJobs,
+  getHrRecentActivity
 } from '../services/hrApi';
 import { getCurrentUser } from '../../../utils/auth';
 
@@ -102,7 +103,8 @@ const HrDashboardPage = () => {
     interviews: [],
     jobApplications: [],
     campusDrives: [],
-    campusApplications: []
+    campusApplications: [],
+    recentActivity: []
   });
 
   const user = getCurrentUser();
@@ -115,11 +117,12 @@ const HrDashboardPage = () => {
       setState((current) => ({ ...current, loading: true, error: '' }));
 
       try {
-        const [jobsRes, analyticsRes, interviewsRes, campusDrivesRes] = await Promise.all([
+        const [jobsRes, analyticsRes, interviewsRes, campusDrivesRes, activityRes] = await Promise.all([
           getHrJobs(),
           getHrAnalytics(),
           getHrInterviews(),
-          fetchHrCampusDrives()
+          fetchHrCampusDrives(),
+          getHrRecentActivity()
         ]);
 
         if (!mounted) return;
@@ -160,7 +163,8 @@ const HrDashboardPage = () => {
           interviews: interviewsRes.data || [],
           jobApplications: jobApplicantGroups.flat(),
           campusDrives,
-          campusApplications: campusApplicantGroups.flat()
+          campusApplications: campusApplicantGroups.flat(),
+          recentActivity: activityRes.data || []
         });
       } catch (error) {
         if (!mounted) return;
@@ -176,6 +180,37 @@ const HrDashboardPage = () => {
 
     return () => {
       mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const refreshRecentActivity = async () => {
+      if (document.visibilityState === 'hidden') return;
+
+      const response = await getHrRecentActivity();
+      if (!mounted || response.error) return;
+
+      setState((current) => ({
+        ...current,
+        recentActivity: response.data || current.recentActivity
+      }));
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refreshRecentActivity();
+    };
+
+    window.addEventListener('focus', refreshRecentActivity);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    const refreshTimer = window.setInterval(refreshRecentActivity, 30000);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('focus', refreshRecentActivity);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.clearInterval(refreshTimer);
     };
   }, []);
 
@@ -223,7 +258,7 @@ const HrDashboardPage = () => {
     return sortLatest([...jobApplicants, ...campusApplicants]).slice(0, 6);
   }, [state.campusApplications, state.jobApplications]);
 
-  const activityFeed = useMemo(() => {
+  useMemo(() => {
     const jobActivities = state.jobs.map((job, index) => ({
       id: `job-post-${job.id || job._id || index}`,
       title: job.jobTitle || 'Job posted',
@@ -266,6 +301,7 @@ const HrDashboardPage = () => {
 
     return sortLatest([...applicantActivities, ...jobActivities, ...driveActivities, ...interviewActivities]).slice(0, 6);
   }, [latestApplicants, state.campusDrives, state.interviews, state.jobs]);
+  const activityFeed = state.recentActivity;
 
   const campusPipeline = useMemo(() => {
     const activeScheduledCampusApplicationIds = new Set(

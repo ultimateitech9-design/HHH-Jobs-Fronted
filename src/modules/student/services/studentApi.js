@@ -835,6 +835,13 @@ export const getStudentInterviews = async () =>
     extract: (payload) => payload?.interviews || []
   });
 
+export const deleteStudentInterview = async (interviewId) =>
+  strictRequest({
+    path: `/student/interviews/${interviewId}`,
+    options: { method: 'DELETE' },
+    extract: (payload) => payload
+  });
+
 export const getStudentAnalytics = async () =>
   safeRequest({
     path: '/student/analytics',

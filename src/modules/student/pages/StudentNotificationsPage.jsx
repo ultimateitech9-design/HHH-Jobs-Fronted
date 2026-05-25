@@ -22,12 +22,9 @@ import {
 import {
   StudentEmptyState,
   StudentNotice,
-  StudentSurfaceCard,
-  studentGhostButtonClassName,
-  studentPrimaryButtonClassName,
-  studentSecondaryButtonClassName
+  StudentSurfaceCard
 } from '../components/StudentExperience';
-import { formatDateTime } from '../services/studentApi';
+import { formatDateTime, getStudentProfile } from '../services/studentApi';
 import { getCurrentUser } from '../../../utils/auth';
 
 const NOTIFICATION_FILTERS = [
@@ -42,6 +39,13 @@ const QUICK_LINKS = [
   { label: 'My Applications', icon: FiFileText, to: '/portal/student/applications' },
   { label: 'Interviews', icon: FiCalendar, to: '/portal/student/interviews' }
 ];
+
+const compactPrimaryButtonClassName =
+  'inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-brand-500 via-brand-500 to-warning-400 px-2.5 py-1.5 text-[11px] font-black text-white shadow-[0_8px_18px_rgba(229,155,23,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70';
+const compactSecondaryButtonClassName =
+  'inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-70';
+const compactGhostButtonClassName =
+  'inline-flex items-center justify-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1.5 text-[11px] font-semibold text-brand-700 transition hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-70';
 
 const formatRelativeTime = (value) => {
   if (!value) return 'Recently';
@@ -161,6 +165,28 @@ const StudentNotificationsPage = () => {
   const [message, setMessage] = useState('');
   const [pageError, setPageError] = useState('');
   const [expandedNotifications, setExpandedNotifications] = useState([]);
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState(
+    () => currentUser?.avatarUrl || currentUser?.avatar_url || ''
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    const loadStudentAvatar = async () => {
+      const response = await getStudentProfile();
+      const nextAvatarUrl = response.data?.avatarUrl || '';
+
+      if (active && !response.error && nextAvatarUrl) {
+        setProfileAvatarUrl(nextAvatarUrl);
+      }
+    };
+
+    loadStudentAvatar();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (hydrated || loading) return undefined;
@@ -220,6 +246,7 @@ const StudentNotificationsPage = () => {
   const activeError = storeError || pageError;
   const isLoading = loading && !hydrated;
   const userName = currentUser?.name || 'Student';
+  const userAvatarUrl = profileAvatarUrl || currentUser?.avatarUrl || currentUser?.avatar_url || '';
 
   const handleMarkRead = async (notificationId) => {
     setMessage('');
@@ -264,8 +291,12 @@ const StudentNotificationsPage = () => {
         <aside className="space-y-5">
           <div className="rounded-[2rem] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_45px_-38px_rgba(15,23,42,0.45)]">
             <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[conic-gradient(#2d5bff_0_72%,#e2e8f0_72%_100%)]">
-              <div className="flex h-[86px] w-[86px] items-center justify-center rounded-full bg-slate-100 text-3xl font-black text-slate-500">
-                {(userName || 'U').charAt(0).toUpperCase()}
+              <div className="flex h-[86px] w-[86px] items-center justify-center overflow-hidden rounded-full bg-slate-100 text-3xl font-black text-slate-500">
+                {userAvatarUrl ? (
+                  <img src={userAvatarUrl} alt="Profile avatar" className="h-full w-full object-cover" />
+                ) : (
+                  (userName || 'U').charAt(0).toUpperCase()
+                )}
               </div>
             </div>
             <span className="mt-3 inline-flex rounded-full border border-amber-100 bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-700">
@@ -286,6 +317,22 @@ const StudentNotificationsPage = () => {
             </Link>
           </div>
 
+          <div className="rounded-[1.6rem] border border-slate-200 bg-white p-4">
+            <div className="space-y-1">
+              {QUICK_LINKS.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  className={`flex items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold ${item.label === 'My home' ? 'bg-slate-100 text-navy' : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                >
+                  <item.icon />
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
           <div className="rounded-[1.6rem] border border-[#d9e7ff] bg-[#edf4ff] p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-navy">Inbox snapshot</h2>
@@ -304,22 +351,6 @@ const StudentNotificationsPage = () => {
             <div className="mt-4 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700">
               <span>Prioritize recruiter and interview updates first</span>
               <FiBell />
-            </div>
-          </div>
-
-          <div className="rounded-[1.6rem] border border-slate-200 bg-white p-4">
-            <div className="space-y-1">
-              {QUICK_LINKS.map((item) => (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  className={`flex items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold ${item.label === 'My home' ? 'bg-slate-100 text-navy' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
-                >
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
-              ))}
             </div>
           </div>
         </aside>
@@ -346,13 +377,13 @@ const StudentNotificationsPage = () => {
               ))}
             </div>
             {isLoading ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[1, 2, 3].map((item) => (
                   <div key={item} className="h-32 animate-pulse rounded-[1.8rem] bg-slate-100" />
                 ))}
               </div>
             ) : filteredNotifications.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {filteredNotifications.map((notification) => {
                   const meta = getNotificationMeta(notification);
                   const title = notification.title || notification.subject || notification.type || 'Notification';
@@ -363,43 +394,43 @@ const StudentNotificationsPage = () => {
                   return (
                     <article
                       key={notification.id}
-                      className={`rounded-[1.5rem] border p-4 transition ${notification.is_read ? 'border-slate-200 bg-white' : 'border-[#d9e7ff] bg-[#eef4ff]'
+                      className={`rounded-2xl border p-2.5 transition ${notification.is_read ? 'border-slate-200 bg-white' : 'border-[#d9e7ff] bg-[#eef4ff]'
                         }`}
                     >
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex gap-3.5">
-                          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${meta.iconClassName}`}>
-                            <meta.Icon size={17} />
+                      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex min-w-0 gap-2">
+                          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${meta.iconClassName}`}>
+                            <meta.Icon size={13} />
                           </div>
 
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] ${meta.badgeClassName}`}>
+                              <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] ${meta.badgeClassName}`}>
                                 {meta.label}
                               </span>
                               {!notification.is_read ? (
-                                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                                   New
                                 </span>
                               ) : null}
                             </div>
 
-                            <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                            <div className="mt-1.5 flex flex-col gap-1.5 md:flex-row md:items-start md:justify-between">
                               <div className="min-w-0">
-                                <h3 className={`text-[1.35rem] leading-tight ${notification.is_read ? 'font-bold text-slate-700' : 'font-bold text-navy'}`}>
+                                <h3 className={`text-sm leading-tight ${notification.is_read ? 'font-bold text-slate-700' : 'font-bold text-navy'}`}>
                                   {title}
                                 </h3>
-                                <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+                                <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{description}</p>
                               </div>
-                              <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-400">
-                                <FiClock size={12} />
+                              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[10px] font-semibold text-slate-400">
+                                <FiClock size={10} />
                                 {formatRelativeTime(notification.created_at || notification.createdAt)}
                               </span>
                             </div>
 
-                            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-400">
-                              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1">
-                                <FiClock size={12} />
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] font-semibold text-slate-400">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5">
+                                <FiClock size={10} />
                                 {formatDateTime(notification.created_at || notification.createdAt)}
                               </span>
                               <button
@@ -418,32 +449,32 @@ const StudentNotificationsPage = () => {
                             </div>
 
                             {isExpanded ? (
-                              <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-sm leading-6 text-slate-700">
+                              <div className="mt-2 rounded-xl border border-amber-100 bg-amber-50/70 px-3 py-2 text-xs leading-5 text-slate-700">
                                 {detailsText}
                               </div>
                             ) : null}
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2.5 lg:w-[210px] lg:justify-end">
+                        <div className="flex flex-wrap gap-1.5 lg:w-auto lg:flex-nowrap lg:items-center lg:justify-end">
                           {!notification.is_read ? (
                             <button
                               type="button"
                               onClick={() => handleMarkRead(notification.id)}
-                              className={studentSecondaryButtonClassName}
+                              className={compactSecondaryButtonClassName}
                             >
                               <FiCheckCircle size={15} />
                               Mark read
                             </button>
                           ) : (
-                            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
-                              <FiCheck size={14} />
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700">
+                              <FiCheck size={12} />
                               Read
                             </span>
                           )}
 
                           {notification.link ? (
-                            <Link to={notification.link} className={studentPrimaryButtonClassName}>
+                            <Link to={notification.link} className={compactPrimaryButtonClassName}>
                               <FiArrowRight size={15} />
                               Open update
                             </Link>
@@ -452,7 +483,7 @@ const StudentNotificationsPage = () => {
                           <button
                             type="button"
                             onClick={() => handleDeleteNotification(notification.id)}
-                            className={studentGhostButtonClassName}
+                            className={compactGhostButtonClassName}
                           >
                             <FiTrash2 size={15} />
                             Delete

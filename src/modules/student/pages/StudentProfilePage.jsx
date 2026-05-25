@@ -500,6 +500,7 @@ const StudentProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [handoffLoading, setHandoffLoading] = useState('');
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false);
   const [resumeImporting, setResumeImporting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [profileEditorOpen, setProfileEditorOpen] = useState(false);
@@ -1244,7 +1245,8 @@ const StudentProfilePage = () => {
   };
 
   const profileDialogOpen =
-    profileEditorOpen
+    avatarPreviewOpen
+    || profileEditorOpen
     || headlineEditorOpen
     || skillsEditorOpen
     || personalEditorOpen
@@ -1277,6 +1279,7 @@ const StudentProfilePage = () => {
 
     const handleEscape = (event) => {
       if (event.key !== 'Escape' || saving) return;
+      setAvatarPreviewOpen(false);
       setProfileEditorOpen(false);
       setHeadlineEditorOpen(false);
       setSkillsEditorOpen(false);
@@ -1467,6 +1470,63 @@ const StudentProfilePage = () => {
           </div>
         </div>
       </section>
+
+      {avatarPreviewOpen ? renderProfileModal(
+        <div
+          className={profileModalBackdropClassName}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setAvatarPreviewOpen(false);
+          }}
+        >
+          <div className="w-full max-w-xl overflow-hidden rounded-[1.8rem] border border-[#e6ecf5] bg-white shadow-[0_30px_80px_-30px_rgba(15,23,42,0.42)]">
+            <div className="grid gap-0 sm:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
+              <div className="flex min-h-[260px] items-center justify-center bg-slate-100 p-5">
+                <div className="flex aspect-square w-full max-w-[220px] items-center justify-center overflow-hidden rounded-[1.6rem] bg-white text-7xl font-black text-slate-400 shadow-sm">
+                  {form.avatarUrl ? (
+                    <img src={form.avatarUrl} alt="Profile photo preview" className="h-full w-full object-cover" />
+                  ) : (
+                    (userName || 'U').charAt(0).toUpperCase()
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col justify-between gap-6 p-5 sm:p-6">
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-brand-700">Profile Photo</p>
+                      <h2 className="mt-1 text-[1.35rem] font-bold tracking-tight text-navy">{userName}</h2>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAvatarPreviewOpen(false)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+                      aria-label="Close profile photo preview"
+                    >
+                      <FiX size={17} />
+                    </button>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    This is the photo shown on your student profile and dashboard.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAvatarPreviewOpen(false);
+                    avatarInputRef.current?.click();
+                  }}
+                  className="inline-flex w-fit items-center gap-2 rounded-full bg-[#2d5bff] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#2449d8]"
+                >
+                  <FiCamera size={15} />
+                  Change photo
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {profileEditorOpen ? renderProfileModal(
         <div
@@ -2394,11 +2454,13 @@ const StudentProfilePage = () => {
 
       <section className="grid gap-2.5 rounded-[1.6rem] border border-[#e6ecf5] bg-white p-3.5 shadow-[0_16px_36px_-32px_rgba(15,23,42,0.22)] sm:p-4 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start xl:grid-cols-[minmax(0,1fr)_272px]">
         <div className="flex flex-col gap-2.5 sm:flex-row">
+          <div className="group relative shrink-0 self-start rounded-full">
             <button
               type="button"
-              aria-label="Update profile photo"
-              className="group relative shrink-0 self-start rounded-full"
-              onClick={() => avatarInputRef.current?.click()}
+              aria-label="Preview profile photo"
+              title="Preview profile photo"
+              className="rounded-full"
+              onClick={() => setAvatarPreviewOpen(true)}
             >
               <div
                 className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full p-1"
@@ -2417,12 +2479,19 @@ const StudentProfilePage = () => {
               <span className="absolute bottom-0 left-1/2 inline-flex -translate-x-1/2 rounded-full border border-red-100 bg-white px-1.5 py-0.5 text-[9px] font-bold text-red-500 shadow-sm">
                 {completion}%
               </span>
-              <span className="absolute -right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white bg-navy text-white shadow-md transition group-hover:bg-brand-600">
-                <FiCamera size={12} />
-              </span>
             </button>
+            <button
+              type="button"
+              aria-label="Update profile photo"
+              title="Update profile photo"
+              className="absolute -right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white bg-navy text-white shadow-md transition group-hover:bg-brand-600"
+              onClick={() => avatarInputRef.current?.click()}
+            >
+              <FiCamera size={12} />
+            </button>
+          </div>
 
-            <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-1.5">
                 <h1 className="text-[1.24rem] font-bold tracking-tight text-navy">{userName}</h1>
                 <button

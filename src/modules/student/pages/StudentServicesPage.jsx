@@ -246,6 +246,31 @@ const StudentServicesPage = () => {
       </section>
 
       <StudentSurfaceCard
+        eyebrow="More Services"
+        title="And many more"
+        subtitle="Extra student-side tools that keep your job hunt organized."
+        className="p-4 xl:p-5"
+      >
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {supportServices.map((service) => (
+            <Link
+              key={service.label}
+              to={service.to}
+              className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white px-3.5 py-3 transition hover:border-brand-200 hover:bg-brand-50/40"
+            >
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.85rem] bg-slate-50 text-slate-600">
+                <service.icon size={16} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-navy">{service.label}</p>
+                <p className="mt-1 text-xs font-semibold text-brand-700">Open tool</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </StudentSurfaceCard>
+
+      <StudentSurfaceCard
         eyebrow="Main Services"
         title="What we provide"
         subtitle="Compact cards, clear value, and direct actions only."
@@ -293,31 +318,6 @@ const StudentServicesPage = () => {
             </article>
             );
           })}
-        </div>
-      </StudentSurfaceCard>
-
-      <StudentSurfaceCard
-        eyebrow="More Services"
-        title="And many more"
-        subtitle="Extra student-side tools that keep your job hunt organized."
-        className="p-4 xl:p-5"
-      >
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {supportServices.map((service) => (
-            <Link
-              key={service.label}
-              to={service.to}
-              className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white px-3.5 py-3 transition hover:border-brand-200 hover:bg-brand-50/40"
-            >
-              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.85rem] bg-slate-50 text-slate-600">
-                <service.icon size={16} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-navy">{service.label}</p>
-                <p className="mt-1 text-xs font-semibold text-brand-700">Open tool</p>
-              </div>
-            </Link>
-          ))}
         </div>
       </StudentSurfaceCard>
 

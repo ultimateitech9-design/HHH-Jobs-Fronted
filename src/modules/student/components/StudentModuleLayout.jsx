@@ -11,9 +11,11 @@ import {
   FiSend,
   FiUser
 } from 'react-icons/fi';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
-import { getCurrentUser } from '../../../utils/auth';
+import { getCurrentUser, getToken, setAuthSession } from '../../../utils/auth';
+import { getStudentProfile } from '../services/studentApi';
 
 const studentDashboardNavItems = [
   { to: '/portal/student/companies', label: 'Companies', icon: FiLayers },
@@ -55,6 +57,38 @@ const StudentModuleLayout = () => {
   const location = useLocation();
   const isRetiredUser = currentUser?.role === 'retired_employee';
   const isStudentHomeRoute = location.pathname === '/portal/student/home';
+
+  useEffect(() => {
+    let active = true;
+
+    const refreshStudentAvatar = async () => {
+      const user = getCurrentUser();
+      if (!['student', 'retired_employee'].includes(String(user?.role || '').trim().toLowerCase())) return;
+
+      const response = await getStudentProfile();
+      const profile = response.data || {};
+      const profileAvatar = profile.avatarUrl || '';
+      const storedAvatar = user.avatarUrl || user.avatar_url || '';
+
+      if (!active || response.error || !profileAvatar || profileAvatar === storedAvatar) return;
+
+      const token = getToken();
+      if (!token) return;
+
+      setAuthSession(token, {
+        ...user,
+        name: profile.name || user.name,
+        avatarUrl: profileAvatar,
+        avatar_url: profileAvatar
+      });
+    };
+
+    refreshStudentAvatar();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <PortalWorkbenchLayout

@@ -22,6 +22,15 @@ const parseJson = async (response) => {
   }
 };
 
+const retryTransientCompanyRequest = async (request) => {
+  try {
+    return await request();
+  } catch (error) {
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 450));
+    return request();
+  }
+};
+
 const normalizeKey = (value = '') =>
   String(value || '')
     .trim()
@@ -361,6 +370,39 @@ export const getPublicCompanyDetail = async (companySlug) => {
   }
 };
 
+export const getCompanySubscriptions = async () => {
+  if (!hasApiAccessToken()) {
+    return {
+      data: { subscriptions: [] },
+      error: ''
+    };
+  }
+
+  try {
+    const response = await retryTransientCompanyRequest(() => apiFetch('/companies/subscriptions'));
+    const payload = await parseJson(response);
+
+    if (!response.ok) {
+      return {
+        data: { subscriptions: [] },
+        error: payload?.message || `Request failed (${response.status})`
+      };
+    }
+
+    return {
+      data: {
+        subscriptions: Array.isArray(payload?.subscriptions) ? payload.subscriptions : []
+      },
+      error: ''
+    };
+  } catch (error) {
+    return {
+      data: { subscriptions: [] },
+      error: error.message || 'Unable to load company subscriptions'
+    };
+  }
+};
+
 export const getCompanySubscription = async ({ companySlug, companyName } = {}) => {
   const slug = String(companySlug || '').trim();
   const name = String(companyName || '').trim();
@@ -379,7 +421,9 @@ export const getCompanySubscription = async ({ companySlug, companyName } = {}) 
   const params = new URLSearchParams({ companyName: name });
 
   try {
-    const response = await apiFetch(`/companies/${encodeURIComponent(slug)}/subscription?${params.toString()}`);
+    const response = await retryTransientCompanyRequest(() =>
+      apiFetch(`/companies/${encodeURIComponent(slug)}/subscription?${params.toString()}`)
+    );
     const payload = await parseJson(response);
 
     if (!response.ok) {
@@ -421,13 +465,15 @@ export const updateCompanySubscription = async ({
   }
 
   try {
-    const response = await apiFetch(`/companies/${encodeURIComponent(slug)}/subscription`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        companyName: name,
-        subscribed: Boolean(subscribed)
+    const response = await retryTransientCompanyRequest(() =>
+      apiFetch(`/companies/${encodeURIComponent(slug)}/subscription`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          companyName: name,
+          subscribed: Boolean(subscribed)
+        })
       })
-    });
+    );
     const payload = await parseJson(response);
 
     if (!response.ok) {

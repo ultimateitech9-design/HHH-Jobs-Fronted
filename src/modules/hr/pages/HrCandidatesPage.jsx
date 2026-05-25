@@ -450,7 +450,7 @@ export default function HrCandidatesPage() {
       {error ? <div className="admin-ops-alert admin-ops-alert--error text-sm">{error}</div> : null}
 
       <section className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className={`${panelClass} space-y-4 lg:sticky lg:top-24 lg:self-start`}>
+        <aside className={`${panelClass} space-y-4 lg:sticky lg:top-4 lg:self-start`}>
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-base font-extrabold text-navy">
               <FiFilter size={16} />
@@ -849,7 +849,7 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
             )}
           </div>
 
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap justify-end gap-2">
             {interestStatus ? (
               <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${statusStyles[interestStatus] || 'border-slate-200 bg-slate-50 text-slate-600'}`}>
                 <FiCheckCircle size={13} />

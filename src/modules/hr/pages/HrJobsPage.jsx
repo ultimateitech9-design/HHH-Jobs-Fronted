@@ -10,7 +10,6 @@ import {
   FiTrash2,
   FiUsers,
   FiEye,
-  FiClock,
   FiMapPin
 } from 'react-icons/fi';
 import {
@@ -898,7 +897,6 @@ const HrJobsPage = () => {
                   <div className="relative z-10 mb-3.5 space-y-1.5 text-[12px] font-medium text-neutral-600">
                     <div className="flex items-center gap-1.5 truncate"><FiMapPin className="shrink-0 text-neutral-400" size={11} /> <span className="truncate">{job.jobLocation || 'Remote'}</span></div>
                     <div className="flex items-center gap-1.5"><FiBriefcase className="shrink-0 text-neutral-400" size={11} /> <span className="truncate">{job.experienceLevel || 'Any Experience'} &bull; {job.employmentType || 'Full-Time'}</span></div>
-                    <div className="flex items-center gap-1.5"><FiClock className="shrink-0 text-neutral-400" size={11} /> <span>Valid till: {formatDateTime(job.validTill).split(' ')[0]}</span></div>
                   </div>
 
                   <div className="relative z-10 mb-3.5 grid grid-cols-2 gap-2 border-y border-neutral-100 py-2.5">

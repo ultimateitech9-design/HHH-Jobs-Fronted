@@ -47,6 +47,7 @@ const canRoleSubscribeToCompany = (role) =>
 const CompanyDirectoryCard = ({
   company,
   onOpenCompany,
+  onSubscriptionChange,
   primaryLabel = 'Open company'
 }) => {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ const CompanyDirectoryCard = ({
   const canSubscribe = canRoleSubscribeToCompany(user?.role);
   const [logoError, setLogoError] = useState(false);
   const [subscriptionState, setSubscriptionState] = useState({
-    subscribed: false,
+    subscribed: Boolean(company?.subscription?.subscribed),
     loading: false
   });
   const categories = getCategoryList(company);
@@ -122,10 +123,12 @@ const CompanyDirectoryCard = ({
       return;
     }
 
+    const nextSubscription = response.data?.subscription || { subscribed: nextSubscribed };
     setSubscriptionState({
-      subscribed: readSubscribedFlag(response.data?.subscription, nextSubscribed),
+      subscribed: readSubscribedFlag(nextSubscription, nextSubscribed),
       loading: false
     });
+    onSubscriptionChange?.(company, nextSubscription);
     toast.success(nextSubscribed ? `Subscribed to ${company.name}.` : `Unsubscribed from ${company.name}.`);
   };
 
