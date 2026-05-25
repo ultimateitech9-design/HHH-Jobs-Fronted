@@ -221,7 +221,7 @@ const HrModuleLayout = () => {
               </div>
             )}
             <Link
-              to="/portal/hr/jobs?tab=billing&billingTab=credits"
+              to="/portal/hr/jobs?tab=billing&billingTab=subscription"
               className="rounded-full border border-sky-200 bg-sky-50 px-3.5 py-1 text-[13px] font-semibold text-sky-700 transition-colors hover:bg-sky-100"
             >
               Upgrade Plan

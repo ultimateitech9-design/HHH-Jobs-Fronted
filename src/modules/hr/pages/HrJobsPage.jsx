@@ -417,7 +417,8 @@ const HrJobsPage = () => {
   }, [location.search]);
   const requestedBillingSubTab = useMemo(() => {
     const value = new URLSearchParams(location.search).get('billingTab');
-    return ['subscription', 'credits', 'history'].includes(value) ? value : '';
+    if (value === 'credits') return 'subscription';
+    return ['subscription', 'history'].includes(value) ? value : '';
   }, [location.search]);
 
   useEffect(() => {

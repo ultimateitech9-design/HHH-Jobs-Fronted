@@ -499,7 +499,7 @@ function DriveApplicantsView({ driveId, onBack }) {
                 disabled={updating}
                 className="rounded-full bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
               >
-                Move student to round
+                Move students to round
               </button>
               <button
                 type="button"
@@ -507,7 +507,7 @@ function DriveApplicantsView({ driveId, onBack }) {
                 disabled={updating}
                 className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
               >
-                Select student
+                Select students
               </button>
               <button
                 type="button"
@@ -515,7 +515,7 @@ function DriveApplicantsView({ driveId, onBack }) {
                 disabled={updating}
                 className="rounded-full bg-red-500 px-4 py-2 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
               >
-                Reject student
+                Reject students
               </button>
             </div>
           </div>
