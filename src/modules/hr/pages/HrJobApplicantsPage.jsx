@@ -450,6 +450,13 @@ const HrJobApplicantsPage = () => {
                         <option key={status} value={status}>{getStatusLabel(status)}</option>
                       ))}
                     </select>
+                    <button
+                      type="button"
+                      onClick={() => updateStatus(activeApplicant.id)}
+                      className="flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-700"
+                    >
+                      <FiCheck /> Save
+                    </button>
                     {activeApplicantResumeUrl && (
                       <a
                         href={activeApplicantResumeUrl}
@@ -483,12 +490,11 @@ const HrJobApplicantsPage = () => {
 
                     <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm">
                       <h3 className="text-lg font-black text-slate-950 mb-4 flex items-center gap-2">
-                        <FiCheckCircle className="text-emerald-600" /> Application Status
+                        <FiCheckCircle className="text-emerald-600" /> Internal HR Notes
                       </h3>
 
                       <div className="space-y-4">
                         <div className="space-y-1.5">
-                          <label className="text-sm font-bold text-neutral-700">Internal HR Notes</label>
                           <textarea
                             rows={4}
                             placeholder="Add evaluation notes, salary expectations, etc. hidden from candidate."
@@ -500,14 +506,6 @@ const HrJobApplicantsPage = () => {
                             className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 font-medium text-sm text-slate-700 resize-none"
                           />
                         </div>
-
-                        <button
-                          type="button"
-                          onClick={() => updateStatus(activeApplicant.id)}
-                          className="w-full py-3 bg-slate-950 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm flex items-center justify-center gap-2"
-                        >
-                          <FiCheck /> Save Evaluation
-                        </button>
                         {statusInlineMessages[activeApplicant.id]?.text ? (
                           <div
                             className={`rounded-xl border px-3 py-2 text-sm font-semibold ${statusInlineMessages[activeApplicant.id]?.type === 'error'
