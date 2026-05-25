@@ -44,6 +44,13 @@ const REQUEST_TYPE_OPTIONS = [
   { value: 'both', label: 'Drive + pool' }
 ];
 
+const VIEW_DOT_COLORS = {
+  incoming: 'bg-amber-400',
+  sent: 'bg-sky-400',
+  connected: 'bg-emerald-400',
+  closed: 'bg-slate-300'
+};
+
 const formatDateTime = (value) => {
   if (!value) return 'Not available';
   const parsed = new Date(value);
@@ -254,26 +261,26 @@ export default function HrCampusConnectionActivityPage() {
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div className="space-y-5 pb-12">
+      <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Campus Activity</p>
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-navy">{VIEW_META[activeView].title}</h1>
-          <p className="mt-1 text-sm text-slate-500">{VIEW_META[activeView].description}</p>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500">{VIEW_META[activeView].description}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => navigate('/portal/hr/campus-connections')}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-[0_10px_28px_rgba(15,23,42,0.06)] transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
           >
             Back To Directory
           </button>
           <button
             type="button"
             onClick={handleRefresh}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-[0_10px_28px_rgba(15,23,42,0.06)] transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
           >
             <FiRefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
             Refresh
@@ -281,19 +288,21 @@ export default function HrCampusConnectionActivityPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {Object.entries(VIEW_META).map(([key, meta]) => (
           <button
             key={key}
             type="button"
             onClick={() => navigate(`/portal/hr/campus-connections/activity/${key}`)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+            className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[11px] font-semibold leading-none shadow-[0_1px_0_rgba(15,23,42,0.02)] transition ${
               activeView === key
-                ? 'bg-navy text-white'
-                : 'bg-white text-slate-600 hover:text-navy'
+                ? 'border-navy bg-navy text-white'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
-            {meta.label} {itemsByView[key].length}
+            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${activeView === key ? 'bg-white/75' : VIEW_DOT_COLORS[key]}`} />
+            <span>{meta.label}</span>
+            <span className={activeView === key ? 'font-semibold text-white' : 'font-semibold text-slate-900'}>{itemsByView[key].length}</span>
           </button>
         ))}
       </div>
@@ -306,16 +315,16 @@ export default function HrCampusConnectionActivityPage() {
       ) : null}
 
       {loading ? (
-        <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="flex min-h-[40vh] items-center justify-center rounded-2xl border border-slate-100 bg-white/70">
           <FiRefreshCw size={24} className="animate-spin text-brand-500" />
         </div>
       ) : activeItems.length === 0 ? (
-        <div className="py-16 text-center">
+        <div className="rounded-2xl border border-slate-100 bg-white/80 px-5 py-16 text-center shadow-[0_20px_60px_rgba(15,23,42,0.04)]">
           <p className="text-base font-semibold text-slate-500">No {VIEW_META[activeView].label.toLowerCase()} items yet.</p>
           <p className="mt-2 text-sm text-slate-400">This page updates as your campus relationships move forward.</p>
         </div>
       ) : (
-        <div className="divide-y divide-slate-200/80">
+        <div className="space-y-3">
           {activeItems.map((connection) => (
             <ActivityRow
               key={connection.id}
@@ -369,66 +378,71 @@ function ActivityRow({
   };
 
   return (
-    <div className="flex flex-col gap-3 py-5 first:pt-0 last:pb-0 md:flex-row md:items-start md:justify-between md:gap-6">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-xl font-bold text-navy">{college.name || 'Campus Partner'}</p>
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{view}</span>
+    <div className="rounded-2xl border border-slate-100 bg-white/90 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.045)] transition hover:border-slate-200 hover:shadow-[0_22px_60px_rgba(15,23,42,0.07)]">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-lg font-extrabold tracking-tight text-navy">{college.name || 'Campus Partner'}</p>
+            <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+              <span className={`h-1.5 w-1.5 rounded-full ${VIEW_DOT_COLORS[view] || VIEW_DOT_COLORS.closed}`} />
+              {VIEW_META[view]?.label || view}
+            </span>
+          </div>
+          <p className="mt-2 text-sm font-medium text-slate-500">{statusCopy[view] || timestamp}</p>
+          {college.placementOfficerName ? (
+            <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-600">
+              <FiUser size={14} className="text-slate-400" />
+              {college.placementOfficerName}
+            </p>
+          ) : null}
+          {connection.message ? (
+            <p className="mt-4 max-w-5xl rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3 text-sm leading-7 text-slate-600">{connection.message}</p>
+          ) : null}
         </div>
-        <p className="mt-2 text-sm text-slate-500">{statusCopy[view] || timestamp}</p>
-        {college.placementOfficerName ? (
-          <p className="mt-3 inline-flex items-center gap-2 text-sm text-slate-600">
-            <FiUser size={14} className="text-slate-400" />
-            {college.placementOfficerName}
-          </p>
-        ) : null}
-        {connection.message ? (
-          <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">{connection.message}</p>
-        ) : null}
-      </div>
 
-      <div className="flex flex-wrap items-center gap-2 md:justify-end">
-        {view === 'incoming' ? (
-          <>
+        <div className="flex shrink-0 flex-wrap items-center gap-2 md:justify-end">
+          {view === 'incoming' ? (
+            <>
+              <button
+                type="button"
+                onClick={onDecline}
+                disabled={Boolean(loadingState)}
+                className="inline-flex h-9 items-center gap-2 rounded-full border border-red-100 bg-white px-3.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+              >
+                {loadingState === 'rejected' ? <FiRefreshCw size={14} className="animate-spin" /> : <FiXCircle size={14} />}
+                Decline
+              </button>
+              <button
+                type="button"
+                onClick={onAccept}
+                disabled={Boolean(loadingState)}
+                className="inline-flex h-9 items-center gap-2 rounded-full bg-emerald-600 px-3.5 text-xs font-semibold text-white shadow-[0_10px_24px_rgba(16,185,129,0.18)] transition hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {loadingState === 'accepted' ? <FiRefreshCw size={14} className="animate-spin" /> : <FiCheckCircle size={14} />}
+                Accept
+              </button>
+            </>
+          ) : null}
+
+          {(view === 'sent' || view === 'closed') ? (
             <button
               type="button"
-              onClick={onDecline}
-              disabled={Boolean(loadingState)}
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+              onClick={onRequestAgain}
+              disabled={!canRequestAgain}
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3.5 text-xs font-semibold text-brand-700 transition hover:border-brand-200 hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loadingState === 'rejected' ? <FiRefreshCw size={14} className="animate-spin" /> : <FiXCircle size={14} />}
-              Decline
+              <FiSend size={14} />
+              {view === 'closed' ? 'Request again' : 'Send again'}
             </button>
-            <button
-              type="button"
-              onClick={onAccept}
-              disabled={Boolean(loadingState)}
-              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-            >
-              {loadingState === 'accepted' ? <FiRefreshCw size={14} className="animate-spin" /> : <FiCheckCircle size={14} />}
-              Accept
-            </button>
-          </>
-        ) : null}
+          ) : null}
 
-        {(view === 'sent' || view === 'closed') ? (
-          <button
-            type="button"
-            onClick={onRequestAgain}
-            disabled={!canRequestAgain}
-            className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <FiSend size={14} />
-            {view === 'closed' ? 'Request again' : 'Send again'}
-          </button>
-        ) : null}
-
-        {view === 'connected' ? (
-          <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
-            <FiCheckCircle size={14} />
-            Connected
-          </span>
-        ) : null}
+          {view === 'connected' ? (
+            <span className="inline-flex h-9 items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3.5 text-xs font-semibold text-emerald-700">
+              <FiCheckCircle size={14} />
+              Connected
+            </span>
+          ) : null}
+        </div>
       </div>
     </div>
   );

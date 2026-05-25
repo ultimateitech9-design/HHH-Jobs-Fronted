@@ -1,0 +1,1 @@
+import{bG as t}from"./index-0n7czMO8.js";import{F as e}from"./FooterContentPage-D0BEHp9E.js";import"./PublicPageHero-DpyrLegc.js";import"./AnimatedSection-C3de9aJW.js";import"./PublicSectionHeader-DlGzQJr3.js";import"./PublicCallToAction-JTeIDjOV.js";const s=()=>t.jsx(e,{pageKey:"help-center"});export{s as default};
