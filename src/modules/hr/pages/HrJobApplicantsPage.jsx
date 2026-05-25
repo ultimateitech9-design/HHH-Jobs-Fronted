@@ -386,8 +386,8 @@ const HrJobApplicantsPage = () => {
         <div className="flex-1 flex flex-col md:flex-row gap-5 min-h-0">
 
           {/* Left Side: Applicant List */}
-          <div className="w-full md:w-[360px] xl:w-[380px] flex flex-col bg-white rounded-[1.5rem] border border-slate-200 shadow-sm overflow-hidden shrink-0">
-            <div className="p-4 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">
+          <div className="w-full md:w-[320px] xl:w-[340px] flex flex-col bg-white rounded-[1.25rem] border border-slate-200 shadow-sm overflow-hidden shrink-0">
+            <div className="px-3.5 py-3 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">
               <button
                 onClick={toggleSelectAll}
                 className="flex items-center gap-2 text-sm font-black text-slate-900 hover:text-amber-700 transition-colors"
@@ -428,7 +428,7 @@ const HrJobApplicantsPage = () => {
               </div>
             )}
 
-            <div className="overflow-y-auto flex-1 p-3 space-y-2 custom-scrollbar">
+            <div className="overflow-y-auto flex-1 p-2 space-y-1.5 custom-scrollbar">
               {state.applicants.map(app => {
                 const applicationId = getApplicationId(app);
                 const isActive = activeApplicantId === applicationId;
@@ -438,32 +438,32 @@ const HrJobApplicantsPage = () => {
                 const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
                 return (
-                  <div key={applicationId} className="flex items-start gap-2">
+                  <div key={applicationId} className="flex items-start gap-1.5">
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleSelect(applicationId); }}
-                      className={`mt-4 p-1 rounded transition-colors shrink-0 ${isSelected ? 'text-amber-700' : 'text-slate-300 hover:text-slate-500'}`}
+                      className={`mt-3 p-1 rounded transition-colors shrink-0 ${isSelected ? 'text-amber-700' : 'text-slate-300 hover:text-slate-500'}`}
                     >
-                      {isSelected ? <FiCheckSquare size={15} /> : <FiSquare size={15} />}
+                      {isSelected ? <FiCheckSquare size={14} /> : <FiSquare size={14} />}
                     </button>
                     <button
                       onClick={() => setActiveApplicantId(applicationId)}
-                      className={`flex-1 text-left p-3 rounded-2xl transition-all flex items-start gap-3 ${isActive ? 'bg-amber-50 border border-amber-200 shadow-sm ring-1 ring-amber-100' : 'hover:bg-slate-50 border border-transparent'
+                      className={`flex-1 text-left px-2.5 py-2.5 rounded-xl transition-all flex items-start gap-2.5 ${isActive ? 'bg-amber-50 border border-amber-200 shadow-sm ring-1 ring-amber-100' : 'hover:bg-slate-50 border border-transparent'
                         }`}
                     >
-                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-xs shrink-0 ${isActive ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500'
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${isActive ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500'
                         }`}>
                         {initials}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className={`font-black truncate ${isActive ? 'text-amber-800' : 'text-slate-900'}`}>{name}</h4>
-                          <span className="text-xs text-slate-400 font-bold shrink-0">
+                          <h4 className={`text-sm font-black truncate ${isActive ? 'text-amber-800' : 'text-slate-900'}`}>{name}</h4>
+                          <span className="text-[11px] text-slate-400 font-bold shrink-0">
                             {new Date(app.createdAt || new Date()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                           </span>
                         </div>
-                        <p className="mt-0.5 truncate text-xs font-medium text-slate-500">{email}</p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${getStatusColor(app.status)}`}>
+                        <p className="truncate text-[11px] font-medium text-slate-500">{email}</p>
+                        <div className="mt-1.5 flex items-center justify-between">
+                          <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase border ${getStatusColor(app.status)}`}>
                             {getStatusLabel(app.status || 'applied')}
                           </span>
                         </div>
