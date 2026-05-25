@@ -1,0 +1,1 @@
+import{bG as o}from"./index-g6sJp5Mq.js";import{F as t}from"./FooterContentPage-CTnQlqM4.js";import"./PublicPageHero-BTo6LpNs.js";import"./AnimatedSection-CXiyVgie.js";import"./PublicSectionHeader-B-aiEC1y.js";import"./PublicCallToAction-BLdXPMFf.js";const s=()=>o.jsx(t,{pageKey:"privacy-policy"});export{s as default};
