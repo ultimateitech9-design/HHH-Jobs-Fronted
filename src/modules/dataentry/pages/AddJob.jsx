@@ -103,9 +103,12 @@ const AddJob = () => {
       stateId,
       stateName: state?.name || '',
       districtId: '',
-      districtName: '',
-      location: state?.name || current.location
+      districtName: ''
     }));
+    if (!stateId) {
+      setDistricts([]);
+      return;
+    }
     const response = await getJobDistricts(stateId);
     setDistricts(response.data || []);
   };
@@ -118,7 +121,7 @@ const AddJob = () => {
         ...current,
         districtId,
         districtName,
-        location: [districtName, current.stateName].filter(Boolean).join(', ') || current.location
+        location: current.location || [districtName, current.stateName].filter(Boolean).join(', ')
       };
     });
   };
@@ -208,8 +211,8 @@ const AddJob = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!draft.title || !draft.companyName || !draft.location || !draft.salaryMax || !draft.description) {
-      setError('Title, registered company, location, max salary, and description are required before posting.');
+    if (!draft.title || !draft.companyName || !draft.sectorName || !draft.stateName || !draft.districtName || !draft.location || !draft.salaryMax || !draft.description) {
+      setError('Title, registered company, sector, state, city/district, location, max salary, and description are required before posting.');
       return;
     }
 
@@ -326,13 +329,17 @@ const AddJob = () => {
               </select>
             </label>
             <label className="grid gap-0.5">
-              <span className={fieldLabelClassName}>District</span>
-              <select className={fieldControlClassName} value={draft.districtId} onChange={(event) => handleDistrictChange(event.target.value)} disabled={!draft.stateId}>
-                <option value="">Select district</option>
-                {districts.map((district) => (
-                  <option key={district.id || district.name} value={district.id}>{district.name}</option>
-                ))}
-              </select>
+              <span className={fieldLabelClassName}>City / District</span>
+              {districts.length > 0 ? (
+                <select className={fieldControlClassName} value={draft.districtId} onChange={(event) => handleDistrictChange(event.target.value)} disabled={!draft.stateId}>
+                  <option value="">Select district</option>
+                  {districts.map((district) => (
+                    <option key={district.id || district.name} value={district.id}>{district.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <input className={fieldControlClassName} value={draft.districtName} onChange={(event) => setField('districtName', event.target.value)} placeholder="Enter city or district" />
+              )}
             </label>
             <label className="grid gap-0.5">
               <span className={fieldLabelClassName}>Location</span>

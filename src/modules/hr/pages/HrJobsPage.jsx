@@ -616,9 +616,12 @@ const HrJobsPage = () => {
       stateId,
       stateName: state?.name || '',
       districtId: '',
-      districtName: '',
-      jobLocation: state?.name || current.jobLocation
+      districtName: ''
     }));
+    if (!stateId) {
+      setDistricts([]);
+      return;
+    }
     const response = await getJobDistricts(stateId);
     setDistricts(response.data || []);
   };
@@ -627,7 +630,7 @@ const HrJobsPage = () => {
     const district = districts.find((item) => item.id === districtId);
     setDraft((current) => {
       const districtName = district?.name || '';
-      const jobLocation = [districtName, current.stateName].filter(Boolean).join(', ') || current.jobLocation;
+      const jobLocation = current.jobLocation || [districtName, current.stateName].filter(Boolean).join(', ');
       return {
         ...current,
         districtId,
@@ -644,7 +647,7 @@ const HrJobsPage = () => {
   };
 
   const validateDraft = () => {
-    const requiredFields = ['jobTitle', 'salaryType', 'experienceLevel', 'employmentType', 'description', 'jobLocation'];
+    const requiredFields = ['jobTitle', 'salaryType', 'experienceLevel', 'employmentType', 'sectorName', 'stateName', 'districtName', 'description', 'jobLocation'];
     const missing = requiredFields.filter((key) => !String(draft[key] || '').trim());
 
     if (missing.length > 0) {
@@ -1080,13 +1083,17 @@ const HrJobsPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-neutral-700">District</label>
-                <select value={draft.districtId} onChange={(e) => handleDistrictChange(e.target.value)} disabled={!draft.stateId} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium disabled:opacity-60">
-                  <option value="">Select District</option>
-                  {districts.map((district) => (
-                    <option key={district.id || district.name} value={district.id}>{district.name}</option>
-                  ))}
-                </select>
+                <label className="text-sm font-bold text-neutral-700">City / District</label>
+                {districts.length > 0 ? (
+                  <select value={draft.districtId} onChange={(e) => handleDistrictChange(e.target.value)} disabled={!draft.stateId} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium disabled:opacity-60">
+                    <option value="">Select District</option>
+                    {districts.map((district) => (
+                      <option key={district.id || district.name} value={district.id}>{district.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input value={draft.districtName} onChange={(e) => updateDraftField('districtName', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Enter city or district" />
+                )}
               </div>
             </div>
 

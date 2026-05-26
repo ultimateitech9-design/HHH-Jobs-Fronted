@@ -34,6 +34,11 @@ const initialFormState = {
   companyName: '',
   sectorId: '',
   sectorName: '',
+  location: '',
+  stateId: '',
+  stateName: '',
+  districtId: '',
+  districtName: '',
   email: '',
   countryCode: '+91',
   mobile: '',
@@ -89,6 +94,8 @@ const SignupPage = () => {
   const [availableProviders, setAvailableProviders] = useState(null);
   const [providersLoading, setProvidersLoading] = useState(true);
   const [sectors, setSectors] = useState([]);
+  const [states, setStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
 
   const redirectAfterSignupRaw = new URLSearchParams(location.search).get('redirect');
   const redirectAfterSignup = redirectAfterSignupRaw && redirectAfterSignupRaw.startsWith('/')
@@ -133,13 +140,21 @@ const SignupPage = () => {
 
   useEffect(() => {
     let cancelled = false;
-    apiFetch('/jobs/meta/sectors')
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled) setSectors(data?.sectors || []);
+    Promise.all([
+      apiFetch('/jobs/meta/sectors').then((res) => res.json()),
+      apiFetch('/jobs/meta/states').then((res) => res.json())
+    ])
+      .then(([sectorData, stateData]) => {
+        if (!cancelled) {
+          setSectors(sectorData?.sectors || []);
+          setStates(stateData?.states || []);
+        }
       })
       .catch(() => {
-        if (!cancelled) setSectors([]);
+        if (!cancelled) {
+          setSectors([]);
+          setStates([]);
+        }
       });
     return () => { cancelled = true; };
   }, []);
@@ -153,7 +168,7 @@ const SignupPage = () => {
   const handleChange = (key, value) => {
     let nextValue = value;
 
-    if (key === 'name' || key === 'companyName') {
+    if (key === 'name') {
       nextValue = value.replace(/[^A-Za-z\s]/g, '');
     }
 
@@ -174,9 +189,15 @@ const SignupPage = () => {
       ...(key === 'role'
         ? {
           companyName: validateSignupField('companyName', nextForm.companyName, nextForm),
-          sectorId: nextForm.role === 'hr' && !nextForm.sectorId ? 'Select company sector.' : ''
+          sectorId: nextForm.role === 'hr' && !nextForm.sectorId ? 'Select company sector.' : '',
+          stateId: nextForm.role === 'hr' && !nextForm.stateId && !nextForm.stateName ? 'Select company state.' : '',
+          districtName: nextForm.role === 'hr' && !nextForm.districtName ? 'Enter company city/district.' : '',
+          location: nextForm.role === 'hr' && !nextForm.location ? 'Enter company location.' : ''
         }
-        : {})
+        : {}),
+      ...(key === 'location' ? { location: nextValue.trim() ? '' : 'Enter company location.' } : {}),
+      ...(key === 'districtName' ? { districtName: nextValue.trim() ? '' : 'Enter company city/district.' } : {}),
+      ...(key === 'stateName' ? { stateId: nextValue.trim() ? '' : 'Select company state.' } : {})
     }));
 
     if (error) {
@@ -214,7 +235,10 @@ const SignupPage = () => {
     setFieldErrors((current) => ({
       ...current,
       companyName: validateSignupField('companyName', nextForm.companyName, nextForm),
-      sectorId: nextForm.role === 'hr' && !nextForm.sectorId ? 'Select company sector.' : ''
+      sectorId: nextForm.role === 'hr' && !nextForm.sectorId ? 'Select company sector.' : '',
+      stateId: nextForm.role === 'hr' && !nextForm.stateId && !nextForm.stateName ? 'Select company state.' : '',
+      districtName: nextForm.role === 'hr' && !nextForm.districtName ? 'Enter company city/district.' : '',
+      location: nextForm.role === 'hr' && !nextForm.location ? 'Enter company location.' : ''
     }));
 
     if (error) {
@@ -236,11 +260,56 @@ const SignupPage = () => {
     if (error) setError('');
   };
 
+  const handleStateSelect = async (stateId) => {
+    const state = states.find((item) => item.id === stateId);
+    setForm((current) => ({
+      ...current,
+      stateId,
+      stateName: state?.name || '',
+      districtId: '',
+      districtName: ''
+    }));
+    setDistricts([]);
+    setFieldErrors((current) => ({
+      ...current,
+      stateId: stateId ? '' : 'Select company state.',
+      districtName: 'Enter company city/district.'
+    }));
+    if (!stateId) return;
+
+    try {
+      const response = await apiFetch(`/jobs/meta/districts?stateId=${encodeURIComponent(stateId)}`);
+      const data = await response.json();
+      setDistricts(data?.districts || []);
+    } catch (loadError) {
+      setDistricts([]);
+    }
+    if (error) setError('');
+  };
+
+  const handleDistrictSelect = (districtId) => {
+    const district = districts.find((item) => item.id === districtId);
+    const districtName = district?.name || '';
+    setForm((current) => ({
+      ...current,
+      districtId,
+      districtName
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      districtName: districtName ? '' : 'Enter company city/district.'
+    }));
+    if (error) setError('');
+  };
+
   const validateForm = () => {
     const errors = {
       name: validateSignupField('name', form.name, form),
       companyName: validateSignupField('companyName', form.companyName, form),
       sectorId: form.role === 'hr' && !form.sectorId ? 'Select company sector.' : '',
+      stateId: form.role === 'hr' && !form.stateId && !form.stateName ? 'Select company state.' : '',
+      districtName: form.role === 'hr' && !String(form.districtName || '').trim() ? 'Enter company city/district.' : '',
+      location: form.role === 'hr' && !String(form.location || '').trim() ? 'Enter company location.' : '',
       email: validateSignupField('email', form.email, form),
       mobile: validateSignupField('mobile', form.mobile, form),
       password: validateSignupField('password', form.password, form)
@@ -262,7 +331,18 @@ const SignupPage = () => {
       : '';
 
     if (form.role === 'hr') {
-      return { ...payload.user, companyName: form.companyName, sectorId: form.sectorId, sectorName: form.sectorName, hrEmployerId };
+      return {
+        ...payload.user,
+        companyName: form.companyName,
+        sectorId: form.sectorId,
+        sectorName: form.sectorName,
+        location: form.location,
+        stateId: form.stateId,
+        stateName: form.stateName,
+        districtId: form.districtId,
+        districtName: form.districtName,
+        hrEmployerId
+      };
     }
 
     if (form.role === 'student') {
@@ -350,6 +430,11 @@ const SignupPage = () => {
       companyName: form.companyName.trim(),
       sectorId: form.sectorId,
       sectorName: form.sectorName,
+      location: form.location.trim(),
+      stateId: form.stateId,
+      stateName: form.stateName,
+      districtId: form.districtId,
+      districtName: form.districtName,
       email: form.email.trim(),
       mobile: fullMobile,
       password: form.password,
@@ -587,6 +672,69 @@ const SignupPage = () => {
                         disabled={isSubmitting || Boolean(socialLoading)}
                         error={fieldErrors.sectorId}
                         className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] focus:!border-gold/60 focus:!bg-white"
+                      />
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {states.length > 0 ? (
+                          <AuthSelectField
+                            label="Company state"
+                            value={form.stateId}
+                            onChange={(event) => handleStateSelect(event.target.value)}
+                            options={[
+                              { value: '', label: 'Select state' },
+                              ...states.map((state) => ({ value: state.id, label: state.name }))
+                            ]}
+                            disabled={isSubmitting || Boolean(socialLoading)}
+                            error={fieldErrors.stateId}
+                            className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] focus:!border-gold/60 focus:!bg-white"
+                          />
+                        ) : (
+                          <AuthInputField
+                            label="Company state"
+                            type="text"
+                            value={form.stateName}
+                            onChange={(event) => handleChange('stateName', event.target.value)}
+                            placeholder="Enter company state"
+                            disabled={isSubmitting || Boolean(socialLoading)}
+                            error={fieldErrors.stateId}
+                            className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
+                          />
+                        )}
+                        {districts.length > 0 ? (
+                          <AuthSelectField
+                            label="City / district"
+                            value={form.districtId}
+                            onChange={(event) => handleDistrictSelect(event.target.value)}
+                            options={[
+                              { value: '', label: 'Select city / district' },
+                              ...districts.map((district) => ({ value: district.id, label: district.name }))
+                            ]}
+                            disabled={isSubmitting || Boolean(socialLoading)}
+                            error={fieldErrors.districtName}
+                            className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] focus:!border-gold/60 focus:!bg-white"
+                          />
+                        ) : (
+                          <AuthInputField
+                            label="City / district"
+                            type="text"
+                            value={form.districtName}
+                            onChange={(event) => handleChange('districtName', event.target.value)}
+                            placeholder="Enter city or district"
+                            disabled={isSubmitting || Boolean(socialLoading)}
+                            error={fieldErrors.districtName}
+                            className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
+                          />
+                        )}
+                      </div>
+                      <AuthInputField
+                        label="Company location"
+                        type="text"
+                        value={form.location}
+                        onChange={(event) => handleChange('location', event.target.value)}
+                        placeholder="Office area, city, or full address"
+                        disabled={isSubmitting || Boolean(socialLoading)}
+                        error={fieldErrors.location}
+                        helper="Used for nearby job search and sales/support zone routing."
+                        className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                       />
                     </>
                   ) : null}

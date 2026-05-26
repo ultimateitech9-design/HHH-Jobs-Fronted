@@ -97,9 +97,12 @@ const HrProfilePage = () => {
       stateId,
       stateName: state?.name || '',
       districtId: '',
-      districtName: '',
-      location: state?.name || current.location
+      districtName: ''
     }));
+    if (!stateId) {
+      setDistricts([]);
+      return;
+    }
     const response = await getJobDistricts(stateId);
     setDistricts(response.data || []);
   };
@@ -108,7 +111,7 @@ const HrProfilePage = () => {
     const district = districts.find((item) => item.id === districtId);
     setForm((current) => {
       const districtName = district?.name || '';
-      const location = [districtName, current.stateName].filter(Boolean).join(', ') || current.location;
+      const location = current.location || [districtName, current.stateName].filter(Boolean).join(', ');
       return {
         ...current,
         districtId,
@@ -125,6 +128,9 @@ const HrProfilePage = () => {
     setSuccess('');
 
     try {
+      if (!form.sectorName || !form.stateName || !form.districtName || !form.location) {
+        throw new Error('Sector, company location, state, and city/district are required.');
+      }
       const updated = await updateHrProfile(form);
       setForm(updated);
       const token = getToken();
@@ -251,7 +257,7 @@ const HrProfilePage = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiTarget className="text-neutral-400"/> Sector</label>
+                    <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiTarget className="text-neutral-400"/> Sector *</label>
                     <select
                       value={form.sectorId}
                       onChange={(e) => handleSectorChange(e.target.value)}
@@ -324,18 +330,18 @@ const HrProfilePage = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiMapPin className="text-neutral-400"/> Headquarter Location</label>
+                  <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiMapPin className="text-neutral-400"/> Company Location *</label>
                   <input
                     value={form.location}
                     onChange={(e) => updateField('location', e.target.value)}
-                    placeholder="e.g. San Francisco, CA"
+                    placeholder="Office area, city, or full address"
                     className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium transition-colors text-primary"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiMapPin className="text-neutral-400"/> State</label>
+                    <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiMapPin className="text-neutral-400"/> State *</label>
                     <select
                       value={form.stateId}
                       onChange={(e) => handleStateChange(e.target.value)}
@@ -349,18 +355,27 @@ const HrProfilePage = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiMapPin className="text-neutral-400"/> District</label>
-                    <select
-                      value={form.districtId}
-                      onChange={(e) => handleDistrictChange(e.target.value)}
-                      disabled={!form.stateId}
-                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium transition-colors text-primary appearance-none disabled:opacity-60"
-                    >
-                      <option value="">Select District</option>
-                      {districts.map((district) => (
-                        <option key={district.id || district.name} value={district.id}>{district.name}</option>
-                      ))}
-                    </select>
+                    <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiMapPin className="text-neutral-400"/> City / District *</label>
+                    {districts.length > 0 ? (
+                      <select
+                        value={form.districtId}
+                        onChange={(e) => handleDistrictChange(e.target.value)}
+                        disabled={!form.stateId}
+                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium transition-colors text-primary appearance-none disabled:opacity-60"
+                      >
+                        <option value="">Select District</option>
+                        {districts.map((district) => (
+                          <option key={district.id || district.name} value={district.id}>{district.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        value={form.districtName}
+                        onChange={(e) => updateField('districtName', e.target.value)}
+                        placeholder="Enter city or district"
+                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium transition-colors text-primary"
+                      />
+                    )}
                   </div>
                 </div>
 

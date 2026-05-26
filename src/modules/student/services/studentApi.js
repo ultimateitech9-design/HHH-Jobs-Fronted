@@ -644,6 +644,13 @@ export const getStudentJobs = async (filters = {}) => {
   });
 };
 
+export const getJobSectors = async () =>
+  safeRequest({
+    path: '/jobs/meta/sectors',
+    emptyData: [],
+    extract: (payload) => payload?.sectors || []
+  });
+
 export const getStudentJobById = async (jobId) =>
   safeRequest({
     path: `/jobs/${jobId}`,

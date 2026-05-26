@@ -20,7 +20,7 @@ import {
   studentSecondaryButtonClassName
 } from '../components/StudentExperience';
 import { ExternalJobCard, ExternalJobCardSkeleton } from './StudentExternalJobsPage';
-import { getStudentJobs } from '../services/studentApi';
+import { getJobSectors, getStudentJobs } from '../services/studentApi';
 import { getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
 
 const FEED_PAGE_LIMIT = 50;
@@ -178,7 +178,8 @@ const StudentJobsPage = ({
     error: '',
     internalCount: 0,
     externalCount: 0,
-    sources: []
+    sources: [],
+    sectors: []
   });
   const [actionFeedback, setActionFeedback] = useState({ type: '', text: '', ctaTo: '', ctaLabel: '' });
   useEffect(() => {
@@ -251,15 +252,21 @@ const StudentJobsPage = ({
       };
 
       const loadSources = async () => {
-        const response = await getExternalJobSources();
+        const [sourceResponse, sectorResponse] = await Promise.all([
+          getExternalJobSources(),
+          getJobSectors()
+        ]);
         if (!mounted) return;
 
         setJobsState((current) => ({
           ...current,
-          error: current.error || response.error || '',
-          sources: response.error
+          error: current.error || sourceResponse.error || sectorResponse.error || '',
+          sources: sourceResponse.error
             ? current.sources
-            : (response.data || []).filter((source) => source?.is_active)
+            : (sourceResponse.data || []).filter((source) => source?.is_active),
+          sectors: sectorResponse.error
+            ? current.sectors
+            : (sectorResponse.data || []).filter((sector) => sector?.is_active !== false)
         }));
       };
 
@@ -456,12 +463,18 @@ const StudentJobsPage = ({
 
             <div className="relative min-w-0">
               <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
-              <input
-                className="h-9 w-full min-w-0 rounded-[14px] border border-slate-200 bg-white py-2 pl-8 pr-3 text-[13px] font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
-                placeholder="Category"
+              <select
+                className="h-9 w-full min-w-0 appearance-none rounded-[14px] border border-slate-200 bg-white py-2 pl-8 pr-3 text-[13px] font-semibold text-slate-700 outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
                 value={filters.category}
                 onChange={(event) => updateFilter('category', event.target.value)}
-              />
+              >
+                <option value="">All sectors</option>
+                {jobsState.sectors.map((sector) => (
+                  <option key={sector.id || sector.name} value={sector.name}>
+                    {sector.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="relative min-w-0">

@@ -65,9 +65,7 @@ export const validateSignupField = (key, value, nextForm) => {
     case 'companyName':
       if (nextForm.role === 'hr') {
         if (!String(value || '').trim()) return 'Company name is required.';
-        if (!textOnlyRegex.test(String(value || '').trim())) {
-          return 'Company name should contain only letters and spaces.';
-        }
+        if (String(value || '').trim().length < 2) return 'Company name must be at least 2 characters.';
       }
       return '';
 
