@@ -1,1 +1,0 @@
-const a=(r,t="INR",m="en-IN")=>new Intl.NumberFormat(m,{style:"currency",currency:t,maximumFractionDigits:0}).format(Number(r||0)),n=(r,t="INR",m="en-IN")=>new Intl.NumberFormat(m,{style:"currency",currency:t,notation:"compact",maximumFractionDigits:1}).format(Number(r||0));export{a,n as f};

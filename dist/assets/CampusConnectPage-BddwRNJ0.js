@@ -1,1 +1,0 @@
-import{bG as o}from"./index-DLC44gF_.js";import{A as t}from"./AudienceLandingPage-CS9hg0rC.js";import"./PublicFeatureCard-N7kWBqab.js";import"./AnimatedSection-DLzjKYwW.js";import"./PublicPageHero-CMeQg3cb.js";import"./PublicSectionHeader-DtkvPsoI.js";const r=()=>o.jsx(t,{audienceKey:"campus-connect"});export{r as default};
