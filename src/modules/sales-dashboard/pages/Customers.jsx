@@ -7,13 +7,15 @@ import { formatCompactCurrency } from '../utils/currencyFormat';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
+  const [summary, setSummary] = useState({ totalAccounts: 0, activeAccounts: 0, inactiveAccounts: 0, lifetimeValue: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const load = async () => {
       const response = await getCustomers();
-      setCustomers(response.data || []);
+      setCustomers(response.data?.customers || []);
+      setSummary(response.data?.summary || { totalAccounts: 0, activeAccounts: 0, inactiveAccounts: 0, lifetimeValue: 0 });
       setError(response.error || '');
       setLoading(false);
     };
@@ -21,11 +23,11 @@ const Customers = () => {
   }, []);
 
   const cards = useMemo(() => [
-    { label: 'Customers', value: String(customers.length), helper: 'Managed accounts', tone: 'info' },
-    { label: 'Active', value: String(customers.filter((item) => item.status === 'active').length), helper: 'Current paying customers', tone: 'success' },
-    { label: 'Inactive', value: String(customers.filter((item) => item.status === 'inactive').length), helper: 'Reactivation opportunities', tone: 'warning' },
-    { label: 'Lifetime Value', value: formatCompactCurrency(customers.reduce((sum, item) => sum + Number(item.lifetimeValue || 0), 0)), helper: 'Total visible account value', tone: 'default' }
-  ], [customers]);
+    { label: 'Accounts', value: String(summary.totalAccounts || 0), helper: 'HR, campus, and student accounts', tone: 'info' },
+    { label: 'Plan Taken', value: String(summary.activeAccounts || 0), helper: 'Current paying or active plan users', tone: 'success' },
+    { label: 'Plan Pending', value: String(summary.inactiveAccounts || 0), helper: 'Accounts to convert', tone: 'warning' },
+    { label: 'Lifetime Value', value: formatCompactCurrency(summary.lifetimeValue || 0), helper: 'Collected account value', tone: 'default' }
+  ], [summary]);
 
   return (
     <div className="module-page module-page--platform">
