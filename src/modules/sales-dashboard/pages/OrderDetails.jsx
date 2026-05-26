@@ -41,7 +41,6 @@ const OrderDetails = () => {
             <li><strong>Customer</strong><span>{order.customer}</span></li>
             <li><strong>Package</strong><span>{order.product}</span></li>
             <li><strong>Amount</strong><span>{formatCurrency(order.amount)}</span></li>
-            <li><strong>Quantity</strong><span>{order.quantity}</span></li>
             <li><strong>Payment Method</strong><span>{order.paymentMethod}</span></li>
             <li><strong>Record Status</strong><span><StatusPill value={order.status} /></span></li>
             <li><strong>Payment Status</strong><span><StatusPill value={order.paymentStatus} /></span></li>
