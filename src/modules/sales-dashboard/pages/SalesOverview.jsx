@@ -62,13 +62,6 @@ const SalesOverview = () => {
       ctaLabel: 'Open customers'
     },
     {
-      to: '/portal/sales/team',
-      title: 'Sales Team',
-      description: 'Review team coverage, performance, and ownership balance.',
-      tone: 'accent',
-      ctaLabel: 'Open team'
-    },
-    {
       to: '/portal/sales/products',
       title: 'Products',
       description: 'Inspect product performance and commercial package demand.',
