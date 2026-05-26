@@ -3,7 +3,7 @@ import SectionHeader from '../../../shared/components/SectionHeader';
 import FilterBar from '../components/FilterBar';
 import LeadTable from '../components/LeadTable';
 import SalesStatCards from '../components/SalesStatCards';
-import { getLeads, markLeadCalled, syncCommercialLeads } from '../services/leadApi';
+import { getLeads, markLeadCalled } from '../services/leadApi';
 import { formatCompactCurrency } from '../utils/currencyFormat';
 
 const Leads = () => {
@@ -20,25 +20,12 @@ const Leads = () => {
     summary: { totalLeads: 0, planTaken: 0, planPending: 0, expectedValue: 0 }
   });
 
-  const loadLeads = async (nextFilters = filters, { hydrateIfEmpty = false, silent = false } = {}) => {
+  const loadLeads = async (nextFilters = filters, { silent = false } = {}) => {
     if (!silent) setLoading(true);
     const response = await getLeads(nextFilters);
-    let nextData = response.data || { leads: [], total: 0, page: 1, limit: 100, summary: { totalLeads: 0, planTaken: 0, planPending: 0, expectedValue: 0 } };
-    let nextLeads = nextData.leads || [];
-    let nextError = response.error || '';
-
-    if (hydrateIfEmpty && nextLeads.length === 0 && !nextError) {
-      try {
-        const syncResponse = await syncCommercialLeads(['hr', 'campus_connect', 'student']);
-        setMessage(`Commercial data synced: ${syncResponse?.syncedCount || 0} new leads, ${syncResponse?.assignedExistingCount || 0} assigned leads, ${syncResponse?.customerSyncedCount || 0} customers`);
-        const refreshed = await getLeads(nextFilters);
-        nextData = refreshed.data || nextData;
-        nextLeads = nextData.leads || [];
-        nextError = refreshed.error || '';
-      } catch (syncError) {
-        nextError = String(syncError.message || 'Unable to sync commercial data.');
-      }
-    }
+    const nextData = response.data || { leads: [], total: 0, page: 1, limit: 100, summary: { totalLeads: 0, planTaken: 0, planPending: 0, expectedValue: 0 } };
+    const nextLeads = nextData.leads || [];
+    const nextError = response.error || '';
 
     setLeads(nextLeads);
     setLeadMeta(nextData);
@@ -47,7 +34,7 @@ const Leads = () => {
   };
 
   useEffect(() => {
-    loadLeads(filters, { hydrateIfEmpty: true });
+    loadLeads(filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
