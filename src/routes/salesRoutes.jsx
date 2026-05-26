@@ -14,7 +14,6 @@ const CustomerDetails = lazy(() => import('../modules/sales-dashboard/pages/Cust
 const SalesTeam = lazy(() => import('../modules/sales-dashboard/pages/SalesTeam'));
 const Products = lazy(() => import('../modules/sales-dashboard/pages/Products'));
 const Coupons = lazy(() => import('../modules/sales-dashboard/pages/Coupons'));
-const SalesRefunds = lazy(() => import('../modules/sales-dashboard/pages/Refunds'));
 const SalesReports = lazy(() => import('../modules/sales-dashboard/pages/Reports'));
 
 const salesRoutes = [
@@ -40,7 +39,7 @@ const salesRoutes = [
       { path: 'team', element: <SalesTeam /> },
       { path: 'products', element: <Products /> },
       { path: 'coupons', element: <Coupons /> },
-      { path: 'refunds', element: <SalesRefunds /> },
+      { path: 'refunds', element: <Navigate to="../overview" replace /> },
       { path: 'reports', element: <SalesReports /> }
     ]
   },

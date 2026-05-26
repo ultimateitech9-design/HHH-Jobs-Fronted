@@ -76,13 +76,6 @@ const SalesOverview = () => {
       ctaLabel: 'Open coupons'
     },
     {
-      to: '/portal/sales/refunds',
-      title: 'Refunds',
-      description: 'Monitor refund exposure and reversal movement.',
-      tone: 'warning',
-      ctaLabel: 'Open refunds'
-    },
-    {
       to: '/portal/sales/reports',
       title: 'Reports',
       description: 'Review performance summaries and campaign effectiveness.',
