@@ -60,10 +60,23 @@ const emptyOverview = {
     totalCustomers: 0,
     salesAgents: 0,
     refunds: 0,
-    averageOrderValue: 0
+    averageOrderValue: 0,
+    conversionRate: 0,
+    managedLeads: 0,
+    contactedLeads: 0,
+    untouchedLeads: 0,
+    followupDueToday: 0,
+    overdueFollowups: 0,
+    upcomingFollowups: 0,
+    pendingPaymentValue: 0,
+    refundValue: 0
   },
   monthlySales: [],
-  revenueTrend: []
+  revenueTrend: [],
+  workQueue: [],
+  audienceBreakdown: [],
+  paymentSummary: {},
+  recentActivity: []
 };
 
 const SALES_FUNNEL_STAGE_ALIASES = Object.freeze({
@@ -138,10 +151,23 @@ export const getSalesOverview = async () =>
           pendingPayments: ov.pendingPayments || 0,
           salesAgents: ov.salesAgents || 0,
           refunds: ov.refunds || 0,
-          averageOrderValue: totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0
+          conversionRate: Number(ov.conversionRate || 0),
+          managedLeads: Number(ov.managedLeads || 0),
+          contactedLeads: Number(ov.contactedLeads || 0),
+          untouchedLeads: Number(ov.untouchedLeads || 0),
+          followupDueToday: Number(ov.followupDueToday || 0),
+          overdueFollowups: Number(ov.overdueFollowups || 0),
+          upcomingFollowups: Number(ov.upcomingFollowups || 0),
+          pendingPaymentValue: Number(ov.pendingPaymentValue || 0),
+          refundValue: Number(ov.refundValue || 0),
+          averageOrderValue: Number(ov.averageOrderValue || (totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0))
         },
         monthlySales: ov.monthlySales || [],
-        revenueTrend: ov.revenueTrend || []
+        revenueTrend: ov.revenueTrend || [],
+        workQueue: Array.isArray(ov.workQueue) ? ov.workQueue : [],
+        audienceBreakdown: Array.isArray(ov.audienceBreakdown) ? ov.audienceBreakdown : [],
+        paymentSummary: ov.paymentSummary || {},
+        recentActivity: Array.isArray(ov.recentActivity) ? ov.recentActivity : []
       };
     }
   });
