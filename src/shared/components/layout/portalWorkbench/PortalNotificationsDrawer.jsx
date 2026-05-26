@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, BriefcaseBusiness, Trash2, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   deleteAllNotificationsRequest,
   deleteNotificationRequest,
@@ -10,7 +10,6 @@ import {
   markNotificationReadRequest
 } from '../../../../core/notifications/notificationApi';
 import useNotificationStore from '../../../../core/notifications/notificationStore';
-import { resolveNotificationLink } from '../../../utils/notificationLinks';
 
 const JOB_NOTIFICATION_KEYWORDS = [
   'job',
@@ -90,6 +89,7 @@ const PortalNotificationsDrawer = ({
   notificationPath = '',
   notifications = []
 }) => {
+  const navigate = useNavigate();
   const [clearing, setClearing] = useState(false);
   const markAllNotificationsReadLocally = useNotificationStore((state) => state.markAllNotificationsReadLocally);
   const markNotificationReadLocally = useNotificationStore((state) => state.markNotificationReadLocally);
@@ -126,6 +126,24 @@ const PortalNotificationsDrawer = ({
     deleteNotificationRequest(notificationId).catch(() => {
       replaceNotifications(previousNotifications);
     });
+  };
+
+  const handleOpenNotificationPage = (notification) => {
+    if (!notificationPath) return;
+
+    if (notification?.id && !notification.is_read) {
+      markNotificationReadLocally(notification.id);
+      markNotificationReadRequest(notification.id).catch(() => {});
+    }
+
+    onClose();
+    navigate(notificationPath);
+  };
+
+  const handleNotificationKeyDown = (event, notification) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    handleOpenNotificationPage(notification);
   };
 
   const handleClearAll = async () => {
@@ -210,16 +228,19 @@ const PortalNotificationsDrawer = ({
                           {items.map((notification) => {
                             const title = notification.title || notification.subject || notification.type || 'Job alert';
                             const message = notification.message || notification.description || 'Alerts bhej';
-                            const notificationLink = resolveNotificationLink(notification);
 
                             return (
                               <article
                                 key={notification.id || `${title}-${message}`}
+                                role={notificationPath ? 'button' : undefined}
+                                tabIndex={notificationPath ? 0 : undefined}
+                                onClick={() => handleOpenNotificationPage(notification)}
+                                onKeyDown={(event) => handleNotificationKeyDown(event, notification)}
                                 className={`rounded-[1.45rem] border px-3.5 py-3 shadow-sm transition-colors ${
                                   notification.is_read
                                     ? 'border-slate-200 bg-white'
                                     : 'border-brand-200 bg-brand-50/80'
-                                }`}
+                                } ${notificationPath ? 'cursor-pointer hover:border-brand-200 hover:bg-brand-50/60 focus:outline-none focus:ring-2 focus:ring-brand-200' : ''}`}
                               >
                                 <div className="flex items-start gap-3">
                                   <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-brand-600 shadow-sm">
@@ -243,25 +264,25 @@ const PortalNotificationsDrawer = ({
                                           Seen
                                         </span>
                                       )}
-                                      {notificationLink ? (
-                                        <Link
-                                          to={notificationLink}
-                                          onClick={() => {
-                                            if (notification.id && !notification.is_read) {
-                                              markNotificationReadLocally(notification.id);
-                                              markNotificationReadRequest(notification.id).catch(() => {});
-                                            }
-                                            onClose();
+                                      {notificationPath ? (
+                                        <button
+                                          type="button"
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            handleOpenNotificationPage(notification);
                                           }}
                                           className="text-xs font-semibold text-brand-700 transition-colors hover:text-brand-800"
                                         >
                                           Open
-                                        </Link>
+                                        </button>
                                       ) : null}
                                       {notification.id ? (
                                         <button
                                           type="button"
-                                          onClick={() => handleClearNotification(notification.id)}
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            handleClearNotification(notification.id);
+                                          }}
                                           className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 transition-colors hover:text-red-600"
                                           aria-label="Clear notification"
                                           title="Clear notification"
