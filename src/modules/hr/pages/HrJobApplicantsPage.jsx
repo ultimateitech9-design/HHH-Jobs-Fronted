@@ -44,6 +44,13 @@ const getStatusLabel = (status = '') => {
 };
 
 const getApplicationId = (application = {}) => application.id || application._id || '';
+const getApplicantGroup = (application = {}) => {
+  const status = String(application.status || '').toLowerCase();
+  if (status === 'interview_scheduled' || status === 'interviewed') return 'interview';
+  if (status === 'hired' || status === 'offered') return 'selected';
+  if (status === 'rejected') return 'rejected';
+  return 'applicants';
+};
 
 const HrJobApplicantsPage = () => {
   const { jobId } = useParams();
@@ -58,6 +65,7 @@ const HrJobApplicantsPage = () => {
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('applicants');
 
   useEffect(() => {
     let mounted = true;
@@ -162,12 +170,34 @@ const HrJobApplicantsPage = () => {
     });
   }, []);
 
+  const visibleApplicants = useMemo(() => {
+    if (activeFilter === 'applicants') return state.applicants;
+    return state.applicants.filter((applicant) => getApplicantGroup(applicant) === activeFilter);
+  }, [activeFilter, state.applicants]);
+
+  useEffect(() => {
+    setSelectedIds((current) => {
+      const visibleIds = new Set(visibleApplicants.map((item) => getApplicationId(item)).filter(Boolean));
+      return new Set(Array.from(current).filter((id) => visibleIds.has(id)));
+    });
+
+    if (!visibleApplicants.length) {
+      setActiveApplicantId(null);
+      return;
+    }
+
+    if (!visibleApplicants.some((item) => getApplicationId(item) === activeApplicantId)) {
+      setActiveApplicantId(getApplicationId(visibleApplicants[0]));
+    }
+  }, [activeApplicantId, visibleApplicants]);
+
   const toggleSelectAll = useCallback(() => {
     setSelectedIds((prev) => {
-      if (prev.size === state.applicants.length) return new Set();
-      return new Set(state.applicants.map(a => a.id));
+      const visibleIds = visibleApplicants.map((item) => getApplicationId(item)).filter(Boolean);
+      if (visibleIds.length > 0 && visibleIds.every((id) => prev.has(id))) return new Set();
+      return new Set(visibleIds);
     });
-  }, [state.applicants]);
+  }, [visibleApplicants]);
 
   const handleBulkAction = async (action) => {
     if (selectedIds.size === 0) return;
@@ -214,7 +244,7 @@ const HrJobApplicantsPage = () => {
     const rows = [
       ['Name', 'Email', 'Phone', 'Status', 'Applied At']
     ];
-    state.applicants.forEach(app => {
+    visibleApplicants.forEach(app => {
       rows.push([
         app.applicant?.name || app.applicantEmail || '',
         app.applicant?.email || app.applicantEmail || '',
@@ -228,12 +258,12 @@ const HrJobApplicantsPage = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `applicants-${jobId}.csv`;
+    a.download = `${activeFilter}-${jobId}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [state.applicants, jobId]);
+  }, [activeFilter, visibleApplicants, jobId]);
 
-  const allSelected = state.applicants.length > 0 && selectedIds.size === state.applicants.length;
+  const allSelected = visibleApplicants.length > 0 && visibleApplicants.every((item) => selectedIds.has(getApplicationId(item)));
   const someSelected = selectedIds.size > 0 && !allSelected;
   const activeApplicantResumeUrl =
     activeApplicant?.resumeUrl
@@ -283,14 +313,20 @@ const HrJobApplicantsPage = () => {
               <FiArrowLeft size={14} /> Back To Jobs
             </Link>
             {[
-              { label: 'Applicants', value: statusSummary.total, tone: 'border-slate-200 bg-slate-50 text-slate-700' },
-              { label: 'Interviews', value: statusSummary.interview, tone: 'border-violet-200 bg-violet-50 text-violet-700' },
-              { label: 'Selected', value: statusSummary.selected, tone: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
-              { label: 'Rejected', value: statusSummary.rejected, tone: 'border-red-200 bg-red-50 text-red-700' }
+              { key: 'applicants', label: 'Applicants', value: statusSummary.total, tone: 'border-slate-200 bg-slate-50 text-slate-700', activeTone: 'ring-slate-300' },
+              { key: 'interview', label: 'Interviews', value: statusSummary.interview, tone: 'border-violet-200 bg-violet-50 text-violet-700', activeTone: 'ring-violet-300' },
+              { key: 'selected', label: 'Selected', value: statusSummary.selected, tone: 'border-emerald-200 bg-emerald-50 text-emerald-700', activeTone: 'ring-emerald-300' },
+              { key: 'rejected', label: 'Rejected', value: statusSummary.rejected, tone: 'border-red-200 bg-red-50 text-red-700', activeTone: 'ring-red-300' }
             ].map((item) => (
-              <span key={item.label} className={`rounded-full border px-3 py-2 text-sm font-semibold ${item.tone}`}>
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setActiveFilter(item.key)}
+                aria-pressed={activeFilter === item.key}
+                className={`rounded-full border px-3 py-2 text-sm font-semibold transition hover:-translate-y-px hover:shadow-sm ${item.tone} ${activeFilter === item.key ? `ring-2 ring-offset-1 ${item.activeTone}` : ''}`}
+              >
                 {item.value} {item.label}
-              </span>
+              </button>
             ))}
             {!state.loading && state.applicants.length > 0 && (
               <button
@@ -331,7 +367,7 @@ const HrJobApplicantsPage = () => {
                 className="flex items-center gap-2 text-sm font-semibold text-navy hover:text-brand-700 transition-colors"
               >
                 {allSelected ? <FiCheckSquare size={16} className="text-brand-700" /> : someSelected ? <FiCheckSquare size={16} className="text-brand-400" /> : <FiSquare size={16} />}
-                Applications ({state.applicants.length})
+                Applications ({visibleApplicants.length})
               </button>
               {selectedIds.size > 0 && (
                 <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">{selectedIds.size} selected</span>
@@ -367,7 +403,7 @@ const HrJobApplicantsPage = () => {
             )}
 
             <div className="overflow-y-auto flex-1 divide-y divide-slate-100 custom-scrollbar">
-              {state.applicants.map(app => {
+              {visibleApplicants.length > 0 ? visibleApplicants.map(app => {
                 const applicationId = getApplicationId(app);
                 const isActive = activeApplicantId === applicationId;
                 const isSelected = selectedIds.has(applicationId);
@@ -409,7 +445,11 @@ const HrJobApplicantsPage = () => {
                     </button>
                   </div>
                 );
-              })}
+              }) : (
+                <div className="px-4 py-8 text-center text-sm font-semibold text-slate-400">
+                  No {activeFilter === 'interview' ? 'interview' : activeFilter} applicants found.
+                </div>
+              )}
             </div>
           </div>
 
