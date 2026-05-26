@@ -4,7 +4,7 @@ import { getCurrentUser } from '../../../utils/auth';
 import FilterBar from '../components/FilterBar';
 import LeadTable from '../components/LeadTable';
 import SalesStatCards from '../components/SalesStatCards';
-import { getLeads, syncCommercialLeads, updateLead } from '../services/leadApi';
+import { getLeads, markLeadCalled, syncCommercialLeads } from '../services/leadApi';
 import { formatCompactCurrency } from '../utils/currencyFormat';
 
 const Leads = () => {
@@ -23,8 +23,8 @@ const Leads = () => {
     summary: { totalLeads: 0, planTaken: 0, planPending: 0, expectedValue: 0 }
   });
 
-  const loadLeads = async (nextFilters = filters, { hydrateIfEmpty = false } = {}) => {
-    setLoading(true);
+  const loadLeads = async (nextFilters = filters, { hydrateIfEmpty = false, silent = false } = {}) => {
+    if (!silent) setLoading(true);
     const response = await getLeads(nextFilters);
     let nextData = response.data || { leads: [], total: 0, page: 1, limit: 100, summary: { totalLeads: 0, planTaken: 0, planPending: 0, expectedValue: 0 } };
     let nextLeads = nextData.leads || [];
@@ -46,7 +46,7 @@ const Leads = () => {
     setLeads(nextLeads);
     setLeadMeta(nextData);
     setError(nextError);
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   useEffect(() => {
@@ -74,20 +74,17 @@ const Leads = () => {
     { label: 'Expected Value', value: formatCompactCurrency(summary.expectedValue || 0), helper: 'Potential pipeline value', tone: 'default' }
   ], [leadMeta.total, rows.length, summary]);
 
-  const handleMarkCalled = async (lead, nextFollowupValue) => {
+  const handleMarkCalled = async (lead, nextFollowupAt) => {
     setError('');
     setMessage('');
     setUpdatingId(lead.id);
     try {
-      const nextFollowupAt = nextFollowupValue ? new Date(nextFollowupValue).toISOString() : null;
-      const updatedLead = await updateLead(lead.id, {
-        status: lead.stage === 'new' ? 'contacted' : (lead.stage || 'contacted'),
-        last_followup_at: new Date().toISOString(),
+      const updatedLead = await markLeadCalled(lead.id, {
         next_followup_at: nextFollowupAt
       });
       setLeads((current) => current.map((item) => (item.id === lead.id ? updatedLead : item)));
       setMessage(`${updatedLead.contactName || updatedLead.company || 'Lead'} marked called${nextFollowupAt ? ' with follow-up set' : ''}.`);
-      await loadLeads(filters);
+      await loadLeads(filters, { silent: true });
     } catch (updateError) {
       setError(String(updateError.message || 'Unable to mark lead as called.'));
     } finally {

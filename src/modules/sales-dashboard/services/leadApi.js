@@ -56,6 +56,16 @@ export const updateLead = async (leadId, payload) =>
     extract: (responsePayload) => mapSalesLead(responsePayload?.lead || responsePayload || {})
   });
 
+export const markLeadCalled = async (leadId, payload = {}) =>
+  strictRequest({
+    path: `${SALES_BASE}/leads/${leadId}/call`,
+    options: {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    extract: (responsePayload) => mapSalesLead(responsePayload?.lead || responsePayload || {})
+  });
+
 export const syncCommercialLeads = async (roles = ['hr', 'campus_connect', 'student']) =>
   strictRequest({
     path: `${SALES_BASE}/leads/sync-commercial`,
