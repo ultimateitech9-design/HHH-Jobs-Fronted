@@ -4,22 +4,30 @@ import { getCurrentUser } from '../../../utils/auth';
 import FilterBar from '../components/FilterBar';
 import LeadTable from '../components/LeadTable';
 import SalesStatCards from '../components/SalesStatCards';
-import { getLeads, syncCommercialLeads } from '../services/leadApi';
+import { getLeads, syncCommercialLeads, updateLead } from '../services/leadApi';
 import { formatCompactCurrency } from '../utils/currencyFormat';
 
 const Leads = () => {
   const currentUser = getCurrentUser();
   const canSync = ['admin', 'super_admin', 'sales'].includes(String(currentUser?.role || '').toLowerCase());
   const [leads, setLeads] = useState([]);
-  const [filters, setFilters] = useState({ stage: '', targetRole: '', onboardingStatus: '', search: '' });
+  const [filters, setFilters] = useState({ stage: '', targetRole: '', onboardingStatus: '', search: '', page: 1, limit: 100 });
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [leadMeta, setLeadMeta] = useState({
+    total: 0,
+    page: 1,
+    limit: 100,
+    summary: { totalLeads: 0, planTaken: 0, planPending: 0, expectedValue: 0 }
+  });
 
   const loadLeads = async (nextFilters = filters, { hydrateIfEmpty = false } = {}) => {
     setLoading(true);
     const response = await getLeads(nextFilters);
-    let nextLeads = response.data || [];
+    let nextData = response.data || { leads: [], total: 0, page: 1, limit: 100, summary: { totalLeads: 0, planTaken: 0, planPending: 0, expectedValue: 0 } };
+    let nextLeads = nextData.leads || [];
     let nextError = response.error || '';
 
     if (hydrateIfEmpty && nextLeads.length === 0 && !nextError) {
@@ -27,7 +35,8 @@ const Leads = () => {
         const syncResponse = await syncCommercialLeads(['hr', 'campus_connect', 'student']);
         setMessage(`Commercial data synced: ${syncResponse?.syncedCount || 0} new leads, ${syncResponse?.assignedExistingCount || 0} assigned leads, ${syncResponse?.customerSyncedCount || 0} customers`);
         const refreshed = await getLeads(nextFilters);
-        nextLeads = refreshed.data || [];
+        nextData = refreshed.data || nextData;
+        nextLeads = nextData.leads || [];
         nextError = refreshed.error || '';
       } catch (syncError) {
         nextError = String(syncError.message || 'Unable to sync commercial data.');
@@ -35,6 +44,7 @@ const Leads = () => {
     }
 
     setLeads(nextLeads);
+    setLeadMeta(nextData);
     setError(nextError);
     setLoading(false);
   };
@@ -50,17 +60,40 @@ const Leads = () => {
       const matchesStage = !filters.stage || String(item.stage || '').toLowerCase() === filters.stage;
       const matchesRole = !filters.targetRole || String(item.targetRole || '').toLowerCase() === filters.targetRole;
       const matchesOnboarding = !filters.onboardingStatus || String(item.onboardingStatus || '').toLowerCase() === filters.onboardingStatus;
-      const matchesSearch = !search || `${item.company} ${item.contactName} ${item.email} ${item.zone} ${item.location}`.toLowerCase().includes(search);
+      const matchesSearch = !search || `${item.company} ${item.contactName} ${item.email} ${item.phone} ${item.zone} ${item.location}`.toLowerCase().includes(search);
       return matchesStage && matchesRole && matchesOnboarding && matchesSearch;
     });
   }, [leads, filters]);
 
+  const summary = leadMeta.summary || {};
+  const totalPages = Math.max(1, Math.ceil((leadMeta.total || 0) / (leadMeta.limit || 100)));
   const cards = useMemo(() => [
-    { label: 'Visible Leads', value: String(rows.length), helper: 'Current lead queue', tone: 'info' },
-    { label: 'Plan Taken', value: String(rows.filter((item) => item.stage === 'converted' || item.onboardingStatus === 'active').length), helper: 'Client onboarded', tone: 'success' },
-    { label: 'Plan Pending', value: String(rows.filter((item) => item.stage !== 'converted' && item.onboardingStatus !== 'active').length), helper: 'Send plan or coupon', tone: 'warning' },
-    { label: 'Expected Value', value: formatCompactCurrency(rows.reduce((sum, item) => sum + Number(item.expectedValue || 0), 0)), helper: 'Potential pipeline value', tone: 'default' }
-  ], [rows]);
+    { label: 'Total Leads', value: String(summary.totalLeads || leadMeta.total || rows.length), helper: `${rows.length} loaded on this page`, tone: 'info' },
+    { label: 'Plan Taken', value: String(summary.planTaken || 0), helper: 'Client onboarded', tone: 'success' },
+    { label: 'Plan Pending', value: String(summary.planPending || 0), helper: 'Send plan or coupon', tone: 'warning' },
+    { label: 'Expected Value', value: formatCompactCurrency(summary.expectedValue || 0), helper: 'Potential pipeline value', tone: 'default' }
+  ], [leadMeta.total, rows.length, summary]);
+
+  const handleMarkCalled = async (lead, nextFollowupValue) => {
+    setError('');
+    setMessage('');
+    setUpdatingId(lead.id);
+    try {
+      const nextFollowupAt = nextFollowupValue ? new Date(nextFollowupValue).toISOString() : null;
+      const updatedLead = await updateLead(lead.id, {
+        status: lead.stage === 'new' ? 'contacted' : (lead.stage || 'contacted'),
+        last_followup_at: new Date().toISOString(),
+        next_followup_at: nextFollowupAt
+      });
+      setLeads((current) => current.map((item) => (item.id === lead.id ? updatedLead : item)));
+      setMessage(`${updatedLead.contactName || updatedLead.company || 'Lead'} marked called${nextFollowupAt ? ' with follow-up set' : ''}.`);
+      await loadLeads(filters);
+    } catch (updateError) {
+      setError(String(updateError.message || 'Unable to mark lead as called.'));
+    } finally {
+      setUpdatingId('');
+    }
+  };
 
   const handleSync = async () => {
     setError('');
@@ -103,12 +136,44 @@ const Leads = () => {
             values={filters}
             onChange={(key, value) => {
               const nextFilters = { ...filters, [key]: value };
+              nextFilters.page = 1;
               setFilters(nextFilters);
               loadLeads(nextFilters);
             }}
           />
           {loading ? <p className="module-note">Loading leads...</p> : null}
-          <LeadTable rows={rows} />
+          <LeadTable rows={rows} onMarkCalled={handleMarkCalled} updatingId={updatingId} />
+          <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <span className="font-semibold">
+              Showing {rows.length} of {leadMeta.total || rows.length} leads · Page {leadMeta.page || 1} of {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={(leadMeta.page || 1) <= 1 || loading}
+                onClick={() => {
+                  const nextFilters = { ...filters, page: Math.max(1, (leadMeta.page || 1) - 1), limit: leadMeta.limit || 100 };
+                  setFilters(nextFilters);
+                  loadLeads(nextFilters);
+                }}
+                className="rounded-full border border-slate-200 px-4 py-2 font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={(leadMeta.page || 1) >= totalPages || loading}
+                onClick={() => {
+                  const nextFilters = { ...filters, page: (leadMeta.page || 1) + 1, limit: leadMeta.limit || 100 };
+                  setFilters(nextFilters);
+                  loadLeads(nextFilters);
+                }}
+                className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 font-bold text-brand-700 transition hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       </section>
     </div>

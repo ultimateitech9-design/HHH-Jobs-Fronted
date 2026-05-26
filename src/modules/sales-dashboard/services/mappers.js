@@ -68,6 +68,7 @@ export const mapSalesLead = (lead = {}) => ({
   onboardingStatus: normalizeStatus(lead.onboardingStatus || lead.onboarding_status, 'prospect'),
   nextFollowupAt: lead.nextFollowupAt || lead.next_followup_at || null,
   lastFollowupAt: lead.lastFollowupAt || lead.last_followup_at || null,
+  lastContactedAt: lead.lastContactedAt || lead.last_contacted_at || null,
   planInterestSlug: lead.planInterestSlug || lead.plan_interest_slug || '',
   couponCode: lead.couponCode || lead.coupon_code || '',
   followupNotes: lead.followupNotes || lead.followup_notes || ''
