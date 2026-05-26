@@ -4,7 +4,7 @@ import { formatCurrency } from '../utils/currencyFormat';
 
 const ProductSalesTable = ({ rows = [] }) => {
   const columns = [
-    { key: 'name', label: 'Product' },
+    { key: 'name', label: 'Package' },
     { key: 'category', label: 'Category' },
     { key: 'unitsSold', label: 'Units Sold' },
     {

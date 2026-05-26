@@ -13,11 +13,11 @@ import { getCurrentUser } from '../../../utils/auth';
 
 const salesNavItems = [
   { to: '/portal/sales/overview', label: 'Overview', icon: FiBarChart2 },
-  { to: '/portal/sales/orders', label: 'Orders', icon: FiShoppingCart },
+  { to: '/portal/sales/payments', label: 'Payments', icon: FiShoppingCart },
   { to: '/portal/sales/leads', label: 'Leads', icon: FiUserCheck },
   { to: '/portal/sales/customers', label: 'Customers', icon: FiUsers },
   { to: '/portal/sales/team', label: 'Sales Team', icon: FiLayers },
-  { to: '/portal/sales/products', label: 'Products', icon: FiPackage },
+  { to: '/portal/sales/packages', label: 'Packages', icon: FiPackage },
   { to: '/portal/sales/coupons', label: 'Coupons', icon: FiGift },
   { to: '/portal/sales/reports', label: 'Reports', icon: FiFileText }
 ];
@@ -33,7 +33,7 @@ const SalesModuleLayout = () => {
     <PortalWorkbenchLayout
       portalKey="sales"
       portalLabel="Sales Dashboard"
-      subtitle="Orders, leads, customers, team performance, products, coupons, and sales reporting."
+      subtitle="Payments, leads, customers, team performance, packages, coupons, and sales reporting."
       navItems={visibleNavItems}
     />
   );

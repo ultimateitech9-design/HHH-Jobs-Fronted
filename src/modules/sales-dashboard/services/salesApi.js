@@ -152,6 +152,19 @@ export const getProducts = async () =>
     extract: (payload) => (payload?.products || []).map(mapSalesProduct)
   });
 
+export const getRolePlans = async (audienceRole = '') =>
+  safeRequest({
+    path: `/pricing/role-plans${buildQueryString({ audienceRole }) ? `?${buildQueryString({ audienceRole })}` : ''}`,
+    emptyData: [],
+    extract: (payload) => (payload?.plans || []).map((plan) => ({
+      slug: plan.slug || '',
+      name: plan.name || plan.slug || 'Plan',
+      audienceRole: plan.audienceRole || plan.audience_role || '',
+      price: Number(plan.price || 0),
+      currency: plan.currency || 'INR'
+    }))
+  });
+
 export const getSalesFunnel = async () =>
   safeRequest({
     path: `${SALES_BASE}/funnel`,

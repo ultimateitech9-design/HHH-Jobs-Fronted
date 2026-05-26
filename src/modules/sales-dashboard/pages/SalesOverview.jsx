@@ -34,7 +34,7 @@ const SalesOverview = () => {
       { label: 'Total Revenue', value: formatCompactCurrency(stats.totalRevenue || 0), helper: 'Overall booked sales', tone: 'success' },
       { label: 'Monthly Revenue', value: formatCompactCurrency(stats.monthlyRevenue || 0), helper: 'Current month performance', tone: 'info' },
       { label: 'Open Leads', value: String(stats.openLeads || 0), helper: `${stats.convertedLeads || 0} converted`, tone: 'warning' },
-      { label: 'Orders', value: String(stats.totalOrders || 0), helper: `${stats.activeCustomers || 0} active customers`, tone: 'default' }
+      { label: 'Payments', value: String(stats.totalOrders || 0), helper: `${stats.activeCustomers || 0} active customers`, tone: 'default' }
     ];
   }, [state.overview]);
 
@@ -57,7 +57,7 @@ const SalesOverview = () => {
 
           <DashboardSectionCard
             eyebrow="Commercial Snapshot"
-            title="Pipeline and order priorities"
+            title="Pipeline and payment priorities"
             subtitle="Quick operational take on the current commercial funnel."
           >
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -72,9 +72,9 @@ const SalesOverview = () => {
                 <p className="mt-2 text-sm text-slate-500">Deals moved through the pipeline</p>
               </article>
               <article className="rounded-[1.4rem] border-2 border-secondary-100 bg-gradient-to-br from-secondary-50 to-white p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-secondary-600">Orders</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-secondary-600">Payments</p>
                 <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview.stats?.totalOrders || 0}</p>
-                <p className="mt-2 text-sm text-slate-500">Processed across the commercial flow</p>
+                <p className="mt-2 text-sm text-slate-500">Paid or pending client package purchases</p>
               </article>
               <article className="rounded-[1.4rem] border-2 border-info-100 bg-gradient-to-br from-info-50 to-white p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-info-600">Active customers</p>

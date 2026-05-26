@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import SectionHeader from '../../../shared/components/SectionHeader';
 import StatusPill from '../../../shared/components/StatusPill';
 import { getLeadDetails, updateLead } from '../services/leadApi';
+import { getRolePlans } from '../services/salesApi';
 import { formatCurrency } from '../utils/currencyFormat';
 import { formatDateTime } from '../utils/dateFormat';
 
@@ -15,6 +16,7 @@ const LeadDetails = () => {
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [followupHistory, setFollowupHistory] = useState([]);
+  const [rolePlans, setRolePlans] = useState([]);
   const [draft, setDraft] = useState({
     stage: 'new',
     onboardingStatus: 'prospect',
@@ -29,8 +31,9 @@ const LeadDetails = () => {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const response = await getLeadDetails(leadId);
+      const [response, planResponse] = await Promise.all([getLeadDetails(leadId), getRolePlans()]);
       setLead(response.data || null);
+      setRolePlans(planResponse.data || []);
       setDraft({
         stage: response.data?.stage || 'new',
         onboardingStatus: response.data?.onboardingStatus || 'prospect',
@@ -46,11 +49,14 @@ const LeadDetails = () => {
         nextFollowupAt: response.data.nextFollowupAt,
         savedAt: response.data.lastFollowupAt || response.data.updatedAt || response.data.createdAt
       }] : []);
-      setError(response.error || '');
+      setError(response.error || planResponse.error || '');
       setLoading(false);
     };
     load();
   }, [leadId]);
+
+  const planOptions = rolePlans.filter((plan) => !lead?.targetRole || plan.audienceRole === lead.targetRole);
+  const selectedPlanIsMissing = draft.planInterestSlug && !planOptions.some((plan) => plan.slug === draft.planInterestSlug);
 
   const handleSave = async (event) => {
     event.preventDefault();
@@ -145,7 +151,15 @@ const LeadDetails = () => {
             </label>
             <label className="space-y-1">
               <span className="text-sm font-semibold text-slate-600">Plan Interest</span>
-              <input value={draft.planInterestSlug} onChange={(event) => setDraft((current) => ({ ...current, planInterestSlug: event.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2" />
+              <select value={draft.planInterestSlug} onChange={(event) => setDraft((current) => ({ ...current, planInterestSlug: event.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2">
+                <option value="">Select plan</option>
+                {selectedPlanIsMissing ? <option value={draft.planInterestSlug}>{draft.planInterestSlug}</option> : null}
+                {planOptions.map((plan) => (
+                  <option key={plan.slug} value={plan.slug}>
+                    {plan.name} ({plan.slug})
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="space-y-1">
               <span className="text-sm font-semibold text-slate-600">Zone</span>

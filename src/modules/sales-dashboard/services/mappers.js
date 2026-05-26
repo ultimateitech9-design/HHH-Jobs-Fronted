@@ -21,7 +21,7 @@ export const mapSalesAgent = (agent = {}) => ({
 export const mapSalesProduct = (product = {}) => ({
   id: product.id,
   name: product.name || '-',
-  category: product.category || 'Job Posting Plan',
+  category: product.category || 'Package',
   unitsSold: Number(product.units_sold || product.unitsSold || 0),
   revenue: Number(product.revenue || 0),
   status: product.is_active === false ? 'inactive' : normalizeStatus(product.status, 'active'),

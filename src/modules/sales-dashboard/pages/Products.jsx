@@ -21,19 +21,19 @@ const Products = () => {
   }, []);
 
   const cards = useMemo(() => [
-    { label: 'Products', value: String(products.length), helper: 'Sales catalog items', tone: 'info' },
+    { label: 'Packages', value: String(products.length), helper: 'Sales package catalog', tone: 'info' },
     { label: 'Units Sold', value: String(products.reduce((sum, item) => sum + Number(item.unitsSold || 0), 0)), helper: 'Visible unit volume', tone: 'success' },
-    { label: 'Revenue', value: formatCompactCurrency(products.reduce((sum, item) => sum + Number(item.revenue || 0), 0)), helper: 'Visible product revenue', tone: 'default' },
-    { label: 'Active Products', value: String(products.filter((item) => item.status === 'active').length), helper: 'Current catalog coverage', tone: 'warning' }
+    { label: 'Revenue', value: formatCompactCurrency(products.reduce((sum, item) => sum + Number(item.revenue || 0), 0)), helper: 'Visible package revenue', tone: 'default' },
+    { label: 'Active Packages', value: String(products.filter((item) => item.status === 'active').length), helper: 'Current catalog coverage', tone: 'warning' }
   ], [products]);
 
   return (
     <div className="module-page module-page--platform">
-      <SectionHeader eyebrow="Sales" title="Products" subtitle="Review which sales products, plans, and add-ons are generating the strongest revenue." />
+      <SectionHeader eyebrow="Sales" title="Packages" subtitle="Review which plans and commercial packages are generating the strongest revenue." />
       {error ? <p className="form-error">{error}</p> : null}
       <SalesStatCards cards={cards} />
       <section className="panel-card">
-        {loading ? <p className="module-note">Loading products...</p> : null}
+        {loading ? <p className="module-note">Loading packages...</p> : null}
         <ProductSalesTable rows={products} />
       </section>
     </div>

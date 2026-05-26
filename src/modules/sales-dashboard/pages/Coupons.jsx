@@ -6,6 +6,7 @@ import { getCurrentUser } from '../../../utils/auth';
 import CouponTable from '../components/CouponTable';
 import SalesStatCards from '../components/SalesStatCards';
 import { createCouponRequest, getCouponRequests, getCoupons, validateCoupon } from '../services/couponApi';
+import { getRolePlans } from '../services/salesApi';
 import { formatCurrency } from '../utils/currencyFormat';
 import { formatDateTime } from '../utils/dateFormat';
 
@@ -14,6 +15,7 @@ const Coupons = () => {
   const isAdmin = ['admin', 'super_admin'].includes(String(currentUser?.role || '').toLowerCase());
   const [coupons, setCoupons] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [rolePlans, setRolePlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -32,10 +34,11 @@ const Coupons = () => {
 
   useEffect(() => {
     const load = async () => {
-      const [couponResponse, requestResponse] = await Promise.all([getCoupons(), getCouponRequests()]);
+      const [couponResponse, requestResponse, planResponse] = await Promise.all([getCoupons(), getCouponRequests(), getRolePlans()]);
       setCoupons(couponResponse.data || []);
       setRequests(requestResponse.data || []);
-      setError(couponResponse.error || requestResponse.error || '');
+      setRolePlans(planResponse.data || []);
+      setError(couponResponse.error || requestResponse.error || planResponse.error || '');
       setLoading(false);
     };
     load();
@@ -47,6 +50,36 @@ const Coupons = () => {
     { label: 'Expired', value: String(coupons.filter((item) => item.status === 'expired').length), helper: 'Inactive offer codes', tone: 'danger' },
     { label: 'Usage', value: String(coupons.reduce((sum, item) => sum + Number(item.usageCount || 0), 0)), helper: 'Visible redemption volume', tone: 'warning' }
   ], [coupons]);
+
+  const getPlanOptions = (audienceRole) =>
+    rolePlans.filter((plan) => !audienceRole || plan.audienceRole === audienceRole);
+
+  const handleAudienceChange = (setter) => (event) => {
+    const audienceRole = event.target.value;
+    setter((current) => ({
+      ...current,
+      audienceRole,
+      planSlug: getPlanOptions(audienceRole).some((plan) => plan.slug === current.planSlug) ? current.planSlug : ''
+    }));
+  };
+
+  const renderPlanSelect = (draft, setter) => {
+    const options = getPlanOptions(draft.audienceRole);
+    return (
+      <select
+        value={draft.planSlug}
+        onChange={(event) => setter((current) => ({ ...current, planSlug: event.target.value }))}
+        className="rounded-xl border border-slate-200 px-3 py-2"
+      >
+        <option value="">Select plan</option>
+        {options.map((plan) => (
+          <option key={plan.slug} value={plan.slug}>
+            {plan.name} ({plan.slug})
+          </option>
+        ))}
+      </select>
+    );
+  };
 
   const handleValidate = async (event) => {
     event.preventDefault();
@@ -112,12 +145,12 @@ const Coupons = () => {
           <h2 className="admin-ops-panel-title">Validate client coupon</h2>
           <form onSubmit={handleValidate} className="mt-4 grid gap-3 md:grid-cols-2">
             <input value={validateDraft.code} onChange={(event) => setValidateDraft((current) => ({ ...current, code: event.target.value }))} placeholder="Coupon code" className="rounded-xl border border-slate-200 px-3 py-2" />
-            <select value={validateDraft.audienceRole} onChange={(event) => setValidateDraft((current) => ({ ...current, audienceRole: event.target.value }))} className="rounded-xl border border-slate-200 px-3 py-2">
+            <select value={validateDraft.audienceRole} onChange={handleAudienceChange(setValidateDraft)} className="rounded-xl border border-slate-200 px-3 py-2">
               <option value="hr">HR</option>
               <option value="campus_connect">Campus</option>
               <option value="student">Student</option>
             </select>
-            <input value={validateDraft.planSlug} onChange={(event) => setValidateDraft((current) => ({ ...current, planSlug: event.target.value }))} placeholder="Plan slug" className="rounded-xl border border-slate-200 px-3 py-2" />
+            {renderPlanSelect(validateDraft, setValidateDraft)}
             <input value={validateDraft.amount} onChange={(event) => setValidateDraft((current) => ({ ...current, amount: event.target.value }))} placeholder="Client amount" type="number" className="rounded-xl border border-slate-200 px-3 py-2" />
             <button type="submit" className="rounded-full bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-500 md:col-span-2">Validate Coupon</button>
           </form>
@@ -133,12 +166,12 @@ const Coupons = () => {
             <input required value={requestDraft.clientName} onChange={(event) => setRequestDraft((current) => ({ ...current, clientName: event.target.value }))} placeholder="Client name" className="rounded-xl border border-slate-200 px-3 py-2" />
             <input value={requestDraft.clientEmail} onChange={(event) => setRequestDraft((current) => ({ ...current, clientEmail: event.target.value }))} placeholder="Client email" className="rounded-xl border border-slate-200 px-3 py-2" />
             <input value={requestDraft.clientPhone} onChange={(event) => setRequestDraft((current) => ({ ...current, clientPhone: event.target.value }))} placeholder="Client phone" className="rounded-xl border border-slate-200 px-3 py-2" />
-            <select value={requestDraft.audienceRole} onChange={(event) => setRequestDraft((current) => ({ ...current, audienceRole: event.target.value }))} className="rounded-xl border border-slate-200 px-3 py-2">
+            <select value={requestDraft.audienceRole} onChange={handleAudienceChange(setRequestDraft)} className="rounded-xl border border-slate-200 px-3 py-2">
               <option value="hr">HR</option>
               <option value="campus_connect">Campus</option>
               <option value="student">Student</option>
             </select>
-            <input value={requestDraft.planSlug} onChange={(event) => setRequestDraft((current) => ({ ...current, planSlug: event.target.value }))} placeholder="Plan slug" className="rounded-xl border border-slate-200 px-3 py-2" />
+            {renderPlanSelect(requestDraft, setRequestDraft)}
             <input value={requestDraft.expectedValue} onChange={(event) => setRequestDraft((current) => ({ ...current, expectedValue: event.target.value }))} placeholder="Expected value" type="number" className="rounded-xl border border-slate-200 px-3 py-2" />
             <input value={requestDraft.requestedDiscount} onChange={(event) => setRequestDraft((current) => ({ ...current, requestedDiscount: event.target.value }))} placeholder="Requested discount" className="rounded-xl border border-slate-200 px-3 py-2 md:col-span-2" />
             <textarea value={requestDraft.reason} onChange={(event) => setRequestDraft((current) => ({ ...current, reason: event.target.value }))} placeholder="Client context" rows={3} className="rounded-xl border border-slate-200 px-3 py-2 md:col-span-2" />

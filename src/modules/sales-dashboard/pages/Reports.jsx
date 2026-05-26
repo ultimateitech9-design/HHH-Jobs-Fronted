@@ -26,7 +26,7 @@ const Reports = () => {
   const cards = useMemo(() => [
     { label: 'Lead Sources', value: String((report.topSources || []).length), helper: 'Lead acquisition channels', tone: 'info' },
     { label: 'Total Leads', value: String(report.summary?.totalLeads || 0), helper: 'Visible lead volume', tone: 'success' },
-    { label: 'Paid Orders', value: String(report.summary?.paidOrders || 0), helper: 'Collected sales orders', tone: 'default' },
+    { label: 'Paid Payments', value: String(report.summary?.paidOrders || 0), helper: 'Collected package payments', tone: 'default' },
     { label: 'Revenue', value: formatCompactCurrency(report.summary?.totalRevenue || 0), helper: 'Visible collected revenue', tone: 'warning' }
   ], [report]);
 

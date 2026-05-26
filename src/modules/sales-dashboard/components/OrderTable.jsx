@@ -8,15 +8,15 @@ const OrderTable = ({ rows = [] }) => {
   const columns = [
     {
       key: 'id',
-      label: 'Order No.',
+      label: 'Payment ID',
       render: (value, row) => (
-        <Link to={`/portal/sales/order-details/${encodeURIComponent(value)}`} className="font-semibold text-brand-700 hover:text-brand-800">
+        <Link to={`/portal/sales/payment-details/${encodeURIComponent(value)}`} className="font-semibold text-brand-700 hover:text-brand-800">
           {row.orderNumber || value}
         </Link>
       )
     },
     { key: 'customer', label: 'Customer' },
-    { key: 'product', label: 'Product' },
+    { key: 'product', label: 'Package' },
     {
       key: 'amount',
       label: 'Amount',
@@ -27,7 +27,7 @@ const OrderTable = ({ rows = [] }) => {
     { key: 'paymentMethod', label: 'Payment Method' },
     {
       key: 'status',
-      label: 'Order Status',
+      label: 'Record Status',
       render: (value) => <StatusPill value={value || 'pending'} />
     },
     {

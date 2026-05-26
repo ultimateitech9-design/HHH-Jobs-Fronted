@@ -27,7 +27,10 @@ const salesRoutes = [
     children: [
       { index: true, element: <Navigate to="overview" replace /> },
       { path: 'overview', element: <SalesOverview /> },
-      { path: 'orders', element: <Orders /> },
+      { path: 'payments', element: <Orders /> },
+      { path: 'orders', element: <Navigate to="../payments" replace /> },
+      { path: 'payment-details', element: <OrderDetails /> },
+      { path: 'payment-details/:orderId', element: <OrderDetails /> },
       { path: 'order-details', element: <OrderDetails /> },
       { path: 'order-details/:orderId', element: <OrderDetails /> },
       { path: 'leads', element: <Leads /> },
@@ -37,7 +40,8 @@ const salesRoutes = [
       { path: 'customer-details', element: <CustomerDetails /> },
       { path: 'customer-details/:customerId', element: <CustomerDetails /> },
       { path: 'team', element: <SalesTeam /> },
-      { path: 'products', element: <Products /> },
+      { path: 'packages', element: <Products /> },
+      { path: 'products', element: <Navigate to="../packages" replace /> },
       { path: 'coupons', element: <Coupons /> },
       { path: 'refunds', element: <Navigate to="../overview" replace /> },
       { path: 'reports', element: <SalesReports /> }

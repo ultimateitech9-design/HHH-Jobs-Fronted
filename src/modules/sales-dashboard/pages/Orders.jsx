@@ -33,18 +33,18 @@ const Orders = () => {
   }, [orders, filters]);
 
   const cards = useMemo(() => [
-    { label: 'Visible Orders', value: String(rows.length), helper: 'Current filtered orders', tone: 'info' },
-    { label: 'Paid Orders', value: String(rows.filter((item) => item.paymentStatus === 'paid').length), helper: 'Collections received', tone: 'success' },
+    { label: 'Visible Payments', value: String(rows.length), helper: 'Current filtered payment records', tone: 'info' },
+    { label: 'Paid Payments', value: String(rows.filter((item) => item.paymentStatus === 'paid').length), helper: 'Collections received', tone: 'success' },
     { label: 'Pending Payment', value: String(rows.filter((item) => item.paymentStatus === 'pending').length), helper: 'Awaiting collection', tone: 'warning' },
-    { label: 'Visible Revenue', value: formatCompactCurrency(rows.reduce((sum, item) => sum + Number(item.amount || 0), 0)), helper: 'Current filtered order value', tone: 'default' }
+    { label: 'Visible Revenue', value: formatCompactCurrency(rows.reduce((sum, item) => sum + Number(item.amount || 0), 0)), helper: 'Current filtered payment value', tone: 'default' }
   ], [rows]);
 
   return (
     <div className="module-page module-page--platform">
       <SectionHeader
         eyebrow="Sales"
-        title="Orders"
-        subtitle="Review sales orders, payment progress, assigned agents, and booked commercial value."
+        title="Plan Payments"
+        subtitle="Track client package purchases, payment status, assigned owner, and booked commercial value."
         action={<ExportButtons onExportCsv={() => {}} onExportPdf={() => {}} />}
       />
       {error ? <p className="form-error">{error}</p> : null}
@@ -52,20 +52,20 @@ const Orders = () => {
       <section className="admin-ops-panel">
         <div className="admin-ops-panel-header">
           <div>
-            <h2 className="admin-ops-panel-title">Order registry</h2>
-            <p className="admin-ops-panel-note">Track payment progress, customer demand, and booked revenue from one list.</p>
+            <h2 className="admin-ops-panel-title">Payment registry</h2>
+            <p className="admin-ops-panel-note">Use this list to see which client selected which package, whether payment is collected, and what revenue is booked.</p>
           </div>
         </div>
         <div className="px-4 py-4 sm:px-5 sm:py-5">
           <FilterBar
             filters={[
               { key: 'status', label: 'Status', type: 'select', options: [{ value: '', label: 'All' }, { value: 'pending', label: 'Pending' }, { value: 'paid', label: 'Paid' }, { value: 'failed', label: 'Failed' }, { value: 'refunded', label: 'Refunded' }, { value: 'cancelled', label: 'Cancelled' }] },
-              { key: 'search', label: 'Search', type: 'text', placeholder: 'Order ID, customer, product', fullWidth: true }
+              { key: 'search', label: 'Search', type: 'text', placeholder: 'Payment ID, customer, package', fullWidth: true }
             ]}
             values={filters}
             onChange={(key, value) => setFilters((current) => ({ ...current, [key]: value }))}
           />
-          {loading ? <p className="module-note">Loading orders...</p> : null}
+          {loading ? <p className="module-note">Loading payments...</p> : null}
           <OrderTable rows={rows} />
         </div>
       </section>

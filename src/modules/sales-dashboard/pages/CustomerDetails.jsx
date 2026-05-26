@@ -27,7 +27,7 @@ const CustomerDetails = () => {
 
   return (
     <div className="module-page module-page--platform">
-      <SectionHeader eyebrow="Sales" title="Customer Details" subtitle="View ownership, account value, status, and open order context for a selected customer." />
+      <SectionHeader eyebrow="Sales" title="Customer Details" subtitle="View ownership, account value, status, and payment context for a selected customer." />
       {error ? <p className="form-error">{error}</p> : null}
       {!loading && !customerId ? (
         <p className="module-note">No customer ID was provided. Showing the first available customer from the queue.</p>
