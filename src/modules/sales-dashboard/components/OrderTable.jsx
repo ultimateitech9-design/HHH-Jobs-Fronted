@@ -22,7 +22,8 @@ const OrderTable = ({ rows = [] }) => {
       label: 'Amount',
       render: (value) => formatCurrency(value)
     },
-    { key: 'zone', label: 'Zone', render: (value, row) => value || row.location || '-' },
+    { key: 'stateName', label: 'State', render: (value, row) => value || row.zone || '-' },
+    { key: 'districtName', label: 'District', render: (value, row) => value || row.location || '-' },
     { key: 'paymentMethod', label: 'Payment Method' },
     {
       key: 'status',

@@ -88,6 +88,12 @@ export const defaultJobEntryDraft = {
   title: '',
   companyName: '',
   location: '',
+  sectorId: '',
+  sectorName: '',
+  stateId: '',
+  stateName: '',
+  districtId: '',
+  districtName: '',
   salaryMin: '',
   salaryMax: '',
   employmentType: 'Full-Time',
@@ -144,6 +150,12 @@ export const formatJobEntryPayload = (draft = {}) => ({
   title: draft.title,
   companyName: draft.companyName,
   location: draft.location,
+  sectorId: draft.sectorId,
+  sectorName: draft.sectorName,
+  stateId: draft.stateId,
+  stateName: draft.stateName,
+  districtId: draft.districtId,
+  districtName: draft.districtName,
   salaryMin: draft.salaryMin ? Number(draft.salaryMin) : null,
   salaryMax: draft.salaryMax ? Number(draft.salaryMax) : null,
   employmentType: draft.employmentType,
@@ -151,6 +163,36 @@ export const formatJobEntryPayload = (draft = {}) => ({
   description: draft.description,
   skills: parseListInput(draft.skillsInput)
 });
+
+const normalizeMasterOption = (item = {}) => ({
+  id: item.id || '',
+  name: item.name || '',
+  stateId: item.state_id || item.stateId || ''
+});
+
+export const getJobSectors = async () =>
+  safeRequest({
+    path: '/jobs/meta/sectors',
+    emptyData: [],
+    extract: (payload) => (payload?.sectors || []).map(normalizeMasterOption)
+  });
+
+export const getJobStates = async () =>
+  safeRequest({
+    path: '/jobs/meta/states',
+    emptyData: [],
+    extract: (payload) => (payload?.states || []).map(normalizeMasterOption)
+  });
+
+export const getJobDistricts = async (stateId = '') =>
+  readCollection({
+    path: '/jobs/meta/districts',
+    key: 'districts',
+    params: { stateId }
+  }).then((response) => ({
+    ...response,
+    data: (response.data || []).map(normalizeMasterOption)
+  }));
 
 export const formatPropertyEntryPayload = (draft = {}) => ({
   type: 'property',

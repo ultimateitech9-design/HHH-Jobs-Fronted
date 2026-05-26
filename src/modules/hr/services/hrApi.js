@@ -43,6 +43,35 @@ const buildQueryString = (params = {}) => {
   return query.toString();
 };
 
+const normalizeMasterOption = (item = {}) => ({
+  id: item.id || '',
+  name: item.name || '',
+  code: item.code || '',
+  stateId: item.state_id || item.stateId || '',
+  isActive: item.is_active ?? item.isActive ?? true
+});
+
+export const getJobSectors = async () =>
+  safeRequest({
+    path: '/jobs/meta/sectors',
+    emptyData: [],
+    extract: (payload) => (payload?.sectors || []).map(normalizeMasterOption)
+  });
+
+export const getJobStates = async () =>
+  safeRequest({
+    path: '/jobs/meta/states',
+    emptyData: [],
+    extract: (payload) => (payload?.states || []).map(normalizeMasterOption)
+  });
+
+export const getJobDistricts = async (stateId = '') =>
+  safeRequest({
+    path: `/jobs/meta/districts${buildQueryString({ stateId }) ? `?${buildQueryString({ stateId })}` : ''}`,
+    emptyData: [],
+    extract: (payload) => (payload?.districts || []).map(normalizeMasterOption)
+  });
+
 const defaultJobDraft = {
   jobTitle: '',
   planSlug: 'standard',
@@ -58,6 +87,12 @@ const defaultJobDraft = {
   companyLogo: '',
   employmentType: 'Full-Time',
   category: '',
+  sectorId: '',
+  sectorName: '',
+  stateId: '',
+  stateName: '',
+  districtId: '',
+  districtName: '',
   description: ''
 };
 
@@ -83,7 +118,13 @@ const formatJobDraftForApi = (draft = {}) => ({
   skills: parseSkillsInput(draft.skillsInput),
   companyLogo: draft.companyLogo,
   employmentType: draft.employmentType,
-  category: draft.category,
+  category: draft.sectorName || draft.category,
+  sectorId: draft.sectorId,
+  sectorName: draft.sectorName || draft.category,
+  stateId: draft.stateId,
+  stateName: draft.stateName,
+  districtId: draft.districtId,
+  districtName: draft.districtName,
   description: draft.description
 });
 
@@ -101,7 +142,13 @@ const hydrateJobDraftFromJob = (job = {}) => ({
   skillsInput: Array.isArray(job.skills) ? job.skills.join(', ') : '',
   companyLogo: job.companyLogo || '',
   employmentType: job.employmentType || 'Full-Time',
-  category: job.category || '',
+  category: job.category || job.sectorName || '',
+  sectorId: job.sectorId || job.sector_id || '',
+  sectorName: job.sectorName || job.sector_name || job.category || '',
+  stateId: job.stateId || job.state_id || '',
+  stateName: job.stateName || job.state_name || '',
+  districtId: job.districtId || job.district_id || '',
+  districtName: job.districtName || job.district_name || '',
   description: job.description || ''
 });
 
@@ -110,9 +157,15 @@ const normalizeHrProfile = (profile = {}) => ({
   companyWebsite: profile.company_website || profile.companyWebsite || '',
   companySize: profile.company_size || profile.companySize || '',
   industryType: profile.industry_type || profile.industryType || '',
+  sectorId: profile.sector_id || profile.sectorId || '',
+  sectorName: profile.sector_name || profile.sectorName || profile.industry_type || profile.industryType || '',
   foundedYear: profile.founded_year || profile.foundedYear || '',
   companyType: profile.company_type || profile.companyType || '',
   location: profile.location || '',
+  stateId: profile.state_id || profile.stateId || '',
+  stateName: profile.state_name || profile.stateName || '',
+  districtId: profile.district_id || profile.districtId || '',
+  districtName: profile.district_name || profile.districtName || '',
   about: profile.about || '',
   logoUrl: profile.logo_url || profile.logoUrl || ''
 });
@@ -132,10 +185,16 @@ export const updateHrProfile = async (formState) => {
     companyName: formState.companyName,
     companyWebsite: formState.companyWebsite,
     companySize: formState.companySize,
-    industryType: formState.industryType,
+    industryType: formState.sectorName || formState.industryType,
+    sectorId: formState.sectorId,
+    sectorName: formState.sectorName || formState.industryType,
     foundedYear: formState.foundedYear,
     companyType: formState.companyType,
     location: formState.location,
+    stateId: formState.stateId,
+    stateName: formState.stateName,
+    districtId: formState.districtId,
+    districtName: formState.districtName,
     about: formState.about,
     logoUrl: formState.logoUrl
   };

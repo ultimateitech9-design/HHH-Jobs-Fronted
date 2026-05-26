@@ -19,7 +19,8 @@ const CustomerTable = ({ rows = [] }) => {
     { key: 'phone', label: 'Contact', render: (value) => value || '-' },
     { key: 'email', label: 'Email' },
     { key: 'audienceRole', label: 'Audience' },
-    { key: 'zone', label: 'Zone', render: (value, row) => value || row.location || '-' },
+    { key: 'stateName', label: 'State', render: (value, row) => value || row.zone || '-' },
+    { key: 'districtName', label: 'District', render: (value, row) => value || row.location || '-' },
     { key: 'plan', label: 'Plan' },
     {
       key: 'lifetimeValue',

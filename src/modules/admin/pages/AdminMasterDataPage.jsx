@@ -8,6 +8,7 @@ import {
   createAdminIndustry,
   createAdminLocation,
   createAdminPincode,
+  createAdminSector,
   createAdminSkill,
   createAdminState,
   createAdminTehsil,
@@ -17,6 +18,7 @@ import {
   deleteAdminIndustry,
   deleteAdminLocation,
   deleteAdminPincode,
+  deleteAdminSector,
   deleteAdminSkill,
   deleteAdminState,
   deleteAdminTehsil,
@@ -26,6 +28,7 @@ import {
   getAdminIndustries,
   getAdminLocations,
   getAdminPincodes,
+  getAdminSectors,
   getAdminSkills,
   getAdminStates,
   getAdminTehsils,
@@ -34,6 +37,7 @@ import {
   updateAdminDistrict,
   updateAdminIndustry,
   updateAdminLocation,
+  updateAdminSector,
   updateAdminSkill,
   updateAdminState,
   updateAdminTehsil,
@@ -57,6 +61,7 @@ const initialForm = {
   pincodeDistrictId: '',
   pincodeVillageId: '',
   industryName: '',
+  sectorName: '',
   skillName: '',
   skillIndustryId: ''
 };
@@ -65,7 +70,7 @@ const isActive = (value) => value !== false;
 const actionButtonClass = 'inline-flex items-center justify-center rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-black text-neutral-700 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700';
 const dangerButtonClass = 'inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-black text-red-700 shadow-sm transition hover:bg-red-100';
 const MASTER_PAGE_SIZE = 10;
-const masterKeys = ['categories', 'locations', 'states', 'districts', 'tehsils', 'villages', 'pincodes', 'industries', 'skills'];
+const masterKeys = ['categories', 'locations', 'states', 'districts', 'tehsils', 'villages', 'pincodes', 'industries', 'sectors', 'skills'];
 
 const getTotalPages = (items) => Math.max(1, Math.ceil((items?.length || 0) / MASTER_PAGE_SIZE));
 const getPaginatedItems = (items = [], page = 1) => (
@@ -86,6 +91,7 @@ const AdminMasterDataPage = () => {
     villages: [],
     pincodes: [],
     industries: [],
+    sectors: [],
     skills: []
   });
   const [pages, setPages] = useState(Object.fromEntries(masterKeys.map((key) => [key, 1])));
@@ -123,6 +129,7 @@ const AdminMasterDataPage = () => {
       getAdminVillages(),
       getAdminPincodes(),
       getAdminIndustries(),
+      getAdminSectors(),
       getAdminSkills()
     ]);
 
@@ -135,7 +142,8 @@ const AdminMasterDataPage = () => {
       villages: results[5].data || [],
       pincodes: results[6].data || [],
       industries: results[7].data || [],
-      skills: results[8].data || []
+      sectors: results[8].data || [],
+      skills: results[9].data || []
     });
 
     setError(results.find((item) => item.error)?.error || '');
@@ -409,6 +417,28 @@ const AdminMasterDataPage = () => {
           ))}
         </ul>
         <Pagination page={pages.industries} totalPages={pageData.industries.totalPages} onChange={(page) => setPage('industries', page)} />
+        <h4 style={{ marginTop: 12 }}>Sectors</h4>
+        <div className="student-inline-controls">
+          <input placeholder="Sector name" value={form.sectorName} onChange={(event) => setField('sectorName', event.target.value)} />
+          <button type="button" className="btn-primary" onClick={() => runMutation(async () => {
+            if (!form.sectorName.trim()) throw new Error('Sector name is required.');
+            await createAdminSector({ name: form.sectorName.trim(), isActive: true });
+            setField('sectorName', '');
+          }, 'Sector created.')}>Add Sector</button>
+        </div>
+        <ul className="student-list">
+          {pageData.sectors.items.map((item) => (
+            <li key={item.id}>
+              <div><strong>{item.name}</strong></div>
+              <div className="student-list-actions">
+                <StatusPill value={isActive(item.is_active) ? 'active' : 'inactive'} />
+                <button type="button" className={actionButtonClass} onClick={() => runMutation(async () => updateAdminSector(item.id, { isActive: !isActive(item.is_active) }), 'Sector status updated.')}>{isActive(item.is_active) ? 'Disable' : 'Enable'}</button>
+                <button type="button" className={dangerButtonClass} onClick={() => runMutation(async () => deleteAdminSector(item.id), 'Sector deleted.')}>Delete</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <Pagination page={pages.sectors} totalPages={pageData.sectors.totalPages} onChange={(page) => setPage('sectors', page)} />
         <h4 style={{ marginTop: 12 }}>Skills</h4>
         <ul className="student-list">
           {pageData.skills.items.map((item) => (

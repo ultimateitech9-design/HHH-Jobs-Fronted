@@ -276,6 +276,15 @@ export const updateAdminIndustry = async (id, payload) =>
 export const deleteAdminIndustry = async (id) =>
   deleteEntityItem({ path: `/admin/industries/${id}` });
 
+export const getAdminSectors = async () =>
+  readEntityCollection({ path: '/admin/sectors', key: 'sectors', emptyData: [] });
+export const createAdminSector = async (payload) =>
+  createEntityItem({ path: '/admin/sectors', key: 'sector', body: payload });
+export const updateAdminSector = async (id, payload) =>
+  updateEntityItem({ path: `/admin/sectors/${id}`, key: 'sector', body: payload });
+export const deleteAdminSector = async (id) =>
+  deleteEntityItem({ path: `/admin/sectors/${id}` });
+
 export const getAdminSkills = async (industryId = '') =>
   readEntityCollection({
     path: '/admin/skills',

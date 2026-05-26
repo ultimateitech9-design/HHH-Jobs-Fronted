@@ -14,7 +14,7 @@ import {
   FiHash,
   FiShield
 } from 'react-icons/fi';
-import { getHrProfile, updateHrProfile } from '../services/hrApi';
+import { getHrProfile, getJobDistricts, getJobSectors, getJobStates, updateHrProfile } from '../services/hrApi';
 import { getCurrentUser, getToken, setAuthSession } from '../../../utils/auth';
 
 const HrProfilePage = () => {
@@ -24,12 +24,21 @@ const HrProfilePage = () => {
     companyWebsite: '',
     companySize: '',
     industryType: '',
+    sectorId: '',
+    sectorName: '',
     foundedYear: '',
     companyType: '',
     location: '',
+    stateId: '',
+    stateName: '',
+    districtId: '',
+    districtName: '',
     about: '',
     logoUrl: ''
   });
+  const [sectors, setSectors] = useState([]);
+  const [states, setStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
@@ -41,10 +50,20 @@ const HrProfilePage = () => {
     let mounted = true;
 
     const loadProfile = async () => {
-      const response = await getHrProfile();
+      const [response, sectorsResponse, statesResponse] = await Promise.all([
+        getHrProfile(),
+        getJobSectors(),
+        getJobStates()
+      ]);
       if (!mounted) return;
 
       setForm(response.data);
+      setSectors(sectorsResponse.data || []);
+      setStates(statesResponse.data || []);
+      if (response.data?.stateId) {
+        const districtsResponse = await getJobDistricts(response.data.stateId);
+        if (mounted) setDistricts(districtsResponse.data || []);
+      }
       setIsDemo(Boolean(response.isDemo));
       setError(response.error && !response.isDemo ? response.error : '');
       setLoading(false);
@@ -59,6 +78,44 @@ const HrProfilePage = () => {
 
   const updateField = (key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleSectorChange = (sectorId) => {
+    const sector = sectors.find((item) => item.id === sectorId);
+    setForm((current) => ({
+      ...current,
+      sectorId,
+      sectorName: sector?.name || '',
+      industryType: sector?.name || current.industryType
+    }));
+  };
+
+  const handleStateChange = async (stateId) => {
+    const state = states.find((item) => item.id === stateId);
+    setForm((current) => ({
+      ...current,
+      stateId,
+      stateName: state?.name || '',
+      districtId: '',
+      districtName: '',
+      location: state?.name || current.location
+    }));
+    const response = await getJobDistricts(stateId);
+    setDistricts(response.data || []);
+  };
+
+  const handleDistrictChange = (districtId) => {
+    const district = districts.find((item) => item.id === districtId);
+    setForm((current) => {
+      const districtName = district?.name || '';
+      const location = [districtName, current.stateName].filter(Boolean).join(', ') || current.location;
+      return {
+        ...current,
+        districtId,
+        districtName,
+        location
+      };
+    });
   };
 
   const handleSave = async (event) => {
@@ -194,13 +251,17 @@ const HrProfilePage = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiTarget className="text-neutral-400"/> Industry Type</label>
-                    <input
-                      value={form.industryType}
-                      onChange={(e) => updateField('industryType', e.target.value)}
-                      placeholder="e.g. Software Development"
-                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium transition-colors text-primary"
-                    />
+                    <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiTarget className="text-neutral-400"/> Sector</label>
+                    <select
+                      value={form.sectorId}
+                      onChange={(e) => handleSectorChange(e.target.value)}
+                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium transition-colors text-primary appearance-none"
+                    >
+                      <option value="">Select Sector</option>
+                      {sectors.map((sector) => (
+                        <option key={sector.id || sector.name} value={sector.id}>{sector.name}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="space-y-1.5">
@@ -270,6 +331,37 @@ const HrProfilePage = () => {
                     placeholder="e.g. San Francisco, CA"
                     className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium transition-colors text-primary"
                   />
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiMapPin className="text-neutral-400"/> State</label>
+                    <select
+                      value={form.stateId}
+                      onChange={(e) => handleStateChange(e.target.value)}
+                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium transition-colors text-primary appearance-none"
+                    >
+                      <option value="">Select State</option>
+                      {states.map((state) => (
+                        <option key={state.id || state.name} value={state.id}>{state.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiMapPin className="text-neutral-400"/> District</label>
+                    <select
+                      value={form.districtId}
+                      onChange={(e) => handleDistrictChange(e.target.value)}
+                      disabled={!form.stateId}
+                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium transition-colors text-primary appearance-none disabled:opacity-60"
+                    >
+                      <option value="">Select District</option>
+                      {districts.map((district) => (
+                        <option key={district.id || district.name} value={district.id}>{district.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">

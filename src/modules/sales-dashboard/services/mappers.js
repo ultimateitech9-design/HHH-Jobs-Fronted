@@ -43,6 +43,10 @@ export const mapSalesOrder = (order = {}) => {
     audienceRole: order.audienceRole || order.audience_role || '',
     zone: order.zone || '',
     location: order.location || '',
+    stateName: order.stateName || order.state_name || '',
+    districtName: order.districtName || order.district_name || '',
+    sectorName: order.sectorName || order.sector_name || '',
+    zoneLabel: [order.stateName || order.state_name, order.districtName || order.district_name].filter(Boolean).join(' / ') || order.zone || order.location || '',
     status,
     paymentStatus: status,
     createdAt: order.createdAt || order.created_at || null
@@ -61,6 +65,10 @@ export const mapSalesLead = (lead = {}) => ({
   assignedToId: lead.assignedToId || lead.assigned_to || '',
   zone: lead.zone || '',
   location: lead.location || '',
+  stateName: lead.stateName || lead.state_name || '',
+  districtName: lead.districtName || lead.district_name || '',
+  sectorName: lead.sectorName || lead.sector_name || '',
+  zoneLabel: [lead.stateName || lead.state_name, lead.districtName || lead.district_name].filter(Boolean).join(' / ') || lead.zone || lead.location || '',
   expectedValue: Number(lead.expectedValue ?? lead.value ?? 0),
   stage: normalizeStatus(lead.stage || lead.status, 'new'),
   createdAt: lead.createdAt || lead.created_at || null,
@@ -107,7 +115,11 @@ export const mapSalesCustomer = (customer = {}) => ({
   salesOwnerId: customer.salesOwnerId || customer.sales_owner_id || '',
   subscriptionId: customer.subscriptionId || customer.subscription_id || '',
   zone: customer.zone || '',
-  location: customer.location || ''
+  location: customer.location || '',
+  stateName: customer.stateName || customer.state_name || '',
+  districtName: customer.districtName || customer.district_name || '',
+  sectorName: customer.sectorName || customer.sector_name || '',
+  zoneLabel: [customer.stateName || customer.state_name, customer.districtName || customer.district_name].filter(Boolean).join(' / ') || customer.zone || customer.location || ''
 });
 
 export const mapSalesCoupon = (coupon = {}) => {

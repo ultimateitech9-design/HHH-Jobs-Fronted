@@ -44,7 +44,7 @@ const Leads = () => {
       const matchesStage = !filters.stage || String(item.stage || '').toLowerCase() === filters.stage;
       const matchesRole = !filters.targetRole || String(item.targetRole || '').toLowerCase() === filters.targetRole;
       const matchesOnboarding = !filters.onboardingStatus || String(item.onboardingStatus || '').toLowerCase() === filters.onboardingStatus;
-      const matchesSearch = !search || `${item.company} ${item.contactName} ${item.email} ${item.phone} ${item.zone} ${item.location}`.toLowerCase().includes(search);
+      const matchesSearch = !search || `${item.company} ${item.contactName} ${item.email} ${item.phone} ${item.zoneLabel} ${item.zone} ${item.location} ${item.sectorName}`.toLowerCase().includes(search);
       return matchesStage && matchesRole && matchesOnboarding && matchesSearch;
     });
   }, [leads, filters]);

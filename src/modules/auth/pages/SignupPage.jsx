@@ -32,6 +32,8 @@ import {
 const initialFormState = {
   name: '',
   companyName: '',
+  sectorId: '',
+  sectorName: '',
   email: '',
   countryCode: '+91',
   mobile: '',
@@ -86,6 +88,7 @@ const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [availableProviders, setAvailableProviders] = useState(null);
   const [providersLoading, setProvidersLoading] = useState(true);
+  const [sectors, setSectors] = useState([]);
 
   const redirectAfterSignupRaw = new URLSearchParams(location.search).get('redirect');
   const redirectAfterSignup = redirectAfterSignupRaw && redirectAfterSignupRaw.startsWith('/')
@@ -128,6 +131,19 @@ const SignupPage = () => {
     return () => { cancelled = true; };
   }, [isCampusConnectSignup]);
 
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch('/jobs/meta/sectors')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setSectors(data?.sectors || []);
+      })
+      .catch(() => {
+        if (!cancelled) setSectors([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   if (isCampusConnectSignup) {
     const redirectParam = new URLSearchParams(location.search).get('redirect');
     const nextSearch = redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : '';
@@ -157,7 +173,8 @@ const SignupPage = () => {
       [key]: validateSignupField(key, nextValue, nextForm),
       ...(key === 'role'
         ? {
-          companyName: validateSignupField('companyName', nextForm.companyName, nextForm)
+          companyName: validateSignupField('companyName', nextForm.companyName, nextForm),
+          sectorId: nextForm.role === 'hr' && !nextForm.sectorId ? 'Select company sector.' : ''
         }
         : {})
     }));
@@ -196,7 +213,8 @@ const SignupPage = () => {
     setForm(nextForm);
     setFieldErrors((current) => ({
       ...current,
-      companyName: validateSignupField('companyName', nextForm.companyName, nextForm)
+      companyName: validateSignupField('companyName', nextForm.companyName, nextForm),
+      sectorId: nextForm.role === 'hr' && !nextForm.sectorId ? 'Select company sector.' : ''
     }));
 
     if (error) {
@@ -204,10 +222,25 @@ const SignupPage = () => {
     }
   };
 
+  const handleSectorSelect = (sectorId) => {
+    const sector = sectors.find((item) => item.id === sectorId);
+    setForm((current) => ({
+      ...current,
+      sectorId,
+      sectorName: sector?.name || ''
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      sectorId: sectorId ? '' : 'Select company sector.'
+    }));
+    if (error) setError('');
+  };
+
   const validateForm = () => {
     const errors = {
       name: validateSignupField('name', form.name, form),
       companyName: validateSignupField('companyName', form.companyName, form),
+      sectorId: form.role === 'hr' && !form.sectorId ? 'Select company sector.' : '',
       email: validateSignupField('email', form.email, form),
       mobile: validateSignupField('mobile', form.mobile, form),
       password: validateSignupField('password', form.password, form)
@@ -229,7 +262,7 @@ const SignupPage = () => {
       : '';
 
     if (form.role === 'hr') {
-      return { ...payload.user, companyName: form.companyName, hrEmployerId };
+      return { ...payload.user, companyName: form.companyName, sectorId: form.sectorId, sectorName: form.sectorName, hrEmployerId };
     }
 
     if (form.role === 'student') {
@@ -315,6 +348,8 @@ const SignupPage = () => {
     const signupPayload = {
       name: form.name.trim(),
       companyName: form.companyName.trim(),
+      sectorId: form.sectorId,
+      sectorName: form.sectorName,
       email: form.email.trim(),
       mobile: fullMobile,
       password: form.password,
@@ -529,17 +564,31 @@ const SignupPage = () => {
                   />
 
                   {form.role === 'hr' ? (
-                    <AuthInputField
-                      label="Company name"
-                      type="text"
-                      value={form.companyName}
-                      onChange={(event) => handleChange('companyName', event.target.value)}
-                      placeholder="Enter your company name"
-                      disabled={isSubmitting || Boolean(socialLoading)}
-                      error={fieldErrors.companyName}
-                      helper="This helps us set up your recruiter workspace."
-                      className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
-                    />
+                    <>
+                      <AuthInputField
+                        label="Company name"
+                        type="text"
+                        value={form.companyName}
+                        onChange={(event) => handleChange('companyName', event.target.value)}
+                        placeholder="Enter your company name"
+                        disabled={isSubmitting || Boolean(socialLoading)}
+                        error={fieldErrors.companyName}
+                        helper="This helps us set up your recruiter workspace."
+                        className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
+                      />
+                      <AuthSelectField
+                        label="Company sector"
+                        value={form.sectorId}
+                        onChange={(event) => handleSectorSelect(event.target.value)}
+                        options={[
+                          { value: '', label: 'Select company sector' },
+                          ...sectors.map((sector) => ({ value: sector.id, label: sector.name }))
+                        ]}
+                        disabled={isSubmitting || Boolean(socialLoading)}
+                        error={fieldErrors.sectorId}
+                        className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] focus:!border-gold/60 focus:!bg-white"
+                      />
+                    </>
                   ) : null}
 
                   <AuthInputField

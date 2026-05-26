@@ -6,6 +6,9 @@ import {
   defaultJobEntryDraft,
   formatJobEntryPayload,
   getDataEntryEntryById,
+  getJobDistricts,
+  getJobSectors,
+  getJobStates,
   getRegisteredJobCompanies,
   updateDataEntry
 } from '../services/dataentryApi';
@@ -18,6 +21,12 @@ const buildDraftFromEntry = (entry = {}) => {
     title: entry?.title || source.title || '',
     companyName: source.companyName || source.company_name || '',
     location: source.location || '',
+    sectorId: source.sectorId || source.sector_id || '',
+    sectorName: source.sectorName || source.sector_name || '',
+    stateId: source.stateId || source.state_id || '',
+    stateName: source.stateName || source.state_name || '',
+    districtId: source.districtId || source.district_id || '',
+    districtName: source.districtName || source.district_name || '',
     salaryMin: source.salaryMin != null ? String(source.salaryMin) : '',
     salaryMax: source.salaryMax != null ? String(source.salaryMax) : '',
     employmentType: source.employmentType || 'Full-Time',
@@ -46,6 +55,9 @@ const AddJob = () => {
   const [existingEntry, setExistingEntry] = useState(null);
   const [loadingEntry, setLoadingEntry] = useState(false);
   const [registeredCompanies, setRegisteredCompanies] = useState([]);
+  const [sectors, setSectors] = useState([]);
+  const [states, setStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [companiesError, setCompaniesError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -57,22 +69,82 @@ const AddJob = () => {
     setDraft((current) => ({ ...current, [field]: value }));
   };
 
+  const applyRegisteredCompanyDefaults = async (companyName) => {
+    const company = registeredCompanies.find((item) => normalizeCompanyKey(item.companyName) === normalizeCompanyKey(companyName));
+    if (!company) return;
+
+    setDraft((current) => ({
+      ...current,
+      companyName,
+      sectorId: current.sectorId || company.sectorId || '',
+      sectorName: current.sectorName || company.sectorName || '',
+      stateId: current.stateId || company.stateId || '',
+      stateName: current.stateName || company.stateName || '',
+      districtId: current.districtId || company.districtId || '',
+      districtName: current.districtName || company.districtName || '',
+      location: current.location || [company.districtName, company.stateName].filter(Boolean).join(', ')
+    }));
+
+    if (company.stateId) {
+      const response = await getJobDistricts(company.stateId);
+      setDistricts(response.data || []);
+    }
+  };
+
+  const handleSectorChange = (sectorId) => {
+    const sector = sectors.find((item) => item.id === sectorId);
+    setDraft((current) => ({ ...current, sectorId, sectorName: sector?.name || '' }));
+  };
+
+  const handleStateChange = async (stateId) => {
+    const state = states.find((item) => item.id === stateId);
+    setDraft((current) => ({
+      ...current,
+      stateId,
+      stateName: state?.name || '',
+      districtId: '',
+      districtName: '',
+      location: state?.name || current.location
+    }));
+    const response = await getJobDistricts(stateId);
+    setDistricts(response.data || []);
+  };
+
+  const handleDistrictChange = (districtId) => {
+    const district = districts.find((item) => item.id === districtId);
+    setDraft((current) => {
+      const districtName = district?.name || '';
+      return {
+        ...current,
+        districtId,
+        districtName,
+        location: [districtName, current.stateName].filter(Boolean).join(', ') || current.location
+      };
+    });
+  };
+
   useEffect(() => {
     let active = true;
 
-    const loadCompanies = async () => {
+    const loadCommercialMeta = async () => {
       setLoadingCompanies(true);
       setCompaniesError('');
 
-      const response = await getRegisteredJobCompanies();
+      const [companiesResponse, sectorsResponse, statesResponse] = await Promise.all([
+        getRegisteredJobCompanies(),
+        getJobSectors(),
+        getJobStates()
+      ]);
       if (!active) return;
 
-      setRegisteredCompanies(Array.isArray(response.data) ? response.data : []);
-      setCompaniesError(response.error || '');
+      setRegisteredCompanies(Array.isArray(companiesResponse.data) ? companiesResponse.data : []);
+      setSectors(sectorsResponse.data || []);
+      setStates(statesResponse.data || []);
+      setCompaniesError(companiesResponse.error || sectorsResponse.error || statesResponse.error || '');
       setLoadingCompanies(false);
     };
 
-    loadCompanies();
+    loadCommercialMeta();
 
     return () => {
       active = false;
@@ -106,7 +178,12 @@ const AddJob = () => {
 
       const nextEntry = response.data || {};
       setExistingEntry(nextEntry);
-      setDraft(buildDraftFromEntry(nextEntry));
+      const nextDraft = buildDraftFromEntry(nextEntry);
+      setDraft(nextDraft);
+      if (nextDraft.stateId) {
+        const districtsResponse = await getJobDistricts(nextDraft.stateId);
+        if (active) setDistricts(districtsResponse.data || []);
+      }
       setLoadingEntry(false);
     };
 
@@ -221,6 +298,7 @@ const AddJob = () => {
                 placeholder={loadingCompanies ? 'Loading registered companies...' : 'Select registered company'}
                 autoComplete="off"
                 onChange={(event) => setField('companyName', event.target.value)}
+                onBlur={(event) => applyRegisteredCompanyDefaults(event.target.value)}
               />
               <datalist id={registeredCompaniesListId}>
                 {registeredCompanies.map((company) => (
@@ -228,6 +306,33 @@ const AddJob = () => {
                 ))}
               </datalist>
               {companiesError ? <span className="text-xs font-medium text-rose-600">{companiesError}</span> : null}
+            </label>
+            <label className="grid gap-0.5">
+              <span className={fieldLabelClassName}>Sector</span>
+              <select className={fieldControlClassName} value={draft.sectorId} onChange={(event) => handleSectorChange(event.target.value)}>
+                <option value="">Select sector</option>
+                {sectors.map((sector) => (
+                  <option key={sector.id || sector.name} value={sector.id}>{sector.name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-0.5">
+              <span className={fieldLabelClassName}>State</span>
+              <select className={fieldControlClassName} value={draft.stateId} onChange={(event) => handleStateChange(event.target.value)}>
+                <option value="">Select state</option>
+                {states.map((state) => (
+                  <option key={state.id || state.name} value={state.id}>{state.name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-0.5">
+              <span className={fieldLabelClassName}>District</span>
+              <select className={fieldControlClassName} value={draft.districtId} onChange={(event) => handleDistrictChange(event.target.value)} disabled={!draft.stateId}>
+                <option value="">Select district</option>
+                {districts.map((district) => (
+                  <option key={district.id || district.name} value={district.id}>{district.name}</option>
+                ))}
+              </select>
             </label>
             <label className="grid gap-0.5">
               <span className={fieldLabelClassName}>Location</span>

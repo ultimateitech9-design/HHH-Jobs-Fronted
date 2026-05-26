@@ -22,7 +22,10 @@ import {
   getCurrentRolePlanSubscription,
   getEmptyJobDraft,
   getHrJobs,
+  getJobDistricts,
   getJobDraftFromJob,
+  getJobSectors,
+  getJobStates,
   getPricingPlans,
   reopenHrJob,
   getRolePlanPurchases,
@@ -187,6 +190,9 @@ const HrJobsPage = () => {
   const [roleQuote, setRoleQuote] = useState(null);
   const [roleQuoteLoading, setRoleQuoteLoading] = useState(false);
   const [roleQuoteError, setRoleQuoteError] = useState('');
+  const [sectors, setSectors] = useState([]);
+  const [states, setStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
 
   const normalizedPlans = useMemo(
     () => plans.map((plan) => ({
@@ -504,10 +510,16 @@ const HrJobsPage = () => {
     let mounted = true;
 
     const loadAll = async () => {
-      const jobsRes = await getHrJobs();
+      const [jobsRes, sectorsRes, statesRes] = await Promise.all([
+        getHrJobs(),
+        getJobSectors(),
+        getJobStates()
+      ]);
       if (!mounted) return;
 
       setJobs(jobsRes.data || []);
+      setSectors(sectorsRes.data || []);
+      setStates(statesRes.data || []);
       setError(jobsRes.error || '');
       setLoading(false);
 
@@ -587,6 +599,44 @@ const HrJobsPage = () => {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
+  const handleSectorChange = (sectorId) => {
+    const sector = sectors.find((item) => item.id === sectorId);
+    setDraft((current) => ({
+      ...current,
+      sectorId,
+      sectorName: sector?.name || '',
+      category: sector?.name || current.category
+    }));
+  };
+
+  const handleStateChange = async (stateId) => {
+    const state = states.find((item) => item.id === stateId);
+    setDraft((current) => ({
+      ...current,
+      stateId,
+      stateName: state?.name || '',
+      districtId: '',
+      districtName: '',
+      jobLocation: state?.name || current.jobLocation
+    }));
+    const response = await getJobDistricts(stateId);
+    setDistricts(response.data || []);
+  };
+
+  const handleDistrictChange = (districtId) => {
+    const district = districts.find((item) => item.id === districtId);
+    setDraft((current) => {
+      const districtName = district?.name || '';
+      const jobLocation = [districtName, current.stateName].filter(Boolean).join(', ') || current.jobLocation;
+      return {
+        ...current,
+        districtId,
+        districtName,
+        jobLocation
+      };
+    });
+  };
+
   const resetForm = () => {
     setEditingJobId('');
     setDraft({ ...getEmptyJobDraft(), planSlug: autoPostingPlan?.slug || selectedPlan?.slug || 'standard' });
@@ -663,9 +713,14 @@ const HrJobsPage = () => {
     }
   };
 
-  const startEdit = (job) => {
+  const startEdit = async (job) => {
     setEditingJobId(job.id || job._id);
-    setDraft(getJobDraftFromJob(job));
+    const nextDraft = getJobDraftFromJob(job);
+    setDraft(nextDraft);
+    if (nextDraft.stateId) {
+      const response = await getJobDistricts(nextDraft.stateId);
+      setDistricts(response.data || []);
+    }
     setActiveTab('post');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1001,6 +1056,38 @@ const HrJobsPage = () => {
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-neutral-700">Experience Level</label>
               <input required value={draft.experienceLevel} onChange={(e) => updateDraftField('experienceLevel', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. 3-5 Years" />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-neutral-700">Sector</label>
+              <select value={draft.sectorId} onChange={(e) => handleSectorChange(e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium">
+                <option value="">Select Sector</option>
+                {sectors.map((sector) => (
+                  <option key={sector.id || sector.name} value={sector.id}>{sector.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:col-span-2 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-neutral-700">State</label>
+                <select value={draft.stateId} onChange={(e) => handleStateChange(e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium">
+                  <option value="">Select State</option>
+                  {states.map((state) => (
+                    <option key={state.id || state.name} value={state.id}>{state.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-neutral-700">District</label>
+                <select value={draft.districtId} onChange={(e) => handleDistrictChange(e.target.value)} disabled={!draft.stateId} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium disabled:opacity-60">
+                  <option value="">Select District</option>
+                  {districts.map((district) => (
+                    <option key={district.id || district.name} value={district.id}>{district.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="space-y-1.5">

@@ -94,9 +94,21 @@ const LeadTable = ({ rows = [], onMarkCalled, updatingId = '' }) => {
       render: (value, row) => (
         <div className="space-y-0.5">
           <p className="font-semibold text-slate-700">{value || '-'}</p>
-          <p className="truncate text-[11px] text-slate-400">{row.zone || row.location || 'No zone'}</p>
+          <p className="truncate text-[11px] text-slate-400">{row.sectorName || 'No sector'}</p>
         </div>
       )
+    },
+    {
+      key: 'stateName',
+      label: 'State',
+      width: 118,
+      render: (value, row) => <span className="font-semibold text-slate-700">{value || row.zone || '-'}</span>
+    },
+    {
+      key: 'districtName',
+      label: 'District',
+      width: 118,
+      render: (value, row) => <span className="font-semibold text-slate-700">{value || row.location || '-'}</span>
     },
     {
       key: 'assignedTo',
