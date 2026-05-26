@@ -293,8 +293,8 @@ const HrJobApplicantsPage = () => {
     <div className="space-y-6 pb-12 h-full flex flex-col min-h-[calc(100vh-8rem)]">
 
       <header className="shrink-0">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0 xl:max-w-[360px]">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Job Applications</p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <h1 className="truncate text-2xl font-extrabold tracking-tight text-navy">{targetJob?.jobTitle || 'Loading Job...'}</h1>
@@ -305,10 +305,10 @@ const HrJobApplicantsPage = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto pb-1 xl:w-auto xl:shrink-0 xl:justify-end xl:overflow-visible xl:pb-0">
             <Link
               to="/portal/hr/jobs"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
             >
               <FiArrowLeft size={14} /> Back To Jobs
             </Link>
@@ -323,7 +323,7 @@ const HrJobApplicantsPage = () => {
                 type="button"
                 onClick={() => setActiveFilter(item.key)}
                 aria-pressed={activeFilter === item.key}
-                className={`rounded-full border px-3 py-2 text-sm font-semibold transition hover:-translate-y-px hover:shadow-sm ${item.tone} ${activeFilter === item.key ? `ring-2 ring-offset-1 ${item.activeTone}` : ''}`}
+                className={`shrink-0 rounded-full border px-3 py-2 text-sm font-semibold transition hover:-translate-y-px hover:shadow-sm ${item.tone} ${activeFilter === item.key ? `ring-2 ring-offset-1 ${item.activeTone}` : ''}`}
               >
                 {item.value} {item.label}
               </button>
@@ -331,7 +331,7 @@ const HrJobApplicantsPage = () => {
             {!state.loading && state.applicants.length > 0 && (
               <button
                 onClick={exportToCsv}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
               >
                 <FiDownload size={14} /> Export CSV
               </button>
