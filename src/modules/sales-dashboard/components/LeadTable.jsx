@@ -5,34 +5,53 @@ import DataTable from '../../../shared/components/DataTable';
 import StatusPill from '../../../shared/components/StatusPill';
 import { formatDateTime } from '../utils/dateFormat';
 
-const toLocalFollowupParts = (value) => {
-  if (!value) return { date: '', time: '' };
+const CLOSED_STAGES = new Set(['converted', 'lost']);
+const ONE_MINUTE_MS = 60 * 1000;
+
+const padTwo = (value) => String(value).padStart(2, '0');
+
+const dateToLocalParts = (date) => ({
+  date: `${date.getFullYear()}-${padTwo(date.getMonth() + 1)}-${padTwo(date.getDate())}`,
+  time: `${padTwo(date.getHours())}:${padTwo(date.getMinutes())}`
+});
+
+const getDefaultFollowupParts = () => {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  date.setHours(10, 0, 0, 0);
+
+  if (date.getDay() === 0) date.setDate(date.getDate() + 1);
+  if (date.getDay() === 6) date.setDate(date.getDate() + 2);
+
+  return dateToLocalParts(date);
+};
+
+const toEditableFollowupParts = (value) => {
+  if (!value) return getDefaultFollowupParts();
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return { date: '', time: '' };
-  const local = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString();
-  return {
-    date: local.slice(0, 10),
-    time: local.slice(11, 16)
-  };
+  if (Number.isNaN(date.getTime())) return getDefaultFollowupParts();
+  if (date.getTime() <= Date.now() + ONE_MINUTE_MS) return getDefaultFollowupParts();
+  return dateToLocalParts(date);
 };
 
 const buildFollowupIso = ({ date = '', time = '' } = {}) => {
   if (!date) return undefined;
   const parsed = new Date(`${date}T${time || '10:00'}:00`);
   if (Number.isNaN(parsed.getTime())) return undefined;
+  if (parsed.getTime() <= Date.now() + ONE_MINUTE_MS) return undefined;
   return parsed.toISOString();
 };
 
 const LeadTable = ({ rows = [], onMarkCalled, updatingId = '' }) => {
   const [followupDrafts, setFollowupDrafts] = useState({});
 
-  const getDraft = (row) => followupDrafts[row.id] || toLocalFollowupParts(row.nextFollowupAt);
+  const getDraft = (row) => followupDrafts[row.id] || toEditableFollowupParts(row.nextFollowupAt);
 
   const updateDraft = (row, field, value) => {
     setFollowupDrafts((current) => ({
       ...current,
       [row.id]: {
-        ...(current[row.id] || toLocalFollowupParts(row.nextFollowupAt)),
+        ...(current[row.id] || toEditableFollowupParts(row.nextFollowupAt)),
         [field]: value
       }
     }));
@@ -99,13 +118,28 @@ const LeadTable = ({ rows = [], onMarkCalled, updatingId = '' }) => {
     {
       key: 'nextFollowupAt',
       label: 'Follow-up',
-      width: 156,
-      render: (value, row) => (
-        <div className="space-y-0.5">
-          <p className="font-semibold text-slate-700">{formatDateTime(value)}</p>
-          <p className="text-[11px] text-slate-400">Last: {formatDateTime(row.lastContactedAt)}</p>
-        </div>
-      )
+      width: 176,
+      render: (value, row) => {
+        const nextDate = value ? new Date(value) : null;
+        const nextIsValid = nextDate && !Number.isNaN(nextDate.getTime());
+        const isClosed = CLOSED_STAGES.has(String(row.stage || '').toLowerCase());
+        const isOverdue = nextIsValid && nextDate.getTime() < Date.now() && !isClosed;
+        const nextClassName = isOverdue
+          ? 'font-bold text-danger-600'
+          : nextIsValid
+            ? 'font-semibold text-slate-700'
+            : 'font-semibold text-amber-700';
+
+        return (
+          <div className="space-y-0.5">
+            <p className={nextClassName}>
+              {isOverdue ? 'Overdue: ' : 'Next: '}
+              {nextIsValid ? formatDateTime(value) : 'Set on call'}
+            </p>
+            <p className="text-[11px] text-slate-400">Last call: {formatDateTime(row.lastContactedAt)}</p>
+          </div>
+        );
+      }
     },
     {
       key: 'callAction',
@@ -117,9 +151,10 @@ const LeadTable = ({ rows = [], onMarkCalled, updatingId = '' }) => {
         const followupIso = buildFollowupIso(draft);
         const isUpdating = updatingId === row.id;
         const hasBeenCalled = Boolean(row.lastContactedAt);
-        const buttonTone = hasBeenCalled
-          ? 'border-success-200 bg-success-50 text-success-700 hover:bg-success-100'
-          : 'border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100';
+        const canSave = Boolean(followupIso) && !isUpdating;
+        const buttonTone = canSave
+          ? 'border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100'
+          : 'border-slate-200 bg-slate-50 text-slate-400';
 
         return (
           <div className="flex min-w-[300px] items-center gap-2">
@@ -141,12 +176,13 @@ const LeadTable = ({ rows = [], onMarkCalled, updatingId = '' }) => {
             />
             <button
               type="button"
-              disabled={isUpdating}
+              disabled={!canSave}
+              title={followupIso ? 'Log call and schedule next follow-up' : 'Select a future follow-up date and time'}
               onClick={() => onMarkCalled?.(row, followupIso)}
               className={`inline-flex h-9 w-[94px] items-center justify-center gap-1.5 rounded-lg border px-2 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonTone}`}
             >
               {hasBeenCalled ? <FiCheckCircle size={13} /> : <FiPhoneCall size={13} />}
-              <span className="whitespace-nowrap">{isUpdating ? 'Saving' : (hasBeenCalled ? 'Called' : 'Mark call')}</span>
+              <span className="whitespace-nowrap">{isUpdating ? 'Saving' : (hasBeenCalled ? 'Log again' : 'Log call')}</span>
             </button>
           </div>
         );

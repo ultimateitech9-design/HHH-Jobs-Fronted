@@ -77,13 +77,18 @@ const Leads = () => {
   const handleMarkCalled = async (lead, nextFollowupAt) => {
     setError('');
     setMessage('');
+    if (!nextFollowupAt) {
+      setError('Select a future follow-up date and time before logging the call.');
+      return;
+    }
+
     setUpdatingId(lead.id);
     try {
       const updatedLead = await markLeadCalled(lead.id, {
         next_followup_at: nextFollowupAt
       });
       setLeads((current) => current.map((item) => (item.id === lead.id ? updatedLead : item)));
-      setMessage(`${updatedLead.contactName || updatedLead.company || 'Lead'} marked called${nextFollowupAt ? ' with follow-up set' : ''}.`);
+      setMessage(`Call logged for ${updatedLead.contactName || updatedLead.company || 'lead'} and next follow-up scheduled.`);
       await loadLeads(filters, { silent: true });
     } catch (updateError) {
       setError(String(updateError.message || 'Unable to mark lead as called.'));
