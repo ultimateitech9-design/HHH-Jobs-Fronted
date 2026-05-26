@@ -31,10 +31,10 @@ const SalesOverview = () => {
   const cards = useMemo(() => {
     const stats = state.overview?.stats || {};
     return [
-      { label: 'Total Revenue', value: formatCompactCurrency(stats.totalRevenue || 0), helper: 'Overall booked sales', tone: 'success' },
-      { label: 'Monthly Revenue', value: formatCompactCurrency(stats.monthlyRevenue || 0), helper: 'Current month performance', tone: 'info' },
-      { label: 'Open Leads', value: String(stats.openLeads || 0), helper: `${stats.convertedLeads || 0} converted`, tone: 'warning' },
-      { label: 'Payments', value: String(stats.totalOrders || 0), helper: `${stats.activeCustomers || 0} active customers`, tone: 'default' }
+      { label: 'Platform Accounts', value: String(stats.totalCustomers || 0), helper: 'HR, campus, and student users', tone: 'info' },
+      { label: 'Plan Taken', value: String(stats.activeCustomers || 0), helper: 'Active or trialing plans', tone: 'success' },
+      { label: 'Plan Pending', value: String(stats.planPendingCustomers || 0), helper: 'Accounts sales can convert', tone: 'warning' },
+      { label: 'Collected Revenue', value: formatCompactCurrency(stats.totalRevenue || 0), helper: `${stats.paidPayments || 0} paid payments`, tone: 'default' }
     ];
   }, [state.overview]);
 
@@ -62,9 +62,9 @@ const SalesOverview = () => {
           >
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <article className="rounded-[1.4rem] border-2 border-brand-100 bg-gradient-to-br from-brand-50 to-white p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-brand-500">Open leads</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-500">Pipeline leads</p>
                 <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview.stats?.openLeads || 0}</p>
-                <p className="mt-2 text-sm text-slate-500">Top of funnel demand to qualify</p>
+                <p className="mt-2 text-sm text-slate-500">{state.overview.stats?.newLeads || 0} new leads to qualify</p>
               </article>
               <article className="rounded-[1.4rem] border-2 border-success-100 bg-gradient-to-br from-success-50 to-white p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-success-600">Converted leads</p>
@@ -73,13 +73,13 @@ const SalesOverview = () => {
               </article>
               <article className="rounded-[1.4rem] border-2 border-secondary-100 bg-gradient-to-br from-secondary-50 to-white p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-secondary-600">Payments</p>
-                <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview.stats?.totalOrders || 0}</p>
-                <p className="mt-2 text-sm text-slate-500">Paid or pending client package purchases</p>
+                <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview.stats?.paidPayments || 0}</p>
+                <p className="mt-2 text-sm text-slate-500">{state.overview.stats?.pendingPayments || 0} pending payments</p>
               </article>
               <article className="rounded-[1.4rem] border-2 border-info-100 bg-gradient-to-br from-info-50 to-white p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-info-600">Active customers</p>
-                <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview.stats?.activeCustomers || 0}</p>
-                <p className="mt-2 text-sm text-slate-500">Accounts to retain and grow</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-info-600">Current month</p>
+                <p className="mt-3 font-heading text-3xl font-bold text-navy">{formatCompactCurrency(state.overview.stats?.monthlyRevenue || 0)}</p>
+                <p className="mt-2 text-sm text-slate-500">Revenue collected this month</p>
               </article>
             </div>
           </DashboardSectionCard>
