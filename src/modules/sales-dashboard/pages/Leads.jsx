@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import SectionHeader from '../../../shared/components/SectionHeader';
-import { getCurrentUser } from '../../../utils/auth';
 import FilterBar from '../components/FilterBar';
 import LeadTable from '../components/LeadTable';
 import SalesStatCards from '../components/SalesStatCards';
@@ -8,8 +7,6 @@ import { getLeads, markLeadCalled, syncCommercialLeads } from '../services/leadA
 import { formatCompactCurrency } from '../utils/currencyFormat';
 
 const Leads = () => {
-  const currentUser = getCurrentUser();
-  const canSync = ['admin', 'super_admin', 'sales'].includes(String(currentUser?.role || '').toLowerCase());
   const [leads, setLeads] = useState([]);
   const [filters, setFilters] = useState({ stage: '', targetRole: '', onboardingStatus: '', search: '', page: 1, limit: 100 });
   const [loading, setLoading] = useState(true);
@@ -97,18 +94,6 @@ const Leads = () => {
     }
   };
 
-  const handleSync = async () => {
-    setError('');
-    setMessage('');
-    try {
-      const response = await syncCommercialLeads(['hr', 'campus_connect', 'student']);
-      setMessage(`Commercial data synced: ${response?.syncedCount || 0} new leads, ${response?.assignedExistingCount || 0} assigned leads, ${response?.customerSyncedCount || 0} customers`);
-      await loadLeads(filters);
-    } catch (syncError) {
-      setError(String(syncError.message || 'Unable to sync leads.'));
-    }
-  };
-
   return (
     <div className="module-page module-page--platform">
       <SectionHeader eyebrow="Sales" title="Leads" subtitle="Manage assigned HR, campus, and student leads by plan status, owner, zone, and next follow-up." />
@@ -121,11 +106,6 @@ const Leads = () => {
             <h2 className="admin-ops-panel-title">Commercial lead pipeline</h2>
             <p className="admin-ops-panel-note">Review audience mix, stage progression, zone, owner, and onboarding readiness from one list.</p>
           </div>
-          {canSync ? (
-            <button type="button" onClick={handleSync} className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 transition hover:bg-brand-100">
-              Sync Commercial Leads
-            </button>
-          ) : null}
         </div>
         <div className="px-4 py-4 sm:px-5 sm:py-5">
           <FilterBar
