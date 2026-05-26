@@ -9,23 +9,38 @@ import { formatCompactCurrency } from '../utils/currencyFormat';
 
 const Leads = () => {
   const currentUser = getCurrentUser();
-  const canSync = ['admin', 'super_admin'].includes(String(currentUser?.role || '').toLowerCase());
+  const canSync = ['admin', 'super_admin', 'sales'].includes(String(currentUser?.role || '').toLowerCase());
   const [leads, setLeads] = useState([]);
   const [filters, setFilters] = useState({ stage: '', targetRole: '', onboardingStatus: '', search: '' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  const loadLeads = async (nextFilters = filters) => {
+  const loadLeads = async (nextFilters = filters, { hydrateIfEmpty = false } = {}) => {
     setLoading(true);
     const response = await getLeads(nextFilters);
-    setLeads(response.data || []);
-    setError(response.error || '');
+    let nextLeads = response.data || [];
+    let nextError = response.error || '';
+
+    if (hydrateIfEmpty && nextLeads.length === 0 && !nextError) {
+      try {
+        const syncResponse = await syncCommercialLeads(['hr', 'campus_connect', 'student']);
+        setMessage(`Commercial data synced: ${syncResponse?.syncedCount || 0} new leads, ${syncResponse?.assignedExistingCount || 0} assigned leads, ${syncResponse?.customerSyncedCount || 0} customers`);
+        const refreshed = await getLeads(nextFilters);
+        nextLeads = refreshed.data || [];
+        nextError = refreshed.error || '';
+      } catch (syncError) {
+        nextError = String(syncError.message || 'Unable to sync commercial data.');
+      }
+    }
+
+    setLeads(nextLeads);
+    setError(nextError);
     setLoading(false);
   };
 
   useEffect(() => {
-    loadLeads(filters);
+    loadLeads(filters, { hydrateIfEmpty: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -52,7 +67,7 @@ const Leads = () => {
     setMessage('');
     try {
       const response = await syncCommercialLeads(['hr', 'campus_connect', 'student']);
-      setMessage(`Commercial leads synced: ${response?.syncedCount || 0}`);
+      setMessage(`Commercial data synced: ${response?.syncedCount || 0} new leads, ${response?.assignedExistingCount || 0} assigned leads, ${response?.customerSyncedCount || 0} customers`);
       await loadLeads(filters);
     } catch (syncError) {
       setError(String(syncError.message || 'Unable to sync leads.'));
