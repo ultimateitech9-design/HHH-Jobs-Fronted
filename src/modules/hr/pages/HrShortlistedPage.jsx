@@ -122,8 +122,11 @@ export default function HrShortlistedPage() {
           <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">Your recruiter CRM for saved candidates, tags, notes, and follow-ups.</p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400">Connected candidates</p>
-          <p className="mt-0.5 text-base font-bold tabular-nums text-navy">{summary.connected}</p>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400">Total shortlisted</p>
+          <p className="mt-0.5 text-base font-bold tabular-nums text-navy">{summary.total || entries.length}</p>
+          <p className="mt-0.5 text-[10px] font-semibold text-slate-400">
+            DB {summary.candidateDb || 0} | Jobs {summary.jobApplications || 0} | Campus {summary.campusDrives || 0}
+          </p>
         </div>
       </section>
 
@@ -153,7 +156,7 @@ export default function HrShortlistedPage() {
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
           {entries.map((entry) => (
             <ShortlistCard
-              key={entry.student_user_id}
+              key={entry.id || `${entry.sourceType || 'shortlist'}-${entry.student_user_id}`}
               entry={entry}
               actionState={actionState}
               onEdit={() => openEdit(entry)}
@@ -220,6 +223,9 @@ export default function HrShortlistedPage() {
 function ShortlistCard({ entry, actionState, onEdit, onRemove, onInterest }) {
   const candidate = entry.candidate || {};
   const interestStatus = candidate.crm?.interestStatus;
+  const sourceType = entry.sourceType || 'candidate_db';
+  const isCandidateDb = sourceType === 'candidate_db';
+  const sourceLabel = entry.sourceLabel || 'Candidate DB';
 
   return (
     <article className={cardClass}>
@@ -233,12 +239,29 @@ function ShortlistCard({ entry, actionState, onEdit, onRemove, onInterest }) {
             <p className="truncate text-[10px] text-slate-500">{candidate.profile?.headline || 'Student profile'}</p>
           </div>
         </div>
-        <button type="button" onClick={onEdit} className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border border-slate-200 text-slate-400 hover:bg-slate-50">
-          <FiEdit2 size={10} />
-        </button>
+        {isCandidateDb ? (
+          <button type="button" onClick={onEdit} className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border border-slate-200 text-slate-400 hover:bg-slate-50">
+            <FiEdit2 size={10} />
+          </button>
+        ) : (
+          <Link to={entry.sourceRoute || '/portal/hr/applications?status=shortlisted'} className="inline-flex shrink-0 rounded border border-blue-100 bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700 hover:bg-blue-100">
+            View
+          </Link>
+        )}
       </div>
 
-      {(entry.tags || []).length > 0 ? (
+      <div className="mt-1.5 flex flex-wrap gap-1">
+        <span className="rounded-full border border-slate-200 bg-slate-50 px-1.5 py-px text-[9px] font-semibold text-slate-600">
+          {sourceLabel}
+        </span>
+        {entry.status ? (
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-px text-[9px] font-semibold uppercase text-emerald-700">
+            {String(entry.status).replaceAll('_', ' ')}
+          </span>
+        ) : null}
+      </div>
+
+      {(entry.tags || []).length > 0 && isCandidateDb ? (
         <div className="mt-1.5 flex flex-wrap gap-1">
           {entry.tags.map((tag) => (
             <span key={tag} className="rounded-full border border-brand-100 bg-brand-50 px-1.5 py-px text-[9px] font-semibold text-brand-700">
@@ -286,7 +309,7 @@ function ShortlistCard({ entry, actionState, onEdit, onRemove, onInterest }) {
             <FiCheckCircle size={10} />
             Interest {interestStatus}
           </span>
-        ) : (
+        ) : isCandidateDb ? (
           <button
             type="button"
             onClick={onInterest}
@@ -296,17 +319,23 @@ function ShortlistCard({ entry, actionState, onEdit, onRemove, onInterest }) {
             {actionState[`interest_${entry.student_user_id}`] === 'sending' ? <FiRefreshCw size={10} className="animate-spin" /> : <FiSend size={10} />}
             Send Interest
           </button>
-        )}
+        ) : null}
 
-        <button
-          type="button"
-          onClick={onRemove}
-          disabled={actionState[`remove_${entry.student_user_id}`] === 'removing'}
-          className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-60"
-        >
-          {actionState[`remove_${entry.student_user_id}`] === 'removing' ? <FiRefreshCw size={10} className="animate-spin" /> : <FiTrash2 size={10} />}
-          Remove
-        </button>
+        {isCandidateDb ? (
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={actionState[`remove_${entry.student_user_id}`] === 'removing'}
+            className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-60"
+          >
+            {actionState[`remove_${entry.student_user_id}`] === 'removing' ? <FiRefreshCw size={10} className="animate-spin" /> : <FiTrash2 size={10} />}
+            Remove
+          </button>
+        ) : (
+          <Link to={entry.sourceRoute || '/portal/hr/applications?status=shortlisted'} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 transition hover:bg-blue-100">
+            View source
+          </Link>
+        )}
       </div>
     </article>
   );
