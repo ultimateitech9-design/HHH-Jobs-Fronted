@@ -45,6 +45,13 @@ const getRedirectPathByRole = (role) => {
   if (role === 'super_admin') return '/portal/super-admin/dashboard';
   if (role === 'admin') return '/portal/admin/dashboard';
   if (role === 'hr') return '/portal/hr/dashboard';
+  if (role === 'support') return '/portal/support/dashboard';
+  if (role === 'sales') return '/portal/sales/overview';
+  if (role === 'accounts') return '/portal/accounts/overview';
+  if (role === 'dataentry' || role === 'data_entry') return '/portal/dataentry/dashboard';
+  if (role === 'campus_connect') return '/portal/campus-connect/dashboard';
+  if (role === 'platform') return '/portal/platform/dashboard';
+  if (role === 'audit') return '/portal/audit/dashboard';
   if (role === 'retired_employee') return '/portal/student/companies';
   return '/portal/student/companies';
 };

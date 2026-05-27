@@ -7,6 +7,7 @@ import {
   getDashboardPathByRole,
   getPendingVerificationSession,
   getStoredUser,
+  isRedirectPathAllowedForRole,
   isEmailVerifiedUser,
   normalizeRole,
   normalizeRedirectPath,
@@ -62,6 +63,20 @@ const buildPortalRoleErrorMessage = (allowedLoginRoles = []) => {
   }
 
   return 'This account is not allowed on the selected login page.';
+};
+
+const getRoleSafeRedirectPath = (role) => {
+  const normalizedRole = normalizeRole(role);
+  if (!normalizedRole) return '';
+  return getDashboardPathByRole(normalizedRole);
+};
+
+const getVerificationSuccessDestination = ({ payloadRedirectTo = '', role = '' } = {}) => {
+  if (isRedirectPathAllowedForRole(payloadRedirectTo, role)) {
+    return normalizeRedirectPath(payloadRedirectTo || getDashboardPathByRole(role), role);
+  }
+
+  return getRoleSafeRedirectPath(role);
 };
 
 const OtpVerificationPage = () => {
@@ -283,14 +298,19 @@ const OtpVerificationPage = () => {
           }
           : payload.user;
 
-      if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
+      const destination = getVerificationSuccessDestination({
+        payloadRedirectTo: payload.redirectTo,
+        role: nextUser?.role
+      });
+
+      if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles) && !destination) {
         setError(buildPortalRoleErrorMessage(allowedLoginRoles));
         return;
       }
 
       clearPendingVerificationSession();
       setAuthSession(payload.token, nextUser);
-      navigate(normalizeRedirectPath(payload.redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
+      navigate(destination, { replace: true });
     } catch (requestError) {
       try {
         const payload = verifyLocalSignupOtp({ email, otp: otpCode });
@@ -313,14 +333,19 @@ const OtpVerificationPage = () => {
             }
             : payload.user;
 
-        if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
+        const destination = getVerificationSuccessDestination({
+          payloadRedirectTo: payload.redirectTo,
+          role: nextUser?.role
+        });
+
+        if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles) && !destination) {
           setError(buildPortalRoleErrorMessage(allowedLoginRoles));
           return;
         }
 
         clearPendingVerificationSession();
         setAuthSession(payload.token, nextUser);
-        navigate(normalizeRedirectPath(payload.redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
+        navigate(destination, { replace: true });
       } catch (fallbackError) {
         setError(fallbackError.message || 'Unable to verify OTP right now.');
       }
