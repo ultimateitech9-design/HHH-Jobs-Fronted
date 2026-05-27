@@ -54,6 +54,18 @@ const buildPortalRoleErrorMessage = (allowedLoginRoles = []) => {
   return 'This account is not allowed on the selected login page.';
 };
 
+const getRoleSafeRedirectPath = (role) => {
+  const normalizedRole = normalizeRole(role);
+  if (!normalizedRole) return '';
+  return getDashboardPathByRole(normalizedRole);
+};
+
+const shouldAutoRedirectRoleMismatch = ({ role, allowedLoginRoles = [], defaultRedirectPath = '' } = {}) => {
+  if (!role || !allowedLoginRoles.length) return false;
+  if (!String(defaultRedirectPath || '').startsWith('/portal/')) return false;
+  return Boolean(getRoleSafeRedirectPath(role));
+};
+
 const tryManagedAccountLogin = ({ email, password, navigate, redirectTo, setError, allowedLoginRoles }) => {
   const managedAccount = findManagedAccountByLogin(email);
   if (!managedAccount) return false;
@@ -63,19 +75,29 @@ const tryManagedAccountLogin = ({ email, password, navigate, redirectTo, setErro
     return true;
   }
 
-  if (!isRoleAllowedOnLoginPage(managedAccount.role, allowedLoginRoles)) {
+  const nextUser = updateManagedAccountLogin(managedAccount.id) || managedAccount;
+
+  const roleMatchesPage = isRoleAllowedOnLoginPage(nextUser?.role, allowedLoginRoles);
+  if (!roleMatchesPage && shouldAutoRedirectRoleMismatch({
+    role: nextUser?.role,
+    allowedLoginRoles,
+    defaultRedirectPath: redirectTo
+  })) {
+    setAuthSession(`managed-${nextUser.id}`, nextUser);
+    navigate(getRoleSafeRedirectPath(nextUser?.role), { replace: true });
+    return true;
+  }
+
+  if (!roleMatchesPage) {
     setError?.(buildPortalRoleErrorMessage(allowedLoginRoles));
     return true;
   }
 
-  if (!isRedirectPathAllowedForRole(redirectTo, managedAccount.role)) {
-    setError?.(`This ID is not allowed for the selected portal. Use the ${managedAccount.role} account on its assigned dashboard.`);
-    return true;
-  }
-
-  const nextUser = updateManagedAccountLogin(managedAccount.id) || managedAccount;
+  const destination = isRedirectPathAllowedForRole(redirectTo, nextUser?.role)
+    ? normalizeRedirectPath(redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role)
+    : getRoleSafeRedirectPath(nextUser?.role);
   setAuthSession(`managed-${nextUser.id}`, nextUser);
-  navigate(normalizeRedirectPath(redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
+  navigate(destination, { replace: true });
   return true;
 };
 
@@ -241,19 +263,26 @@ const LoginPanelContent = ({
             : payload.user;
 
       if (!isRoleAllowedOnLoginPage(nextUser?.role, normalizedAllowedLoginRoles)) {
+        if (shouldAutoRedirectRoleMismatch({
+          role: nextUser?.role,
+          allowedLoginRoles: normalizedAllowedLoginRoles,
+          defaultRedirectPath
+        })) {
+          setAuthSession(payload.token, nextUser);
+          navigate(getRoleSafeRedirectPath(nextUser?.role), { replace: true });
+          return;
+        }
+
         clearAuthSession();
         setError(buildPortalRoleErrorMessage(normalizedAllowedLoginRoles));
         return;
       }
 
-      if (!isRedirectPathAllowedForRole(redirectTo, nextUser?.role)) {
-        clearAuthSession();
-        setError('Wrong ID or password.');
-        return;
-      }
-
       setAuthSession(payload.token, nextUser);
-      navigate(normalizeRedirectPath(redirectTo || payload.redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role), { replace: true });
+      const destination = isRedirectPathAllowedForRole(redirectTo, nextUser?.role)
+        ? normalizeRedirectPath(redirectTo || payload.redirectTo || getDashboardPathByRole(nextUser?.role), nextUser?.role)
+        : getRoleSafeRedirectPath(nextUser?.role);
+      navigate(destination, { replace: true });
     } catch (requestError) {
       if (tryManagedAccountLogin({
         email: form.email,
