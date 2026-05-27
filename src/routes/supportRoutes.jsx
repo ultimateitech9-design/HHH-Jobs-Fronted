@@ -9,6 +9,7 @@ const Tickets = lazy(() => import('../modules/support/pages/Tickets'));
 const TicketDetails = lazy(() => import('../modules/support/pages/TicketDetails'));
 const CreateTicket = lazy(() => import('../modules/support/pages/CreateTicket'));
 const LiveChat = lazy(() => import('../modules/support/pages/LiveChat'));
+const ClientSearchPage = lazy(() => import('../shared/pages/ClientSearchPage'));
 const FAQ = lazy(() => import('../modules/support/pages/FAQ'));
 const Complaints = lazy(() => import('../modules/support/pages/Complaints'));
 const Feedback = lazy(() => import('../modules/support/pages/Feedback'));
@@ -31,6 +32,7 @@ const supportRoutes = [
       { path: 'ticket-details/:ticketId', element: <TicketDetails /> },
       { path: 'create-ticket', element: <CreateTicket /> },
       { path: 'live-chat', element: <LiveChat /> },
+      { path: 'client-search', element: <ClientSearchPage /> },
       { path: 'faq', element: <FAQ /> },
       { path: 'complaints', element: <Complaints /> },
       { path: 'feedback', element: <Feedback /> },

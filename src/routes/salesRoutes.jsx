@@ -11,6 +11,7 @@ const Leads = lazy(() => import('../modules/sales-dashboard/pages/Leads'));
 const LeadDetails = lazy(() => import('../modules/sales-dashboard/pages/LeadDetails'));
 const Customers = lazy(() => import('../modules/sales-dashboard/pages/Customers'));
 const CustomerDetails = lazy(() => import('../modules/sales-dashboard/pages/CustomerDetails'));
+const ClientSearchPage = lazy(() => import('../shared/pages/ClientSearchPage'));
 const SalesTeam = lazy(() => import('../modules/sales-dashboard/pages/SalesTeam'));
 const Products = lazy(() => import('../modules/sales-dashboard/pages/Products'));
 const Coupons = lazy(() => import('../modules/sales-dashboard/pages/Coupons'));
@@ -39,6 +40,7 @@ const salesRoutes = [
       { path: 'customers', element: <Customers /> },
       { path: 'customer-details', element: <CustomerDetails /> },
       { path: 'customer-details/:customerId', element: <CustomerDetails /> },
+      { path: 'client-search', element: <ClientSearchPage /> },
       { path: 'team', element: <SalesTeam /> },
       { path: 'packages', element: <Products /> },
       { path: 'products', element: <Navigate to="../packages" replace /> },

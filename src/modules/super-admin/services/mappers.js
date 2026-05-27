@@ -29,6 +29,10 @@ export const mapApiUserToUi = (user = {}) => ({
   email: user.email || '-',
   role: user.role || 'student',
   company: user.company || user.department || (user.role === 'hr' ? 'Employer' : 'HHH Jobs'),
+  assignedStates: Array.isArray(user.assignedStates)
+    ? user.assignedStates
+    : (Array.isArray(user.assigned_states) ? user.assigned_states : []),
+  salesCode: user.salesCode || user.sales_code || '',
   status: normalizeUserStatus(user),
   verified: Boolean(user.verified ?? user.is_email_verified ?? user.is_hr_approved),
   lastActiveAt: user.lastActiveAt || user.last_login_at || null,

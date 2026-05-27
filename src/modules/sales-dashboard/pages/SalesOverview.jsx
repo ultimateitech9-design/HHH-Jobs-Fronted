@@ -3,7 +3,7 @@ import { FiArrowRight, FiCheckCircle, FiClock, FiCreditCard, FiPhoneCall, FiUser
 import { Link } from 'react-router-dom';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
-import { getSalesOverview } from '../services/salesApi';
+import { getSalesOverview, getSalesReferralCode } from '../services/salesApi';
 import { formatCompactCurrency } from '../utils/currencyFormat';
 
 const formatNumber = (value) => Number(value || 0).toLocaleString('en-IN');
@@ -29,21 +29,26 @@ const queueToneClass = {
 
 const SalesOverview = () => {
   const [state, setState] = useState({ loading: true, error: '', overview: null });
+  const [referral, setReferral] = useState({ salesCode: '', assignedStates: [], shareText: '' });
 
   useEffect(() => {
     const load = async () => {
-      const overviewRes = await getSalesOverview();
+      const [overviewRes, referralRes] = await Promise.all([
+        getSalesOverview(),
+        getSalesReferralCode()
+      ]);
       setState({
         loading: false,
         error: overviewRes.error || '',
         overview: overviewRes.data
       });
+      setReferral(referralRes.data || { salesCode: '', assignedStates: [], shareText: '' });
     };
 
     load();
   }, []);
 
-  const stats = state.overview?.stats || {};
+  const stats = useMemo(() => state.overview?.stats || {}, [state.overview?.stats]);
   const paymentSummary = state.overview?.paymentSummary || {};
   const audienceBreakdown = state.overview?.audienceBreakdown || [];
   const workQueue = state.overview?.workQueue || [];
@@ -103,6 +108,27 @@ const SalesOverview = () => {
 
       {!state.loading && state.overview ? (
         <div className="space-y-3">
+          {referral.salesCode ? (
+            <section className="rounded-lg border border-brand-100 bg-brand-50 px-4 py-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-600">Your sales code</p>
+                  <p className="mt-1 font-mono text-xl font-black text-navy">{referral.salesCode}</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-600">
+                    {(referral.assignedStates || []).length ? `State scope: ${referral.assignedStates.join(', ')}` : 'Use this code for HR, campus, or student registrations.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => navigator.clipboard?.writeText(referral.shareText || referral.salesCode)}
+                >
+                  Copy Code
+                </button>
+              </div>
+            </section>
+          ) : null}
+
           <DashboardMetricCards cards={cards} />
 
           <DashboardSectionCard

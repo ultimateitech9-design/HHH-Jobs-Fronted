@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FiBell, FiCheck, FiInfo, FiX, FiAlertTriangle } from 'react-icons/fi';
-
-const TOAST_DURATION = 5000;
+import { subscribeToToasts } from '../utils/toastBus';
 
 const typeConfig = {
   success: { icon: FiCheck, bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', iconColor: 'text-emerald-500' },
@@ -10,24 +9,6 @@ const typeConfig = {
   info: { icon: FiInfo, bg: 'bg-blue-50 border-blue-200', text: 'text-blue-800', iconColor: 'text-blue-500' },
   warning: { icon: FiAlertTriangle, bg: 'bg-amber-50 border-amber-200', text: 'text-amber-800', iconColor: 'text-amber-500' },
   notification: { icon: FiBell, bg: 'bg-indigo-50 border-indigo-200', text: 'text-indigo-800', iconColor: 'text-indigo-500' }
-};
-
-let toastId = 0;
-let listeners = [];
-
-export const showToast = ({ type = 'info', title = '', message = '', duration = TOAST_DURATION, action = null }) => {
-  const id = ++toastId;
-  const toast = { id, type, title, message, duration, action, createdAt: Date.now() };
-  listeners.forEach((fn) => fn(toast));
-  return id;
-};
-
-export const notify = {
-  success: (title, message, opts) => showToast({ type: 'success', title, message, ...opts }),
-  error: (title, message, opts) => showToast({ type: 'error', title, message, ...opts }),
-  info: (title, message, opts) => showToast({ type: 'info', title, message, ...opts }),
-  warning: (title, message, opts) => showToast({ type: 'warning', title, message, ...opts }),
-  notification: (title, message, opts) => showToast({ type: 'notification', title, message, ...opts })
 };
 
 const ToastItem = ({ toast, onDismiss }) => {
@@ -80,10 +61,7 @@ const NotificationToast = () => {
     const handler = (toast) => {
       setToasts((current) => [...current.slice(-4), toast]);
     };
-    listeners.push(handler);
-    return () => {
-      listeners = listeners.filter((fn) => fn !== handler);
-    };
+    return subscribeToToasts(handler);
   }, []);
 
   const dismiss = useCallback((id) => {

@@ -119,3 +119,11 @@ export const updateTicket = async (ticketId, updates = {}) =>
     emptyData: null,
     extract: (payload) => normalizeTicket(payload?.ticket || payload)
   });
+
+export const transferTicket = async (ticketId, payload = {}) =>
+  safeRequest({
+    path: `${SUPPORT_BASE}/tickets/${ticketId}/transfer`,
+    options: { method: 'PATCH', body: JSON.stringify(payload) },
+    emptyData: null,
+    extract: (responsePayload) => normalizeTicket(responsePayload?.ticket || responsePayload || {})
+  });

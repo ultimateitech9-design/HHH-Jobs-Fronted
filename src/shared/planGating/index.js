@@ -2,7 +2,7 @@ export { default as FeatureGate } from '../components/FeatureGate';
 export { default as UpgradePlanModal } from '../components/UpgradePlanModal';
 export { default as usePlanAccess, getPlanTierName, getTrialLabel } from '../hooks/usePlanAccess';
 export { default as useDebounceSearch, useDebounce } from '../hooks/useDebounceSearch';
-export { notify, showToast } from '../components/NotificationToast';
+export { notify, showToast } from '../utils/toastBus';
 export { default as Skeleton, SkeletonCard, SkeletonList, SkeletonDashboard } from '../components/Skeleton';
 export { default as LazyPage, PageSkeleton } from '../components/LazyPage';
 export {

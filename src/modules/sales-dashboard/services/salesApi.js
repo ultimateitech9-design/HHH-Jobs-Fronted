@@ -219,3 +219,10 @@ export const getSalesFunnel = async () =>
       };
     }
   });
+
+export const getSalesReferralCode = async () =>
+  safeRequest({
+    path: `${SALES_BASE}/referral-code`,
+    emptyData: { salesCode: '', assignedStates: [], shareText: '' },
+    extract: (payload) => payload?.referral || { salesCode: '', assignedStates: [], shareText: '' }
+  });

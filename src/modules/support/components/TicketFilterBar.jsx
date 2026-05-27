@@ -1,6 +1,7 @@
 import { SUPPORT_CATEGORIES } from '../constants/supportCategories';
 import { TICKET_PRIORITY } from '../constants/ticketPriority';
 import { TICKET_STATUS } from '../constants/ticketStatus';
+import { SUPPORT_DEPARTMENT_OPTIONS } from '../utils/ticketHelpers';
 import SearchBar from './SearchBar';
 
 const TicketFilterBar = ({ filters, onChange }) => {
@@ -25,6 +26,13 @@ const TicketFilterBar = ({ filters, onChange }) => {
         <select value={filters.category} onChange={(event) => onChange('category', event.target.value)}>
           <option value="">All</option>
           {SUPPORT_CATEGORIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        </select>
+      </label>
+      <label>
+        Queue
+        <select value={filters.department} onChange={(event) => onChange('department', event.target.value)}>
+          <option value="">All</option>
+          {SUPPORT_DEPARTMENT_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
         </select>
       </label>
       <label className="full-width-control">

@@ -5,6 +5,7 @@ import {
   FiFileText,
   FiLayers,
   FiRefreshCcw,
+  FiSearch,
   FiSettings,
   FiTrendingUp
 } from 'react-icons/fi';
@@ -19,6 +20,7 @@ const accountsNavItems = [
   { to: '/portal/accounts/payouts', label: 'Payouts', icon: FiTrendingUp },
   { to: '/portal/accounts/refunds', label: 'Refunds', icon: FiRefreshCcw },
   { to: '/portal/accounts/reports', label: 'Reports', icon: FiBarChart2 },
+  { to: '/portal/accounts/client-search', label: 'Client Search', icon: FiSearch },
   { to: '/portal/accounts/payment-settings', label: 'Payment Settings', icon: FiSettings }
 ];
 

@@ -5,6 +5,8 @@ import {
   FiBriefcase,
   FiCreditCard,
   FiHeadphones,
+  FiSearch,
+  FiSettings,
   FiShield,
   FiUserCheck
 } from 'react-icons/fi';
@@ -15,7 +17,9 @@ import './ManagementPortalPage.css';
 
 const managementLinks = [
   { label: 'Admin Dashboard', to: '/portal/admin/dashboard', loginPath: '/management/login/admin', portalLabel: 'Admin Portal', icon: FiShield, roles: PORTAL_ACCESS.admin },
-  { label: 'Super Admin', to: '/portal/super-admin/dashboard', loginPath: '/management/login/super-admin', portalLabel: 'Super Admin Portal', icon: FiUserCheck, roles: PORTAL_ACCESS.superAdmin }
+  { label: 'Super Admin', to: '/portal/super-admin/dashboard', loginPath: '/management/login/super-admin', portalLabel: 'Super Admin Portal', icon: FiUserCheck, roles: PORTAL_ACCESS.superAdmin },
+  { label: 'Platform Ops', to: '/portal/platform/dashboard', loginPath: '/management/login/platform', portalLabel: 'Platform Ops Portal', icon: FiSettings, roles: PORTAL_ACCESS.platform },
+  { label: 'Audit Portal', to: '/portal/audit/dashboard', loginPath: '/management/login/audit', portalLabel: 'Audit Portal', icon: FiSearch, roles: PORTAL_ACCESS.audit }
 ];
 
 const employeeLinks = [

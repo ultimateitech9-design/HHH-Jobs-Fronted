@@ -4,6 +4,7 @@ import {
   FiGift,
   FiLayers,
   FiPackage,
+  FiSearch,
   FiShoppingCart,
   FiUserCheck,
   FiUsers
@@ -16,6 +17,7 @@ const salesNavItems = [
   { to: '/portal/sales/payments', label: 'Payments', icon: FiShoppingCart },
   { to: '/portal/sales/leads', label: 'Leads', icon: FiUserCheck },
   { to: '/portal/sales/customers', label: 'Customers', icon: FiUsers },
+  { to: '/portal/sales/client-search', label: 'Client Search', icon: FiSearch },
   { to: '/portal/sales/team', label: 'Sales Team', icon: FiLayers },
   { to: '/portal/sales/packages', label: 'Packages', icon: FiPackage },
   { to: '/portal/sales/coupons', label: 'Coupons', icon: FiGift },

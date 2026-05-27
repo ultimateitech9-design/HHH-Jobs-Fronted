@@ -11,6 +11,8 @@ const managementPortalKeySet = new Set([
   'sales',
   'dataentry',
   'accounts',
+  'platform',
+  'audit',
   'campus-connect'
 ]);
 
@@ -217,6 +219,46 @@ const loginPortals = {
       'Dedicated access for accounts and financial operations teams.',
       'Cleaner role-specific login path with less confusion.',
       'Built to send each account only to its assigned portal.'
+    ]
+  },
+  platform: {
+    key: 'platform',
+    title: 'Platform ops login',
+    eyebrow: 'Operations access',
+    description: 'Open the platform operations workspace for tenants, security, integrations, and service controls.',
+    helperText: 'For authorized platform operations team members only.',
+    emailLabel: 'Platform ops email',
+    emailPlaceholder: 'Enter your platform ops email',
+    passwordPlaceholder: 'Enter your password',
+    allowSocialLogin: false,
+    allowedLoginRoles: ['platform'],
+    showCreateAccount: false,
+    showOtpLogin: true,
+    defaultRedirectPath: '/portal/platform/dashboard',
+    benefits: [
+      'Dedicated access to platform-wide operational tools.',
+      'Keeps platform operations separate from admin and employee dashboards.',
+      'Sends platform IDs directly to the correct workspace.'
+    ]
+  },
+  audit: {
+    key: 'audit',
+    title: 'Audit portal login',
+    eyebrow: 'Audit access',
+    description: 'Open the audit workspace for event review, alerts, compliance checks, and system logs.',
+    helperText: 'For authorized audit team members only.',
+    emailLabel: 'Audit email',
+    emailPlaceholder: 'Enter your audit email',
+    passwordPlaceholder: 'Enter your password',
+    allowSocialLogin: false,
+    allowedLoginRoles: ['audit'],
+    showCreateAccount: false,
+    showOtpLogin: true,
+    defaultRedirectPath: '/portal/audit/dashboard',
+    benefits: [
+      'Dedicated access to audit events and compliance alerts.',
+      'Role-locked sign-in reduces cross-portal mistakes.',
+      'Direct landing into audit visibility and reporting tools.'
     ]
   },
   'campus-connect': {

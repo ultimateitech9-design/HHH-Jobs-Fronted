@@ -24,6 +24,7 @@ import { createAdminUser } from '../../super-admin/services/usersApi';
 import { getDashboardPathByRole } from '../../../utils/auth';
 import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
 import Pagination from '../../../shared/components/Pagination';
+import { INDIAN_STATES } from '../../../shared/constants/indianStates';
 import {
   deleteManagedAccount,
   findManagedAccountByEmail,
@@ -100,7 +101,8 @@ const AdminUsersPage = () => {
     email: '',
     password: '',
     role: 'admin',
-    department: 'Operations'
+    department: 'Operations',
+    assignedStates: []
   });
   const normalizedAccountEmail = String(accountForm.email || '').trim().toLowerCase();
   const showEmailValidationMessage = accountFormTouched.email && Boolean(normalizedAccountEmail) && !emailRegex.test(normalizedAccountEmail);
@@ -182,7 +184,8 @@ const AdminUsersPage = () => {
         role: accountForm.role,
         mobile: accountForm.phone,
         company: 'HHH Jobs',
-        department: accountForm.department
+        department: accountForm.department,
+        assignedStates: accountForm.assignedStates
       });
       const managedAccount = findManagedAccountByEmail(email) || created;
       setManagedAccounts(getManagedAccounts());
@@ -192,7 +195,8 @@ const AdminUsersPage = () => {
         email: '',
         password: '',
         role: 'admin',
-        department: 'Operations'
+        department: 'Operations',
+        assignedStates: []
       });
       setAccountFormTouched({ email: false, password: false });
       setMessage(`${managedAccount.name || created.name} account ${getManagementDisplayId(managedAccount.id || created.id, managedAccount.role || created.role)} created for ${managedAccount.role || created.role}. Login will open ${getDashboardPathByRole(managedAccount.role || created.role)}.`);
@@ -504,6 +508,24 @@ const AdminUsersPage = () => {
                 </div>
               </div>
 
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">State Scope</label>
+                <select
+                  multiple
+                  value={accountForm.assignedStates}
+                  onChange={(e) => setAccountForm({
+                    ...accountForm,
+                    assignedStates: Array.from(e.target.selectedOptions, (option) => option.value)
+                  })}
+                  className="min-h-[112px] w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-500"
+                >
+                  {INDIAN_STATES.map((state) => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+                <p className="text-[11px] font-semibold text-neutral-500">Blank means this ID can work across the admin&apos;s state scope.</p>
+              </div>
+
               <button 
                 type="button" 
                 onClick={handleCreateManagedAccount}
@@ -542,6 +564,16 @@ const AdminUsersPage = () => {
                         <div className="mt-1 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
                           ID {getManagementDisplayId(acc.id, acc.role)}
                         </div>
+                        {Array.isArray(acc.assignedStates) && acc.assignedStates.length ? (
+                          <div className="mt-1 text-[11px] font-semibold text-neutral-500">
+                            {acc.assignedStates.join(', ')}
+                          </div>
+                        ) : null}
+                        {acc.salesCode ? (
+                          <div className="mt-1 font-mono text-[11px] font-semibold text-brand-700">
+                            Code {acc.salesCode}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="p-3">
                         <span className="inline-block rounded-md border border-brand-100 bg-brand-50 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-brand-700">

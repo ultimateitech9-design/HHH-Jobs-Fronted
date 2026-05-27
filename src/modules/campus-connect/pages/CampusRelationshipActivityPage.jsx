@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   FiChevronLeft,
@@ -109,7 +109,7 @@ export default function CampusRelationshipActivityPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const loadPage = async ({ silent = false } = {}) => {
+  const loadPage = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     else setRefreshing(true);
 
@@ -123,11 +123,11 @@ export default function CampusRelationshipActivityPage() {
     setError(connectionsResponse.error || directoryResponse.error || '');
     setLoading(false);
     setRefreshing(false);
-  };
+  }, []);
 
   useEffect(() => {
     loadPage();
-  }, []);
+  }, [loadPage]);
 
   const pendingIncoming = useMemo(
     () => connections.filter((connection) => connection.status === 'pending' && connection.initiation_source === 'company'),
@@ -146,14 +146,14 @@ export default function CampusRelationshipActivityPage() {
     [connections]
   );
 
-  const itemsByView = {
+  const itemsByView = useMemo(() => ({
     incoming: pendingIncoming,
     sent: pendingOutgoing,
     connected,
     declined
-  };
+  }), [connected, declined, pendingIncoming, pendingOutgoing]);
 
-  const activeItems = itemsByView[activeView] || [];
+  const activeItems = useMemo(() => itemsByView[activeView] || [], [activeView, itemsByView]);
 
   const companyDirectoryByUserId = useMemo(
     () => Object.fromEntries((directory.companies || []).map((company) => [company.companyUserId, company])),
@@ -162,7 +162,7 @@ export default function CampusRelationshipActivityPage() {
 
   const inviteModalCompanies = inviteModal.companies;
 
-  const openInviteModal = (companies, options = {}) => {
+  const openInviteModal = useCallback((companies, options = {}) => {
     const {
       allowExistingPending = false,
       draftMessage = ''
@@ -182,21 +182,21 @@ export default function CampusRelationshipActivityPage() {
     });
     setError('');
     setNotice('');
-  };
+  }, []);
 
-  const closeInviteModal = () => {
+  const closeInviteModal = useCallback(() => {
     setInviteModal({ open: false, companies: [] });
     setInviteMessage('');
     setInviteSubmitting(false);
-  };
+  }, []);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setError('');
     setNotice('');
     loadPage({ silent: true });
-  };
+  }, [loadPage]);
 
-  const handleRespond = async (connectionId, status) => {
+  const handleRespond = useCallback(async (connectionId, status) => {
     setResponding((current) => ({ ...current, [connectionId]: status }));
     setError('');
     setNotice('');
@@ -211,9 +211,9 @@ export default function CampusRelationshipActivityPage() {
     } finally {
       setResponding((current) => ({ ...current, [connectionId]: '' }));
     }
-  };
+  }, [loadPage, navigate]);
 
-  const handleDeleteInvite = async (connection) => {
+  const handleDeleteInvite = useCallback(async (connection) => {
     if (!connection?.id) return;
     if (!window.confirm(`Remove the sent invite for ${connection.company_name || 'this company'}?`)) return;
 
@@ -230,9 +230,9 @@ export default function CampusRelationshipActivityPage() {
     } finally {
       setDeleting((current) => ({ ...current, [connection.id]: false }));
     }
-  };
+  }, []);
 
-  const handleInviteSubmit = async () => {
+  const handleInviteSubmit = useCallback(async () => {
     if (!inviteModalCompanies.length) return;
 
     setInviteSubmitting(true);
@@ -272,9 +272,9 @@ export default function CampusRelationshipActivityPage() {
 
     await loadPage({ silent: true });
     setInviteSubmitting(false);
-  };
+  }, [closeInviteModal, inviteMessage, inviteModalCompanies, loadPage, navigate]);
 
-  const handleResend = (connection) => {
+  const handleResend = useCallback((connection) => {
     if (!connection?.company_user_id) return;
 
     const fallbackCompany = companyDirectoryByUserId[connection.company_user_id] || {
@@ -292,7 +292,7 @@ export default function CampusRelationshipActivityPage() {
       allowExistingPending: true,
       draftMessage: connection.message || ''
     });
-  };
+  }, [companyDirectoryByUserId, openInviteModal]);
 
   const tableRows = useMemo(
     () => activeItems.map((connection) => {
@@ -336,7 +336,7 @@ export default function CampusRelationshipActivityPage() {
       onDelete: handleDeleteInvite,
       onResend: handleResend
     }),
-    [activeView, responding, deleting]
+    [activeView, deleting, handleDeleteInvite, handleResend, handleRespond, responding]
   );
 
   return (

@@ -6,7 +6,8 @@ const initialFilters = {
   search: '',
   status: '',
   priority: '',
-  category: ''
+  category: '',
+  department: ''
 };
 
 const useTickets = (defaultFilters = {}) => {

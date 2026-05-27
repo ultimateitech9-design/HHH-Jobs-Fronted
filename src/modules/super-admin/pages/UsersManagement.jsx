@@ -11,13 +11,16 @@ import useUsers from '../hooks/useUsers';
 import { ASSIGNABLE_DASHBOARD_ROLE_OPTIONS, USER_ROLES, USER_ROLE_LABELS } from '../constants/userRoles';
 import { createAdminUser, deleteUser, updateUserStatus } from '../services/usersApi';
 import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
+import { INDIAN_STATES } from '../../../shared/constants/indianStates';
 
 const INITIAL_ADMIN_FORM = {
   name: '',
   email: '',
   company: 'HHH Jobs',
   password: '',
-  role: 'admin'
+  role: 'admin',
+  assignedStates: [],
+  salesCode: ''
 };
 
 const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
@@ -39,6 +42,8 @@ const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
     const company = adminForm.company.trim() || 'HHH Jobs';
     const password = String(adminForm.password || '');
     const role = adminForm.role || 'admin';
+    const assignedStates = Array.isArray(adminForm.assignedStates) ? adminForm.assignedStates : [];
+    const salesCode = String(adminForm.salesCode || '').trim().toUpperCase();
 
     if (!name || !email || !password) {
       setFormError('Name, email, and password are required to create a user ID.');
@@ -65,7 +70,7 @@ const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
     setFormError('');
 
     try {
-      await onCreate({ name, email, company, password, role });
+      await onCreate({ name, email, company, password, role, assignedStates, salesCode });
       setAdminForm(INITIAL_ADMIN_FORM);
       setFormError('');
       onSuccess?.();
@@ -141,6 +146,34 @@ const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
           ))}
         </select>
       </label>
+      <label>
+        State Scope
+        <select
+          multiple
+          value={adminForm.assignedStates}
+          onChange={(event) => setAdminForm((current) => ({
+            ...current,
+            assignedStates: Array.from(event.target.selectedOptions, (option) => option.value)
+          }))}
+          className="min-h-[118px]"
+        >
+          {INDIAN_STATES.map((state) => (
+            <option key={state} value={state}>{state}</option>
+          ))}
+        </select>
+        <span className="text-xs font-semibold text-slate-500">Leave empty for all states. Admin can get multiple states; employees inherit selected state work.</span>
+      </label>
+      {adminForm.role === 'sales' ? (
+        <label>
+          Sales Code
+          <input
+            type="text"
+            value={adminForm.salesCode}
+            onChange={(event) => setAdminForm((current) => ({ ...current, salesCode: event.target.value.toUpperCase() }))}
+            placeholder="Auto generated if blank"
+          />
+        </label>
+      ) : null}
       {formError ? <p className="form-error">{formError}</p> : null}
       <div className="student-job-actions">
         {onCancel ? (
@@ -234,11 +267,11 @@ const UsersManagement = () => {
     { label: 'Verified Accounts', value: String(users.filter((item) => item.verified).length), helper: 'Checks complete', tone: 'success' }
   ], [users]);
 
-  const handleCreateAdmin = async ({ name, email, company, password, role }) => {
+  const handleCreateAdmin = async ({ name, email, company, password, role, assignedStates, salesCode }) => {
     setFormMessage('');
 
-    const createdUser = await createAdminUser({ name, email, company, password, role });
-    setUsers((current) => [{ ...createdUser, role }, ...current]);
+    const createdUser = await createAdminUser({ name, email, company, password, role, assignedStates, salesCode });
+    setUsers((current) => [{ ...createdUser, role, assignedStates: createdUser.assignedStates || assignedStates, salesCode: createdUser.salesCode || salesCode }, ...current]);
     setFormMessage(`${USER_ROLE_LABELS[role] || 'User'} ID ${(createdUser.displayId || createdUser.id)} created for ${name}. This email and password can now open the assigned dashboard.`);
     setPage(1);
   };

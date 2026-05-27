@@ -85,6 +85,10 @@ const isStrongAuthKey = (value) => {
 const nowIso = () => new Date().toISOString();
 const normalizeAlphaNumeric = (value) => String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const normalizeRoleToken = (role) => String(role || '').trim().toLowerCase();
+const normalizeAssignedStates = (value = []) => {
+  const source = Array.isArray(value) ? value : String(value || '').split(',');
+  return Array.from(new Set(source.map((item) => String(item || '').trim()).filter(Boolean)));
+};
 
 const getManagementRoleToken = (role) => {
   const normalizedRole = normalizeRoleToken(role);
@@ -157,6 +161,20 @@ export const generateManagedAccountId = (role, existingAccounts = []) => {
   return nextId;
 };
 
+const generateSalesCode = ({ name = '', id = '', assignedStates = [] } = {}) => {
+  const initials = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 4) || 'SL';
+  const stateToken = String(assignedStates[0] || 'IND').replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 3) || 'IND';
+  const hash = createHashToken(`${name}:${id}:${assignedStates.join('|')}`, 5);
+  return `${initials}-${stateToken}-${hash}`;
+};
+
 export const getManagedAccounts = () => filterDeletedUsers(readManagedAccounts());
 
 export const findManagedAccountByEmail = (email) => {
@@ -176,7 +194,7 @@ export const findManagedAccountByLogin = (value) => {
   }) || null;
 };
 
-export const createManagedAccount = ({ name, email, password, role, phone, department }) => {
+export const createManagedAccount = ({ name, email, password, role, phone, department, assignedStates, salesCode }) => {
   const normalizedEmail = normalizeEmail(email);
   const current = readManagedAccounts();
 
@@ -196,14 +214,21 @@ export const createManagedAccount = ({ name, email, password, role, phone, depar
     throw new Error('Email already registered.');
   }
 
+  const id = generateManagedAccountId(role, current);
+  const scopedStates = normalizeAssignedStates(assignedStates);
+  const normalizedRole = String(role).trim().toLowerCase();
   const newAccount = {
-    id: generateManagedAccountId(role, current),
+    id,
     name: String(name || '').trim() || `${role} operator`,
     email: normalizedEmail,
     password: String(password),
-    role: String(role).trim().toLowerCase(),
+    role: normalizedRole,
     phone: String(phone || '').trim(),
     department: String(department || '').trim(),
+    assignedStates: scopedStates,
+    salesCode: normalizedRole === 'sales'
+      ? String(salesCode || '').trim().toUpperCase() || generateSalesCode({ name, id, assignedStates: scopedStates })
+      : '',
     status: 'active',
     created_at: nowIso(),
     last_login_at: null

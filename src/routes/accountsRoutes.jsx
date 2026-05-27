@@ -13,6 +13,7 @@ const Payouts = lazy(() => import('../modules/accounts-dashboard/pages/Payouts')
 const Refunds = lazy(() => import('../modules/accounts-dashboard/pages/Refunds'));
 const Reports = lazy(() => import('../modules/accounts-dashboard/pages/Reports'));
 const PaymentSettings = lazy(() => import('../modules/accounts-dashboard/pages/PaymentSettings'));
+const ClientSearchPage = lazy(() => import('../shared/pages/ClientSearchPage'));
 
 const accountsRoutes = [
   {
@@ -32,6 +33,7 @@ const accountsRoutes = [
       { path: 'payouts', element: <Payouts /> },
       { path: 'refunds', element: <Refunds /> },
       { path: 'reports', element: <Reports /> },
+      { path: 'client-search', element: <ClientSearchPage /> },
       { path: 'payment-settings', element: <PaymentSettings /> }
     ]
   },

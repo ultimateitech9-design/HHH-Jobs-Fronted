@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import DataTable from '../../../shared/components/DataTable';
 import { formatDateTime } from '../utils/formatDate';
-import { getTicketDisplayId } from '../utils/ticketHelpers';
+import { formatSupportDepartment, getTicketDisplayId } from '../utils/ticketHelpers';
 import TicketStatusBadge from './TicketStatusBadge';
 
 const TicketTable = ({ rows = [] }) => {
@@ -18,6 +18,11 @@ const TicketTable = ({ rows = [] }) => {
     { key: 'title', label: 'Title' },
     { key: 'customer', label: 'Customer' },
     { key: 'category', label: 'Category' },
+    {
+      key: 'assignedDepartment',
+      label: 'Queue',
+      render: (value) => formatSupportDepartment(value)
+    },
     { key: 'assignedTo', label: 'Assigned To' },
     {
       key: 'priority',

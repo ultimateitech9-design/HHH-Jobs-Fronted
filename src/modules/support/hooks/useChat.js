@@ -19,7 +19,7 @@ const useChat = () => {
     load();
   }, []);
 
-  return { chats, loading, error, isDemo };
+  return { chats, setChats, loading, error, setError, isDemo };
 };
 
 export default useChat;

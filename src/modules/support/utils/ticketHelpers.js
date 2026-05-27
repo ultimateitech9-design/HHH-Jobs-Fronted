@@ -1,13 +1,37 @@
+export const SUPPORT_DEPARTMENT_OPTIONS = [
+  { value: 'support', label: 'Support' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'dataentry', label: 'Data Entry' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'accounts', label: 'Accounts' },
+  { value: 'hr', label: 'HR' },
+  { value: 'student', label: 'Student' },
+  { value: 'campus_connect', label: 'Campus Connect' },
+  { value: 'platform', label: 'Platform Ops' },
+  { value: 'audit', label: 'Audit' }
+];
+
+export const formatSupportDepartment = (value = '') => (
+  SUPPORT_DEPARTMENT_OPTIONS.find((item) => item.value === value)?.label
+  || String(value || 'support').replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+);
+
 export const normalizeTicket = (ticket = {}) => ({
   id: ticket.id || '',
   ticketNumber: ticket.ticket_number || ticket.ticketNumber || '',
   title: ticket.title || '',
   customer: ticket.customer || ticket.user || ticket.requester_name || '',
   customerEmail: ticket.customerEmail || ticket.requester_email || '',
+  requesterRole: ticket.requesterRole || ticket.requester_role || '',
+  state: ticket.state || '',
   category: ticket.category || 'technical',
   priority: ticket.priority || 'medium',
   status: ticket.status || 'open',
   assignedTo: ticket.assignedTo || ticket.assignee_name || 'Unassigned',
+  assignedDepartment: ticket.assignedDepartment || ticket.assigned_department || 'support',
+  transferStatus: ticket.transferStatus || ticket.transfer_status || '',
+  transferReason: ticket.transferReason || ticket.transfer_reason || '',
+  transferredAt: ticket.transferredAt || ticket.transferred_at || '',
   description: ticket.description || '',
   escalationReason: ticket.escalationReason || ticket.escalation_reason || '',
   replies: Array.isArray(ticket.replies)
@@ -32,12 +56,14 @@ export const filterTickets = (tickets = [], filters = {}) => {
   const status = String(filters.status || '').trim().toLowerCase();
   const priority = String(filters.priority || '').trim().toLowerCase();
   const category = String(filters.category || '').trim().toLowerCase();
+  const department = String(filters.department || '').trim().toLowerCase();
 
   return tickets.filter((ticket) => {
-    const matchesSearch = !search || `${getTicketDisplayId(ticket)} ${ticket.id} ${ticket.title} ${ticket.customer} ${ticket.assignedTo}`.toLowerCase().includes(search);
+    const matchesSearch = !search || `${getTicketDisplayId(ticket)} ${ticket.id} ${ticket.title} ${ticket.customer} ${ticket.customerEmail} ${ticket.assignedTo} ${ticket.assignedDepartment} ${ticket.requesterRole}`.toLowerCase().includes(search);
     const matchesStatus = !status || String(ticket.status || '').toLowerCase() === status;
     const matchesPriority = !priority || String(ticket.priority || '').toLowerCase() === priority;
     const matchesCategory = !category || String(ticket.category || '').toLowerCase() === category;
-    return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
+    const matchesDepartment = !department || String(ticket.assignedDepartment || '').toLowerCase() === department;
+    return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesDepartment;
   });
 };

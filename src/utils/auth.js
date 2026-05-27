@@ -11,7 +11,9 @@ const DASHBOARD_REDIRECT_RULES = [
   { legacy: '/dataentry', canonical: '/portal/dataentry', defaultPath: '/portal/dataentry/dashboard' },
   { legacy: '/support', canonical: '/portal/support', defaultPath: '/portal/support/dashboard' },
   { legacy: '/sales', canonical: '/portal/sales', defaultPath: '/portal/sales/overview' },
-  { legacy: '/accounts', canonical: '/portal/accounts', defaultPath: '/portal/accounts/overview' }
+  { legacy: '/accounts', canonical: '/portal/accounts', defaultPath: '/portal/accounts/overview' },
+  { legacy: '/platform', canonical: '/portal/platform', defaultPath: '/portal/platform/dashboard' },
+  { legacy: '/audit', canonical: '/portal/audit', defaultPath: '/portal/audit/dashboard' }
 ];
 const PORTAL_ROLE_METADATA = Object.freeze({
   student: Object.freeze({
@@ -73,6 +75,18 @@ const PORTAL_ROLE_METADATA = Object.freeze({
     dashboardPath: '/portal/campus-connect/dashboard',
     profilePath: '/portal/campus-connect/profile',
     notificationPath: '/portal/campus-connect/notifications'
+  }),
+  platform: Object.freeze({
+    label: 'Platform Ops',
+    dashboardPath: '/portal/platform/dashboard',
+    profilePath: '/portal/platform/dashboard',
+    notificationPath: ''
+  }),
+  audit: Object.freeze({
+    label: 'Audit Portal',
+    dashboardPath: '/portal/audit/dashboard',
+    profilePath: '/portal/audit/dashboard',
+    notificationPath: ''
   })
 });
 const ADMIN_PORTAL_SWITCH_ROLES = Object.freeze([
@@ -84,7 +98,9 @@ const ADMIN_PORTAL_SWITCH_ROLES = Object.freeze([
   'sales',
   'accounts',
   'dataentry',
-  'campus_connect'
+  'campus_connect',
+  'platform',
+  'audit'
 ]);
 const ADMIN_ACCESS_ROLES = new Set(['admin', 'super_admin']);
 

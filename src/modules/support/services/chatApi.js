@@ -8,3 +8,15 @@ export const getChats = async () =>
     fallbackData: supportDummyData.chats,
     extract: (payload) => payload?.chats || []
   });
+
+export const transferChat = async (chatId, payload = {}) =>
+  safeRequest({
+    path: `${SUPPORT_BASE}/chats/${chatId}/transfer`,
+    options: {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    },
+    emptyData: null,
+    fallbackData: null,
+    extract: (responsePayload) => responsePayload?.chat || responsePayload || null
+  });

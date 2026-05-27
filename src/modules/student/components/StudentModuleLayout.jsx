@@ -7,6 +7,7 @@ import {
   FiCalendar,
   FiFileText,
   FiGlobe,
+  FiHelpCircle,
   FiLayers,
   FiSend,
   FiUser
@@ -36,7 +37,8 @@ const studentDashboardNavItems = [
   { to: '/portal/student/saved-jobs', label: 'Saved Jobs', icon: FiBookmark },
   { to: '/portal/student/interviews', label: 'Interviews', icon: FiCalendar },
   { to: '/portal/student/analytics', label: 'Analytics', icon: FiBarChart2 },
-  { to: '/portal/student/hr-interests', label: 'HR Interests', icon: FiSend }
+  { to: '/portal/student/hr-interests', label: 'HR Interests', icon: FiSend },
+  { to: '/portal/student/help-support', label: 'Help & Support', icon: FiHelpCircle }
 ];
 
 const studentHomeNavItems = [
@@ -49,7 +51,8 @@ const studentHeaderNavItems = [
   { label: 'Companies', to: '/portal/student/companies' },
   { label: 'Campus Connect', to: '/portal/student/campus-connect' },
   { label: 'ATS', to: '/portal/student/ats' },
-  { label: 'Services', to: '/portal/student/services' }
+  { label: 'Services', to: '/portal/student/services' },
+  { label: 'Help', to: '/portal/student/help-support' }
 ];
 
 const StudentModuleLayout = () => {

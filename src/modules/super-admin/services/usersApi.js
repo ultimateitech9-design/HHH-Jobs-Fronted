@@ -72,6 +72,8 @@ const mapManagedAccountToUser = (account) => ({
   email: account.email,
   role: account.role,
   company: account.department || 'HHH Jobs',
+  assignedStates: Array.isArray(account.assignedStates) ? account.assignedStates : [],
+  salesCode: account.salesCode || '',
   status: account.status || 'active',
   verified: true,
   lastActiveAt: account.last_login_at || null,
@@ -162,7 +164,10 @@ export const createAdminUser = async (payload) => {
     name: payload.name,
     email: payload.email,
     password: payload.password,
-    role: managedRole === 'data_entry' ? 'dataentry' : managedRole
+    role: managedRole === 'data_entry' ? 'dataentry' : managedRole,
+    department: payload.department || payload.company || '',
+    assignedStates: payload.assignedStates || payload.assigned_states || [],
+    salesCode: payload.salesCode || payload.sales_code || ''
   };
 
   if (!findManagedAccountByEmail(managedPayload.email)) {
@@ -184,6 +189,8 @@ export const createAdminUser = async (payload) => {
       email: payload.email,
       role: managedPayload.role,
       company: payload.company || 'HHH Jobs',
+      assignedStates: managedPayload.assignedStates,
+      salesCode: managedPayload.salesCode,
       status: 'active',
       verified: true,
       lastActiveAt: new Date().toISOString(),

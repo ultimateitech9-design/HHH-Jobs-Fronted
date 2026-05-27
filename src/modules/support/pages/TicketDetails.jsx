@@ -5,8 +5,8 @@ import SupportHeader from '../components/SupportHeader';
 import TicketReplyBox from '../components/TicketReplyBox';
 import TicketStatusBadge from '../components/TicketStatusBadge';
 import { formatDateTime } from '../utils/formatDate';
-import { getTicketDetails, replyToTicket, escalateTicket, addInternalNote, updateTicket } from '../services/ticketApi';
-import { getTicketDisplayId } from '../utils/ticketHelpers';
+import { getTicketDetails, replyToTicket, escalateTicket, addInternalNote, updateTicket, transferTicket } from '../services/ticketApi';
+import { formatSupportDepartment, getTicketDisplayId, SUPPORT_DEPARTMENT_OPTIONS } from '../utils/ticketHelpers';
 
 const TicketDetails = () => {
   const { ticketId: ticketIdParam } = useParams();
@@ -26,6 +26,9 @@ const TicketDetails = () => {
   const [noteError, setNoteError] = useState('');
   const [internalNotes, setInternalNotes] = useState([]);
   const [assignedTo, setAssignedTo] = useState('');
+  const [transferDepartment, setTransferDepartment] = useState('support');
+  const [transferReason, setTransferReason] = useState('');
+  const [transferring, setTransferring] = useState(false);
   const ticketId = ticketIdParam || searchParams.get('ticketId') || searchParams.get('id') || '';
   const successMessage = String(location.state?.successMessage || '').trim();
 
@@ -56,6 +59,8 @@ const TicketDetails = () => {
       const data = response.data || null;
       setTicket(data);
       setAssignedTo(data?.assignedTo || '');
+      setTransferDepartment(data?.assignedDepartment || 'support');
+      setTransferReason(data?.transferReason || '');
       setInternalNotes(Array.isArray(data?.replies) ? data.replies.filter((item) => item.isInternal) : []);
       setError(response.error || '');
       setLoading(false);
@@ -124,6 +129,34 @@ const TicketDetails = () => {
       if (result.data?.assignedTo) setAssignedTo(result.data.assignedTo);
     }
     setSending(false);
+  };
+
+  const handleTransfer = async () => {
+    if (!ticket?.id) return;
+    setTransferring(true);
+    setError('');
+    const result = await transferTicket(ticket.id, {
+      department: transferDepartment,
+      reason: transferReason || `Transferred to ${formatSupportDepartment(transferDepartment)} queue.`
+    });
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setTicket((current) => ({ ...(current || {}), ...result.data }));
+      setTransferDepartment(result.data?.assignedDepartment || transferDepartment);
+      setTransferReason(result.data?.transferReason || transferReason);
+      setInternalNotes((current) => ([
+        ...current,
+        {
+          id: `local-transfer-${Date.now()}`,
+          authorName: 'Support',
+          message: `Transferred to ${formatSupportDepartment(transferDepartment)}. ${transferReason || ''}`.trim(),
+          createdAt: new Date().toISOString(),
+          isInternal: true
+        }
+      ]));
+    }
+    setTransferring(false);
   };
 
   return (
@@ -224,9 +257,12 @@ const TicketDetails = () => {
             <div className="dash-list">
               <li><strong>Ticket ID</strong><span>{getTicketDisplayId(ticket)}</span></li>
               <li><strong>Customer</strong><span>{ticket.customer}</span></li>
+              <li><strong>Requester Role</strong><span>{ticket.requesterRole || '-'}</span></li>
+              <li><strong>State</strong><span>{ticket.state || '-'}</span></li>
               <li><strong>Category</strong><span>{ticket.category}</span></li>
               <li><strong>Priority</strong><span><TicketStatusBadge value={ticket.priority} /></span></li>
               <li><strong>Status</strong><span><TicketStatusBadge value={ticket.status} /></span></li>
+              <li><strong>Current Queue</strong><span>{formatSupportDepartment(ticket.assignedDepartment)}</span></li>
               <li><strong>Assigned To</strong><span>{ticket.assignedTo}</span></li>
               <li><strong>Updated</strong><span>{formatDateTime(ticket.updatedAt)}</span></li>
             </div>
@@ -236,6 +272,42 @@ const TicketDetails = () => {
               </div>
             )}
             <p style={{ marginTop: '1rem' }}>{ticket.description}</p>
+          </section>
+
+          <section className="panel-card" style={{ borderLeft: '4px solid #2563eb' }}>
+            <div className="dash-card-head mb-4">
+              <div>
+                <h3>Transfer Queue</h3>
+                <p>Send this query to Admin, Data Entry, Sales, Accounts, or another specialist dashboard queue.</p>
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-[220px_1fr_auto] md:items-end">
+              <label className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Send To
+                <select
+                  value={transferDepartment}
+                  onChange={(event) => setTransferDepartment(event.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold normal-case tracking-normal"
+                >
+                  {SUPPORT_DEPARTMENT_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Reason / Note
+                <input
+                  value={transferReason}
+                  onChange={(event) => setTransferReason(event.target.value)}
+                  placeholder="Example: billing issue, send to Accounts"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold normal-case tracking-normal"
+                />
+              </label>
+              <button type="button" className="btn-primary" onClick={handleTransfer} disabled={transferring}>
+                {transferring ? 'Transferring...' : 'Transfer'}
+              </button>
+            </div>
+            {ticket.transferReason ? <p className="module-note mt-3">Last transfer: {ticket.transferReason}</p> : null}
           </section>
 
           <section className="panel-card">

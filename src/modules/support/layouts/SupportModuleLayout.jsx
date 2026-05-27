@@ -6,6 +6,7 @@ import {
   FiGrid,
   FiMessageCircle,
   FiMessageSquare,
+  FiSearch,
   FiShield,
   FiStar
 } from 'react-icons/fi';
@@ -16,6 +17,7 @@ const supportNavItems = [
   { to: '/portal/support/tickets', label: 'Tickets', icon: FiClipboard },
   { to: '/portal/support/create-ticket', label: 'Create Ticket', icon: FiEdit3 },
   { to: '/portal/support/live-chat', label: 'Live Chat', icon: FiMessageCircle },
+  { to: '/portal/support/client-search', label: 'Client Search', icon: FiSearch },
   { to: '/portal/support/faq', label: 'FAQ', icon: FiMessageSquare },
   { to: '/portal/support/complaints', label: 'Complaints', icon: FiShield },
   { to: '/portal/support/feedback', label: 'Feedback', icon: FiStar },

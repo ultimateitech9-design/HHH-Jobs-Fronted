@@ -4,6 +4,7 @@ import {
   FiBriefcase,
   FiCreditCard,
   FiFileText,
+  FiHelpCircle,
   FiLink,
   FiUsers
 } from 'react-icons/fi';
@@ -18,7 +19,8 @@ const campusNavItems = [
   { to: '/portal/campus-connect/notifications', label: 'Notifications', icon: FiBell },
   { to: '/portal/campus-connect/connections', label: 'Company Connections', icon: FiLink },
   { to: '/portal/campus-connect/reports', label: 'Placement Reports', icon: FiFileText },
-  { to: '/portal/campus-connect/billing', label: 'Billing', icon: FiCreditCard }
+  { to: '/portal/campus-connect/billing', label: 'Billing', icon: FiCreditCard },
+  { to: '/portal/campus-connect/help-support', label: 'Help & Support', icon: FiHelpCircle }
 ];
 
 const hasUsableCampusSubscription = (subscription = null) => {

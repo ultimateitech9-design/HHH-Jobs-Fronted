@@ -16,6 +16,8 @@ import campusConnectRoutes from './campusConnectRoutes';
 import accountsRoutes from './accountsRoutes';
 import salesRoutes from './salesRoutes';
 import supportRoutes from './supportRoutes';
+import platformRoutes from './platformRoutes';
+import auditRoutes from './auditRoutes';
 import retiredRoutes from './retiredRoutes';
 
 const ManagementPortalPage = lazy(() => import('../modules/common/pages/ManagementPortalPage'));
@@ -86,6 +88,8 @@ const router = createBrowserRouter([
       ...accountsRoutes,
       ...salesRoutes,
       ...supportRoutes,
+      ...platformRoutes,
+      ...auditRoutes,
       ...superAdminRoutes,
       ...publicRoutes
     ].map((route) => wrapRouteSuspense(route))

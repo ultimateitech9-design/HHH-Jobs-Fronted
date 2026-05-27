@@ -21,6 +21,7 @@ const EmployeeVerificationPage = lazy(() => import('../modules/hr/pages/Employee
 const HrCampusDrivesPage = lazy(() => import('../modules/hr/pages/HrCampusDrivesPage'));
 const HrCampusConnectionsPage = lazy(() => import('../modules/hr/pages/HrCampusConnectionsPage'));
 const HrCampusConnectionActivityPage = lazy(() => import('../modules/hr/pages/HrCampusConnectionActivityPage'));
+const HelpSupportPage = lazy(() => import('../shared/pages/HelpSupportPage'));
 
 const hrRoutes = [
   {
@@ -50,7 +51,8 @@ const hrRoutes = [
       { path: 'campus-connections', element: <HrCampusConnectionsPage /> },
       { path: 'campus-connections/activity', element: <Navigate to="sent" replace /> },
       { path: 'campus-connections/activity/:view', element: <HrCampusConnectionActivityPage /> },
-      { path: 'campus-drives', element: <HrCampusDrivesPage /> }
+      { path: 'campus-drives', element: <HrCampusDrivesPage /> },
+      { path: 'help-support', element: <HelpSupportPage /> }
     ]
   },
   { path: 'hr', element: <Navigate to="/portal/hr/dashboard" replace /> }

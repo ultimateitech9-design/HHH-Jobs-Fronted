@@ -3,8 +3,10 @@ import SectionHeader from '../../../shared/components/SectionHeader';
 import FilterBar from '../components/FilterBar';
 import LeadTable from '../components/LeadTable';
 import SalesStatCards from '../components/SalesStatCards';
-import { getLeads, markLeadCalled } from '../services/leadApi';
+import { createOnboardingRequest, getLeads, markLeadCalled } from '../services/leadApi';
+import { getSalesReferralCode } from '../services/salesApi';
 import { formatCompactCurrency } from '../utils/currencyFormat';
+import { INDIAN_STATES } from '../../../shared/constants/indianStates';
 
 const Leads = () => {
   const [leads, setLeads] = useState([]);
@@ -13,6 +15,19 @@ const Leads = () => {
   const [updatingId, setUpdatingId] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [referral, setReferral] = useState({ salesCode: '', assignedStates: [] });
+  const [requestSaving, setRequestSaving] = useState(false);
+  const [requestForm, setRequestForm] = useState({
+    companyName: '',
+    contactName: '',
+    contactEmail: '',
+    contactPhone: '',
+    targetRole: 'hr',
+    state: '',
+    channel: 'dataentry',
+    planSlug: '',
+    notes: ''
+  });
   const [leadMeta, setLeadMeta] = useState({
     total: 0,
     page: 1,
@@ -35,6 +50,7 @@ const Leads = () => {
 
   useEffect(() => {
     loadLeads(filters);
+    getSalesReferralCode().then((response) => setReferral(response.data || { salesCode: '', assignedStates: [] }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -49,7 +65,7 @@ const Leads = () => {
     });
   }, [leads, filters]);
 
-  const summary = leadMeta.summary || {};
+  const summary = useMemo(() => leadMeta.summary || {}, [leadMeta.summary]);
   const totalPages = Math.max(1, Math.ceil((leadMeta.total || 0) / (leadMeta.limit || 100)));
   const cards = useMemo(() => [
     { label: 'Total Leads', value: String(summary.totalLeads || leadMeta.total || rows.length), helper: `${rows.length} loaded on this page`, tone: 'info' },
@@ -81,12 +97,84 @@ const Leads = () => {
     }
   };
 
+  const handleCreateOnboardingRequest = async (event) => {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+
+    if (!requestForm.companyName.trim()) {
+      setError('Company or client name is required.');
+      return;
+    }
+
+    setRequestSaving(true);
+    try {
+      const response = await createOnboardingRequest({
+        ...requestForm,
+        salesCode: referral.salesCode || ''
+      });
+      setLeads((current) => [response.lead, ...current].filter(Boolean));
+      setRequestForm({
+        companyName: '',
+        contactName: '',
+        contactEmail: '',
+        contactPhone: '',
+        targetRole: 'hr',
+        state: '',
+        channel: 'dataentry',
+        planSlug: '',
+        notes: ''
+      });
+      setMessage(response.dataEntryTask
+        ? 'Onboarding request sent to Data Entry and lead added.'
+        : 'Self-registration lead added for sales follow-up.');
+      await loadLeads(filters, { silent: true });
+    } catch (createError) {
+      setError(String(createError.message || 'Unable to create onboarding request.'));
+    } finally {
+      setRequestSaving(false);
+    }
+  };
+
   return (
     <div className="module-page module-page--platform">
       <SectionHeader eyebrow="Sales" title="Leads" subtitle="Manage assigned HR, campus, and student leads by plan status, owner, zone, and next follow-up." />
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="module-note">{message}</p> : null}
       <SalesStatCards cards={cards} />
+      <section className="admin-ops-panel">
+        <div className="admin-ops-panel-header">
+          <div>
+            <h2 className="admin-ops-panel-title">Vendor onboarding request</h2>
+            <p className="admin-ops-panel-note">Send details to Data Entry or keep a self-registration lead under your sales code.</p>
+          </div>
+          {referral.salesCode ? <span className="font-mono text-xs font-black text-brand-700">{referral.salesCode}</span> : null}
+        </div>
+        <form className="grid gap-3 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-4" onSubmit={handleCreateOnboardingRequest}>
+          <input className="rounded-lg border border-slate-200 px-3 py-2 text-sm" value={requestForm.companyName} onChange={(event) => setRequestForm((current) => ({ ...current, companyName: event.target.value }))} placeholder="Company / campus / student" />
+          <input className="rounded-lg border border-slate-200 px-3 py-2 text-sm" value={requestForm.contactName} onChange={(event) => setRequestForm((current) => ({ ...current, contactName: event.target.value }))} placeholder="Contact name" />
+          <input className="rounded-lg border border-slate-200 px-3 py-2 text-sm" value={requestForm.contactEmail} onChange={(event) => setRequestForm((current) => ({ ...current, contactEmail: event.target.value }))} placeholder="Email" />
+          <input className="rounded-lg border border-slate-200 px-3 py-2 text-sm" value={requestForm.contactPhone} onChange={(event) => setRequestForm((current) => ({ ...current, contactPhone: event.target.value }))} placeholder="Phone" />
+          <select className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold" value={requestForm.targetRole} onChange={(event) => setRequestForm((current) => ({ ...current, targetRole: event.target.value }))}>
+            <option value="hr">HR / Vendor</option>
+            <option value="campus_connect">Campus</option>
+            <option value="student">Student</option>
+          </select>
+          <select className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold" value={requestForm.state} onChange={(event) => setRequestForm((current) => ({ ...current, state: event.target.value }))}>
+            <option value="">State</option>
+            {INDIAN_STATES.map((stateName) => <option key={stateName} value={stateName}>{stateName}</option>)}
+          </select>
+          <select className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold" value={requestForm.channel} onChange={(event) => setRequestForm((current) => ({ ...current, channel: event.target.value }))}>
+            <option value="dataentry">Data Entry onboarding</option>
+            <option value="self_registration">Self registration</option>
+          </select>
+          <input className="rounded-lg border border-slate-200 px-3 py-2 text-sm" value={requestForm.planSlug} onChange={(event) => setRequestForm((current) => ({ ...current, planSlug: event.target.value }))} placeholder="Package slug" />
+          <textarea className="min-h-[76px] rounded-lg border border-slate-200 px-3 py-2 text-sm sm:col-span-2 lg:col-span-3" value={requestForm.notes} onChange={(event) => setRequestForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Notes for data entry / sales follow-up" />
+          <button type="submit" className="btn-primary self-start" disabled={requestSaving}>
+            {requestSaving ? 'Sending...' : 'Create Request'}
+          </button>
+        </form>
+      </section>
       <section className="admin-ops-panel">
         <div className="admin-ops-panel-header">
           <div>
@@ -114,7 +202,7 @@ const Leads = () => {
           <LeadTable rows={rows} onMarkCalled={handleMarkCalled} updatingId={updatingId} />
           <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
             <span className="font-semibold">
-              Showing {rows.length} of {leadMeta.total || rows.length} leads · Page {leadMeta.page || 1} of {totalPages}
+              Showing {rows.length} of {leadMeta.total || rows.length} leads - Page {leadMeta.page || 1} of {totalPages}
             </span>
             <div className="flex gap-2">
               <button

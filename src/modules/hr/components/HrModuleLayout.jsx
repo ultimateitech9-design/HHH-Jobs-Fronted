@@ -7,6 +7,7 @@ import {
   FiCalendar,
   FiCheckSquare,
   FiHome,
+  FiHelpCircle,
   FiLink,
   FiSend,
   FiStar,
@@ -31,7 +32,8 @@ const hrNavItems = [
   { to: '/portal/hr/campus-drives', label: 'Campus Drives', icon: FiBook },
   { to: '/portal/hr/notifications', label: 'Notifications', icon: FiBell },
   { to: '/portal/hr/analytics', label: 'Reports', icon: FiFileText },
-  { to: '/portal/hr/employee-verification', label: 'Employee Verification', icon: FiCheckSquare }
+  { to: '/portal/hr/employee-verification', label: 'Employee Verification', icon: FiCheckSquare },
+  { to: '/portal/hr/help-support', label: 'Help & Support', icon: FiHelpCircle }
 ];
 
 const trackedJobPlanSlugs = ['premium', 'hot_vacancy', 'standard'];

@@ -258,7 +258,7 @@ const SuperAdminDashboard = () => {
     const records = activeWorkspace?.records || [];
     return records.slice((workspacePage - 1) * DASHBOARD_PAGE_SIZE, workspacePage * DASHBOARD_PAGE_SIZE);
   }, [activeWorkspace, workspacePage]);
-  const supportTickets = dashboard?.supportTickets || [];
+  const supportTickets = useMemo(() => dashboard?.supportTickets || [], [dashboard?.supportTickets]);
   const supportTotalPages = Math.max(1, Math.ceil(supportTickets.length / DASHBOARD_PAGE_SIZE));
   const paginatedSupportTickets = useMemo(
     () => supportTickets.slice((supportPage - 1) * DASHBOARD_PAGE_SIZE, supportPage * DASHBOARD_PAGE_SIZE),

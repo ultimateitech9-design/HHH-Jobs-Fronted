@@ -94,7 +94,8 @@ const LeadTable = ({ rows = [], onMarkCalled, updatingId = '' }) => {
       render: (value, row) => (
         <div className="space-y-0.5">
           <p className="font-semibold text-slate-700">{value || '-'}</p>
-          <p className="truncate text-[11px] text-slate-400">{row.sectorName || 'No sector'}</p>
+          <p className="truncate text-[11px] text-slate-400">{row.sectorName || row.assignedState || row.zone || row.location || 'No sector'}</p>
+          {row.salesCode ? <p className="truncate font-mono text-[10px] text-brand-600">{row.salesCode}</p> : null}
         </div>
       )
     },

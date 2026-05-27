@@ -56,6 +56,29 @@ export const updateLead = async (leadId, payload) =>
     extract: (responsePayload) => mapSalesLead(responsePayload?.lead || responsePayload || {})
   });
 
+export const createLead = async (payload) =>
+  strictRequest({
+    path: `${SALES_BASE}/leads`,
+    options: {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    extract: (responsePayload) => mapSalesLead(responsePayload?.lead || responsePayload || {})
+  });
+
+export const createOnboardingRequest = async (payload) =>
+  strictRequest({
+    path: `${SALES_BASE}/onboarding-requests`,
+    options: {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    extract: (responsePayload) => ({
+      lead: mapSalesLead(responsePayload?.lead || {}),
+      dataEntryTask: responsePayload?.dataEntryTask || null
+    })
+  });
+
 export const markLeadCalled = async (leadId, payload = {}) =>
   strictRequest({
     path: `${SALES_BASE}/leads/${leadId}/call`,

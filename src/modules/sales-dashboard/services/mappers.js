@@ -79,7 +79,12 @@ export const mapSalesLead = (lead = {}) => ({
   lastContactedAt: lead.lastContactedAt || lead.last_contacted_at || null,
   planInterestSlug: lead.planInterestSlug || lead.plan_interest_slug || '',
   couponCode: lead.couponCode || lead.coupon_code || '',
-  followupNotes: lead.followupNotes || lead.followup_notes || ''
+  followupNotes: lead.followupNotes || lead.followup_notes || '',
+  salesCode: lead.salesCode || lead.sales_code || '',
+  assignedState: lead.assignedState || lead.assigned_state || '',
+  onboardingChannel: lead.onboardingChannel || lead.onboarding_channel || '',
+  onboardingRequestStatus: lead.onboardingRequestStatus || lead.onboarding_request_status || '',
+  dataEntryEntryId: lead.dataEntryEntryId || lead.dataentry_entry_id || ''
 });
 
 export const mapCouponRequest = (request = {}) => ({
@@ -119,7 +124,9 @@ export const mapSalesCustomer = (customer = {}) => ({
   stateName: customer.stateName || customer.state_name || '',
   districtName: customer.districtName || customer.district_name || '',
   sectorName: customer.sectorName || customer.sector_name || '',
-  zoneLabel: [customer.stateName || customer.state_name, customer.districtName || customer.district_name].filter(Boolean).join(' / ') || customer.zone || customer.location || ''
+  zoneLabel: [customer.stateName || customer.state_name, customer.districtName || customer.district_name].filter(Boolean).join(' / ') || customer.zone || customer.location || '',
+  salesCode: customer.salesCode || customer.sales_code || '',
+  state: customer.state || ''
 });
 
 export const mapSalesCoupon = (coupon = {}) => {
