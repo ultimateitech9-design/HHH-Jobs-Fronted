@@ -4,6 +4,7 @@ import {
   FiDollarSign,
   FiFileText,
   FiLayers,
+  FiMessageCircle,
   FiRefreshCcw,
   FiSearch,
   FiSettings,
@@ -21,6 +22,7 @@ const accountsNavItems = [
   { to: '/portal/accounts/refunds', label: 'Refunds', icon: FiRefreshCcw },
   { to: '/portal/accounts/reports', label: 'Reports', icon: FiBarChart2 },
   { to: '/portal/accounts/client-search', label: 'Client Search', icon: FiSearch },
+  { to: '/portal/accounts/live-chat', label: 'Live Chat', icon: FiMessageCircle },
   { to: '/portal/accounts/payment-settings', label: 'Payment Settings', icon: FiSettings }
 ];
 

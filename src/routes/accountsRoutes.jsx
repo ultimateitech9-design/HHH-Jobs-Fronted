@@ -14,6 +14,7 @@ const Refunds = lazy(() => import('../modules/accounts-dashboard/pages/Refunds')
 const Reports = lazy(() => import('../modules/accounts-dashboard/pages/Reports'));
 const PaymentSettings = lazy(() => import('../modules/accounts-dashboard/pages/PaymentSettings'));
 const ClientSearchPage = lazy(() => import('../shared/pages/ClientSearchPage'));
+const DepartmentLiveChatPage = lazy(() => import('../shared/pages/DepartmentLiveChatPage'));
 
 const accountsRoutes = [
   {
@@ -34,6 +35,7 @@ const accountsRoutes = [
       { path: 'refunds', element: <Refunds /> },
       { path: 'reports', element: <Reports /> },
       { path: 'client-search', element: <ClientSearchPage /> },
+      { path: 'live-chat', element: <DepartmentLiveChatPage department="accounts" /> },
       { path: 'payment-settings', element: <PaymentSettings /> }
     ]
   },

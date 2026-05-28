@@ -3,6 +3,7 @@ import {
   FiFileText,
   FiGift,
   FiLayers,
+  FiMessageCircle,
   FiPackage,
   FiSearch,
   FiShoppingCart,
@@ -21,6 +22,7 @@ const salesNavItems = [
   { to: '/portal/sales/team', label: 'Sales Team', icon: FiLayers },
   { to: '/portal/sales/packages', label: 'Packages', icon: FiPackage },
   { to: '/portal/sales/coupons', label: 'Coupons', icon: FiGift },
+  { to: '/portal/sales/live-chat', label: 'Live Chat', icon: FiMessageCircle },
   { to: '/portal/sales/reports', label: 'Reports', icon: FiFileText }
 ];
 

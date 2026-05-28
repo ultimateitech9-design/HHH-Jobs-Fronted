@@ -9,6 +9,7 @@ import {
   resolvePortalViewRole
 } from '../../../../utils/auth';
 import useAuthStore from '../../../../core/auth/authStore';
+import LiveSupportChatWidget from '../../LiveSupportChatWidget';
 import PortalWorkbenchHeader from './PortalWorkbenchHeader';
 import PortalWorkbenchMobileDrawer from './PortalWorkbenchMobileDrawer';
 import PortalWorkbenchSidebar from './PortalWorkbenchSidebar';
@@ -53,6 +54,7 @@ const PortalWorkbenchLayout = ({
   hideSidebar = false,
   hideSidebarBrand = false,
   sidebarBelowHeader = false,
+  expandSidebarOnHover = false,
   headerVariant = 'default',
   headerNavItems = [],
   headerSearchPlaceholder = '',
@@ -62,7 +64,8 @@ const PortalWorkbenchLayout = ({
   const navigate = useNavigate();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [user, setUser] = useState(() => getCurrentUser());
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(!expandSidebarOnHover);
+  const [sidebarPinned, setSidebarPinned] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const flattenedNavItems = useMemo(() => flattenNavItems(navItems), [navItems]);
@@ -110,10 +113,37 @@ const PortalWorkbenchLayout = ({
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (!expandSidebarOnHover) return;
+    setSidebarPinned(false);
+    setSidebarOpen(false);
+  }, [expandSidebarOnHover]);
+
   const handleLogout = () => {
     clearAuth();
     setMobileMenuOpen(false);
     navigate('/login', { replace: true });
+  };
+
+  const handleSidebarMouseEnter = () => {
+    if (expandSidebarOnHover) setSidebarOpen(true);
+  };
+
+  const handleSidebarMouseLeave = () => {
+    if (expandSidebarOnHover && !sidebarPinned) setSidebarOpen(false);
+  };
+
+  const handleSidebarToggle = () => {
+    if (!expandSidebarOnHover) {
+      setSidebarOpen((current) => !current);
+      return;
+    }
+
+    setSidebarPinned((current) => {
+      const nextPinned = !current;
+      setSidebarOpen(nextPinned);
+      return nextPinned;
+    });
   };
 
   const sidebarMarginClass = hideSidebar ? 'xl:ml-0' : sidebarOpen ? 'xl:ml-[260px]' : 'xl:ml-[72px]';
@@ -168,6 +198,8 @@ const PortalWorkbenchLayout = ({
           initial={false}
           animate={{ width: sidebarOpen ? PORTAL_SIDEBAR_EXPANDED_WIDTH : PORTAL_SIDEBAR_COLLAPSED_WIDTH }}
           className={sidebarClassName}
+          onMouseEnter={expandSidebarOnHover ? handleSidebarMouseEnter : undefined}
+          onMouseLeave={expandSidebarOnHover ? handleSidebarMouseLeave : undefined}
         >
           <PortalWorkbenchSidebar
             brandPath={resolvedBrandPath}
@@ -179,7 +211,7 @@ const PortalWorkbenchLayout = ({
             support={support}
             user={user}
             onLogout={handleLogout}
-            onCollapseToggle={() => setSidebarOpen((current) => !current)}
+            onCollapseToggle={handleSidebarToggle}
           />
         </motion.aside>
       )}
@@ -221,6 +253,7 @@ const PortalWorkbenchLayout = ({
           </motion.main>
         </div>
       </div>
+      <LiveSupportChatWidget portalKey={portalKey} />
     </div>
   );
 };

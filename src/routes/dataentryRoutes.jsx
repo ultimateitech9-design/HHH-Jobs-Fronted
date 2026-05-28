@@ -14,6 +14,7 @@ const Notifications = lazy(() => import('../modules/dataentry/pages/Notification
 const PendingEntries = lazy(() => import('../modules/dataentry/pages/PendingEntries'));
 const Profile = lazy(() => import('../modules/dataentry/pages/Profile'));
 const RejectedEntries = lazy(() => import('../modules/dataentry/pages/RejectedEntries'));
+const DepartmentLiveChatPage = lazy(() => import('../shared/pages/DepartmentLiveChatPage'));
 
 const dataentryRoutes = [
   {
@@ -35,6 +36,7 @@ const dataentryRoutes = [
       { path: 'pending', element: <PendingEntries /> },
       { path: 'approved', element: <ApprovedEntries /> },
       { path: 'rejected', element: <RejectedEntries /> },
+      { path: 'live-chat', element: <DepartmentLiveChatPage department="dataentry" /> },
       { path: 'notifications', element: <Notifications /> },
       { path: 'profile', element: <Profile /> }
     ]

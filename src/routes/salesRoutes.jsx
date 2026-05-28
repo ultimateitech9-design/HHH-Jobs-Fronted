@@ -16,6 +16,7 @@ const SalesTeam = lazy(() => import('../modules/sales-dashboard/pages/SalesTeam'
 const Products = lazy(() => import('../modules/sales-dashboard/pages/Products'));
 const Coupons = lazy(() => import('../modules/sales-dashboard/pages/Coupons'));
 const SalesReports = lazy(() => import('../modules/sales-dashboard/pages/Reports'));
+const DepartmentLiveChatPage = lazy(() => import('../shared/pages/DepartmentLiveChatPage'));
 
 const salesRoutes = [
   {
@@ -45,6 +46,7 @@ const salesRoutes = [
       { path: 'packages', element: <Products /> },
       { path: 'products', element: <Navigate to="../packages" replace /> },
       { path: 'coupons', element: <Coupons /> },
+      { path: 'live-chat', element: <DepartmentLiveChatPage department="sales" /> },
       { path: 'refunds', element: <Navigate to="../overview" replace /> },
       { path: 'reports', element: <SalesReports /> }
     ]

@@ -6,6 +6,7 @@ import {
   FiFilePlus,
   FiFolder,
   FiList,
+  FiMessageCircle,
   FiThumbsDown,
   FiUser
 } from 'react-icons/fi';
@@ -20,6 +21,7 @@ const dataEntryNavItems = [
   { to: '/portal/dataentry/pending', label: 'Pending Approval', icon: FiClock },
   { to: '/portal/dataentry/approved', label: 'Approved Jobs', icon: FiCheckCircle },
   { to: '/portal/dataentry/rejected', label: 'Rejected Jobs', icon: FiThumbsDown },
+  { to: '/portal/dataentry/live-chat', label: 'Live Chat', icon: FiMessageCircle },
   { to: '/portal/dataentry/notifications', label: 'Notifications', icon: FiBell },
   { to: '/portal/dataentry/profile', label: 'Profile', icon: FiUser }
 ];

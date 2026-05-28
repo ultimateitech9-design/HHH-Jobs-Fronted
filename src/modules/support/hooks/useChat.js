@@ -8,8 +8,11 @@ const useChat = () => {
   const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
     const load = async () => {
       const response = await getChats();
+      if (!active) return;
       setChats(response.data || []);
       setError(response.error || '');
       setIsDemo(Boolean(response.isDemo));
@@ -17,6 +20,12 @@ const useChat = () => {
     };
 
     load();
+    const timer = window.setInterval(load, 5000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   return { chats, setChats, loading, error, setError, isDemo };

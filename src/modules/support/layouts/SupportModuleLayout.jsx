@@ -32,6 +32,7 @@ const SupportModuleLayout = () => {
       portalLabel="Support Center"
       subtitle="Tickets, live chat, FAQ, complaints, feedback, knowledge content, and support reporting."
       navItems={supportNavItems}
+      expandSidebarOnHover
     />
   );
 };
