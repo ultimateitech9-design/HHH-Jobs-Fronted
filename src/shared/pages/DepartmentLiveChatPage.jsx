@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FiRefreshCw, FiSend, FiTrash2 } from 'react-icons/fi';
+import { FiCheckCircle, FiRefreshCw, FiSend, FiTrash2 } from 'react-icons/fi';
 import ChatMessage from '../../modules/support/components/ChatMessage';
 import EmptyState from '../../modules/support/components/EmptyState';
 import SupportHeader from '../../modules/support/components/SupportHeader';
@@ -7,7 +7,8 @@ import {
   clearSupportChatMessages,
   deleteSupportChatMessage,
   getSupportChats,
-  sendSupportChatMessage
+  sendSupportChatMessage,
+  updateSupportChatStatus
 } from '../services/liveSupportChatApi';
 
 const departmentCopy = {
@@ -97,6 +98,17 @@ const DepartmentLiveChatPage = ({ department = 'support' }) => {
     )));
   };
 
+  const handleUpdateStatus = async (status) => {
+    if (!activeChat?.id || !status) return;
+    setError('');
+    try {
+      const updatedChat = await updateSupportChatStatus(activeChat.id, status);
+      updateChat(activeChat.id, updatedChat);
+    } catch (statusError) {
+      setError(statusError.message || 'Unable to update chat status.');
+    }
+  };
+
   const handleDeleteMessage = async (message) => {
     if (!activeChat?.id || !message?.id) return;
     if (!window.confirm('Delete this message?')) return;
@@ -148,7 +160,11 @@ const DepartmentLiveChatPage = ({ department = 'support' }) => {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate text-sm font-extrabold text-slate-900">{chat.visitor}</p>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase text-slate-600">{chat.status}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${
+                      chat.status === 'waiting' || chat.queueStatus === 'waiting'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>{chat.status}</span>
                   </div>
                   <p className="mt-1 truncate text-xs font-semibold text-slate-500">{chat.subject}</p>
                   <p className="mt-1 truncate text-[11px] font-semibold text-slate-400">{chat.stateName || 'No state'} | {chat.lastMessage || 'No message'}</p>
@@ -167,6 +183,14 @@ const DepartmentLiveChatPage = ({ department = 'support' }) => {
                   <p>{activeChat.company} | {activeChat.stateName || 'State not set'} | Support transferred to {department}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateStatus(['closed', 'resolved'].includes(String(activeChat.status || '').toLowerCase()) ? 'open' : 'resolved')}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black uppercase text-emerald-700 transition-colors hover:bg-emerald-100"
+                  >
+                    {['closed', 'resolved'].includes(String(activeChat.status || '').toLowerCase()) ? <FiRefreshCw size={13} /> : <FiCheckCircle size={13} />}
+                    {['closed', 'resolved'].includes(String(activeChat.status || '').toLowerCase()) ? 'Reopen' : 'Resolve'}
+                  </button>
                   <button
                     type="button"
                     disabled={!(activeChat.messages || []).length}

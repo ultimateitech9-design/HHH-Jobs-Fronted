@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FiMessageCircle, FiMinus, FiSend, FiTrash2 } from 'react-icons/fi';
+import { FiClock, FiMessageCircle, FiMinus, FiSend, FiTrash2 } from 'react-icons/fi';
 import {
   clearSupportChatMessages,
   createSupportChat,
   deleteSupportChatMessage,
   getMySupportChat,
-  getSupportChatMessages,
   sendSupportChatMessage
 } from '../services/liveSupportChatApi';
 
@@ -25,6 +24,10 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const portalLabel = useMemo(() => portalLabels[portalKey] || 'Portal', [portalKey]);
+  const isWaitingForSupport = Boolean(chat?.id && (chat.status === 'waiting' || chat.queueStatus === 'waiting'));
+  const supportDeskLabel = isWaitingForSupport
+    ? 'Waiting for support'
+    : `${chat?.assignedTo || 'Support desk'} will help you`;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -40,21 +43,13 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
     };
 
     loadChat();
-    const timer = window.setInterval(async () => {
-      if (!chat?.id) return;
-      try {
-        const messages = await getSupportChatMessages(chat.id);
-        if (active) setChat((current) => current ? { ...current, messages } : current);
-      } catch (error) {
-        // Polling failure should not close the customer's chat box.
-      }
-    }, 5000);
+    const timer = window.setInterval(loadChat, 5000);
 
     return () => {
       active = false;
       window.clearInterval(timer);
     };
-  }, [chat?.id, open]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -81,7 +76,11 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
 
       setChat(nextChat);
       setMessage('');
-      setStatus('Message sent to support.');
+      setStatus(
+        nextChat?.status === 'waiting' || nextChat?.queueStatus === 'waiting'
+          ? (nextChat.waitingMessage || 'All support agents are busy. You are in queue and will connect automatically.')
+          : 'Message sent to support.'
+      );
     } catch (error) {
       setStatus(error.message || 'Message send failed.');
     } finally {
@@ -125,13 +124,13 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
   if (!['student', 'hr', 'campus-connect'].includes(portalKey)) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-[70]">
+    <div className="fixed z-[70]" style={{ bottom: 'max(1rem, 2vw)', right: 'max(1rem, 2vw)' }}>
       {open ? (
-        <section className="flex h-[520px] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <section className="flex h-[min(74vh,560px)] max-h-[calc(100vh-2rem)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
           <header className="flex items-center justify-between border-b border-slate-100 bg-slate-950 px-4 py-3 text-white">
             <div>
               <p className="text-sm font-extrabold">Live Support</p>
-              <p className="text-[11px] font-semibold text-slate-300">{chat?.assignedTo || 'Support desk'} will help you</p>
+              <p className="text-[11px] font-semibold text-slate-300">{supportDeskLabel}</p>
             </div>
             <div className="flex items-center gap-1">
               <button type="button" className="rounded-full p-2 hover:bg-white/10" onClick={() => setOpen(false)} aria-label="Minimize live chat">
@@ -167,6 +166,12 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
           ) : null}
 
           <div className="flex-1 space-y-2 overflow-y-auto bg-slate-50 p-3">
+            {isWaitingForSupport ? (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-800">
+                <FiClock className="mt-0.5 shrink-0" size={14} />
+                <span>{chat.waitingMessage || 'All support agents are busy. You are in queue and will connect automatically.'}</span>
+              </div>
+            ) : null}
             {(chat?.messages || []).length ? (
               chat.messages.map((item) => {
                 const isAgent = item.role === 'agent';
@@ -237,7 +242,7 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-extrabold text-white shadow-xl transition-transform hover:-translate-y-0.5"
+          className="flex items-center gap-2 rounded-full bg-slate-950 px-[clamp(0.9rem,1.1vw,1.2rem)] py-[clamp(0.7rem,0.8vw,0.85rem)] text-sm font-extrabold text-white shadow-xl transition-transform hover:-translate-y-0.5"
         >
           <FiMessageCircle size={18} />
           Live Chat

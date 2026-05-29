@@ -42,6 +42,8 @@ export const normalizeChat = (chat = {}) => ({
   subject: chat.subject || 'Live support',
   stateName: chat.stateName || chat.state_name || chat.meta?.stateName || '',
   status: chat.status || 'open',
+  queueStatus: chat.queueStatus || chat.queue_status || chat.meta?.queueStatus || '',
+  waitingMessage: chat.waitingMessage || chat.waiting_message || chat.meta?.waitingMessage || '',
   assignedDepartment: chat.assignedDepartment || chat.assigned_department || 'support',
   assignedTo: chat.assignedTo || chat.assigneeName || chat.assignee_name || chat.assignedDepartment || chat.assigned_department || 'Support',
   assigneeId: chat.assigneeId || chat.assignee_id || '',
@@ -109,6 +111,14 @@ export const transferSupportChat = async (chatId, body = {}) => {
   const payload = await request(`/support/chats/${chatId}/transfer`, {
     method: 'PATCH',
     body: JSON.stringify(body)
+  });
+  return normalizeChat(payload.chat || {});
+};
+
+export const updateSupportChatStatus = async (chatId, status) => {
+  const payload = await request(`/support/chats/${chatId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status })
   });
   return normalizeChat(payload.chat || {});
 };

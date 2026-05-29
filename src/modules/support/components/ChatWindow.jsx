@@ -1,4 +1,4 @@
-import { FiSend, FiTrash2 } from 'react-icons/fi';
+import { FiCheckCircle, FiClock, FiRefreshCw, FiSend, FiTrash2 } from 'react-icons/fi';
 import ChatMessage from './ChatMessage';
 import EmptyState from './EmptyState';
 
@@ -16,12 +16,15 @@ const ChatWindow = ({
   onMessageChange,
   onReply,
   onTransfer,
+  onUpdateStatus,
   onDeleteMessage,
   onClearChat,
   sending = false,
   transferring = false
 }) => {
   const canSend = Boolean(String(message || '').trim()) && !sending;
+  const isWaiting = chat?.status === 'waiting' || chat?.queueStatus === 'waiting';
+  const isClosed = ['closed', 'resolved'].includes(String(chat?.status || '').toLowerCase());
   const handleEnterToSend = (event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
@@ -44,6 +47,18 @@ const ChatWindow = ({
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
           <button
             type="button"
+            disabled={!onUpdateStatus}
+            onClick={() => onUpdateStatus?.(chat, isClosed ? 'open' : 'resolved')}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold leading-4 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              isClosed
+                ? 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100'
+                : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+            }`}
+          >
+            {isClosed ? <><FiRefreshCw size={12} /> Reopen</> : <><FiCheckCircle size={12} /> Resolve</>}
+          </button>
+          <button
+            type="button"
             disabled={!(chat.messages || []).length}
             onClick={() => onClearChat?.(chat)}
             className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold leading-4 text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
@@ -63,6 +78,12 @@ const ChatWindow = ({
           ))}
         </div>
       </div>
+      {isWaiting ? (
+        <p className="flex items-start gap-2 border-b border-amber-100 bg-amber-50 px-4 py-2 text-[12px] font-semibold text-amber-800">
+          <FiClock className="mt-0.5 shrink-0" size={13} />
+          <span>{chat.waitingMessage || 'Customer is waiting for an available support agent.'}</span>
+        </p>
+      ) : null}
       {chat.transferReason ? <p className="border-b border-slate-100 px-4 py-2 text-[12px] font-semibold text-slate-500">Last transfer: {chat.transferReason}</p> : null}
       <div className="flex-1 space-y-2.5 overflow-y-auto bg-slate-50 px-4 py-3">
         {(chat.messages || []).map((message) => (

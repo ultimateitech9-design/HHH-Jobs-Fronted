@@ -6,7 +6,8 @@ import { transferChat } from '../services/chatApi';
 import {
   clearSupportChatMessages,
   deleteSupportChatMessage,
-  sendSupportChatMessage
+  sendSupportChatMessage,
+  updateSupportChatStatus
 } from '../../../shared/services/liveSupportChatApi';
 import { formatSupportDepartment } from '../utils/ticketHelpers';
 
@@ -105,6 +106,17 @@ const LiveChat = () => {
     )));
   };
 
+  const handleUpdateStatus = async (chat, status) => {
+    if (!chat?.id || !status) return;
+    setError('');
+    try {
+      const updatedChat = await updateSupportChatStatus(chat.id, status);
+      updateChat(chat.id, updatedChat);
+    } catch (statusError) {
+      setError(statusError.message || 'Unable to update chat status.');
+    }
+  };
+
   const handleDeleteMessage = async (chat, message) => {
     if (!chat?.id || !message?.id) return;
     if (!window.confirm('Delete this message?')) return;
@@ -162,7 +174,11 @@ const LiveChat = () => {
                           {unreadCounts[chat.id] > 99 ? '99+' : unreadCounts[chat.id]}
                         </span>
                       ) : null}
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase leading-3 text-slate-600">{chat.status}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase leading-3 ${
+                        chat.status === 'waiting' || chat.queueStatus === 'waiting'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}>{chat.status}</span>
                     </span>
                   </div>
                   <p className="mt-0.5 truncate text-[12px] font-semibold leading-4 text-slate-500">{chat.subject}</p>
@@ -180,6 +196,7 @@ const LiveChat = () => {
             onMessageChange={setReply}
             onReply={handleReply}
             onTransfer={handleTransfer}
+            onUpdateStatus={handleUpdateStatus}
             onDeleteMessage={handleDeleteMessage}
             onClearChat={handleClearChat}
             sending={sending}
