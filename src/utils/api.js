@@ -78,6 +78,22 @@ const hasUsableApiToken = (token) =>
   && !/^(managed-|local-|pending-)/i.test(String(token))
   && isEmailVerifiedUser(getCurrentUser());
 
+const buildDevUserHeader = () => {
+  if (!env.DEV || !isLocalOrigin(browserOrigin)) return '';
+  const user = getCurrentUser();
+  if (!user) return '';
+
+  return encodeURIComponent(JSON.stringify({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    status: user.status || 'active',
+    isEmailVerified: user.isEmailVerified,
+    is_email_verified: user.is_email_verified
+  }));
+};
+
 export const hasApiAccessToken = () => {
   const token = getToken();
   return hasUsableApiToken(token);
@@ -95,6 +111,11 @@ export const apiFetch = async (path, options = {}) => {
 
   if (shouldUseApiAuth && !headers.Authorization && !headers.authorization) {
     headers.Authorization = `Bearer ${token}`;
+  }
+
+  if (!shouldUseApiAuth && !skipAuth && !headers['X-HHH-Dev-User'] && !headers['x-hhh-dev-user']) {
+    const devUserHeader = buildDevUserHeader();
+    if (devUserHeader) headers['X-HHH-Dev-User'] = devUserHeader;
   }
 
   const targetUrl = apiUrl(path);

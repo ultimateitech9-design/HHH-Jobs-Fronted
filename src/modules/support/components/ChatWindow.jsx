@@ -4,7 +4,6 @@ import EmptyState from './EmptyState';
 
 const transferOptions = [
   { value: 'support', label: 'Support' },
-  { value: 'admin', label: 'Admin' },
   { value: 'dataentry', label: 'Data Entry' },
   { value: 'sales', label: 'Sales' },
   { value: 'accounts', label: 'Accounts' }

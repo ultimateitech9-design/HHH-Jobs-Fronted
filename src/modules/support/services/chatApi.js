@@ -4,7 +4,7 @@ import { normalizeChat, transferSupportChat } from '../../../shared/services/liv
 
 export const getChats = async () =>
   safeRequest({
-    path: `${SUPPORT_BASE}/chats`,
+    path: `${SUPPORT_BASE}/chats?department=support`,
     emptyData: [],
     fallbackData: supportDummyData.chats,
     extract: (payload) => (payload?.chats || []).map(normalizeChat)
