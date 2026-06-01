@@ -109,13 +109,13 @@ export const apiFetch = async (path, options = {}) => {
     headers['Content-Type'] = 'application/json';
   }
 
-  if (shouldUseApiAuth && !headers.Authorization && !headers.authorization) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  if (!shouldUseApiAuth && !skipAuth && !headers['X-HHH-Dev-User'] && !headers['x-hhh-dev-user']) {
+  if (!skipAuth && !headers['X-HHH-Dev-User'] && !headers['x-hhh-dev-user']) {
     const devUserHeader = buildDevUserHeader();
     if (devUserHeader) headers['X-HHH-Dev-User'] = devUserHeader;
+  }
+
+  if (shouldUseApiAuth && !headers.Authorization && !headers.authorization) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const targetUrl = apiUrl(path);
