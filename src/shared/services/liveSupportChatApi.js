@@ -50,6 +50,7 @@ export const normalizeChat = (chat = {}) => ({
   assigneeName: chat.assigneeName || chat.assignee_name || '',
   lastMessage: chat.lastMessage || chat.last_message || '',
   transferReason: chat.transferReason || chat.transfer_reason || '',
+  moderation: chat.moderation || chat.meta?.moderation || null,
   createdAt: chat.createdAt || chat.created_at || '',
   updatedAt: chat.updatedAt || chat.updated_at || '',
   messages: (chat.messages || []).map(normalizeChatMessage)
@@ -119,6 +120,14 @@ export const updateSupportChatStatus = async (chatId, status) => {
   const payload = await request(`/support/chats/${chatId}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status })
+  });
+  return normalizeChat(payload.chat || {});
+};
+
+export const moderateSupportChat = async (chatId, body = {}) => {
+  const payload = await request(`/support/chats/${chatId}/moderation`, {
+    method: 'PATCH',
+    body: JSON.stringify(body)
   });
   return normalizeChat(payload.chat || {});
 };

@@ -6,6 +6,7 @@ import { transferChat } from '../services/chatApi';
 import {
   clearSupportChatMessages,
   deleteSupportChatMessage,
+  moderateSupportChat,
   sendSupportChatMessage,
   updateSupportChatStatus
 } from '../../../shared/services/liveSupportChatApi';
@@ -141,6 +142,21 @@ const LiveChat = () => {
     }
   };
 
+  const handleModerateChat = async (chat, actionPayload = {}) => {
+    if (!chat?.id || !actionPayload?.action) return;
+    const action = actionPayload.action;
+    const label = action === 'ban' ? 'ban this customer for 24 hours' : action === 'block' ? 'block this customer' : 'unblock this customer';
+    if (!window.confirm(`Do you want to ${label}?`)) return;
+    const reason = window.prompt('Reason for moderation', action === 'ban' ? 'Abusive or inappropriate chat behavior.' : '') || '';
+    setError('');
+    try {
+      const updatedChat = await moderateSupportChat(chat.id, { ...actionPayload, reason });
+      updateChat(chat.id, updatedChat);
+    } catch (moderationError) {
+      setError(moderationError.message || 'Unable to update moderation status.');
+    }
+  };
+
   return (
     <div className="module-page module-page--platform">
       <SupportHeader title="Live Chat" subtitle="Review active customer chat sessions and respond to real-time support requests." />
@@ -197,6 +213,7 @@ const LiveChat = () => {
             onReply={handleReply}
             onTransfer={handleTransfer}
             onUpdateStatus={handleUpdateStatus}
+            onModerate={handleModerateChat}
             onDeleteMessage={handleDeleteMessage}
             onClearChat={handleClearChat}
             sending={sending}

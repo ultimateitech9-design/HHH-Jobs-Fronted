@@ -1,4 +1,4 @@
-import { FiCheckCircle, FiClock, FiRefreshCw, FiSend, FiTrash2 } from 'react-icons/fi';
+import { FiCheckCircle, FiClock, FiRefreshCw, FiSend, FiSlash, FiTrash2, FiUnlock } from 'react-icons/fi';
 import ChatMessage from './ChatMessage';
 import EmptyState from './EmptyState';
 
@@ -16,6 +16,7 @@ const ChatWindow = ({
   onReply,
   onTransfer,
   onUpdateStatus,
+  onModerate,
   onDeleteMessage,
   onClearChat,
   sending = false,
@@ -24,6 +25,8 @@ const ChatWindow = ({
   const canSend = Boolean(String(message || '').trim()) && !sending;
   const isWaiting = chat?.status === 'waiting' || chat?.queueStatus === 'waiting';
   const isClosed = ['closed', 'resolved'].includes(String(chat?.status || '').toLowerCase());
+  const moderationAction = String(chat?.moderation?.action || '').toLowerCase();
+  const isRestricted = ['ban', 'block'].includes(moderationAction);
   const handleEnterToSend = (event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
@@ -75,12 +78,45 @@ const ChatWindow = ({
               {option.label}
             </button>
           ))}
+          <button
+            type="button"
+            disabled={!onModerate || isRestricted}
+            onClick={() => onModerate?.(chat, { action: 'ban', hours: 24 })}
+            className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold leading-4 text-amber-800 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FiClock size={12} /> Ban 24h
+          </button>
+          <button
+            type="button"
+            disabled={!onModerate || isRestricted}
+            onClick={() => onModerate?.(chat, { action: 'block' })}
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-100 px-2.5 py-1 text-[11px] font-bold leading-4 text-slate-800 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FiSlash size={12} /> Block
+          </button>
+          <button
+            type="button"
+            disabled={!onModerate || !isRestricted}
+            onClick={() => onModerate?.(chat, { action: 'unblock' })}
+            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold leading-4 text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FiUnlock size={12} /> Unblock
+          </button>
         </div>
       </div>
       {isWaiting ? (
         <p className="flex items-start gap-2 border-b border-amber-100 bg-amber-50 px-4 py-2 text-[12px] font-semibold text-amber-800">
           <FiClock className="mt-0.5 shrink-0" size={13} />
           <span>{chat.waitingMessage || 'Customer is waiting for an available support agent.'}</span>
+        </p>
+      ) : null}
+      {isRestricted ? (
+        <p className="flex items-start gap-2 border-b border-rose-100 bg-rose-50 px-4 py-2 text-[12px] font-semibold text-rose-800">
+          <FiSlash className="mt-0.5 shrink-0" size={13} />
+          <span>
+            Customer is {moderationAction === 'ban' ? 'banned temporarily' : 'blocked'} from live support chat
+            {chat.moderation?.expiresAt ? ` until ${new Date(chat.moderation.expiresAt).toLocaleString()}` : ''}.
+          </span>
         </p>
       ) : null}
       {chat.transferReason ? <p className="border-b border-slate-100 px-4 py-2 text-[12px] font-semibold text-slate-500">Last transfer: {chat.transferReason}</p> : null}

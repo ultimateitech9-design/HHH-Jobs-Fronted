@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FiCheckCircle, FiRefreshCw, FiSend, FiTrash2 } from 'react-icons/fi';
+import { FiCheckCircle, FiClock, FiRefreshCw, FiSend, FiSlash, FiTrash2, FiUnlock } from 'react-icons/fi';
 import ChatMessage from '../../modules/support/components/ChatMessage';
 import EmptyState from '../../modules/support/components/EmptyState';
 import SupportHeader from '../../modules/support/components/SupportHeader';
@@ -7,6 +7,7 @@ import {
   clearSupportChatMessages,
   deleteSupportChatMessage,
   getSupportChats,
+  moderateSupportChat,
   sendSupportChatMessage,
   updateSupportChatStatus
 } from '../services/liveSupportChatApi';
@@ -133,6 +134,21 @@ const DepartmentLiveChatPage = ({ department = 'support' }) => {
     }
   };
 
+  const handleModerateChat = async (actionPayload = {}) => {
+    if (!activeChat?.id || !actionPayload?.action) return;
+    const action = actionPayload.action;
+    const label = action === 'ban' ? 'ban this customer for 24 hours' : action === 'block' ? 'block this customer' : 'unblock this customer';
+    if (!window.confirm(`Do you want to ${label}?`)) return;
+    const reason = window.prompt('Reason for moderation', action === 'ban' ? 'Abusive or inappropriate chat behavior.' : '') || '';
+    setError('');
+    try {
+      const updatedChat = await moderateSupportChat(activeChat.id, { ...actionPayload, reason });
+      updateChat(activeChat.id, updatedChat);
+    } catch (moderationError) {
+      setError(moderationError.message || 'Unable to update moderation status.');
+    }
+  };
+
   return (
     <div className="module-page module-page--platform">
       <SupportHeader title={copy.title} subtitle={copy.subtitle} />
@@ -202,6 +218,21 @@ const DepartmentLiveChatPage = ({ department = 'support' }) => {
                   <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black uppercase text-amber-700">{activeChat.assignedDepartment}</span>
                 </div>
               </div>
+              {['ban', 'block'].includes(String(activeChat.moderation?.action || '').toLowerCase()) ? (
+                <p className="flex items-center gap-2 border-b border-rose-100 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-800">
+                  <FiSlash /> Customer is {activeChat.moderation.action === 'ban' ? 'banned temporarily' : 'blocked'} from live support chat.
+                  <button type="button" className="btn-link" onClick={() => handleModerateChat({ action: 'unblock' })}><FiUnlock /> Unblock</button>
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2 border-b border-slate-100 px-4 py-2">
+                  <button type="button" className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-black uppercase text-amber-800" onClick={() => handleModerateChat({ action: 'ban', hours: 24 })}>
+                    <FiClock /> Ban 24h
+                  </button>
+                  <button type="button" className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-black uppercase text-slate-800" onClick={() => handleModerateChat({ action: 'block' })}>
+                    <FiSlash /> Block
+                  </button>
+                </div>
+              )}
               {activeChat.transferReason ? <p className="module-note px-4">Transfer note: {activeChat.transferReason}</p> : null}
               <div className="flex-1 space-y-3 overflow-y-auto border-y border-slate-100 bg-slate-50 p-4">
                 {(activeChat.messages || []).map((message) => (
