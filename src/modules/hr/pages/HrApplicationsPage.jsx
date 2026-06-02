@@ -18,6 +18,7 @@ import {
   getApplicantsForJob,
   getHrJobs
 } from '../services/hrApi';
+import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const sourceTabs = [
   { key: 'all', label: 'All Sources' },
@@ -75,7 +76,7 @@ const getApplicationTime = (application = {}) =>
 
 const getJobApplicantsRoute = (job) => {
   const jobId = job?.id || job?._id;
-  return jobId ? `/portal/hr/jobs/${jobId}/applicants` : '/portal/hr/jobs';
+  return jobId ? `${buildJobSeoPath('/portal/hr/jobs', job)}/applicants` : '/portal/hr/jobs';
 };
 
 const getJobApplicationRoute = (job, applicationId) => {

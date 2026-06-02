@@ -1,4 +1,5 @@
 import { apiFetch } from '../../../utils/api';
+import { extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
 
 const clone = (value) => {
   if (value === null || value === undefined) return value;
@@ -545,7 +546,7 @@ export const getStudentCampusConnect = async () => safeRequest({
 
 export const applyToCampusDrive = async (driveId) =>
   strictRequest({
-    path: `/student/campus-connect/drives/${driveId}/apply`,
+    path: `/student/campus-connect/drives/${extractUuidFromSlug(driveId)}/apply`,
     options: {
       method: 'POST',
       body: JSON.stringify({})
@@ -678,7 +679,7 @@ export const getJobSectors = async () =>
 
 export const getStudentJobById = async (jobId) =>
   safeRequest({
-    path: `/jobs/${jobId}`,
+    path: `/jobs/${extractUuidFromSlug(jobId)}`,
     emptyData: null,
     extract: (payload) => payload?.job || payload || null
   });
@@ -747,7 +748,7 @@ const emptyGovtJobDetail = {
 
 export const getPublicGovtJobById = async (jobId) =>
   safeRequest({
-    path: `/public/govt-jobs/${jobId}`,
+    path: `/public/govt-jobs/${extractUuidFromSlug(jobId)}`,
     emptyData: emptyGovtJobDetail,
     extract: extractGovtJobDetail
   });
@@ -764,7 +765,7 @@ export const getStudentGovtJobs = async (filters = {}) => {
 
 export const getStudentGovtJobById = async (jobId) =>
   safeRequest({
-    path: `/student/govt-jobs/${jobId}`,
+    path: `/student/govt-jobs/${extractUuidFromSlug(jobId)}`,
     emptyData: emptyGovtJobDetail,
     extract: (payload) => ({
       job: payload?.job || null,
@@ -774,7 +775,7 @@ export const getStudentGovtJobById = async (jobId) =>
 
 export const updateStudentGovtJobTracker = async (jobId, trackerPayload = {}) =>
   strictRequest({
-    path: `/student/govt-jobs/${jobId}/tracker`,
+    path: `/student/govt-jobs/${extractUuidFromSlug(jobId)}/tracker`,
     options: {
       method: 'PUT',
       body: JSON.stringify(trackerPayload)
@@ -787,7 +788,7 @@ export const updateStudentGovtJobTracker = async (jobId, trackerPayload = {}) =>
 
 export const markStudentGovtJobApplied = async (jobId, trackerPayload = {}) =>
   strictRequest({
-    path: `/student/govt-jobs/${jobId}/mark-applied`,
+    path: `/student/govt-jobs/${extractUuidFromSlug(jobId)}/mark-applied`,
     options: {
       method: 'POST',
       body: JSON.stringify(trackerPayload)
@@ -800,7 +801,7 @@ export const markStudentGovtJobApplied = async (jobId, trackerPayload = {}) =>
 
 export const setStudentGovtJobReminder = async (jobId, trackerPayload = {}) =>
   strictRequest({
-    path: `/student/govt-jobs/${jobId}/reminder`,
+    path: `/student/govt-jobs/${extractUuidFromSlug(jobId)}/reminder`,
     options: {
       method: 'POST',
       body: JSON.stringify(trackerPayload)
@@ -841,7 +842,7 @@ export const getStudentRecommendations = async (filters = {}) => {
 
 export const trackStudentRecommendationView = async (jobId, source = 'recommendation_feed') =>
   strictRequest({
-    path: `/student/recommendations/view-history/${jobId}`,
+    path: `/student/recommendations/view-history/${extractUuidFromSlug(jobId)}`,
     options: {
       method: 'POST',
       body: JSON.stringify({ source })
@@ -861,7 +862,7 @@ export const sendStudentRecommendationDigest = async (limit = 5) =>
 
 export const applyToJob = async ({ jobId, coverLetter = '' }) =>
   strictRequest({
-    path: `/jobs/${jobId}/apply`,
+    path: `/jobs/${extractUuidFromSlug(jobId)}/apply`,
     options: {
       method: 'POST',
       body: JSON.stringify({ useProfileResume: true, coverLetter })
@@ -895,14 +896,14 @@ export const getStudentSavedJobs = async () =>
 
 export const saveJobForStudent = async (jobId) =>
   strictRequest({
-    path: `/student/saved-jobs/${jobId}`,
+    path: `/student/saved-jobs/${extractUuidFromSlug(jobId)}`,
     options: { method: 'POST', body: JSON.stringify({}) },
     extract: (payload) => payload?.savedJob || payload
   });
 
 export const removeSavedJobForStudent = async (jobId) =>
   strictRequest({
-    path: `/student/saved-jobs/${jobId}`,
+    path: `/student/saved-jobs/${extractUuidFromSlug(jobId)}`,
     options: { method: 'DELETE', body: JSON.stringify({}) },
     extract: (payload) => payload?.removed || 0
   });
@@ -1044,7 +1045,7 @@ export const markAllNotificationsRead = async () =>
 
 export const getAtsHistory = async (jobId = '') => {
   const params = new URLSearchParams();
-  if (jobId) params.set('jobId', jobId);
+  if (jobId) params.set('jobId', extractUuidFromSlug(jobId));
 
   return safeRequest({
     path: `/ats/history${params.toString() ? `?${params.toString()}` : ''}`,
@@ -1062,7 +1063,7 @@ export const deleteAtsHistoryItem = async (checkId) =>
 
 export const runAtsCheck = async ({ jobId, source = 'profile_resume', resumeText = '', resumeUrl = '' }) =>
   strictRequest({
-    path: `/ats/check/${jobId}`,
+    path: `/ats/check/${extractUuidFromSlug(jobId)}`,
     options: {
       method: 'POST',
       body: JSON.stringify({ source, resumeText, resumeUrl })

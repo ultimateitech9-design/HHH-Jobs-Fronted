@@ -1,4 +1,5 @@
 import { apiFetch } from '../../../utils/api';
+import { extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
 
 const parseJson = async (response) => {
   try {
@@ -346,7 +347,7 @@ export const createHrJob = async (jobDraft) => {
 export const updateHrJob = async (jobId, jobDraft) => {
   const payload = formatJobDraftForApi(jobDraft);
   return strictRequest({
-    path: `/hr/jobs/${jobId}`,
+    path: `/hr/jobs/${extractUuidFromSlug(jobId)}`,
     options: { method: 'PATCH', body: JSON.stringify(payload) },
     extract: (responsePayload) => responsePayload?.job || payload
   });
@@ -354,28 +355,28 @@ export const updateHrJob = async (jobId, jobDraft) => {
 
 export const deleteHrJob = async (jobId) =>
   strictRequest({
-    path: `/hr/jobs/${jobId}`,
+    path: `/hr/jobs/${extractUuidFromSlug(jobId)}`,
     options: { method: 'DELETE' },
     extract: (responsePayload) => responsePayload
   });
 
 export const closeHrJob = async (jobId) =>
   strictRequest({
-    path: `/hr/jobs/${jobId}/close`,
+    path: `/hr/jobs/${extractUuidFromSlug(jobId)}/close`,
     options: { method: 'PATCH', body: JSON.stringify({}) },
     extract: (responsePayload) => responsePayload?.job || responsePayload
   });
 
 export const reopenHrJob = async (jobId) =>
   strictRequest({
-    path: `/hr/jobs/${jobId}`,
+    path: `/hr/jobs/${extractUuidFromSlug(jobId)}`,
     options: { method: 'PATCH', body: JSON.stringify({ status: 'open' }) },
     extract: (responsePayload) => responsePayload?.job || responsePayload
   });
 
 export const payForHrJob = async (jobId, paymentPayload) =>
   strictRequest({
-    path: `/hr/jobs/${jobId}/payment`,
+    path: `/hr/jobs/${extractUuidFromSlug(jobId)}/payment`,
     options: {
       method: 'POST',
       body: JSON.stringify({
@@ -391,7 +392,7 @@ export const payForHrJob = async (jobId, paymentPayload) =>
 
 export const getApplicantsForJob = async (jobId) =>
   safeRequest({
-    path: `/hr/jobs/${jobId}/applicants`,
+    path: `/hr/jobs/${extractUuidFromSlug(jobId)}/applicants`,
     emptyData: [],
     extract: (payload) => payload?.applicants || []
   });
@@ -544,7 +545,7 @@ export const markAllHrNotificationsRead = async () =>
 
 export const getHrAtsHistory = async (jobId = '') => {
   const params = new URLSearchParams();
-  if (jobId) params.set('jobId', jobId);
+  if (jobId) params.set('jobId', extractUuidFromSlug(jobId));
 
   return safeRequest({
     path: `/ats/history${params.toString() ? `?${params.toString()}` : ''}`,
@@ -562,7 +563,7 @@ export const deleteHrAtsHistoryItem = async (checkId) =>
 
 export const runHrAtsCheck = async ({ jobId, resumeText = '', resumeUrl = '' }) =>
   strictRequest({
-    path: `/ats/check/${jobId}`,
+    path: `/ats/check/${extractUuidFromSlug(jobId)}`,
     options: {
       method: 'POST',
       body: JSON.stringify({
@@ -601,7 +602,7 @@ export const runHrAtsPreview = async ({ resumeText = '', resumeUrl = '', targetT
 
 export const bulkUpdateApplications = async ({ jobId, applicationIds, action }) =>
   safeRequest({
-    path: `/hr/jobs/${jobId}/applicants/bulk`,
+    path: `/hr/jobs/${extractUuidFromSlug(jobId)}/applicants/bulk`,
     options: { method: 'POST', body: JSON.stringify({ applicationIds, action }) },
     emptyData: { updatedCount: 0 },
     extract: (payload) => ({ updatedCount: payload?.updatedCount || 0 })
@@ -806,7 +807,7 @@ export const fetchHrCampusDriveApplications = async (driveId, filters = {}) => {
   });
 
   return strictRequest({
-    path: `/hr/campus-drives/${driveId}/applications${query ? `?${query}` : ''}`,
+    path: `/hr/campus-drives/${extractUuidFromSlug(driveId)}/applications${query ? `?${query}` : ''}`,
     extract: (payload) => ({
       drive: payload?.drive || null,
       applications: payload?.applications || [],
@@ -820,7 +821,7 @@ export const fetchHrCampusDriveApplications = async (driveId, filters = {}) => {
 
 export const updateHrCampusDriveApplication = async (driveId, applicationId, { status, currentRound, notes, eliminatedInRound } = {}) =>
   strictRequest({
-    path: `/hr/campus-drives/${driveId}/applications/${applicationId}`,
+    path: `/hr/campus-drives/${extractUuidFromSlug(driveId)}/applications/${extractUuidFromSlug(applicationId)}`,
     options: {
       method: 'PATCH',
       body: JSON.stringify({ status, currentRound, notes, eliminatedInRound })

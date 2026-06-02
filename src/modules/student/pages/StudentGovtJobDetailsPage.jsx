@@ -38,6 +38,7 @@ import {
   markStudentGovtJobApplied,
   updateStudentGovtJobTracker
 } from '../services/studentApi';
+import { buildGovtJobSeoPath, extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
 
 const QUAL_LABELS = {
   '10TH': '10th',
@@ -204,7 +205,8 @@ const DetailBlock = ({ title, children, icon: Icon, tone = 'default' }) => {
 };
 
 const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
-  const { jobId } = useParams();
+  const { jobId: jobParam } = useParams();
+  const jobId = extractUuidFromSlug(jobParam);
   const currentUser = getCurrentUser();
   const canTrackGovtJobs = currentUser?.role === 'student';
   const isLoggedIn = Boolean(currentUser?.id);
@@ -577,7 +579,7 @@ const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
               <div className="space-y-3">
                 <Link
                   to="/login/student"
-                  state={{ from: `/portal/student/govt-jobs/${job.id}`, portalLabel: 'Login to Track Govt Jobs' }}
+                  state={{ from: buildGovtJobSeoPath('/portal/student/govt-jobs', job), portalLabel: 'Login to Track Govt Jobs' }}
                   className={`${studentPrimaryButtonClassName} w-full px-4 py-2.5 text-[13px]`}
                 >
                   <FiBookmark size={15} />

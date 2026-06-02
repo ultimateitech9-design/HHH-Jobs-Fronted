@@ -1,4 +1,5 @@
 import { apiFetch } from '../../../utils/api';
+import { extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
 
 const parseJson = async (res) => {
   try { return await res.json(); } catch { return null; }
@@ -79,17 +80,17 @@ export const createCampusDrive = (payload) =>
 
 export const updateCampusDrive = (id, payload) =>
   strictRequest({
-    path: `/campus-connect/drives/${id}`,
+    path: `/campus-connect/drives/${extractUuidFromSlug(id)}`,
     options: { method: 'PATCH', body: JSON.stringify(payload) },
     extract: (p) => p.drive
   });
 
 export const deleteCampusDrive = (id) =>
-  strictRequest({ path: `/campus-connect/drives/${id}`, options: { method: 'DELETE' } });
+  strictRequest({ path: `/campus-connect/drives/${extractUuidFromSlug(id)}`, options: { method: 'DELETE' } });
 
 export const getCampusDriveApplications = (driveId) =>
   safeRequest({
-    path: `/campus-connect/drives/${driveId}/applications`,
+    path: `/campus-connect/drives/${extractUuidFromSlug(driveId)}/applications`,
     emptyData: {
       drive: null,
       applications: [],
@@ -118,14 +119,14 @@ export const getCampusDriveApplications = (driveId) =>
 
 export const updateCampusDriveApplication = (driveId, applicationId, payload) =>
   strictRequest({
-    path: `/campus-connect/drives/${driveId}/applications/${applicationId}`,
+    path: `/campus-connect/drives/${extractUuidFromSlug(driveId)}/applications/${extractUuidFromSlug(applicationId)}`,
     options: { method: 'PATCH', body: JSON.stringify(payload) },
     extract: (p) => p.application || p
   });
 
 export const bulkUpdateCampusDriveApplications = (driveId, payload) =>
   strictRequest({
-    path: `/campus-connect/drives/${driveId}/applications`,
+    path: `/campus-connect/drives/${extractUuidFromSlug(driveId)}/applications`,
     options: { method: 'PATCH', body: JSON.stringify(payload) },
     extract: (p) => ({
       updatedCount: p.updatedCount || 0,

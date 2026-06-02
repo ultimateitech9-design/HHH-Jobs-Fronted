@@ -10,7 +10,7 @@ const parseNotificationMeta = (meta) => {
 };
 
 const buildHrJobApplicantsLink = ({ jobId, applicationId }) => {
-  const base = `/portal/hr/jobs/${jobId}/applicants`;
+  const base = `/portal/hr/jobs/job-${jobId}/applicants`;
   return applicationId ? `${base}?applicationId=${applicationId}` : base;
 };
 

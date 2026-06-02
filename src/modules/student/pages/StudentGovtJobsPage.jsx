@@ -32,6 +32,7 @@ import {
   updateStudentGovtJobTracker
 } from '../services/studentApi';
 import { getCurrentUser } from '../../../utils/auth';
+import { buildGovtJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const makeDefaultFilters = () => ({
   search: '',
@@ -723,19 +724,23 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
       ) : state.jobs.length > 0 ? (
         <>
           <div className={govtJobGridClassName}>
-            {state.jobs.map((job) => (
-              <GovtJobCard
-                key={job.id}
-                job={job}
-                detailPath={canTrackGovtJobs ? `/portal/student/govt-jobs/${job.id}` : `/govt-jobs/${job.id}`}
-                actionBusy={actionBusyId === job.id}
-                onOpenDetails={() => navigate(canTrackGovtJobs ? `/portal/student/govt-jobs/${job.id}` : `/govt-jobs/${job.id}`)}
-                onMarkApplied={handleMarkApplied}
-                onToggleReminder={handleToggleReminder}
-                canTrackGovtJobs={canTrackGovtJobs}
-                isLoggedIn={isLoggedIn}
-              />
-            ))}
+            {state.jobs.map((job) => {
+              const detailPath = buildGovtJobSeoPath(canTrackGovtJobs ? '/portal/student/govt-jobs' : '/govt-jobs', job);
+
+              return (
+                <GovtJobCard
+                  key={job.id}
+                  job={job}
+                  detailPath={detailPath}
+                  actionBusy={actionBusyId === job.id}
+                  onOpenDetails={() => navigate(detailPath)}
+                  onMarkApplied={handleMarkApplied}
+                  onToggleReminder={handleToggleReminder}
+                  canTrackGovtJobs={canTrackGovtJobs}
+                  isLoggedIn={isLoggedIn}
+                />
+              );
+            })}
           </div>
 
           {state.pagination.totalPages > 1 ? (

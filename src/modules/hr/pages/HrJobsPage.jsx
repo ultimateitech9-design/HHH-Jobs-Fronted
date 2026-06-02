@@ -37,6 +37,7 @@ import {
 } from '../services/hrApi';
 import { openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpayCheckout';
 import { hrStarterPricing } from '../../../shared/config/pricingCatalog';
+import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const initialRoleCheckoutForm = {
   planSlug: '',
@@ -58,6 +59,7 @@ const isFreePlan = (plan = {}) => {
 };
 
 const isDisabledPostingPlan = (plan = {}) => String(plan.slug || '').toLowerCase() === 'free';
+const buildHrApplicantsPath = (job = {}) => `${buildJobSeoPath('/portal/hr/jobs', job)}/applicants`;
 
 const isUsableRoleSubscription = (subscription = null) => {
   if (!subscription) return false;
@@ -932,11 +934,11 @@ const HrJobsPage = () => {
                   key={job.id || job._id}
                   role="button"
                   tabIndex={0}
-                  onClick={() => navigate(`/portal/hr/jobs/${job.id || job._id}/applicants`)}
+                  onClick={() => navigate(buildHrApplicantsPath(job))}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.preventDefault();
-                      navigate(`/portal/hr/jobs/${job.id || job._id}/applicants`);
+                      navigate(buildHrApplicantsPath(job));
                     }
                   }}
                   className="bg-white rounded-[1.35rem] p-3.5 shadow-sm border border-neutral-100 hover:shadow-md transition-all flex flex-col group relative overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60"

@@ -1,9 +1,11 @@
 import { Link, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { CampusDriveApplicantsPanel } from './CampusDrivesPage';
+import { extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
 
 export default function CampusDriveApplicantsPage() {
-  const { driveId } = useParams();
+  const { driveId: driveParam } = useParams();
+  const driveId = extractUuidFromSlug(driveParam);
 
   return (
     <div className="vw-shell-wide space-y-4 pb-12">

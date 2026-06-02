@@ -22,6 +22,7 @@ import {
 import { ExternalJobCard, ExternalJobCardSkeleton } from './StudentExternalJobsPage';
 import { getJobSectors, getStudentJobs } from '../services/studentApi';
 import { getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
+import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const FEED_PAGE_LIMIT = 50;
 const DEFAULT_JOBS_PER_PAGE = 12;
@@ -414,7 +415,7 @@ const StudentJobsPage = ({
     if (job?.__kind === 'internal') {
       const detailId = job.details_id || job.id;
       if (detailId) {
-        navigate(`${detailsPathBase}/${detailId}`);
+        navigate(buildJobSeoPath(detailsPathBase, job));
       }
       return;
     }

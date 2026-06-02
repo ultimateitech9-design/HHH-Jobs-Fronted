@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FiBriefcase, FiFileText, FiFlag, FiMapPin, FiTrendingUp, FiUser } from 'react-icons/fi';
 import careerCompassDashboard from '../../../assets/career-compass-dashboard.jpg';
 import { BLOG_BASE_URL } from '../../../shared/utils/externalLinks.js';
+import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 import { getCurrentUser } from '../../../utils/auth';
 import { generateRetiredEmployeeId, generateStudentCandidateId } from '../../../utils/hrIdentity';
 import { getStudentDashboardOverview, getStudentJobs, getStudentProfile } from '../services/studentApi';
@@ -223,7 +224,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
                 {recommendedJobs.jobs.map((job) => (
                   <Link
                     key={job.id || job._id}
-                    to={`/portal/student/jobs/${job.id || job._id}`}
+                    to={buildJobSeoPath('/portal/student/jobs', job)}
                     className="rounded-[1.6rem] border border-slate-200 bg-white p-4 transition hover:border-brand-200 hover:shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-3">

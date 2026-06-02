@@ -31,6 +31,7 @@ import {
   readCompanyJobIntent,
   saveCompanyJobIntent
 } from '../utils/companyJobIntent';
+import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const SOURCE_COLOR_VARIANTS = [
   'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -55,10 +56,17 @@ const isCandidateRole = (role) =>
   ['student', 'retired_employee'].includes(normalizeRole(role));
 const canSubscribeToCompanyRole = (role) =>
   ['student', 'retired_employee', 'hr', 'campus_connect'].includes(normalizeRole(role));
-const getPortalJobPathByRole = (role, jobId) =>
-  normalizeRole(role) === 'retired_employee'
-    ? `/portal/retired/jobs/${jobId}`
-    : `/portal/student/jobs/${jobId}`;
+const getPortalJobPathByRole = (role, job = {}) =>
+  buildJobSeoPath(
+    normalizeRole(role) === 'retired_employee' ? '/portal/retired/jobs' : '/portal/student/jobs',
+    {
+      ...job,
+      id: job.portalJobId || job.id || job._id,
+      jobTitle: job.jobTitle || job.title,
+      companyName: job.companyName,
+      jobLocation: job.jobLocation || job.location
+    }
+  );
 const hashSourceKey = (value = '') =>
   Array.from(String(value || '')).reduce((acc, char) => acc + char.charCodeAt(0), 0);
 const getSourceColor = (sourceKey) =>
@@ -404,7 +412,7 @@ const CompanyJobsPage = () => {
     }
 
     setResumeIntent(null);
-    navigate(getPortalJobPathByRole(userRole, job.portalJobId || job.id));
+    navigate(getPortalJobPathByRole(userRole, job));
   };
 
   const handleCompanySubscription = async () => {
@@ -705,7 +713,7 @@ const CompanyJobsPage = () => {
                           );
                           return;
                         }
-                        navigate(getPortalJobPathByRole(userRole, nextIntent.portalJobId));
+                        navigate(getPortalJobPathByRole(userRole, nextIntent));
                       }}
                       className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 via-amber-500 to-orange-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_36px_rgba(245,158,11,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(245,158,11,0.34)]"
                     >

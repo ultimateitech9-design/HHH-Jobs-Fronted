@@ -21,6 +21,7 @@ import {
   updateCampusDrive,
   updateCampusDriveApplication
 } from '../services/campusConnectApi';
+import { buildCampusDriveSeoPath } from '../../../shared/utils/seoRoutes';
 
 const EMPTY_FORM = {
   companyName: '',
@@ -1125,7 +1126,7 @@ export default function CampusDrivesPage() {
                     drive={drive}
                     onEdit={() => { setDraftDrive(null); setEditingDrive(drive); }}
                     onDelete={() => handleDelete(drive.id)}
-                    onApplicants={() => navigate(`/portal/campus-connect/drives/${drive.id}/applicants`)}
+                    onApplicants={() => navigate(`${buildCampusDriveSeoPath('/portal/campus-connect/drives', drive)}/applicants`)}
                   />
                 ))}
               </div>
@@ -1147,7 +1148,7 @@ export default function CampusDrivesPage() {
                     drive={drive}
                     onEdit={() => { setDraftDrive(null); setEditingDrive(drive); }}
                     onDelete={() => handleDelete(drive.id)}
-                    onApplicants={() => navigate(`/portal/campus-connect/drives/${drive.id}/applicants`)}
+                    onApplicants={() => navigate(`${buildCampusDriveSeoPath('/portal/campus-connect/drives', drive)}/applicants`)}
                   />
                 ))}
               </div>

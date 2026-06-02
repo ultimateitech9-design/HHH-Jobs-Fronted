@@ -14,6 +14,7 @@ import {
   getHrRecentActivity
 } from '../services/hrApi';
 import { getCurrentUser } from '../../../utils/auth';
+import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const pickCandidateName = (item, fallback) =>
   item?.candidateName ||
@@ -32,7 +33,7 @@ const pickCandidateRole = (item, fallback) =>
 
 const getJobApplicantsRoute = (job) => {
   const jobId = job?.id || job?._id;
-  return jobId ? `/portal/hr/jobs/${jobId}/applicants` : '/portal/hr/jobs';
+  return jobId ? `${buildJobSeoPath('/portal/hr/jobs', job)}/applicants` : '/portal/hr/jobs';
 };
 
 const getCampusDriveRoute = () => '/portal/hr/campus-drives';

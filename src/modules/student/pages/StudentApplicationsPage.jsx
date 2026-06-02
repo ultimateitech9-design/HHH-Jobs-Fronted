@@ -22,6 +22,7 @@ import {
 } from '../components/StudentExperience';
 import { formatDateTime, getStudentApplications, respondToApplicationOffer } from '../services/studentApi';
 import { getCurrentUser } from '../../../utils/auth';
+import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const STATUS_STAGES = [
   { id: 'applied', label: 'Applied' },
@@ -298,6 +299,14 @@ const StudentApplicationsPage = () => {
               <div className="space-y-3.5">
                 {filtered.map((app) => {
                   const targetId = app.jobId || app.job_id || app.job?.id;
+                  const jobDetailPath = targetId
+                    ? buildJobSeoPath('/portal/student/jobs', {
+                      ...(app.job || {}),
+                      id: targetId,
+                      jobTitle: app.jobTitle || app.job?.jobTitle,
+                      companyName: app.companyName || app.job?.companyName
+                    })
+                    : '';
                   const currentStatus = String(app.status || 'applied').toLowerCase();
                   const progressStatus = getProgressStatus(currentStatus);
                   const progressIndex = getTimelineProgress(progressStatus);
@@ -354,8 +363,8 @@ const StudentApplicationsPage = () => {
                           ) : null}
                         </div>
 
-                        {targetId ? (
-                          <Link to={`/portal/student/jobs/${targetId}`} className={`${studentSecondaryButtonClassName} min-h-8 shrink-0 px-3 py-1.5 text-xs`}>
+                        {jobDetailPath ? (
+                          <Link to={jobDetailPath} className={`${studentSecondaryButtonClassName} min-h-8 shrink-0 px-3 py-1.5 text-xs`}>
                             View job
                             <FiChevronRight size={13} />
                           </Link>

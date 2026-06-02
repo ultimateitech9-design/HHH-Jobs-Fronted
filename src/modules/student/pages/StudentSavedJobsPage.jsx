@@ -25,6 +25,7 @@ import {
   getStudentSavedJobs,
   removeSavedJobForStudent
 } from '../services/studentApi';
+import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const StudentSavedJobsPage = () => {
   const [state, setState] = useState({ loading: true, error: '', jobs: [] });
@@ -187,7 +188,7 @@ const StudentSavedJobsPage = () => {
                     </div>
 
                     <div className="relative z-10 mt-6 flex flex-wrap gap-3 border-t border-slate-100 pt-5">
-                      <Link to={`/portal/student/jobs/${jobId}`} className={studentSecondaryButtonClassName}>
+                      <Link to={buildJobSeoPath('/portal/student/jobs', { ...job, id: jobId })} className={studentSecondaryButtonClassName}>
                         View Details
                         <FiArrowRight size={14} />
                       </Link>

@@ -21,6 +21,7 @@ import { buildCompanyLogoUrl } from '../../common/services/companyLogoUrl';
 import { getExternalJobCategories, getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
 import { getLoginRedirectState } from '../../common/utils/publicAccess';
 import { getStudentJobs } from '../services/studentApi';
+import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 import {
   clearExternalApplyIntent,
   isExternalApplyIntentFresh,
@@ -532,7 +533,7 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
     if (job?.__kind === 'portal') {
       const jobId = job.details_id || job.id;
       if (jobId) {
-        navigate(`/portal/student/jobs/${jobId}`);
+        navigate(buildJobSeoPath('/portal/student/jobs', job));
       }
       return;
     }

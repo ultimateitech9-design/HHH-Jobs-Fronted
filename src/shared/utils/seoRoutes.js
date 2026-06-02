@@ -1,0 +1,65 @@
+const UUID_FRAGMENT_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+export const extractUuidFromSlug = (value = '') => {
+  const rawValue = String(value || '').trim();
+  const match = rawValue.match(UUID_FRAGMENT_PATTERN);
+  return match ? match[0].toLowerCase() : rawValue;
+};
+
+export const slugify = (value = '') => String(value || '')
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/&/g, ' and ')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+  .slice(0, 80);
+
+const cleanBasePath = (basePath = '') => String(basePath || '').replace(/\/+$/, '');
+
+const joinSlugParts = (...parts) => {
+  const slug = parts
+    .map(slugify)
+    .filter(Boolean)
+    .join('-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return slug || 'details';
+};
+
+export const buildSeoEntityPath = (basePath, id, ...parts) => {
+  const entityId = extractUuidFromSlug(id);
+  if (!entityId) return cleanBasePath(basePath) || '/';
+  return `${cleanBasePath(basePath)}/${joinSlugParts(...parts)}-${entityId}`;
+};
+
+export const buildJobSeoPath = (basePath, job = {}) =>
+  buildSeoEntityPath(
+    basePath,
+    job.details_id || job.id || job._id || job.portalJobId || job.jobId || job.job_id,
+    job.seoSlug,
+    job.jobTitle || job.job_title || job.title,
+    job.companyName || job.company_name || job.company,
+    job.cityName || job.city_name || job.jobLocation || job.job_location || job.location
+  );
+
+export const buildGovtJobSeoPath = (basePath, job = {}) =>
+  buildSeoEntityPath(
+    basePath,
+    job.id || job._id || job.jobId || job.job_id,
+    job.seoSlug,
+    job.title,
+    job.organization,
+    job.state || job.category
+  );
+
+export const buildCampusDriveSeoPath = (basePath, drive = {}) =>
+  buildSeoEntityPath(
+    basePath,
+    drive.id || drive._id || drive.driveId || drive.drive_id,
+    drive.seoSlug || drive.seo_slug,
+    drive.jobTitle || drive.job_title || drive.title,
+    drive.companyName || drive.company_name,
+    drive.collegeName || drive.college_name || drive.location
+  );

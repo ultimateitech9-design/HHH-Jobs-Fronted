@@ -6,6 +6,7 @@ import AnimatedSection from '../../../../shared/components/AnimatedSection';
 import { getCurrentUser } from '../../../../utils/auth';
 import { getStudentSavedJobs, saveJobForStudent } from '../../../student/services/studentApi';
 import { buildCompanyLogoUrl } from '../../services/companyLogoUrl';
+import { buildJobSeoPath } from '../../../../shared/utils/seoRoutes';
 
 const getCompanyMark = (name = '') =>
   String(name)
@@ -77,14 +78,15 @@ const buildPublicJobsPath = (job = {}) => {
   return `/jobs${params.toString() ? `?${params.toString()}` : ''}`;
 };
 
-const getJobHref = (job = {}, isAuthenticated = false) => {
+const getJobHref = (job = {}, isAuthenticated = false, currentUser = null) => {
   if (job.sourceType === 'external') {
     return buildPublicJobsPath(job);
   }
 
   const jobId = job.id || job._id;
   if (isAuthenticated && jobId && !job.isFallback) {
-    return `/portal/student/jobs/${jobId}`;
+    const basePath = currentUser?.role === 'retired_employee' ? '/portal/retired/jobs' : '/portal/student/jobs';
+    return buildJobSeoPath(basePath, job);
   }
 
   return buildPublicJobsPath(job);
@@ -148,7 +150,7 @@ export function FeaturedJobs({
     const jobId = job?.id || job?._id;
 
     if (!currentUser) {
-      navigate(`/login?redirect=${encodeURIComponent(getJobHref(job, false))}`);
+      navigate(`/login?redirect=${encodeURIComponent(getJobHref(job, false, currentUser))}`);
       return;
     }
 
@@ -270,7 +272,7 @@ export function FeaturedJobs({
                       <span className="text-[10.5px] text-slate-500">
                         {job.sourceType === 'external' ? 'Live-feed role' : job.isFallback ? 'Verified fallback role' : 'Recently updated'}
                       </span>
-                      <Link to={getJobHref(job, isStudentViewer)}>
+                      <Link to={getJobHref(job, isStudentViewer, currentUser)}>
                         <span className="inline-flex items-center gap-1 text-[12px] font-medium text-brand-700 transition-transform hover:translate-x-1">
                           Apply Now <ArrowRight className="h-3 w-3" />
                         </span>

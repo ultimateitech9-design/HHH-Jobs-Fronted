@@ -20,6 +20,7 @@ import {
   getHrJobs,
   updateApplicationStatus
 } from '../services/hrApi';
+import { extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
 
 const APPLICATION_STATUS_OPTIONS = ['shortlisted', 'interview_scheduled', 'interviewed', 'offered', 'rejected', 'hired'];
 
@@ -53,7 +54,8 @@ const getApplicantGroup = (application = {}) => {
 };
 
 const HrJobApplicantsPage = () => {
-  const { jobId } = useParams();
+  const { jobId: jobParam } = useParams();
+  const jobId = extractUuidFromSlug(jobParam);
   const [searchParams] = useSearchParams();
   const requestedApplicationId = searchParams.get('applicationId') || '';
   const [state, setState] = useState({ loading: true, error: '', applicants: [], jobs: [] });

@@ -30,9 +30,11 @@ import {
   removeSavedJobForStudent,
   saveJobForStudent
 } from '../services/studentApi';
+import { extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
 
 const StudentJobDetailsPage = () => {
-  const { jobId } = useParams();
+  const { jobId: jobParam } = useParams();
+  const jobId = extractUuidFromSlug(jobParam);
   const user = getCurrentUser();
   const jobsListPath = user?.role === 'retired_employee' ? '/portal/retired/jobs' : '/portal/student/jobs';
   const resumeSectionPath = '/portal/student/profile?section=resume';

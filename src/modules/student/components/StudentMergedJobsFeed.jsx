@@ -23,6 +23,7 @@ import {
   sendStudentRecommendationDigest,
   trackStudentRecommendationView
 } from '../services/studentApi';
+import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const FEED_PAGE_LIMIT = 50;
 const JOBS_PER_PAGE = 12;
@@ -423,7 +424,7 @@ const StudentMergedJobsFeed = () => {
 
   const handleCardAction = (job) => {
     if (job.__kind === 'internal') {
-      navigate(`/portal/student/jobs/${job.id}`);
+      navigate(buildJobSeoPath('/portal/student/jobs', job));
       return;
     }
 
@@ -440,7 +441,7 @@ const StudentMergedJobsFeed = () => {
       // Ignore analytics failures so applying is never blocked.
     }
 
-    navigate(`/portal/student/jobs/${jobId}`);
+    navigate(buildJobSeoPath('/portal/student/jobs', recommendation.job));
   };
 
   const handleSendDigest = async () => {
