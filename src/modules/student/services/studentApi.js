@@ -735,6 +735,23 @@ export const getPublicGovtJobs = async (filters = {}) => {
   });
 };
 
+const extractGovtJobDetail = (payload) => ({
+  job: payload?.job || null,
+  viewer: payload?.viewer || { canTrackGovtJobs: false }
+});
+
+const emptyGovtJobDetail = {
+  job: null,
+  viewer: { canTrackGovtJobs: false }
+};
+
+export const getPublicGovtJobById = async (jobId) =>
+  safeRequest({
+    path: `/public/govt-jobs/${jobId}`,
+    emptyData: emptyGovtJobDetail,
+    extract: extractGovtJobDetail
+  });
+
 export const getStudentGovtJobs = async (filters = {}) => {
   const { params, emptyData, extract } = buildGovtJobsRequest(filters);
 
@@ -748,8 +765,11 @@ export const getStudentGovtJobs = async (filters = {}) => {
 export const getStudentGovtJobById = async (jobId) =>
   safeRequest({
     path: `/student/govt-jobs/${jobId}`,
-    emptyData: null,
-    extract: (payload) => payload?.job || null
+    emptyData: emptyGovtJobDetail,
+    extract: (payload) => ({
+      job: payload?.job || null,
+      viewer: payload?.viewer || { canTrackGovtJobs: false }
+    })
   });
 
 export const updateStudentGovtJobTracker = async (jobId, trackerPayload = {}) =>

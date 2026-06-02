@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FiBell,
   FiBookmark,
@@ -137,7 +137,10 @@ const openExternal = (url) => {
   if (!popup) window.location.assign(url);
 };
 
-const GovtJobCard = ({ job, canTrackGovtJobs, isLoggedIn, onMarkApplied, onToggleReminder, actionBusy }) => {
+const isInteractiveTarget = (target) =>
+  typeof Element !== 'undefined' && target instanceof Element && Boolean(target.closest('a,button,input,select,textarea,label'));
+
+const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDetails, onMarkApplied, onToggleReminder, actionBusy }) => {
   const hasApplied = Boolean(job.hasApplied || job.tracker?.status === 'applied');
   const reminderEnabled = Boolean(job.tracker?.reminderEnabled || job.reminderEnabled);
   const isExpired = Boolean(job.isExpired);
@@ -145,7 +148,21 @@ const GovtJobCard = ({ job, canTrackGovtJobs, isLoggedIn, onMarkApplied, onToggl
   const notificationUrl = job.officialNotificationUrl || job.notifUrl;
 
   return (
-    <article className="group flex min-h-[286px] flex-col justify-between rounded-[1.45rem] border border-slate-200/70 bg-white p-4 shadow-[0_14px_32px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_44px_rgba(15,23,42,0.08)]">
+    <article
+      role="link"
+      tabIndex={0}
+      onClick={(event) => {
+        if (isInteractiveTarget(event.target)) return;
+        onOpenDetails?.();
+      }}
+      onKeyDown={(event) => {
+        if (isInteractiveTarget(event.target)) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        onOpenDetails?.();
+      }}
+      className="group flex min-h-[292px] cursor-pointer flex-col justify-between rounded-[1.2rem] border border-slate-200/80 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.045)] outline-none transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_18px_38px_rgba(15,23,42,0.08)] focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+    >
       <div>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -172,9 +189,11 @@ const GovtJobCard = ({ job, canTrackGovtJobs, isLoggedIn, onMarkApplied, onToggl
               ) : null}
             </div>
 
-            <h2 className="mt-3 line-clamp-2 font-heading text-lg font-black leading-snug text-navy">
-              {job.title || 'Government job'}
-            </h2>
+            <Link to={detailPath} className="mt-3 block">
+              <h2 className="line-clamp-2 font-heading text-lg font-black leading-snug text-navy transition group-hover:text-brand-700">
+                {job.title || 'Government job'}
+              </h2>
+            </Link>
             <p className="mt-1 text-sm font-semibold text-slate-500">{job.organization || 'Official portal'}</p>
           </div>
 
@@ -212,6 +231,14 @@ const GovtJobCard = ({ job, canTrackGovtJobs, isLoggedIn, onMarkApplied, onToggl
         ) : null}
 
         <div className="flex flex-wrap gap-2">
+          <Link
+            to={detailPath}
+            className={compactButtonClassName}
+          >
+            Details
+            <FiChevronRight size={13} />
+          </Link>
+
           <button
             type="button"
             onClick={() => openExternal(applyUrl)}
@@ -277,6 +304,7 @@ const GovtJobCard = ({ job, canTrackGovtJobs, isLoggedIn, onMarkApplied, onToggl
 
 const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const searchParamsKey = searchParams.toString();
   const currentUser = getCurrentUser();
   const canTrackGovtJobs = currentUser?.role === 'student';
@@ -639,7 +667,9 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
               <GovtJobCard
                 key={job.id}
                 job={job}
+                detailPath={canTrackGovtJobs ? `/portal/student/govt-jobs/${job.id}` : `/govt-jobs/${job.id}`}
                 actionBusy={actionBusyId === job.id}
+                onOpenDetails={() => navigate(canTrackGovtJobs ? `/portal/student/govt-jobs/${job.id}` : `/govt-jobs/${job.id}`)}
                 onMarkApplied={handleMarkApplied}
                 onToggleReminder={handleToggleReminder}
                 canTrackGovtJobs={canTrackGovtJobs}
