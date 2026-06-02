@@ -84,8 +84,12 @@ const getJobHref = (job = {}, isAuthenticated = false, currentUser = null) => {
   }
 
   const jobId = job.id || job._id;
-  if (isAuthenticated && jobId && !job.isFallback) {
-    const basePath = currentUser?.role === 'retired_employee' ? '/portal/retired/jobs' : '/portal/student/jobs';
+  if (jobId && !job.isFallback) {
+    const basePath = isAuthenticated
+      ? currentUser?.role === 'retired_employee'
+        ? '/portal/retired/jobs'
+        : '/portal/student/jobs'
+      : '/jobs';
     return buildJobSeoPath(basePath, job);
   }
 

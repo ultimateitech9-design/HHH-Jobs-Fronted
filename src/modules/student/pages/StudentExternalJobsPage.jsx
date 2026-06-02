@@ -74,6 +74,7 @@ const mapPortalJobToExternalCard = (job = {}) => ({
   employment_type: job.employmentType || 'Full-time',
   category: job.category || '',
   experience_level: job.experienceLevel || '',
+  seoSlug: job.seoSlug || job.seo_slug || '',
   salary_currency: '',
   salary_min: '',
   salary_max: '',
@@ -533,7 +534,12 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
     if (job?.__kind === 'portal') {
       const jobId = job.details_id || job.id;
       if (jobId) {
-        navigate(buildJobSeoPath('/portal/student/jobs', job));
+        const basePath = !isAuthenticated
+          ? '/jobs'
+          : user?.role === 'retired_employee'
+            ? '/portal/retired/jobs'
+            : '/portal/student/jobs';
+        navigate(buildJobSeoPath(basePath, job));
       }
       return;
     }
