@@ -154,14 +154,16 @@ const getFacetCount = (items = [], name = '') => {
   return Number(match?.count || 0);
 };
 
-const openExternal = (url) => {
+const openExternal = (url, event) => {
+  event?.preventDefault();
+  event?.stopPropagation();
+
   if (!url) {
     toast.error('Official link is not available right now.');
     return;
   }
 
-  const popup = window.open(url, '_blank', 'noopener,noreferrer');
-  if (!popup) window.location.assign(url);
+  window.open(url, '_blank', 'noopener,noreferrer');
 };
 
 const isInteractiveTarget = (target) =>
@@ -267,7 +269,7 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
 
           <button
             type="button"
-            onClick={() => openExternal(applyUrl)}
+            onClick={(event) => openExternal(applyUrl, event)}
             className={compactPrimaryButtonClassName}
           >
             <FiExternalLink size={12} />
@@ -277,7 +279,7 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
           {notificationUrl ? (
             <button
               type="button"
-              onClick={() => openExternal(notificationUrl)}
+              onClick={(event) => openExternal(notificationUrl, event)}
               className={compactButtonClassName}
             >
               Notice

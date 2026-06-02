@@ -146,14 +146,16 @@ const getHostnameLabel = (url) => {
 const getApplyUrl = (job) => job?.officialApplyUrl || job?.applyUrl || job?.officialUrl || '';
 const getNotificationUrl = (job) => job?.officialNotificationUrl || job?.notifUrl || '';
 
-const openExternal = (url) => {
+const openExternal = (url, event) => {
+  event?.preventDefault();
+  event?.stopPropagation();
+
   if (!url) {
     toast.error('Official link is not available right now.');
     return;
   }
 
-  const popup = window.open(url, '_blank', 'noopener,noreferrer');
-  if (!popup) window.location.assign(url);
+  window.open(url, '_blank', 'noopener,noreferrer');
 };
 
 const buildTrackerForm = (job) => ({
@@ -400,7 +402,7 @@ const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
           <div className="grid gap-2 sm:grid-cols-2 lg:w-[340px] lg:grid-cols-1">
             <button
               type="button"
-              onClick={() => openExternal(applyUrl)}
+              onClick={(event) => openExternal(applyUrl, event)}
               disabled={!applyUrl}
               className={`${studentPrimaryButtonClassName} w-full px-4 py-3 text-[13px]`}
             >
@@ -410,7 +412,7 @@ const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
             {notificationUrl ? (
               <button
                 type="button"
-                onClick={() => openExternal(notificationUrl)}
+                onClick={(event) => openExternal(notificationUrl, event)}
                 className={`${studentSecondaryButtonClassName} w-full px-4 py-3 text-[13px]`}
               >
                 <FiFileText size={16} />
@@ -626,7 +628,7 @@ const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
           {job.sourceUrl ? (
             <button
               type="button"
-              onClick={() => openExternal(job.sourceUrl)}
+              onClick={(event) => openExternal(job.sourceUrl, event)}
               className={`${compactButtonClassName} w-full`}
             >
               <FiExternalLink size={14} />
