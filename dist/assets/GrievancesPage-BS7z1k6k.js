@@ -1,1 +1,0 @@
-import{bM as o}from"./index-D-IRW2xE.js";import{F as t}from"./FooterContentPage-Cel7DSuv.js";import"./PublicPageHero-Kf5o3Xid.js";import"./AnimatedSection-BiXge0zn.js";import"./PublicSectionHeader-CDBqwYjj.js";import"./PublicCallToAction-BYMiDaZm.js";const s=()=>o.jsx(t,{pageKey:"grievances"});export{s as default};

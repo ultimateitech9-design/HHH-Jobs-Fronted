@@ -156,6 +156,6 @@ Status: Connected with frontend fallback data when the live backend is unavailab
 - Active frontend services are module-based under `src/modules/**/services/*Api.js`.
 - Some legacy components in `src/components/*` are not part of active router flow.
 - Pricing backend schema and logic are defined in server migration and services:
-  - `job-portal-server/supabase/migrations/005_job_pricing_engine.sql`
+  - `HHH-JOBS-BACKEND-main/scripts/migrate-postgres-to-mysql.js`
   - `job-portal-server/src/routes/pricing.js`
   - `job-portal-server/src/services/pricing.js`

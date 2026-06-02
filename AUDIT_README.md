@@ -1,6 +1,6 @@
 # HHH Jobs — Project Audit & Documentation
 
-**Version:** 1.0 | **Audited:** 2026-03-26 | **Stack:** React 18 + Vite + Tailwind + Supabase
+**Version:** 1.0 | **Audited:** 2026-03-26 | **Stack:** React 18 + Vite + Tailwind + MySQL backend
 
 ---
 
@@ -230,7 +230,7 @@ HHH Jobs is a **multi-role job portal platform** — a full-featured web app whe
 | Icons | React Icons | 5.1.0 |
 | SEO | React Helmet Async | 3.0.0 |
 | Testing | Playwright (E2E) | 1.58.2 |
-| Database / Backend | Supabase | Hosted |
+| Database / Backend | MySQL backend | Hosted |
 | Deployment | Netlify | — |
 
 ---
@@ -277,7 +277,7 @@ Browser
         ├─ React Router (60+ client-side routes)
         ├─ Zustand (auth state only)
         ├─ apiFetch wrapper → Backend REST API (http://localhost:5500 or production URL)
-        └─ Supabase (direct JS client for DB / auth)
+        └─ MySQL backend (direct JS client for DB / auth)
 ```
 
 ### Architecture Assessment
@@ -286,7 +286,7 @@ Browser
 |---|---|---|
 | Frontend | Good | Clean SPA with lazy-loaded routes |
 | Backend API | Unknown | Only base URL configured — no backend code in this repo |
-| Database | Supabase | Fully managed Postgres + auth + storage |
+| Database | MySQL backend | Fully managed Postgres + auth + storage |
 | CDN / Hosting | Netlify | SPA redirect rules via `netlify.toml` needed |
 | AI Chatbot | Partial | XAI API key expected server-side — may be proxy endpoint |
 
@@ -295,7 +295,7 @@ Browser
 | Risk | Severity | Detail |
 |---|---|---|
 | No backend code in repository | Critical | The backend is a black box — API contracts not documented, no shared types |
-| Direct Supabase key in frontend | High | Anon key is public, but any misconfigured RLS policies expose data |
+| Direct MySQL backend key in frontend | High | Anon key is public, but any misconfigured RLS policies expose data |
 | Single API base URL | Medium | No failover, no regional endpoints, no retry logic on network failure |
 | No CDN strategy for assets | Low | Static images served from Netlify — no image optimization pipeline |
 | No WebSocket / real-time for live chat | Medium | "Live chat" feature has UI but unclear if backed by WebSocket or polling |
@@ -323,7 +323,7 @@ Browser
 | Gap | Severity | Recommendation |
 |---|---|---|
 | No CI/CD pipeline visible | High | No GitHub Actions or build pipeline in repo — deployments are manual (Netlify Git push only) |
-| No environment promotion strategy | High | `.env` has production Supabase URL mixed with localhost API — should have dev/staging/prod `.env` files |
+| No environment promotion strategy | High | `.env` has production MySQL backend URL mixed with localhost API — should have dev/staging/prod `.env` files |
 | No health check endpoint | Medium | No `/health` or `/status` route — can't monitor API uptime from frontend perspective |
 | No feature flags system | Medium | Controlled rollouts not possible — changes go live for all users at once |
 | Playwright config targets localhost:4173 | Low | E2E tests don't run against staging/production URL — risks regressions going undetected |
@@ -352,7 +352,7 @@ Browser
 | Vulnerability | Severity | Detail | Recommendation |
 |---|---|---|---|
 | Token stored in localStorage | High | XSS attack can steal the auth token from localStorage | Move to HttpOnly cookies managed by backend |
-| Supabase credentials exposed | High | `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are bundled into the JS build and visible to anyone | Ensure Supabase RLS policies are airtight; move all sensitive queries to backend |
+| MySQL backend credentials exposed | High | `VITE_API_BASE_URL` and `VITE_API_BASE_URL` are bundled into the JS build and visible to anyone | Ensure backend authorization policies are airtight; move all sensitive queries to backend |
 | No token expiry handling | High | No refresh token logic — tokens may be expired but still used | Implement token refresh or short TTL with re-auth |
 | prop-types disabled in ESLint | Medium | `react/prop-types` rule is off — wrong data shapes silently passed to components | Enable prop-types or migrate to TypeScript |
 | No rate limiting on frontend | Medium | Login form has no throttle/lockout mechanism on the UI side | Add lockout after N failed attempts; enforce on backend |
@@ -401,10 +401,10 @@ Browser
 | Risk | Severity | Recommendation |
 |---|---|---|
 | No data retention / archiving strategy visible | High | Define and implement data lifecycle policies — especially for PII (user profiles, resumes) |
-| PII stored in Supabase with anon key accessible | High | Verify all PII tables have Row Level Security (RLS) policies in Supabase |
-| Resume files (if uploaded) storage location unknown | Medium | Confirm Supabase Storage bucket permissions are private, not public |
+| PII stored in MySQL backend with anon key accessible | High | Verify all PII tables have Row Level Security (RLS) policies in MySQL backend |
+| Resume files (if uploaded) storage location unknown | Medium | Confirm backend upload storage bucket permissions are private, not public |
 | Deleted user IDs in localStorage only | High | Deleted user status must be backend-authoritative — not a frontend array |
-| No data backup visible in frontend config | Medium | Ensure Supabase Point-in-Time Recovery is enabled on the project |
+| No data backup visible in frontend config | Medium | Ensure MySQL backups is enabled on the project |
 | Multi-tenant data isolation unclear | High | Platform portal manages tenants but frontend doesn't show how data is isolated between tenants |
 
 ---
@@ -414,7 +414,7 @@ Browser
 | Audit Domain | Rating | Key Concern |
 |---|---|---|
 | System Design | 7/10 | No server state caching, no error boundaries, no TypeScript |
-| System Architecture | 6/10 | Backend is a black box, Supabase keys exposed, no failover |
+| System Architecture | 6/10 | Backend is a black box, MySQL backend keys exposed, no failover |
 | System Administration | 5/10 | No CI/CD, no staging env, no feature flags, manual deployments |
 | System Security | 5/10 | Token in localStorage, no CSP, no token refresh, RLS unverified |
 | Data Administration | 6/10 | Good audit trail but no data retention, GDPR compliance unclear |
@@ -425,9 +425,9 @@ Browser
 
 | Priority | Action |
 |---|---|
-| P0 | Audit Supabase RLS policies — ensure no unauthorized data access via anon key |
+| P0 | Audit backend authorization policies — ensure no unauthorized data access via anon key |
 | P0 | Move auth tokens to HttpOnly cookies — eliminate localStorage XSS risk |
-| P0 | Remove `.env` from git history if committed — rotate Supabase keys immediately |
+| P0 | Remove `.env` from git history if committed — rotate MySQL backend keys immediately |
 | P1 | Add Content Security Policy headers in `netlify.toml` |
 | P1 | Implement token refresh / expiry handling |
 | P1 | Add React Error Boundaries at module level |

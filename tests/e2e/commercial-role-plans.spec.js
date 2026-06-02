@@ -18,6 +18,7 @@ const FRONTEND_ORIGIN = 'http://127.0.0.1:4173';
 
 const backendRequire = createRequire(path.join(BACKEND_ROOT, 'package.json'));
 const jwt = backendRequire('jsonwebtoken');
+const mysql = backendRequire('mysql2/promise');
 
 const backendEnv = parseEnvFile(await fs.readFile(BACKEND_ENV_PATH, 'utf8'));
 const frontendEnv = parseEnvFile(await fs.readFile(FRONTEND_ENV_PATH, 'utf8').catch(() => ''));
@@ -266,25 +267,27 @@ async function resolveUsersByRole() {
 }
 
 async function fetchUsersForRole(role) {
-  const url = new URL(`${backendEnv.SUPABASE_URL}/rest/v1/users`);
-  url.searchParams.set('select', 'id,email,role,name,status,is_hr_approved,is_email_verified,mobile');
-  url.searchParams.set('role', `eq.${role}`);
-  url.searchParams.set('status', 'eq.active');
-  url.searchParams.set('order', 'created_at.desc');
-  url.searchParams.set('limit', '20');
-
-  const response = await fetch(url, {
-    headers: {
-      apikey: backendEnv.SUPABASE_SERVICE_ROLE_KEY || backendEnv.SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${backendEnv.SUPABASE_SERVICE_ROLE_KEY || backendEnv.SUPABASE_SERVICE_KEY}`
-    }
+  const connection = await mysql.createConnection({
+    host: backendEnv.MYSQL_HOST || 'localhost',
+    port: Number(backendEnv.MYSQL_PORT) || 3306,
+    user: backendEnv.MYSQL_USER || 'root',
+    password: backendEnv.MYSQL_PASSWORD || 'root',
+    database: backendEnv.MYSQL_DATABASE || backendEnv.MYSQL_DB || 'hhh_jobs'
   });
 
-  if (!response.ok) {
-    throw new Error(`Unable to resolve ${role} users (${response.status})`);
+  try {
+    const [rows] = await connection.execute(
+      `SELECT id,email,role,name,status,is_hr_approved,is_email_verified,mobile
+       FROM users
+       WHERE role = ? AND status = 'active'
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [role]
+    );
+    return rows;
+  } finally {
+    await connection.end();
   }
-
-  return response.json();
 }
 
 function signToken(user) {

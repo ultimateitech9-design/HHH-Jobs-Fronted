@@ -111,8 +111,8 @@ const fallbackErrorReply = (errorMessage, language = LANGUAGE.ENGLISH) => {
 
   if (/Missing server configuration/i.test(errorMessage)) {
     return inHindi
-      ? 'Backend configuration incomplete lag rahi hai. SUPABASE_SERVICE_ROLE_KEY aur JWT_SECRET check karein.'
-      : 'Backend configuration looks incomplete. Please check SUPABASE_SERVICE_ROLE_KEY and JWT_SECRET.';
+      ? 'Backend configuration incomplete lag rahi hai. MySQL aur JWT_SECRET check karein.'
+      : 'Backend configuration looks incomplete. Please check MySQL and JWT_SECRET.';
   }
 
   if (/Failed to fetch|NetworkError/i.test(errorMessage)) {

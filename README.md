@@ -30,8 +30,8 @@ HHH Jobs Frontend is a multi-role React application for a job marketplace and in
 | Variable | Purpose |
 |---|---|
 | `VITE_API_BASE_URL` | Base URL for the backend REST API |
-| `VITE_SUPABASE_URL` | Supabase project URL present in `.env.example` for platform/backend configuration |
-| `VITE_SUPABASE_ANON_KEY` | Supabase public anon key present in `.env.example` |
+| `VITE_DEPLOYED_API_BASE_URL` | Optional deployed backend fallback URL |
+| `VITE_GETSTREAM_API_KEY` | Optional GetStream key for realtime/video features |
 
 ## Dashboards And Features
 

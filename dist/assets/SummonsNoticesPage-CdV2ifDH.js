@@ -1,0 +1,1 @@
+import{bM as o}from"./index-DxT4K7ce.js";import{F as t}from"./FooterContentPage-BHIzWnDu.js";import"./PublicPageHero-BSQTrvjU.js";import"./AnimatedSection-BQm0JLU1.js";import"./PublicSectionHeader-CY95u28l.js";import"./PublicCallToAction-D2bGEl9n.js";const a=()=>o.jsx(t,{pageKey:"summons-notices"});export{a as default};
