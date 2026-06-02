@@ -1,1 +1,0 @@
-import{bM as p}from"./index-1SkKT1Cd.js";import{S as s}from"./SectionHeader-Cjjh8xkS.js";const S=({eyebrow:o,title:r,subtitle:e,action:t})=>p.jsx(s,{eyebrow:o||"Support",title:r,subtitle:e,action:t});export{S};

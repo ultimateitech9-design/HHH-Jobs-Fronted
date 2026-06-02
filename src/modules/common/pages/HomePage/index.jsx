@@ -138,7 +138,6 @@ const HomePage = () => {
     roles: [],
     sectors: [],
     cities: [],
-    pincodes: [],
     totals: { openJobs: 0, companies: 0 }
   });
 
@@ -193,7 +192,7 @@ const HomePage = () => {
 
     const loadHiringFacets = async () => {
       try {
-        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=100&sectorLimit=90&cityLimit=110&pincodeLimit=40');
+        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=100&sectorLimit=90&cityLimit=110');
         const payload = response.ok ? await response.json().catch(() => null) : null;
         if (!mounted || !payload?.status) return;
 
@@ -201,7 +200,6 @@ const HomePage = () => {
           roles: payload.roles || [],
           sectors: payload.sectors || [],
           cities: payload.cities || [],
-          pincodes: payload.pincodes || [],
           totals: payload.totals || { openJobs: 0, companies: 0 }
         });
       } catch {

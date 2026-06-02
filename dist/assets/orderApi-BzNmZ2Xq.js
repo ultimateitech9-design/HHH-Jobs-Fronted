@@ -1,1 +1,0 @@
-import{s as r,S as s,l as t}from"./currencyFormat-n_gArQgU.js";const p=async()=>r({path:`${s}/orders`,emptyData:[],extract:a=>(a?.orders||[]).map(t)}),c=async a=>r({path:`${s}/orders/${a}`,emptyData:{},extract:e=>t(e?.order||e||{})});export{p as a,c as g};

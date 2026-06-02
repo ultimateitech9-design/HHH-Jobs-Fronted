@@ -1,1 +1,0 @@
-import{bM as t}from"./index-1SkKT1Cd.js";import{F as o}from"./FooterContentPage-Dsi08ReD.js";import"./PublicPageHero-lyiUhsC8.js";import"./AnimatedSection-CnNgawja.js";import"./PublicSectionHeader-B4IcwtDZ.js";import"./PublicCallToAction-Bv05uWDD.js";const a=()=>t.jsx(o,{pageKey:"credits"});export{a as default};

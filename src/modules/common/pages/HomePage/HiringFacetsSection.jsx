@@ -5,8 +5,7 @@ import { ArrowRight } from 'lucide-react';
 const GROUP_LIMITS = {
   role: 28,
   city: 24,
-  sector: 42,
-  pincode: 18
+  sector: 42
 };
 
 const buildFacetPath = (kind, name) => {
@@ -20,7 +19,6 @@ const buildFacetPath = (kind, name) => {
     params.set('location', name);
     params.set('city', name);
   }
-  if (kind === 'pincode') params.set('pincode', name);
   return `/jobs?${params.toString()}`;
 };
 
@@ -108,8 +106,7 @@ export function HiringFacetsSection({ facets }) {
   const roles = useMemo(() => normalizeItems(facets?.roles), [facets?.roles]);
   const sectors = useMemo(() => normalizeItems(facets?.sectors), [facets?.sectors]);
   const cities = useMemo(() => normalizeItems(facets?.cities), [facets?.cities]);
-  const pincodes = useMemo(() => normalizeItems(facets?.pincodes), [facets?.pincodes]);
-  const hasAnyFacet = roles.length || sectors.length || cities.length || pincodes.length;
+  const hasAnyFacet = roles.length || sectors.length || cities.length;
 
   if (!hasAnyFacet) return null;
 
@@ -137,27 +134,6 @@ export function HiringFacetsSection({ facets }) {
               items={sectors}
               compact
             />
-          </div>
-        ) : null}
-
-        {pincodes.length ? (
-          <div className="mt-10 border-t border-slate-100 pt-8">
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h2 className="font-heading text-[1.4rem] font-medium tracking-normal text-slate-800 md:text-[1.65rem]">
-                  {formatGroupTitle(pincodes.length, 'Pincodes')}
-                </h2>
-                <div className="mt-1.5 h-1 w-9 rounded-full bg-[#f2b51f]" />
-              </div>
-              <Link to="/jobs" className="inline-flex items-center gap-2 text-sm font-bold text-[#3f56ad] hover:text-[#31468f]">
-                View all jobs <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <div className="flex flex-wrap gap-2.5">
-              {pincodes.map((item) => (
-                <FacetChip key={`pincode-${item.name}`} kind="pincode" item={item} />
-              ))}
-            </div>
           </div>
         ) : null}
       </div>
