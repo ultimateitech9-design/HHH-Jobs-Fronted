@@ -19,18 +19,15 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
   const location = useLocation();
 
   const jobsNavPath = getPublicJobsNavPath(Boolean(user));
-  const isStudentViewer = ['student', 'retired_employee'].includes(String(user?.role || '').trim().toLowerCase());
-  const govtJobsNavPath = isStudentViewer ? '/portal/student/govt-jobs' : '/login/student';
   const defaultLoginPortal = getLoginPortalConfig('default');
 
   const publicNavItems = useMemo(
     () => getPublicNavItems({
       jobsNavPath,
-      govtJobsNavPath,
-      govtJobsNavState: isStudentViewer ? undefined : { from: '/portal/student/govt-jobs' },
+      govtJobsNavPath: '/govt-jobs',
       dashboardPath
     }),
-    [dashboardPath, govtJobsNavPath, isStudentViewer, jobsNavPath]
+    [dashboardPath, jobsNavPath]
   );
 
   useEffect(() => {

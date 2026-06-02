@@ -683,7 +683,7 @@ export const getStudentJobById = async (jobId) =>
     extract: (payload) => payload?.job || payload || null
   });
 
-export const getStudentGovtJobs = async (filters = {}) => {
+const buildGovtJobsRequest = (filters = {}) => {
   const page = Number(filters.page || 1);
   const limit = Number(filters.limit || 18);
   const params = new URLSearchParams();
@@ -704,22 +704,44 @@ export const getStudentGovtJobs = async (filters = {}) => {
     }
   });
 
+  const emptyData = {
+    jobs: [],
+    pagination: { page, limit, total: 0, totalPages: 1 },
+    counts: { open: 0, expired: 0 },
+    facets: { categories: [], states: [], qualifications: [] },
+    summary: { tracked: 0, applied: 0, reminders: 0, expiringSoon: 0, recent: [] },
+    viewer: { canTrackGovtJobs: false }
+  };
+
+  const extract = (payload) => ({
+    jobs: payload?.jobs || [],
+    pagination: payload?.pagination || { page, limit, total: 0, totalPages: 1 },
+    counts: payload?.counts || { open: 0, expired: 0 },
+    facets: payload?.facets || { categories: [], states: [], qualifications: [] },
+    summary: payload?.summary || { tracked: 0, applied: 0, reminders: 0, expiringSoon: 0, recent: [] },
+    viewer: payload?.viewer || { canTrackGovtJobs: false }
+  });
+
+  return { params, emptyData, extract };
+};
+
+export const getPublicGovtJobs = async (filters = {}) => {
+  const { params, emptyData, extract } = buildGovtJobsRequest(filters);
+
+  return safeRequest({
+    path: `/public/govt-jobs?${params.toString()}`,
+    emptyData,
+    extract
+  });
+};
+
+export const getStudentGovtJobs = async (filters = {}) => {
+  const { params, emptyData, extract } = buildGovtJobsRequest(filters);
+
   return safeRequest({
     path: `/student/govt-jobs?${params.toString()}`,
-    emptyData: {
-      jobs: [],
-      pagination: { page, limit, total: 0, totalPages: 1 },
-      counts: { open: 0, expired: 0 },
-      facets: { categories: [], states: [], qualifications: [] },
-      summary: { tracked: 0, applied: 0, reminders: 0, expiringSoon: 0, recent: [] }
-    },
-    extract: (payload) => ({
-      jobs: payload?.jobs || [],
-      pagination: payload?.pagination || { page, limit, total: 0, totalPages: 1 },
-      counts: payload?.counts || { open: 0, expired: 0 },
-      facets: payload?.facets || { categories: [], states: [], qualifications: [] },
-      summary: payload?.summary || { tracked: 0, applied: 0, reminders: 0, expiringSoon: 0, recent: [] }
-    })
+    emptyData,
+    extract
   });
 };
 

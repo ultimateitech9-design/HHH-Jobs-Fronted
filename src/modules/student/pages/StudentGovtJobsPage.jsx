@@ -26,11 +26,13 @@ import {
   studentSecondaryButtonClassName
 } from '../components/StudentExperience';
 import {
+  getPublicGovtJobs,
   getStudentGovtJobs,
   markStudentGovtJobApplied,
   setStudentGovtJobReminder,
   updateStudentGovtJobTracker
 } from '../services/studentApi';
+import { getCurrentUser } from '../../../utils/auth';
 
 const makeDefaultFilters = () => ({
   search: '',
@@ -135,7 +137,7 @@ const openExternal = (url) => {
   if (!popup) window.location.assign(url);
 };
 
-const GovtJobCard = ({ job, onMarkApplied, onToggleReminder, actionBusy }) => {
+const GovtJobCard = ({ job, canTrackGovtJobs, isLoggedIn, onMarkApplied, onToggleReminder, actionBusy }) => {
   const hasApplied = Boolean(job.hasApplied || job.tracker?.status === 'applied');
   const reminderEnabled = Boolean(job.tracker?.reminderEnabled || job.reminderEnabled);
   const isExpired = Boolean(job.isExpired);
@@ -229,36 +231,56 @@ const GovtJobCard = ({ job, onMarkApplied, onToggleReminder, actionBusy }) => {
             </button>
           ) : null}
 
-          <button
-            type="button"
-            onClick={() => onMarkApplied(job)}
-            disabled={actionBusy || hasApplied}
-            className={hasApplied ? compactButtonClassName : compactPrimaryButtonClassName}
-          >
-            <FiCheckCircle size={13} />
-            {hasApplied ? 'Filled' : 'Mark Filled'}
-          </button>
+          {canTrackGovtJobs ? (
+            <>
+              <button
+                type="button"
+                onClick={() => onMarkApplied(job)}
+                disabled={actionBusy || hasApplied}
+                className={hasApplied ? compactButtonClassName : compactPrimaryButtonClassName}
+              >
+                <FiCheckCircle size={13} />
+                {hasApplied ? 'Filled' : 'Mark Filled'}
+              </button>
 
-          {!isExpired ? (
-            <button
-              type="button"
-              onClick={() => onToggleReminder(job)}
-              disabled={actionBusy}
+              {!isExpired ? (
+                <button
+                  type="button"
+                  onClick={() => onToggleReminder(job)}
+                  disabled={actionBusy}
+                  className={compactButtonClassName}
+                >
+                  {reminderEnabled ? <FiX size={13} /> : <FiBell size={13} />}
+                  {reminderEnabled ? 'Remove Reminder' : 'Reminder'}
+                </button>
+              ) : null}
+            </>
+          ) : isLoggedIn ? (
+            <span className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-500">
+              Student account can track
+            </span>
+          ) : (
+            <Link
+              to="/login/student"
+              state={{ from: '/portal/student/govt-jobs', portalLabel: 'Login to Track Govt Jobs' }}
               className={compactButtonClassName}
             >
-              {reminderEnabled ? <FiX size={13} /> : <FiBell size={13} />}
-              {reminderEnabled ? 'Remove Reminder' : 'Reminder'}
-            </button>
-          ) : null}
+              <FiBookmark size={13} />
+              Login to Track
+            </Link>
+          )}
         </div>
       </div>
     </article>
   );
 };
 
-const StudentGovtJobsPage = () => {
+const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchParamsKey = searchParams.toString();
+  const currentUser = getCurrentUser();
+  const canTrackGovtJobs = currentUser?.role === 'student';
+  const isLoggedIn = Boolean(currentUser?.id);
   const [filters, setFilters] = useState(() => buildFiltersFromSearchParams(searchParams));
   const [state, setState] = useState({
     jobs: [],
@@ -287,24 +309,41 @@ const StudentGovtJobsPage = () => {
     setSearchParams(params, { replace: true });
   }, [setSearchParams]);
 
+  useEffect(() => {
+    if (canTrackGovtJobs || !filters.tracked) return;
+
+    const next = {
+      ...filters,
+      status: filters.status === 'all' ? 'open' : filters.status,
+      tracked: false,
+      page: 1
+    };
+    setFilters(next);
+    pushFiltersToUrl(next);
+  }, [canTrackGovtJobs, filters, pushFiltersToUrl]);
+
   const loadJobs = useCallback(async (currentFilters) => {
+    const requestFilters = canTrackGovtJobs
+      ? currentFilters
+      : { ...currentFilters, tracked: false };
+
     setState((current) => ({
       ...current,
       loading: current.jobs.length === 0,
       error: ''
     }));
 
-    const response = await getStudentGovtJobs(currentFilters);
+    const response = await (publicMode ? getPublicGovtJobs(requestFilters) : getStudentGovtJobs(requestFilters));
     setState({
       jobs: response.data?.jobs || [],
-      pagination: response.data?.pagination || { page: currentFilters.page, limit: currentFilters.limit, total: 0, totalPages: 1 },
+      pagination: response.data?.pagination || { page: requestFilters.page, limit: requestFilters.limit, total: 0, totalPages: 1 },
       counts: response.data?.counts || { open: 0, expired: 0 },
       facets: response.data?.facets || { categories: [], states: [], qualifications: [] },
       summary: response.data?.summary || { tracked: 0, applied: 0, reminders: 0, expiringSoon: 0, recent: [] },
       loading: false,
       error: response.error || ''
     });
-  }, []);
+  }, [canTrackGovtJobs, publicMode]);
 
   useEffect(() => {
     loadJobs(filters);
@@ -343,6 +382,11 @@ const StudentGovtJobsPage = () => {
   };
 
   const handleMarkApplied = async (job) => {
+    if (!canTrackGovtJobs) {
+      toast.error('Login with a registered student account to track government forms.');
+      return;
+    }
+
     setActionBusyId(job.id);
     try {
       const result = await markStudentGovtJobApplied(job.id, {
@@ -359,6 +403,11 @@ const StudentGovtJobsPage = () => {
   };
 
   const handleToggleReminder = async (job) => {
+    if (!canTrackGovtJobs) {
+      toast.error('Login with a registered student account to set reminders.');
+      return;
+    }
+
     const reminderEnabled = Boolean(job.tracker?.reminderEnabled || job.reminderEnabled);
     const status = job.tracker?.status || (job.hasApplied ? 'applied' : 'interested');
 
@@ -398,43 +447,80 @@ const StudentGovtJobsPage = () => {
       helper: 'Current government listings.',
       icon: FiBriefcase
     },
-    {
-      label: 'Filled Forms',
-      value: Number(state.summary.applied || 0).toLocaleString('en-IN'),
-      helper: 'Marked by you.',
-      icon: FiCheckCircle,
-      tone: 'success'
-    },
-    {
-      label: 'Reminders',
-      value: Number(state.summary.reminders || 0).toLocaleString('en-IN'),
-      helper: 'Email and dashboard alerts.',
-      icon: FiBell,
-      tone: 'warning'
-    }
-  ]), [state.counts.open, state.summary.applied, state.summary.reminders]);
+    canTrackGovtJobs
+      ? {
+        label: 'Filled Forms',
+        value: Number(state.summary.applied || 0).toLocaleString('en-IN'),
+        helper: 'Marked by you.',
+        icon: FiCheckCircle,
+        tone: 'success'
+      }
+      : {
+        label: 'Categories',
+        value: Number(state.facets.categories?.length || 0).toLocaleString('en-IN'),
+        helper: 'Browse by department type.',
+        icon: FiFilter,
+        tone: 'info'
+      },
+    canTrackGovtJobs
+      ? {
+        label: 'Reminders',
+        value: Number(state.summary.reminders || 0).toLocaleString('en-IN'),
+        helper: 'Email and dashboard alerts.',
+        icon: FiBell,
+        tone: 'warning'
+      }
+      : {
+        label: 'Expired Archive',
+        value: Number(state.counts.expired || 0).toLocaleString('en-IN'),
+        helper: 'Older notices remain searchable.',
+        icon: FiCalendar,
+        tone: 'warning'
+      }
+  ]), [canTrackGovtJobs, state.counts.expired, state.counts.open, state.facets.categories?.length, state.summary.applied, state.summary.reminders]);
 
   return (
     <StudentPageShell
       eyebrow="Govt Jobs"
-      badge="Student tracker"
-      title="Government jobs and form tracker"
-      subtitle="Browse government updates, apply on the official portal, then keep your filled forms and reminders inside HHH Jobs."
+      badge={canTrackGovtJobs ? 'Student tracker' : 'Public vacancies'}
+      title={canTrackGovtJobs ? 'Government jobs and form tracker' : 'Government jobs and vacancies'}
+      subtitle={canTrackGovtJobs
+        ? 'Browse government updates, apply on the official portal, then keep your filled forms and reminders inside HHH Jobs.'
+        : 'Browse open government vacancies, official apply links, notifications, eligibility, states, and deadlines. Registered student accounts can track forms and reminders.'}
       stats={stats}
+      bodyClassName={publicMode ? 'vw-shell py-8 sm:py-10' : ''}
       actions={(
         <>
-          <button
-            type="button"
-            onClick={() => updateFilter('tracked', true)}
-            className={studentPrimaryButtonClassName}
-          >
-            <FiBookmark size={16} />
-            My Tracked Forms
-          </button>
-          <Link to="/portal/student/notifications" className={studentSecondaryButtonClassName}>
-            <FiBell size={16} />
-            Notifications
-          </Link>
+          {canTrackGovtJobs ? (
+            <>
+              <button
+                type="button"
+                onClick={() => updateFilter('tracked', true)}
+                className={studentPrimaryButtonClassName}
+              >
+                <FiBookmark size={16} />
+                My Tracked Forms
+              </button>
+              <Link to="/portal/student/notifications" className={studentSecondaryButtonClassName}>
+                <FiBell size={16} />
+                Notifications
+              </Link>
+            </>
+          ) : !isLoggedIn ? (
+            <Link
+              to="/login/student"
+              state={{ from: '/portal/student/govt-jobs', portalLabel: 'Login to Track Govt Jobs' }}
+              className={studentPrimaryButtonClassName}
+            >
+              <FiBookmark size={16} />
+              Student Login to Track
+            </Link>
+          ) : (
+            <span className={studentSecondaryButtonClassName}>
+              <FiBookmark size={16} />
+              Student account required to track
+            </span>
+          )}
         </>
       )}
     >
@@ -514,8 +600,8 @@ const StudentGovtJobsPage = () => {
           {[
             { label: `Open (${Number(state.counts.open || 0).toLocaleString('en-IN')})`, status: 'open', tracked: false },
             { label: `Expired (${Number(state.counts.expired || 0).toLocaleString('en-IN')})`, status: 'expired', tracked: false },
-            { label: `Tracked (${Number(state.summary.tracked || 0).toLocaleString('en-IN')})`, status: 'all', tracked: true }
-          ].map((item) => {
+            canTrackGovtJobs ? { label: `Tracked (${Number(state.summary.tracked || 0).toLocaleString('en-IN')})`, status: 'all', tracked: true } : null
+          ].filter(Boolean).map((item) => {
             const isActive = filters.status === item.status && filters.tracked === item.tracked;
             return (
               <button
@@ -556,6 +642,8 @@ const StudentGovtJobsPage = () => {
                 actionBusy={actionBusyId === job.id}
                 onMarkApplied={handleMarkApplied}
                 onToggleReminder={handleToggleReminder}
+                canTrackGovtJobs={canTrackGovtJobs}
+                isLoggedIn={isLoggedIn}
               />
             ))}
           </div>
