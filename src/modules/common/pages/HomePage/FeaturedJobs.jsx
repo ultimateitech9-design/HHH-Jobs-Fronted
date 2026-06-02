@@ -173,8 +173,8 @@ export function FeaturedJobs({
   };
 
   return (
-    <section id="jobs" className="bg-[linear-gradient(180deg,rgba(243,247,253,0.4),rgba(255,248,236,0.2))] px-4 pb-12 pt-5 md:pb-14 md:pt-6">
-      <div className="container mx-auto max-w-[1420px]">
+    <section id="jobs" className="bg-[linear-gradient(180deg,rgba(243,247,253,0.4),rgba(255,248,236,0.2))] pb-12 pt-5 md:pb-14 md:pt-6">
+      <div className="vw-shell">
         <AnimatedSection className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
             <p className="text-[11px] font-medium uppercase tracking-[0.26em] text-brand-700">Featured hiring</p>

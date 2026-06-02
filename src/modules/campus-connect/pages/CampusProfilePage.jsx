@@ -77,7 +77,7 @@ export default function CampusProfilePage() {
   const cardClass = 'rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.10)]';
 
   return (
-    <div className="mx-auto w-full max-w-[860px] space-y-6 pb-12">
+    <div className="vw-shell space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>

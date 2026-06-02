@@ -1398,7 +1398,7 @@ const StudentProfilePage = () => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1120px] space-y-5 pb-12 sm:space-y-7">
+    <div className="vw-shell space-y-5 pb-12 sm:space-y-7">
       <input
         ref={avatarInputRef}
         type="file"

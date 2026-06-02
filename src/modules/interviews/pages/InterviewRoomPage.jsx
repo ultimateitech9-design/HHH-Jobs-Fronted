@@ -2777,7 +2777,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
             )}
 
             {activeRoomTab === 'video' && (
-              <div className="mx-auto flex min-h-0 w-full max-w-[1180px] flex-1 flex-col gap-3">
+              <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
                 {isManager && roomParticipants.length > 1 && (
                   <div className="rounded-lg border border-slate-200 bg-white p-3">
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">

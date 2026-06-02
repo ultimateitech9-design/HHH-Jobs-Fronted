@@ -172,7 +172,7 @@ export default function CampusStudentsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1120px] space-y-6 pb-12">
+    <div className="vw-shell space-y-6 pb-12">
       <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
 
       {/* Header */}

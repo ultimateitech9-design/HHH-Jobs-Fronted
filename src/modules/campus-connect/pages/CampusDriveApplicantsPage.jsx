@@ -6,7 +6,7 @@ export default function CampusDriveApplicantsPage() {
   const { driveId } = useParams();
 
   return (
-    <div className="mx-auto w-full max-w-[1480px] space-y-4 pb-12">
+    <div className="vw-shell-wide space-y-4 pb-12">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Campus Drive</p>

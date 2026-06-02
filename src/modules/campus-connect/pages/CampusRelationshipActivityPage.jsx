@@ -340,7 +340,7 @@ export default function CampusRelationshipActivityPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-[1240px] space-y-6 pb-12 font-body">
+    <div className="vw-shell space-y-6 pb-12 font-body">
       <section className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 shadow-[0_22px_60px_rgba(15,23,42,0.08)] backdrop-blur">
         <div className="flex flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between lg:px-8">
           <div className="max-w-3xl">

@@ -24,8 +24,8 @@ const companies = [
 
 export function TrustedBySection() {
   return (
-    <section className="overflow-hidden border-b border-slate-200 px-4 py-12 md:py-14">
-      <div className="container mx-auto max-w-7xl">
+    <section className="overflow-hidden border-b border-slate-200 py-12 md:py-14">
+      <div className="vw-shell">
         <AnimatedSection>
           <p className="mb-6 text-center text-[12px] font-medium uppercase tracking-[0.3em] text-slate-500">
             Trusted by leading companies worldwide

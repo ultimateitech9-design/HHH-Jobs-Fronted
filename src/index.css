@@ -48,6 +48,25 @@
 }
 
 @layer utilities {
+  .vw-shell {
+    box-sizing: border-box;
+    width: min(92vw, 100%);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .vw-shell-wide {
+    box-sizing: border-box;
+    width: min(94vw, 100%);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .vw-gutter {
+    padding-left: 4vw;
+    padding-right: 4vw;
+  }
+
   .glass-card {
     @apply rounded-[24px] border border-white/70 bg-white/70 shadow-glass backdrop-blur-xl;
   }

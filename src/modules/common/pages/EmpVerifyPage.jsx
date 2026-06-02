@@ -93,7 +93,7 @@ const EmpVerifyPage = ({ compact = false }) => {
         }
       />
 
-      <section className={`container mx-auto max-w-7xl px-4 ${compact ? 'mt-2' : ''}`.trim()}>
+      <section className={`vw-shell ${compact ? 'mt-2' : ''}`.trim()}>
         <PublicSectionHeader
           centered
           eyebrow="Verification Signals"
@@ -114,7 +114,7 @@ const EmpVerifyPage = ({ compact = false }) => {
         </div>
       </section>
 
-      <section className={`container mx-auto max-w-7xl px-4 ${compact ? 'mt-10' : 'mt-16'}`.trim()}>
+      <section className={`vw-shell ${compact ? 'mt-10' : 'mt-16'}`.trim()}>
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
             <PublicSectionHeader
@@ -175,7 +175,7 @@ const EmpVerifyPage = ({ compact = false }) => {
         </div>
       </section>
 
-      <div className={`container mx-auto max-w-7xl px-4 ${compact ? 'mt-10' : 'mt-16'}`.trim()}>
+      <div className={`vw-shell ${compact ? 'mt-10' : 'mt-16'}`.trim()}>
         <PublicCallToAction
           eyebrow="Next Step"
           title="Need verification support inside your hiring flow?"

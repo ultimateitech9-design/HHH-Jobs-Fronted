@@ -205,7 +205,7 @@ const ServicesPage = () => {
 
   return (
     <div className="pb-9 md:pb-12">
-      <section className="container mx-auto mt-4 max-w-[72rem] px-4 md:mt-5">
+      <section className="vw-shell mt-4 md:mt-5">
         <PublicSectionHeader
           centered
           eyebrow="Pricing"
@@ -295,8 +295,8 @@ const ServicesPage = () => {
         </div>
       </section>
 
-      <section className="mt-5 px-4 md:px-6">
-        <div className="mx-auto max-w-[72rem] rounded-[1.3rem] bg-slate-950 p-3 text-white shadow-2xl md:p-3.5">
+      <section className="mt-5">
+        <div className="vw-shell rounded-[1.3rem] bg-slate-950 p-3 text-white shadow-2xl md:p-3.5">
           <PublicSectionHeader
             centered
             eyebrow="Resume Database"
@@ -386,7 +386,7 @@ const ServicesPage = () => {
         </div>
       </section>
 
-      <section className="container mx-auto mt-9 max-w-[72rem] px-4">
+      <section className="vw-shell mt-9">
         <div className="rounded-[1.7rem] border border-brand-100 bg-brand-50 p-4 sm:p-5 md:p-6">
           <PublicSectionHeader
             centered
@@ -446,7 +446,7 @@ const ServicesPage = () => {
         </div>
       </section>
 
-      <div className="container mx-auto mt-9 max-w-[72rem] px-4">
+      <div className="vw-shell mt-9">
         <PublicCallToAction
           eyebrow="HHH Jobs Services"
           title="Use candidate tools and recruiter plans from the same platform"

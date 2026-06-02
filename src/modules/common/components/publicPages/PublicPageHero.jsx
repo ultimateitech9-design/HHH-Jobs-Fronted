@@ -32,7 +32,7 @@ const PublicPageHero = ({
 
   return (
     <section
-      className={`relative overflow-hidden px-4 ${compact
+      className={`relative overflow-hidden ${compact
         ? 'py-8 sm:py-10 md:py-12'
         : tightTop
           ? 'pt-0.5 pb-10 sm:pt-1 sm:pb-12 md:pt-1.5 md:pb-14'
@@ -42,7 +42,7 @@ const PublicPageHero = ({
       <div className="absolute left-8 top-10 h-72 w-72 rounded-full bg-gold/8 blur-3xl" />
       <div className="absolute bottom-0 right-8 h-80 w-80 rounded-full bg-brand-500/10 blur-3xl" />
 
-      <div className="container relative z-10 mx-auto max-w-7xl">
+      <div className="vw-shell relative z-10">
         <div
           className={`grid ${alignVisualTop ? 'items-start' : 'items-center'} ${hasVisual ? 'lg:grid-cols-[1.05fr_0.95fr]' : 'grid-cols-1'
             } ${compact ? 'gap-6 lg:gap-7' : 'gap-8 lg:gap-10'

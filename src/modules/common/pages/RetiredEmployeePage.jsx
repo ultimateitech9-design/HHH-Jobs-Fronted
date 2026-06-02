@@ -128,7 +128,7 @@ const RetiredEmployeePage = () => {
         }
       />
 
-      <section className="container mx-auto max-w-7xl px-4">
+      <section className="vw-shell">
         <PublicSectionHeader
           centered
           eyebrow="Support"
@@ -149,7 +149,7 @@ const RetiredEmployeePage = () => {
         </div>
       </section>
 
-      <section className="container mx-auto mt-16 max-w-7xl px-4">
+      <section className="vw-shell mt-16">
         <PublicSectionHeader
           eyebrow="Role Tracks"
           title="Popular work types for retired candidates"
@@ -170,7 +170,7 @@ const RetiredEmployeePage = () => {
         </div>
       </section>
 
-      <section className="container mx-auto mt-16 max-w-7xl px-4">
+      <section className="vw-shell mt-16">
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
             <PublicSectionHeader
@@ -235,7 +235,7 @@ const RetiredEmployeePage = () => {
         </div>
       </section>
 
-      <div className="container mx-auto mt-16 max-w-7xl px-4">
+      <div className="vw-shell mt-16">
         <PublicCallToAction
           eyebrow="Second Innings"
           title="Ready for your next professional chapter?"

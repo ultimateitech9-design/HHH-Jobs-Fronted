@@ -1044,7 +1044,7 @@ export default function CampusDrivesPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-[1180px] space-y-4 pb-12">
+    <div className="vw-shell space-y-4 pb-12">
       {(showForm || editingDrive) ? (
         <DriveFormModal
           initial={editingDrive || draftDrive}

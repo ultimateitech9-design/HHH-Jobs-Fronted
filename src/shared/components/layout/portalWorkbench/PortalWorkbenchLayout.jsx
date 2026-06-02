@@ -247,7 +247,7 @@ const PortalWorkbenchLayout = ({
             animate={{ opacity: 1, y: 0 }}
             className={`flex flex-1 flex-col ${effectiveMainPaddingClass}`}
           >
-            <div className={`mx-auto flex min-h-0 min-w-0 w-full max-w-[1480px] flex-1 flex-col ${isCompactViewportRoute ? 'gap-2.5' : 'gap-2.5 sm:gap-3 md:gap-4'}`}>
+            <div className={`flex min-h-0 min-w-0 w-full flex-1 flex-col ${isCompactViewportRoute ? 'gap-2.5' : 'gap-2.5 sm:gap-3 md:gap-4'}`}>
               <Outlet />
             </div>
           </motion.main>

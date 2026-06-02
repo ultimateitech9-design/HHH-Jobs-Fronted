@@ -286,7 +286,7 @@ const AddJob = () => {
             <p className="admin-ops-panel-note">Complete the employer, salary, skills, and description fields below to keep the entry consistent and publication-ready.</p>
           </div>
         </div>
-        <div className="mx-auto w-full max-w-[1100px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6">
+        <div className="vw-shell py-4 sm:py-5">
           {loadingEntry ? <p className="module-note">Loading entry details...</p> : null}
           <form className="grid grid-cols-1 gap-5 md:grid-cols-2" onSubmit={handleSubmit}>
             <label className="grid gap-0.5">

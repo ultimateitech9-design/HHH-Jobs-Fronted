@@ -462,7 +462,7 @@ const AudienceLandingPage = ({ audienceKey }) => {
         tightTop
       />
 
-      <section className="container mx-auto max-w-7xl px-4">
+      <section className="vw-shell">
         <PublicSectionHeader
           centered
           eyebrow={content.eyebrow}
@@ -484,7 +484,7 @@ const AudienceLandingPage = ({ audienceKey }) => {
         </div>
       </section>
 
-      <section className="container mx-auto mt-16 max-w-7xl px-4">
+      <section className="vw-shell mt-16">
         <div className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           <div>
             <PublicSectionHeader

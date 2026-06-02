@@ -22,12 +22,12 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
   const postJobPath = isHrUser ? hrJobsPath : '/login/hr';
 
   return (
-    <section className="relative flex min-h-[60vh] items-center overflow-hidden bg-gradient-to-br from-white via-[#fbf8f2] to-[#eef3fb] px-4 pb-6 pt-0">
+    <section className="relative flex min-h-[60vh] items-center overflow-hidden bg-gradient-to-br from-white via-[#fbf8f2] to-[#eef3fb] pb-6 pt-0">
       <div className="pointer-events-none absolute left-8 top-20 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
       <div className="pointer-events-none absolute bottom-12 right-8 h-96 w-96 rounded-full bg-navy/10 blur-3xl" />
       <div className="pointer-events-none absolute top-1/3 right-1/4 h-64 w-64 rounded-full bg-gold-light/10 blur-3xl" />
 
-      <div className="container relative z-10 mx-auto max-w-7xl pb-4 pt-3">
+      <div className="vw-shell relative z-10 pb-4 pt-3">
         <div className="grid items-center gap-6 lg:grid-cols-2 lg:gap-10">
           <div>
             <motion.div

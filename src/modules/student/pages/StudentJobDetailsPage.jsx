@@ -199,7 +199,7 @@ const StudentJobDetailsPage = () => {
 
   if (!state.job) {
     return (
-      <div className="mx-auto max-w-4xl py-16">
+      <div className="vw-shell py-16">
         <StudentEmptyState
           icon={FiAlertCircle}
           title="Job not found"

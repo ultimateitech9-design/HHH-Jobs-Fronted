@@ -12,8 +12,8 @@ export function CtaBanner() {
   const hrSignupPath = '/sign-up?role=hr&redirect=%2Fportal%2Fhr%2Fdashboard';
 
   return (
-    <section className="px-4 py-10 md:py-12">
-      <div className="container mx-auto max-w-5xl">
+    <section className="py-10 md:py-12">
+      <div className="vw-shell">
         <AnimatedSection>
           <div className="gradient-primary relative overflow-hidden rounded-[36px] p-8 text-center md:p-10">
             <motion.div

@@ -17,7 +17,7 @@ const BlogArticlePage = () => {
   }, [targetUrl]);
 
   return (
-    <div className="mx-auto flex min-h-[320px] max-w-3xl items-center justify-center px-4 py-16 text-center">
+    <div className="vw-shell flex min-h-[320px] items-center justify-center py-16 text-center">
       <a
         href={targetUrl}
         className="inline-flex rounded-full bg-navy px-5 py-3 text-sm font-semibold text-white"

@@ -201,7 +201,7 @@ const CampusBillingPage = () => {
   }, [purchases, subscriptions]);
 
   return (
-    <div className="mx-auto w-full max-w-[1180px] space-y-6 pb-12">
+    <div className="vw-shell space-y-6 pb-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-700">Campus Billing</p>

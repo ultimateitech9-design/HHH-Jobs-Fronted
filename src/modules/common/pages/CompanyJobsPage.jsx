@@ -446,7 +446,7 @@ const CompanyJobsPage = () => {
 
   if (detailState.loading) {
     return (
-      <div className="mx-auto flex min-h-[360px] max-w-[1680px] items-center justify-center px-4 py-12 md:px-6 xl:px-8">
+      <div className="vw-shell-wide flex min-h-[360px] items-center justify-center py-12">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-200 border-t-brand-500" />
       </div>
     );
@@ -454,7 +454,7 @@ const CompanyJobsPage = () => {
 
   if (detailState.error || !company) {
     return (
-      <div className="mx-auto max-w-[1680px] px-4 py-12 md:px-6 xl:px-8">
+      <div className="vw-shell-wide py-12">
         <div className="rounded-[32px] border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-700 shadow-sm">
           {detailState.error || 'Company not found.'}
         </div>
@@ -466,7 +466,7 @@ const CompanyJobsPage = () => {
     <div className="relative overflow-hidden">
       <div className="absolute inset-x-0 top-0 -z-10 h-[540px] bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.24),transparent_32%),radial-gradient(circle_at_80%_20%,rgba(14,165,233,0.14),transparent_24%),linear-gradient(180deg,rgba(255,248,235,0.95),rgba(248,250,252,0.68))]" />
 
-      <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-8 px-4 py-10 md:px-6 xl:px-8">
+      <div className="vw-shell-wide flex flex-col gap-8 py-10">
         <Link
           to="/companies"
           className="inline-flex w-max items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:border-brand-300 hover:text-brand-700"

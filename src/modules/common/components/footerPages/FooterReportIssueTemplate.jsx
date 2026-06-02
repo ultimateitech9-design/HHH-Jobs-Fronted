@@ -24,8 +24,8 @@ const FooterReportIssueTemplate = ({ pageData }) => {
         ]}
       />
 
-      <section className="px-4 py-8 md:py-12">
-        <div className="container mx-auto max-w-7xl">
+      <section className="py-8 md:py-12">
+        <div className="vw-shell">
           <PublicSectionHeader
             eyebrow="Issue Handling"
             title="Report concerns clearly so our team can review them faster"
@@ -49,8 +49,8 @@ const FooterReportIssueTemplate = ({ pageData }) => {
         </div>
       </section>
 
-      <section className="px-4 py-4 md:py-8">
-        <div className="container mx-auto max-w-7xl">
+      <section className="py-4 md:py-8">
+        <div className="vw-shell">
           <div className="rounded-[2rem] border border-slate-200 bg-white p-7 shadow-sm">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-rose-600">What to include</p>
             <h3 className="mt-4 font-heading text-2xl font-bold text-navy">High-signal reports get resolved faster</h3>
@@ -70,8 +70,8 @@ const FooterReportIssueTemplate = ({ pageData }) => {
         </div>
       </section>
 
-      <section className="px-4">
-        <div className="container mx-auto max-w-7xl">
+      <section>
+        <div className="vw-shell">
           <PublicCallToAction
             eyebrow="Safe Platform"
             title="Help us keep HHH Jobs reliable, respectful, and secure"

@@ -51,7 +51,7 @@ export default function HrInterestsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1080px] space-y-4 pb-10">
+    <div className="vw-shell space-y-4 pb-10">
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-navy">

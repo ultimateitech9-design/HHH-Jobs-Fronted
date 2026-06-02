@@ -616,7 +616,7 @@ const StudentAtsPage = () => {
       heroSize="mini"
       statsLayout="inline"
       heroClassName="!rounded-[1.55rem] md:!px-5 md:!py-4"
-      bodyClassName="mx-auto max-w-[1360px] pb-6"
+      bodyClassName="vw-shell pb-6"
     >
       {state.error ? <StudentNotice type="error" text={state.error} /> : null}
       {notice.text ? <StudentNotice type={notice.type || 'info'} text={notice.text} /> : null}

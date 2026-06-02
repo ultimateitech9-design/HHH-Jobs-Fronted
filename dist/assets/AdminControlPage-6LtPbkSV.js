@@ -1,0 +1,1 @@
+import{bM as o}from"./index-C5x_-0RI.js";import r from"./AdminDashboardPage-XjrF02c7.js";import"./DashboardMetricCards-buFENhmR.js";import"./DashboardSectionCard-DhcWionx.js";import"./dashboardActionStyles-CaL509Xe.js";import"./StatusPill-v9S1i7Dt.js";import"./adminApi-DytlnWSS.js";const n=()=>o.jsx(r,{});export{n as default};

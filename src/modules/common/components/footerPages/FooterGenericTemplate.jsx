@@ -22,8 +22,8 @@ const FooterGenericTemplate = ({ pageKey, pageData }) => {
         className="pb-6 sm:pb-7 md:pb-8"
       />
 
-      <section className="px-4 pb-8 pt-2 md:pb-10 md:pt-3">
-        <div className="container mx-auto max-w-7xl">
+      <section className="pb-8 pt-2 md:pb-10 md:pt-3">
+        <div className="vw-shell">
           <div className="min-w-0">
             <PublicSectionHeader
               eyebrow={pageData.eyebrow}

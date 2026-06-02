@@ -55,7 +55,7 @@ export default function CampusReportsPage() {
 
   return (
     <FeatureGate feature="campus.reports_export" featureLabel="Placement Reports & Export">
-    <div className="mx-auto w-full max-w-[1120px] space-y-6 pb-12">
+    <div className="vw-shell space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>

@@ -348,10 +348,10 @@ const CampusConnectRegisterPage = () => {
   };
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-brand-50/30 px-4 py-6 pt-24 md:px-6 md:py-8 md:pt-28">
+    <section className="relative min-h-screen overflow-hidden bg-brand-50/30 py-6 pt-24 md:py-8 md:pt-28">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.08),transparent_40%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.04),transparent_40%)]" />
 
-      <div className="relative mx-auto w-full max-w-3xl">
+      <div className="vw-shell relative">
 
         <AnimatedSection delay={0.06}>
           <div className="rounded-[2rem] border border-slate-200/60 bg-white/60 p-6 shadow-[0_8px_32px_rgba(15,23,42,0.04)] backdrop-blur-xl md:p-8">

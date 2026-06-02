@@ -34,7 +34,7 @@ const ChunkRecoveryReady = ({ children }) => {
 };
 
 const PageLoadingFallback = () => (
-  <div className="mx-auto w-full max-w-[1200px] animate-pulse space-y-4 px-4 py-8">
+  <div className="vw-shell animate-pulse space-y-4 py-8">
     <div className="h-7 w-44 rounded-lg bg-slate-100" />
     <div className="h-3.5 w-64 rounded bg-slate-100" />
     <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

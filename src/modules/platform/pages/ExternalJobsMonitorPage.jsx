@@ -137,7 +137,7 @@ export default function ExternalJobsMonitorPage() {
   ];
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8 space-y-8">
+    <div className="vw-shell py-8 space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">External Jobs Monitor</h1>

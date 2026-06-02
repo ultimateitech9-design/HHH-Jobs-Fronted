@@ -541,10 +541,10 @@ const SignupPage = () => {
   const visibleSocialProviders = (Array.isArray(availableProviders) ? availableProviders : ['google'])
     .filter((provider) => provider === 'google');
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#f5f1e8] px-4 pb-6 pt-1 md:px-6 md:pb-8 md:pt-2">
+    <section className="relative min-h-screen overflow-hidden bg-[#f5f1e8] pb-6 pt-1 md:pb-8 md:pt-2">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.14),transparent_26%),radial-gradient(circle_at_100%_0%,rgba(15,23,42,0.06),transparent_28%),linear-gradient(180deg,#f6f1e8_0%,#fbfaf7_52%,#f6f8fb_100%)]" />
 
-      <div className="relative mx-auto grid w-full max-w-[74rem] gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
+      <div className="vw-shell-wide relative grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
         <div className="hidden lg:block">
           <aside className="sticky top-6 mx-auto w-full max-w-[16rem] max-h-[calc(100vh-3rem)] overflow-y-auto rounded-[1rem] border border-slate-200 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] xl:max-w-[17rem] xl:p-5">
             <div className="flex justify-center rounded-[1.3rem] bg-[#f6f8fe] px-4 py-5">

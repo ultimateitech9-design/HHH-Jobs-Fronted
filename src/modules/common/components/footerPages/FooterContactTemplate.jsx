@@ -15,8 +15,8 @@ const FooterContactTemplate = ({ pageData }) => {
         tightTop
       />
 
-      <section className="px-4 pb-12 pt-2 md:pb-16 md:pt-4">
-        <div className="container mx-auto max-w-7xl">
+      <section className="pb-12 pt-2 md:pb-16 md:pt-4">
+        <div className="vw-shell">
           <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-8">
             <FooterContactChannels />
             <FooterContactForm />

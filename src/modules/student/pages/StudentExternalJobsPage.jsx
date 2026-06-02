@@ -541,7 +541,7 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
   };
 
   return (
-    <div className={embedded ? 'space-y-6 pb-2' : 'mx-auto w-full max-w-[1680px] px-4 py-8 md:px-6 xl:px-8'}>
+    <div className={embedded ? 'space-y-6 pb-2' : 'vw-shell-wide py-8'}>
       <section className="mt-4 overflow-hidden rounded-[22px] border border-white/70 bg-white/92 p-2.5 shadow-[0_14px_32px_rgba(15,23,42,0.06)] backdrop-blur xl:p-3">
         <div className="grid gap-2 lg:grid-cols-2 xl:grid-cols-[minmax(0,6fr)_minmax(0,2fr)_minmax(132px,1.15fr)_minmax(126px,1.05fr)_max-content] xl:items-center">
           <div className="relative min-w-0 lg:col-span-2 xl:col-span-1">

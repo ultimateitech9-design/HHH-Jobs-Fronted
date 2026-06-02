@@ -1,0 +1,1 @@
+import{bQ as t,bM as r}from"./index-C5x_-0RI.js";const m=({children:i,className:o="",delay:n=0,as:e="div"})=>{const a=t[e]||t.div;return r.jsx(a,{className:o,initial:{opacity:0,y:24},whileInView:{opacity:1,y:0},viewport:{once:!0,amount:.2},transition:{duration:.55,delay:n},children:i})};export{m as A};

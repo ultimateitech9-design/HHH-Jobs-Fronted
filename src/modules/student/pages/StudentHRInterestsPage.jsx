@@ -140,7 +140,7 @@ export default function StudentHRInterestsPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-[860px] space-y-6 pb-12">
+    <div className="vw-shell space-y-6 pb-12">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-navy">HR Interests</h1>

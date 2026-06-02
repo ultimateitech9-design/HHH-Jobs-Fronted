@@ -112,7 +112,7 @@ export default function HrShortlistedPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1120px] space-y-4 pb-8">
+    <div className="vw-shell space-y-4 pb-8">
       <section className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 font-heading text-base font-bold tracking-tight text-navy md:text-lg">

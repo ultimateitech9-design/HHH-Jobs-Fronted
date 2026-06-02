@@ -6,8 +6,8 @@ import dashboardPreview from '../../../../assets/career-compass-dashboard.jpg';
 
 export function DashboardPreviewSection() {
   return (
-    <section className="overflow-hidden px-4 py-10 md:py-12">
-      <div className="container mx-auto max-w-7xl">
+    <section className="overflow-hidden py-10 md:py-12">
+      <div className="vw-shell">
         <AnimatedSection className="mb-6 text-center">
           <h2 className="font-heading text-2xl font-bold text-navy md:text-3xl">
             Powerful <span className="gradient-text">Dashboards</span>
@@ -20,7 +20,7 @@ export function DashboardPreviewSection() {
           <motion.div
             whileHover={{ scale: 1.01 }}
             transition={{ duration: 0.4 }}
-            className="group relative mx-auto h-[320px] max-w-4xl overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-strong sm:h-[380px] lg:h-[420px]"
+            className="group relative h-[320px] w-full overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-strong sm:h-[380px] lg:h-[420px]"
           >
             <div className="absolute -inset-1 rounded-[28px] gradient-gold opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-15" />
             <img

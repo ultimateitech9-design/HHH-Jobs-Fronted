@@ -493,7 +493,7 @@ export default function CampusConnectionsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1220px] space-y-6 pb-12">
+    <div className="vw-shell space-y-6 pb-12">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-navy">Company Connections</h1>

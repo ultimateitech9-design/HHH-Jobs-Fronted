@@ -92,7 +92,7 @@ const CompaniesPage = () => {
     <div className="relative overflow-hidden">
       <div className="absolute inset-x-0 top-0 -z-10 h-[460px] bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.24),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(14,165,233,0.12),transparent_22%),linear-gradient(180deg,rgba(255,248,235,0.98),rgba(248,250,252,0.72))]" />
 
-      <div className="mx-auto flex w-full max-w-[1560px] flex-col gap-6 px-4 pb-10 pt-4 md:px-6 md:pt-3 lg:px-8">
+      <div className="vw-shell-wide flex flex-col gap-6 pb-10 pt-4 md:pt-3">
         <section className="relative -mt-1 overflow-hidden rounded-[32px] border border-slate-800 bg-[linear-gradient(145deg,#0f172a_0%,#1e293b_50%,#0f172a_100%)] px-6 py-12 shadow-[0_20px_60px_rgba(15,23,42,0.4)] md:py-20 lg:px-12 flex flex-col items-center justify-center text-center">
           <div className="absolute top-0 left-1/4 h-[300px] w-[300px] rounded-full bg-brand-500/20 blur-[80px] pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 h-[300px] w-[300px] rounded-full bg-amber-500/10 blur-[80px] pointer-events-none" />
@@ -117,7 +117,7 @@ const CompaniesPage = () => {
           </div>
         </section>
 
-        <section className="relative z-20 -mt-8 mx-auto w-full max-w-3xl rounded-[32px] border border-white/60 bg-white/80 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl md:-mt-10 md:p-4">
+        <section className="relative z-20 -mt-8 w-full rounded-[32px] border border-white/60 bg-white/80 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl md:-mt-10 md:p-4">
           <div className="relative w-full group">
             <FiSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-brand-500" size={22} />
             <input

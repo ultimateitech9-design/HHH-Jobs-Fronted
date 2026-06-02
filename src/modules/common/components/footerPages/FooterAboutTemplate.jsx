@@ -25,8 +25,8 @@ const FooterAboutTemplate = ({ pageData }) => {
       />
 
 
-      <section className="px-4 py-10 md:py-14">
-        <div className="container mx-auto max-w-4xl">
+      <section className="py-10 md:py-14">
+        <div className="vw-shell">
           <div className="grid gap-6">
             {pageData.sections.map((section, index) => (
               <FooterInfoSectionCard

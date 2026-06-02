@@ -15,8 +15,8 @@ const AuthPageShell = ({
   children
 }) => {
   const sectionClassName = balancedPanels
-    ? `relative overflow-hidden px-4 ${compactHeader ? 'py-4 md:py-5' : 'py-6'} ${lockBalancedHeight ? 'md:min-h-[calc(100vh-4rem)] md:py-8' : compactHeader ? '' : 'md:py-8'}`
-    : 'relative overflow-hidden px-4 py-8 md:py-14';
+    ? `relative overflow-hidden ${compactHeader ? 'py-4 md:py-5' : 'py-6'} ${lockBalancedHeight ? 'md:min-h-[calc(100vh-4rem)] md:py-8' : compactHeader ? '' : 'md:py-8'}`
+    : 'relative overflow-hidden py-8 md:py-14';
   const gridClassName = balancedPanels
     ? `grid gap-7 lg:grid-cols-2 ${lockBalancedHeight ? 'items-stretch' : 'items-start'}`
     : 'grid items-center gap-7 lg:grid-cols-[0.86fr_1fr]';
@@ -32,7 +32,7 @@ const AuthPageShell = ({
       <div className="absolute left-10 top-8 h-52 w-52 rounded-full bg-gold/8 blur-3xl" />
       <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-brand-500/10 blur-3xl" />
 
-      <div className="container relative z-10 mx-auto max-w-[78rem]">
+      <div className="vw-shell relative z-10">
         <div className={gridClassName}>
           <AnimatedSection className={`hidden lg:block ${balancedPanels && lockBalancedHeight ? 'h-full' : ''}`.trim()}>
             <div className={`${sideCardClassName} ${sideClassName}`.trim()}>

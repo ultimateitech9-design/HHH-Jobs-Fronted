@@ -134,7 +134,7 @@ const PortalWorkbenchHeader = ({
         />
 
         <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 py-1.5 backdrop-blur-xl">
-          <div className="mx-auto grid w-full max-w-[1148px] grid-cols-[auto_1fr_auto] items-center gap-2 px-3 sm:px-4 lg:gap-2.5 lg:px-5 xl:px-0">
+          <div className="vw-shell-wide grid grid-cols-[auto_1fr_auto] items-center gap-2 lg:gap-2.5">
             <div className="flex items-center gap-3">
               <button
                 type="button"
