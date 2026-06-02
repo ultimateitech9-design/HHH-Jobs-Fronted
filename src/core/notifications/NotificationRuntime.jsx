@@ -173,6 +173,11 @@ const NotificationRuntime = () => {
         const store = useNotificationStore.getState();
         store.setStreamConnected(false);
 
+        if (error?.status === 401) {
+          store.reset();
+          return;
+        }
+
         if (!store.hydrated) {
           store.setError(error.message || 'Notification stream disconnected.');
         }

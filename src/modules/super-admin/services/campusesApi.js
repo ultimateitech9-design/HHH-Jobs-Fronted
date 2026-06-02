@@ -61,6 +61,15 @@ const fetchAllCampuses = async () => {
 export const getCampuses = async (filters = {}) => {
   try {
     const { campuses, summary } = await fetchAllCampuses();
+    if (campuses.length === 0) {
+      const demoCampuses = adminDummyData.campuses || [];
+      return {
+        data: filterCampuses(demoCampuses, filters),
+        summary: buildDemoSummary(demoCampuses),
+        error: '',
+        isDemo: true
+      };
+    }
     return {
       data: filterCampuses(campuses, filters),
       summary,

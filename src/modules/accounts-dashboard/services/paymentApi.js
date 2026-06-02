@@ -1,5 +1,4 @@
-import { ACCOUNTS_BASE, cloneValue, safeRequest, strictRequest } from './accountsApi';
-import { getAccountsDemoData } from './accountsDemoData';
+import { ACCOUNTS_BASE, safeRequest, strictRequest } from './accountsApi';
 
 const normalizeTransactionStatus = (status) => {
   const normalized = String(status || '').toLowerCase();
@@ -47,7 +46,6 @@ export const getTransactions = async () =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/transactions`,
     emptyData: [],
-    fallbackData: () => getAccountsDemoData().transactions,
     extract: (payload) => (payload?.transactions || []).map(normalizeTransaction)
   });
 
@@ -55,7 +53,6 @@ export const getPayouts = async () =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/payouts`,
     emptyData: [],
-    fallbackData: () => getAccountsDemoData().payouts,
     extract: (payload) => (payload?.payouts || []).map(normalizePayout)
   });
 
@@ -63,7 +60,6 @@ export const getRefunds = async () =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/refunds`,
     emptyData: [],
-    fallbackData: () => getAccountsDemoData().refunds,
     extract: (payload) => (payload?.refunds || []).map(normalizeRefund)
   });
 
@@ -74,10 +70,6 @@ export const getPaymentSettings = async () =>
       methods: [],
       settlementProfile: {}
     },
-    fallbackData: () => ({
-      methods: cloneValue(getAccountsDemoData().paymentMethods),
-      settlementProfile: cloneValue(getAccountsDemoData().settlementProfile)
-    }),
     extract: (payload) => ({
       methods: payload?.methods || [],
       settlementProfile: payload?.settlementProfile || {}

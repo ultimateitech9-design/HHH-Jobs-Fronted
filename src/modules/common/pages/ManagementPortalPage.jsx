@@ -5,8 +5,6 @@ import {
   FiBriefcase,
   FiCreditCard,
   FiHeadphones,
-  FiSearch,
-  FiSettings,
   FiShield,
   FiUserCheck
 } from 'react-icons/fi';
@@ -17,9 +15,7 @@ import './ManagementPortalPage.css';
 
 const managementLinks = [
   { label: 'Admin Dashboard', to: '/portal/admin/dashboard', loginPath: '/management/login/admin', portalLabel: 'Admin Portal', icon: FiShield, roles: PORTAL_ACCESS.admin },
-  { label: 'Super Admin', to: '/portal/super-admin/dashboard', loginPath: '/management/login/super-admin', portalLabel: 'Super Admin Portal', icon: FiUserCheck, roles: PORTAL_ACCESS.superAdmin },
-  { label: 'Platform Ops', to: '/portal/platform/dashboard', loginPath: '/management/login/platform', portalLabel: 'Platform Ops Portal', icon: FiSettings, roles: PORTAL_ACCESS.platform },
-  { label: 'Audit Portal', to: '/portal/audit/dashboard', loginPath: '/management/login/audit', portalLabel: 'Audit Portal', icon: FiSearch, roles: PORTAL_ACCESS.audit }
+  { label: 'Super Admin', to: '/portal/super-admin/dashboard', loginPath: '/management/login/super-admin', portalLabel: 'Super Admin Portal', icon: FiUserCheck, roles: PORTAL_ACCESS.superAdmin }
 ];
 
 const employeeLinks = [
@@ -27,7 +23,7 @@ const employeeLinks = [
   { label: 'Sales Dashboard', to: '/portal/sales/overview', loginPath: '/management/login/sales', portalLabel: 'Sales Portal', icon: FiBarChart2, roles: PORTAL_ACCESS.sales },
   { label: 'Data Entry', to: '/portal/dataentry/dashboard', loginPath: '/management/login/dataentry', portalLabel: 'Data Entry Portal', icon: FiBriefcase, roles: PORTAL_ACCESS.dataentry },
   { label: 'Accounts Dashboard', to: '/portal/accounts/overview', loginPath: '/management/login/accounts', portalLabel: 'Accounts Portal', icon: FiCreditCard, roles: PORTAL_ACCESS.accounts },
-  { label: 'Campus Connect', to: '/portal/campus-connect/dashboard', loginPath: '/management/login/campus-connect', portalLabel: 'Campus Connect Portal', icon: FiBookOpen, roles: PORTAL_ACCESS.campusConnect }
+  { label: 'Campus Connect', to: '/portal/campus-connect/dashboard', loginPath: '/login/campus-connect', portalLabel: 'Campus Connect Portal', icon: FiBookOpen, roles: PORTAL_ACCESS.campusConnect }
 ];
 
 const ManagementPortalPage = () => {
@@ -79,7 +75,7 @@ const ManagementPortalPage = () => {
                   className="management-card__link"
                   onClick={() => openPortalLogin(item)}
                 >
-                  <item.icon size={16} />
+                  <item.icon size={14} />
                   <span>{item.label}</span>
                 </button>
               ))}
@@ -99,7 +95,7 @@ const ManagementPortalPage = () => {
                   className="management-card__link"
                   onClick={() => openPortalLogin(item)}
                 >
-                  <item.icon size={16} />
+                  <item.icon size={14} />
                   <span>{item.label}</span>
                 </button>
               ))}

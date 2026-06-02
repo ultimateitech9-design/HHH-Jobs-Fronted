@@ -28,6 +28,7 @@ const PlatformModuleLayout = () => {
       portalLabel="Platform Console"
       subtitle="Manage tenants, billing, integrations, and support operations from one console."
       navItems={platformNavItems}
+      expandSidebarOnHover
       support={{
         title: 'Platform Ops',
         text: 'Track degraded integrations and open tickets to avoid tenant downtime.',

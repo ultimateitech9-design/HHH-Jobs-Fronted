@@ -14,6 +14,7 @@ const AuditModuleLayout = () => {
       portalLabel="Audit Console"
       subtitle="Explore events, investigate alerts, and keep compliance trails complete."
       navItems={auditNavItems}
+      expandSidebarOnHover
       support={{
         title: 'Audit Focus',
         text: 'Review unresolved high-severity alerts first each cycle.',

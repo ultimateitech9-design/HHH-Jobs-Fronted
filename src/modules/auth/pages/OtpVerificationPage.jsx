@@ -303,7 +303,7 @@ const OtpVerificationPage = () => {
         role: nextUser?.role
       });
 
-      if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles) && !destination) {
+      if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
         setError(buildPortalRoleErrorMessage(allowedLoginRoles));
         return;
       }
@@ -338,7 +338,7 @@ const OtpVerificationPage = () => {
           role: nextUser?.role
         });
 
-        if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles) && !destination) {
+        if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
           setError(buildPortalRoleErrorMessage(allowedLoginRoles));
           return;
         }

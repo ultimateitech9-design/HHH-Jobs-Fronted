@@ -98,9 +98,7 @@ const ADMIN_PORTAL_SWITCH_ROLES = Object.freeze([
   'sales',
   'accounts',
   'dataentry',
-  'campus_connect',
-  'platform',
-  'audit'
+  'campus_connect'
 ]);
 const ADMIN_ACCESS_ROLES = new Set(['admin', 'super_admin']);
 

@@ -39,6 +39,7 @@ const SalesModuleLayout = () => {
       portalLabel="Sales Dashboard"
       subtitle="Payments, leads, customers, team performance, packages, coupons, and sales reporting."
       navItems={visibleNavItems}
+      expandSidebarOnHover
     />
   );
 };

@@ -1,5 +1,4 @@
 import { ACCOUNTS_BASE, safeRequest, strictRequest } from './accountsApi';
-import { getAccountsDemoData } from './accountsDemoData';
 
 const normalizeInvoice = (invoice = {}) => ({
   id: invoice.id,
@@ -17,7 +16,6 @@ export const getInvoices = async () =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/invoices`,
     emptyData: [],
-    fallbackData: () => getAccountsDemoData().invoices,
     extract: (payload) => (payload?.invoices || []).map(normalizeInvoice)
   });
 

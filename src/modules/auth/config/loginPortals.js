@@ -12,8 +12,7 @@ const managementPortalKeySet = new Set([
   'dataentry',
   'accounts',
   'platform',
-  'audit',
-  'campus-connect'
+  'audit'
 ]);
 
 const loginPortals = {
@@ -46,6 +45,7 @@ const loginPortals = {
     passwordPlaceholder: 'Enter your password',
     allowSocialLogin: true,
     socialRole: 'student',
+    allowedLoginRoles: ['student'],
     showCreateAccount: true,
     createAccountPath: '/sign-up?role=student',
     createAccountLabel: 'Create candidate account',
@@ -68,6 +68,7 @@ const loginPortals = {
     passwordPlaceholder: 'Enter your password',
     allowSocialLogin: true,
     socialRole: 'retired_employee',
+    allowedLoginRoles: [],
     showCreateAccount: true,
     createAccountPath: '/sign-up?role=retired_employee',
     createAccountLabel: 'Create retired professional account',
@@ -90,6 +91,7 @@ const loginPortals = {
     passwordPlaceholder: 'Enter your password',
     allowSocialLogin: false,
     socialRole: 'student',
+    allowedLoginRoles: ['hr'],
     showCreateAccount: true,
     createAccountPath: '/sign-up?role=hr',
     createAccountLabel: 'Create recruiter account',

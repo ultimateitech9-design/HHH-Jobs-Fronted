@@ -20,6 +20,25 @@ export const clone = (value) => {
   return JSON.parse(JSON.stringify(value));
 };
 
+const resolveFallbackData = (fallbackData) => (
+  typeof fallbackData === 'function' ? fallbackData() : fallbackData
+);
+
+const isEmptyResponseData = (value) => {
+  if (Array.isArray(value)) return value.length === 0;
+  if (!value || typeof value !== 'object') return false;
+
+  const entries = Object.values(value);
+  if (entries.length === 0) return true;
+
+  return entries.every((item) => {
+    if (Array.isArray(item)) return item.length === 0;
+    if (item && typeof item === 'object') return isEmptyResponseData(item);
+    if (typeof item === 'number') return item === 0;
+    return item === null || item === undefined || item === '';
+  });
+};
+
 export const parseJson = async (response) => {
   try {
     return await response.json();
@@ -42,10 +61,17 @@ export const strictRequest = async ({ path, options, extract = (payload) => payl
 export const safeRequest = async ({ path, options, emptyData, fallbackData, extract = (payload) => payload }) => {
   try {
     const data = await strictRequest({ path, options, extract });
+    if (fallbackData !== undefined && isEmptyResponseData(data)) {
+      return {
+        data: clone(resolveFallbackData(fallbackData)),
+        error: '',
+        isDemo: true
+      };
+    }
     return { data, error: '', isDemo: false };
   } catch (error) {
-    const resolvedFallback = areDemoFallbacksEnabled()
-      ? (typeof fallbackData === 'function' ? fallbackData() : fallbackData)
+    const resolvedFallback = fallbackData !== undefined
+      ? resolveFallbackData(fallbackData)
       : undefined;
     return {
       data: clone(resolvedFallback !== undefined ? resolvedFallback : emptyData),
@@ -131,6 +157,13 @@ export const getUsers = async (filters = {}) => {
     const managedUsers = areDemoFallbacksEnabled()
       ? getManagedAccounts().map(mapManagedAccountToUser)
       : [];
+    if (apiUsers.length === 0 && managedUsers.length === 0) {
+      return {
+        data: buildVisibleUsers(filters),
+        error: '',
+        isDemo: true
+      };
+    }
     return {
       data: filterDeletedUsers(filterUsers([...apiUsers, ...managedUsers], filters)),
       error: '',
@@ -170,17 +203,22 @@ export const createAdminUser = async (payload) => {
     salesCode: payload.salesCode || payload.sales_code || ''
   };
 
-  if (!findManagedAccountByEmail(managedPayload.email)) {
-    createManagedAccount(managedPayload);
-  }
-
   try {
-    return await strictRequest({
+    const createdUser = await strictRequest({
       path: `${SUPER_ADMIN_BASE}/users`,
       options: { method: 'POST', body: JSON.stringify(payload) },
       extract: (response) => mapApiUserToUi(response?.user || response)
     });
+    return createdUser;
   } catch (error) {
+    if (!areDemoFallbacksEnabled()) {
+      throw error;
+    }
+
+    if (!findManagedAccountByEmail(managedPayload.email)) {
+      createManagedAccount(managedPayload);
+    }
+
     const nextId = `USR-${1000 + adminDummyData.users.length + 1}`;
     return {
       id: nextId,

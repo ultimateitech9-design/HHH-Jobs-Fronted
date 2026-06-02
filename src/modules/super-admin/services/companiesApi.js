@@ -51,6 +51,13 @@ const fetchAllCompanies = async () => {
 export const getCompanies = async (filters = {}) => {
   try {
     const companies = await fetchAllCompanies();
+    if (companies.length === 0) {
+      return {
+        data: filterCompanies(adminDummyData.companies, filters),
+        error: '',
+        isDemo: true
+      };
+    }
     return {
       data: filterCompanies(companies, filters),
       error: '',

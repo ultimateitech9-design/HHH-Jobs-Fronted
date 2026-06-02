@@ -18,6 +18,12 @@ const initialDraft = {
   note: ''
 };
 
+const CompactText = ({ value, className = '' }) => (
+  <span className={`block max-w-full truncate ${className}`.trim()} title={String(value || '')}>
+    {value || '-'}
+  </span>
+);
+
 const Expenses = () => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,25 +56,55 @@ const Expenses = () => {
   }, [expenses]);
 
   const columns = [
-    { key: 'title', label: 'Expense' },
-    { key: 'category', label: 'Category' },
-    { key: 'department', label: 'Department' },
+    {
+      key: 'title',
+      label: 'Expense',
+      width: 155,
+      wrap: false,
+      render: (value) => <CompactText value={value} className="font-medium text-slate-800" />
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      width: 115,
+      wrap: false,
+      render: (value) => <CompactText value={value} />
+    },
+    {
+      key: 'department',
+      label: 'Department',
+      width: 125,
+      wrap: false,
+      render: (value) => <CompactText value={value} />
+    },
     {
       key: 'amount',
       label: 'Amount',
+      width: 105,
+      wrap: false,
       render: (value) => formatCurrency(value)
     },
     {
       key: 'status',
       label: 'Status',
+      width: 100,
+      wrap: false,
       render: (value) => <StatusPill value={value || 'pending'} />
     },
     {
       key: 'spentOn',
       label: 'Spent On',
+      width: 105,
+      wrap: false,
       render: (value) => formatDate(value)
     },
-    { key: 'note', label: 'Note' }
+    {
+      key: 'note',
+      label: 'Note',
+      width: 140,
+      wrap: false,
+      render: (value) => <CompactText value={value} className="text-slate-600" />
+    }
   ];
 
   const handleDraftChange = (field, value) => {
@@ -142,7 +178,7 @@ const Expenses = () => {
         </div>
         <div className="px-4 py-4 sm:px-5 sm:py-5">
           {loading ? <p className="module-note">Loading expenses...</p> : null}
-          <DataTable columns={columns} rows={expenses} searchable pagination itemsPerPage={8} searchPlaceholder="Search expense, category, department, note, or status" />
+          <DataTable columns={columns} rows={expenses} compact fitOnDesktop searchable pagination itemsPerPage={8} searchPlaceholder="Search expense, category, department, note, or status" />
         </div>
       </section>
     </div>

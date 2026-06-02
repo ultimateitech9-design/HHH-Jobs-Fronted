@@ -11,7 +11,7 @@ import useUsers from '../hooks/useUsers';
 import { ASSIGNABLE_DASHBOARD_ROLE_OPTIONS, USER_ROLES, USER_ROLE_LABELS } from '../constants/userRoles';
 import { createAdminUser, deleteUser, updateUserStatus } from '../services/usersApi';
 import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
-import { INDIAN_STATES } from '../../../shared/constants/indianStates';
+import StateScopePicker from '../../../shared/components/StateScopePicker';
 
 const INITIAL_ADMIN_FORM = {
   name: '',
@@ -19,7 +19,7 @@ const INITIAL_ADMIN_FORM = {
   company: 'HHH Jobs',
   password: '',
   role: 'admin',
-  assignedStates: [],
+  assignedStates: ['Andhra Pradesh'],
   salesCode: ''
 };
 
@@ -148,20 +148,11 @@ const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
       </label>
       <label>
         State Scope
-        <select
-          multiple
+        <StateScopePicker
           value={adminForm.assignedStates}
-          onChange={(event) => setAdminForm((current) => ({
-            ...current,
-            assignedStates: Array.from(event.target.selectedOptions, (option) => option.value)
-          }))}
-          className="min-h-[118px]"
-        >
-          {INDIAN_STATES.map((state) => (
-            <option key={state} value={state}>{state}</option>
-          ))}
-        </select>
-        <span className="text-xs font-semibold text-slate-500">Leave empty for all states. Admin can get multiple states; employees inherit selected state work.</span>
+          onChange={(assignedStates) => setAdminForm((current) => ({ ...current, assignedStates }))}
+          helper="Admin can get multiple states; employees inherit selected state work."
+        />
       </label>
       {adminForm.role === 'sales' ? (
         <label>
@@ -252,7 +243,7 @@ const UsersManagement = () => {
   const [deletingAdmin, setDeletingAdmin] = useState(null);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState(filters);
-  const pageSize = 5;
+  const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
   const paginatedUsers = useMemo(
     () => filteredUsers.slice((page - 1) * pageSize, page * pageSize),

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { FiX } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { apiFetch, apiUrl, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
+import { apiFetch, apiUrl, areDemoFallbacksEnabled, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
 import {
   beginPendingVerificationSession,
   clearAuthSession,
@@ -69,6 +69,8 @@ const getLoginSuccessDestination = ({ redirectTo = '', payloadRedirectTo = '', r
 };
 
 const tryManagedAccountLogin = ({ email, password, navigate, redirectTo, setError, allowedLoginRoles }) => {
+  if (!areDemoFallbacksEnabled()) return false;
+
   const managedAccount = findManagedAccountByLogin(email);
   if (!managedAccount) return false;
 
@@ -81,13 +83,8 @@ const tryManagedAccountLogin = ({ email, password, navigate, redirectTo, setErro
 
   const roleMatchesPage = isRoleAllowedOnLoginPage(nextUser?.role, allowedLoginRoles);
   const safeDestination = getLoginSuccessDestination({ redirectTo, role: nextUser?.role });
-  if (!roleMatchesPage && safeDestination) {
-    setAuthSession(`managed-${nextUser.id}`, nextUser);
-    navigate(safeDestination, { replace: true });
-    return true;
-  }
-
   if (!roleMatchesPage) {
+    clearAuthSession();
     setError?.(buildPortalRoleErrorMessage(allowedLoginRoles));
     return true;
   }
@@ -188,7 +185,10 @@ const LoginPanelContent = ({
       setIsSubmitting(true);
       const response = await apiFetch('/auth/login', {
         method: 'POST',
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          allowedLoginRoles: normalizedAllowedLoginRoles
+        }),
         skipAuth: true,
         timeoutMs: AUTH_REQUEST_TIMEOUT_MS
       });
@@ -260,18 +260,6 @@ const LoginPanelContent = ({
             : payload.user;
 
       if (!isRoleAllowedOnLoginPage(nextUser?.role, normalizedAllowedLoginRoles)) {
-        const safeDestination = getLoginSuccessDestination({
-          redirectTo,
-          payloadRedirectTo: payload.redirectTo,
-          role: nextUser?.role
-        });
-
-        if (safeDestination) {
-          setAuthSession(payload.token, nextUser);
-          navigate(safeDestination, { replace: true });
-          return;
-        }
-
         clearAuthSession();
         setError(buildPortalRoleErrorMessage(normalizedAllowedLoginRoles));
         return;

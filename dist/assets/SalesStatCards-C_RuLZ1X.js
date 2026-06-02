@@ -1,0 +1,1 @@
+import{bM as a}from"./index-D-IRW2xE.js";import{S as r}from"./StatCard-DF0-m-2U.js";const e=({cards:t=[]})=>a.jsx("div",{className:"stats-grid",children:t.map(s=>a.jsx(r,{...s},s.label))});export{e as S};

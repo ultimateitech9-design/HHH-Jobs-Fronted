@@ -1,1 +1,0 @@
-import{bH as s}from"./index-omNDN7EC.js";const e=({title:t="No records found.",description:o="Nothing to show right now."})=>s.jsxs("div",{className:"dash-list-empty",children:[s.jsx("strong",{children:t}),s.jsx("p",{children:o})]});export{e as E};

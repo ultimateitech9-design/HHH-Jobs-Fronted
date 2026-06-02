@@ -24,7 +24,7 @@ const mapJobStage = (value) => {
 
 export const mapApiUserToUi = (user = {}) => ({
   id: user.id,
-  displayId: getManagementDisplayId(user.id, user.role),
+  displayId: user.employeeCode || user.employee_code || getManagementDisplayId(user.id, user.role),
   name: user.name || '-',
   email: user.email || '-',
   role: user.role || 'student',
@@ -227,4 +227,3 @@ export const expandPermissionKeys = (permissions = []) => {
 
   return next;
 };
-

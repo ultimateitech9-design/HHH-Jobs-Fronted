@@ -33,6 +33,7 @@ const DataEntryModuleLayout = () => {
       portalLabel="Data Entry Workspace"
       subtitle="Create job posts, manage approval queues, and track publishing status in one place."
       navItems={dataEntryNavItems}
+      expandSidebarOnHover
     />
   );
 };

@@ -1,5 +1,4 @@
 import { ACCOUNTS_BASE, safeRequest } from './accountsApi';
-import { getAccountsDemoData } from './accountsDemoData';
 
 const buildCategoryPerformance = (summary = {}) => ([
   {
@@ -27,7 +26,6 @@ export const getRevenueReports = async () =>
       revenue: [],
       categoryPerformance: []
     },
-    fallbackData: () => getAccountsDemoData().reports,
     extract: (payload) => {
       const summary = payload?.revenue || {};
       const monthlyPoints = Array.isArray(summary.monthly)

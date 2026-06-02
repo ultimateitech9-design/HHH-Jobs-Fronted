@@ -2,6 +2,24 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import rankedSearch from '../utils/rankedSearch';
 
+const DISPLAY_ID_LENGTH = 11;
+
+const isIdColumn = (column = {}) => {
+  const key = String(column.key || '').toLowerCase();
+  const label = String(column.label || '').toLowerCase();
+
+  return key === 'id'
+    || key === 'displayid'
+    || key.endsWith('_id')
+    || /(^|\s)id($|\s)/.test(label);
+};
+
+const formatDisplayId = (value) => {
+  const text = String(value || '');
+  if (text.length <= DISPLAY_ID_LENGTH) return text;
+  return text.slice(0, DISPLAY_ID_LENGTH);
+};
+
 const DataTable = ({
   columns = [],
   rows = [],
@@ -50,8 +68,8 @@ const DataTable = ({
     total + (typeof column.width === 'number' ? column.width : 0)
   ), 0);
   const tableMinWidth = `${explicitTableWidth || Math.max(760, columns.length * 150)}px`;
-  const desktopTableStyle = fitOnDesktop ? undefined : { minWidth: tableMinWidth };
-  const desktopTableClassName = fitOnDesktop ? 'table-auto' : 'table-fixed';
+  const desktopTableStyle = fitOnDesktop ? { tableLayout: 'fixed' } : { minWidth: tableMinWidth };
+  const desktopTableClassName = 'table-fixed';
   
   // Professional tight spacing and fonts
   const headerCellClassName = compact
@@ -80,7 +98,7 @@ const DataTable = ({
 
   const getCellContentClassName = (column) => {
     const wrappingClassName = column.wrap === false
-      ? 'whitespace-nowrap'
+      ? 'overflow-hidden truncate whitespace-nowrap'
       : 'break-words [overflow-wrap:anywhere]';
 
     return `min-w-0 ${wrappingClassName} ${column.cellClassName || ''}`.trim();
@@ -91,7 +109,20 @@ const DataTable = ({
       ? column.render(row[column.key], row)
       : row[column.key];
 
-    return value === null || value === undefined || value === '' ? '-' : value;
+    if (value === null || value === undefined || value === '') return '-';
+
+    if (column.truncateId !== false && isIdColumn(column) && ['string', 'number'].includes(typeof value)) {
+      const fullValue = String(value);
+      const displayValue = formatDisplayId(fullValue);
+
+      return (
+        <span title={fullValue} aria-label={fullValue}>
+          {displayValue}
+        </span>
+      );
+    }
+
+    return value;
   };
 
   return (

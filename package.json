@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --configLoader runner",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
@@ -15,6 +15,7 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "framer-motion": "^12.38.0",
+    "kill-port": "^2.0.1",
     "localforage": "^1.10.0",
     "lucide-react": "^1.7.0",
     "match-sorter": "^6.3.4",

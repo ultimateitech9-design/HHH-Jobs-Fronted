@@ -7,6 +7,7 @@ import {
   getMySupportChat,
   sendSupportChatMessage
 } from '../services/liveSupportChatApi';
+import useAuthStore from '../../core/auth/authStore';
 
 const portalLabels = {
   student: 'Student',
@@ -15,6 +16,8 @@ const portalLabels = {
 };
 
 const LiveSupportChatWidget = ({ portalKey = '' }) => {
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
   const [open, setOpen] = useState(false);
   const [chat, setChat] = useState(null);
   const [message, setMessage] = useState('');
@@ -28,9 +31,15 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
   const supportDeskLabel = isWaitingForSupport
     ? 'Waiting for support'
     : `${chat?.assignedTo || 'Support desk'} will help you`;
+  const canUseLiveSupport = Boolean(user?.id && token);
 
   useEffect(() => {
     if (!open) return undefined;
+    if (!canUseLiveSupport) {
+      setChat(null);
+      setStatus('');
+      return undefined;
+    }
 
     let active = true;
     const loadChat = async () => {
@@ -49,7 +58,7 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
       active = false;
       window.clearInterval(timer);
     };
-  }, [open]);
+  }, [canUseLiveSupport, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -60,6 +69,10 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
     event.preventDefault();
     const text = message.trim();
     if (!text || loading) return;
+    if (!canUseLiveSupport) {
+      setStatus('Please sign in again to use live support.');
+      return;
+    }
 
     setLoading(true);
     setStatus('');
@@ -148,7 +161,13 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
             </div>
           </header>
 
-          {!chat?.id ? (
+          {!canUseLiveSupport ? (
+            <div className="flex flex-1 items-center justify-center bg-slate-50 p-4">
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm font-semibold leading-6 text-slate-500">
+                Please sign in again to use live support.
+              </div>
+            </div>
+          ) : !chat?.id ? (
             <div className="grid gap-2 border-b border-slate-100 p-3">
               <input
                 value={subject}
@@ -165,7 +184,7 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
             </div>
           ) : null}
 
-          <div className="flex-1 space-y-2 overflow-y-auto bg-slate-50 p-3">
+          {canUseLiveSupport ? <div className="flex-1 space-y-2 overflow-y-auto bg-slate-50 p-3">
             {isWaitingForSupport ? (
               <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-800">
                 <FiClock className="mt-0.5 shrink-0" size={14} />
@@ -215,11 +234,11 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
               </div>
             )}
             <div ref={messagesEndRef} />
-          </div>
+          </div> : null}
 
           {status ? <p className="border-t border-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">{status}</p> : null}
 
-          <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-slate-100 bg-white p-3">
+          {canUseLiveSupport ? <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-slate-100 bg-white p-3">
             <textarea
               value={message}
               onChange={(event) => setMessage(event.target.value)}
@@ -236,7 +255,7 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
             >
               <FiSend size={17} />
             </button>
-          </form>
+          </form> : null}
         </section>
       ) : (
         <button

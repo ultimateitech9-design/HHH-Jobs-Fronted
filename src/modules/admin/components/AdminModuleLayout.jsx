@@ -26,6 +26,7 @@ const AdminModuleLayout = () => {
       portalLabel="Admin Console"
       subtitle="Manage users, jobs, reports, approvals, and payments from one workspace."
       navItems={adminNavItems}
+      expandSidebarOnHover
     />
   );
 };

@@ -27,6 +27,11 @@ const ChatWindow = ({
   const isClosed = ['closed', 'resolved'].includes(String(chat?.status || '').toLowerCase());
   const moderationAction = String(chat?.moderation?.action || '').toLowerCase();
   const isRestricted = ['ban', 'block'].includes(moderationAction);
+  const handleTransferSelect = (event) => {
+    const targetDepartment = event.target.value;
+    event.target.value = '';
+    onTransfer?.(chat, targetDepartment);
+  };
   const handleEnterToSend = (event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
@@ -46,12 +51,12 @@ const ChatWindow = ({
             {chat.company} | {chat.stateName || 'State not set'} | Assigned to {chat.assignedTo || chat.assignedDepartment || 'Support'}
           </p>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+        <div className="flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1.5">
           <button
             type="button"
             disabled={!onUpdateStatus}
             onClick={() => onUpdateStatus?.(chat, isClosed ? 'open' : 'resolved')}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold leading-4 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`inline-flex h-7 items-center justify-center gap-1 rounded-full border px-2.5 text-[10px] font-extrabold uppercase leading-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap ${
               isClosed
                 ? 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100'
                 : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
@@ -63,26 +68,33 @@ const ChatWindow = ({
             type="button"
             disabled={!(chat.messages || []).length}
             onClick={() => onClearChat?.(chat)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold leading-4 text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-7 items-center justify-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 text-[10px] font-extrabold uppercase leading-none text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
           >
             <FiTrash2 size={12} /> Clear
           </button>
-          {transferOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-bold leading-4 text-sky-800 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-55"
-              disabled={transferring || (chat.assignedDepartment || '').toLowerCase() === option.value}
-              onClick={() => onTransfer?.(chat, option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
+          <select
+            value=""
+            disabled={transferring || !onTransfer}
+            onChange={handleTransferSelect}
+            className="h-7 rounded-full border border-sky-200 bg-sky-50 px-2.5 text-[10px] font-extrabold uppercase leading-none text-sky-800 outline-none transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-55"
+            aria-label="Transfer chat"
+          >
+            <option value="" disabled>{transferring ? 'Transferring...' : 'Transfer'}</option>
+            {transferOptions.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+                disabled={(chat.assignedDepartment || '').toLowerCase() === option.value}
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
           <button
             type="button"
             disabled={!onModerate || isRestricted}
             onClick={() => onModerate?.(chat, { action: 'ban', hours: 24 })}
-            className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold leading-4 text-amber-800 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-7 items-center justify-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 text-[10px] font-extrabold uppercase leading-none text-amber-800 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
           >
             <FiClock size={12} /> Ban 24h
           </button>
@@ -90,7 +102,7 @@ const ChatWindow = ({
             type="button"
             disabled={!onModerate || isRestricted}
             onClick={() => onModerate?.(chat, { action: 'block' })}
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-100 px-2.5 py-1 text-[11px] font-bold leading-4 text-slate-800 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-7 items-center justify-center gap-1 rounded-full border border-slate-300 bg-slate-100 px-2.5 text-[10px] font-extrabold uppercase leading-none text-slate-800 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
           >
             <FiSlash size={12} /> Block
           </button>
@@ -98,7 +110,7 @@ const ChatWindow = ({
             type="button"
             disabled={!onModerate || !isRestricted}
             onClick={() => onModerate?.(chat, { action: 'unblock' })}
-            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold leading-4 text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-7 items-center justify-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 text-[10px] font-extrabold uppercase leading-none text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
           >
             <FiUnlock size={12} /> Unblock
           </button>

@@ -51,7 +51,7 @@ const Refunds = () => {
             <p className="admin-ops-panel-note">Track refund exposure, processing completion, and reasons behind reversals.</p>
           </div>
         </div>
-        <div className="px-4 py-4 sm:px-5 sm:py-5">
+        <div className="px-2 py-2 sm:px-3 sm:py-3">
           {loading ? <p className="module-note">Loading refunds...</p> : null}
           <RefundTable rows={refunds} />
         </div>

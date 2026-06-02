@@ -1,5 +1,4 @@
 import { apiFetch, areDemoFallbacksEnabled } from '../../../utils/api';
-import { getAccountsDemoData } from './accountsDemoData';
 
 export const ACCOUNTS_BASE = '/accounts';
 
@@ -123,7 +122,6 @@ export const getAccountsOverview = async () =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/overview`,
     emptyData: emptyOverview,
-    fallbackData: () => getAccountsDemoData().overview,
     extract: (payload) => {
       const ov = payload?.overview || payload || {};
       const totalInvoices = ov.totalInvoices || 0;
@@ -179,10 +177,6 @@ export const getTransactions = async (params = {}) =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/transactions?${buildQueryString(params)}`,
     emptyData: { transactions: [], total: 0, page: 1, limit: 50 },
-    fallbackData: () => {
-      const transactions = getAccountsDemoData().transactions;
-      return { transactions, total: transactions.length, page: 1, limit: 50 };
-    },
     extract: (payload) => ({
       transactions: payload?.transactions || [],
       total: payload?.total || 0,
@@ -195,10 +189,6 @@ export const getInvoices = async (params = {}) =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/invoices?${buildQueryString(params)}`,
     emptyData: { invoices: [], total: 0, page: 1, limit: 50 },
-    fallbackData: () => {
-      const invoices = getAccountsDemoData().invoices;
-      return { invoices, total: invoices.length, page: 1, limit: 50 };
-    },
     extract: (payload) => ({
       invoices: payload?.invoices || [],
       total: payload?.total || 0,
@@ -225,7 +215,6 @@ export const getSubscriptions = async (params = {}) =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/subscriptions?${buildQueryString(params)}`,
     emptyData: [],
-    fallbackData: () => getAccountsDemoData().subscriptions,
     extract: (payload) => (payload?.subscriptions || []).map(normalizeSubscription)
   });
 
@@ -233,7 +222,6 @@ export const getExpenses = async (params = {}) =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/expenses?${buildQueryString(params)}`,
     emptyData: [],
-    fallbackData: () => getAccountsDemoData().expenses,
     extract: (payload) => (payload?.expenses || []).map(normalizeExpense)
   });
 
@@ -255,10 +243,6 @@ export const getPayouts = async (params = {}) =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/payouts?${buildQueryString(params)}`,
     emptyData: { payouts: [], total: 0, page: 1, limit: 50 },
-    fallbackData: () => {
-      const payouts = getAccountsDemoData().payouts;
-      return { payouts, total: payouts.length, page: 1, limit: 50 };
-    },
     extract: (payload) => ({
       payouts: payload?.payouts || [],
       total: payload?.total || 0,
@@ -278,10 +262,6 @@ export const getRefunds = async (params = {}) =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/refunds?${buildQueryString(params)}`,
     emptyData: { refunds: [], total: 0, page: 1, limit: 50 },
-    fallbackData: () => {
-      const refunds = getAccountsDemoData().refunds;
-      return { refunds, total: refunds.length, page: 1, limit: 50 };
-    },
     extract: (payload) => ({
       refunds: payload?.refunds || [],
       total: payload?.total || 0,
@@ -294,7 +274,6 @@ export const getReports = async () =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/reports`,
     emptyData: { revenue: [], categoryPerformance: [] },
-    fallbackData: () => getAccountsDemoData().reports,
     extract: (payload) => payload?.reports || payload || {}
   });
 
@@ -302,6 +281,5 @@ export const getSettlementProfile = async () =>
   safeRequest({
     path: `${ACCOUNTS_BASE}/settlement`,
     emptyData: {},
-    fallbackData: () => getAccountsDemoData().settlementProfile,
     extract: (payload) => payload?.settlement || payload || {}
   });

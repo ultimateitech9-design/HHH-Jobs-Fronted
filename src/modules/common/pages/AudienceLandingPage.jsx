@@ -369,7 +369,7 @@ const audienceContent = {
     ],
     heroActions: [
       { label: 'Register Campus', to: '/campus-connect/register?redirect=%2Fportal%2Fcampus-connect%2Fdashboard' },
-      { label: 'Campus Login', to: '/management/login/campus-connect', variant: 'ghost' }
+      { label: 'Campus Login', to: '/login/campus-connect', variant: 'ghost' }
     ],
     asideTitle: 'What campuses get here',
     asidePoints: [
@@ -433,7 +433,7 @@ const audienceContent = {
       description: 'If your college or placement cell needs a cleaner workflow for drives, students, and recruiter outreach, Campus Connect should be entered directly from the public home experience.',
       actions: [
         { label: 'Register Campus', to: '/campus-connect/register?redirect=%2Fportal%2Fcampus-connect%2Fdashboard' },
-        { label: 'Campus Login', to: '/management/login/campus-connect' }
+        { label: 'Campus Login', to: '/login/campus-connect' }
       ],
       chips: ['Placement cell', 'Drive management', 'Employer outreach']
     }

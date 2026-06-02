@@ -128,6 +128,7 @@ const SIGNAL_CURSOR_OVERLAP_MS = 2000;
 const MAX_TRACKED_SIGNAL_IDS = 5000;
 const MEDIA_RETRY_INTERVAL_MS = 5000;
 const PRESENCE_HEARTBEAT_INTERVAL_MS = 4000;
+const HR_OFFER_COOLDOWN_MS = 12000;
 
 const createSignalSessionId = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -169,7 +170,7 @@ const CandidateVideoTile = ({ participant, mediaState, isSelected, onSelect, onR
       }`}
     >
       <div className="relative aspect-video">
-        <video ref={videoRef} autoPlay playsInline className="absolute inset-0 h-full w-full object-contain" />
+        <video ref={videoRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-contain" />
         {!isReady && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-slate-400">
             <FiUsers size={18} />
@@ -338,6 +339,36 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
   const visibleRoomParticipants = isManager
     ? roomParticipants
     : roomParticipants.filter((participant) => !currentCandidateId || participant.candidateId === currentCandidateId);
+  const currentRoomParticipant = roomParticipants.find((participant) => participant.candidateId === currentCandidateId) || null;
+  const isRecruiterOnline = Boolean(
+    currentRoomParticipant?.isHrOnline
+    || remoteStreamReady
+    || ['connected', 'connecting'].includes(String(connectionState || '').toLowerCase())
+  );
+  const visibleRoomMembers = isManager
+    ? roomParticipants.map((participant) => ({
+        id: participant.interviewId || participant.candidateId,
+        name: participant.name || 'Candidate',
+        meta: participant.email || participant.status || 'Scheduled',
+        role: 'Candidate',
+        isOnline: Boolean(participant.isOnline)
+      }))
+    : [
+        {
+          id: hr?.id || 'recruiter',
+          name: hr?.name || 'Recruiter',
+          meta: hr?.companyName || job?.company_name || hr?.email || 'Hiring team',
+          role: 'Recruiter',
+          isOnline: isRecruiterOnline
+        },
+        ...visibleRoomParticipants.map((participant) => ({
+          id: participant.interviewId || participant.candidateId,
+          name: participant.name || candidate?.name || 'You',
+          meta: participant.email || candidate?.email || participant.status || 'Candidate',
+          role: 'You',
+          isOnline: Boolean(participant.isOnline)
+        }))
+      ];
   const roomApiInterviewId = activeInterviewId || interviewId;
   const videoRecipientId = isManager ? currentCandidateId : (hr?.id || '');
   const workspaceRecipientId = videoRecipientId;
@@ -798,7 +829,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     return entry;
   };
 
-  const createHrCandidateOffer = async (candidateId, { iceRestart = false } = {}) => {
+  const createHrCandidateOffer = async (candidateId, { iceRestart = false, force = false } = {}) => {
     const normalizedCandidateId = String(candidateId || '').trim();
     if (!isManager || !localStreamRef.current || !normalizedCandidateId) return;
 
@@ -806,6 +837,12 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     if (!entry || entry.offerInFlight) return;
 
     const { peerConnection } = entry;
+    const peerState = peerConnection.connectionState || peerConnection.iceConnectionState || 'new';
+    const recentOfferAge = Date.now() - (entry.offerStartedAt || 0);
+    const hasRecentOffer = entry.sessionId && recentOfferAge >= 0 && recentOfferAge < HR_OFFER_COOLDOWN_MS;
+    const canRenegotiateNow = ['failed', 'disconnected', 'closed'].includes(peerState);
+    if (!force && hasRecentOffer && !canRenegotiateNow) return;
+
     if (peerConnection.signalingState !== 'stable') {
       const stuckMs = Date.now() - (entry.offerStartedAt || 0);
       if (peerConnection.signalingState === 'have-local-offer' && stuckMs > 8000) {
@@ -1816,7 +1853,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
       if (isManager) {
         const reconnectCandidateId = String(payloadBody.candidateId || '').trim();
         if (reconnectCandidateId && localStreamRef.current) {
-          await createHrCandidateOffer(reconnectCandidateId, { iceRestart: true });
+          await createHrCandidateOffer(reconnectCandidateId, { iceRestart: true, force: true });
         }
         return;
       }
@@ -1840,7 +1877,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
     if (isManager) {
       await Promise.all((roomParticipants.length > 0 ? roomParticipants : [{ candidateId: currentCandidateId }])
         .filter((participant) => participant.candidateId)
-        .map((participant) => createHrCandidateOffer(participant.candidateId, { iceRestart: true }).catch(() => null)));
+        .map((participant) => createHrCandidateOffer(participant.candidateId, { iceRestart: true, force: true }).catch(() => null)));
       return;
     }
 
@@ -1871,7 +1908,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
 
     await startLocalMedia({ createOffer: false, announcePresence: false });
     if (localStreamRef.current) {
-      await createHrCandidateOffer(targetCandidateId, { iceRestart: true });
+      await createHrCandidateOffer(targetCandidateId, { iceRestart: true, force: true });
     }
 
     await sendInterviewSignal(roomApiInterviewId, {
@@ -2630,13 +2667,21 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{isManager ? 'Participants' : 'Your room'}</p>
               <div className="mt-2 space-y-1.5">
-                {visibleRoomParticipants.map((participant) => (
-                  <div key={participant.interviewId || participant.candidateId} className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2">
-                    <p className="truncate text-[11px] font-semibold text-slate-800">{participant.name || 'Candidate'}</p>
-                    <p className="mt-0.5 truncate text-[9px] text-slate-500">{participant.email || participant.status || 'Scheduled'}</p>
+                {visibleRoomMembers.map((member) => (
+                  <div key={member.id} className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-[11px] font-semibold text-slate-800">{member.name}</p>
+                      <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide ${
+                        member.isOnline ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${member.isOnline ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                        {member.isOnline ? 'Online' : 'Waiting'}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 truncate text-[9px] text-slate-500">{member.role} · {member.meta}</p>
                   </div>
                 ))}
-                {!visibleRoomParticipants.length ? (
+                {!visibleRoomMembers.length ? (
                   <div className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-[11px] font-semibold text-slate-500">
                     Recruiter room details will appear after joining.
                   </div>
@@ -2702,7 +2747,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
               <div className="grid shrink-0 gap-3 lg:grid-cols-2">
                 <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-950">
                   <div className="relative aspect-video max-h-[180px]">
-                    <video ref={bindRemoteVideoRef(compactRemoteVideoRef)} autoPlay playsInline className="absolute inset-0 h-full w-full object-contain" />
+                    <video ref={bindRemoteVideoRef(compactRemoteVideoRef)} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-contain" />
                     {!remoteStreamReady && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-slate-400">
                         <FiUsers size={18} />
@@ -2773,7 +2818,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                     {isLocalPrimaryStage ? (
                       <video ref={bindLocalVideoRef(localVideoRef)} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-contain" />
                     ) : (
-                      <video ref={bindRemoteVideoRef(remoteVideoRef)} autoPlay playsInline className="absolute inset-0 h-full w-full object-contain" />
+                      <video ref={bindRemoteVideoRef(remoteVideoRef)} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-contain" />
                     )}
 
                     {isLocalPrimaryStage ? (
@@ -2809,7 +2854,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                   >
                     <div className="relative aspect-video overflow-hidden rounded-[18px] border border-white/20 bg-slate-900 shadow-[0_20px_42px_rgba(15,23,42,0.34)] ring-1 ring-black/10 backdrop-blur-sm">
                       {isLocalPrimaryStage ? (
-                        <video ref={bindRemoteVideoRef(remoteVideoRef)} autoPlay playsInline className="absolute inset-0 h-full w-full object-contain" />
+                        <video ref={bindRemoteVideoRef(remoteVideoRef)} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-contain" />
                       ) : (
                         <video ref={bindLocalVideoRef(localVideoRef)} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-contain" />
                       )}
@@ -3252,7 +3297,7 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                     </div>
                   </div>
                   <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-[10px] text-slate-600">
-                    {roomParticipants.find((participant) => participant.candidateId === currentCandidateId)?.isHrOnline
+                    {isRecruiterOnline
                       ? 'Recruiter is in this room.'
                       : 'Recruiter will appear here when they join or reconnect.'}
                   </div>

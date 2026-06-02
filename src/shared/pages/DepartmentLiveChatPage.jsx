@@ -9,8 +9,10 @@ import {
   getSupportChats,
   moderateSupportChat,
   sendSupportChatMessage,
+  transferSupportChat,
   updateSupportChatStatus
 } from '../services/liveSupportChatApi';
+import { formatSupportDepartment } from '../../modules/support/utils/ticketHelpers';
 
 const departmentCopy = {
   dataentry: {
@@ -27,6 +29,13 @@ const departmentCopy = {
   }
 };
 
+const transferOptions = [
+  { value: 'support', label: 'Support' },
+  { value: 'dataentry', label: 'Data Entry' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'accounts', label: 'Accounts' }
+];
+
 const DepartmentLiveChatPage = ({ department = 'support' }) => {
   const copy = departmentCopy[department] || departmentCopy.dataentry;
   const [chats, setChats] = useState([]);
@@ -34,6 +43,7 @@ const DepartmentLiveChatPage = ({ department = 'support' }) => {
   const [reply, setReply] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [transferring, setTransferring] = useState(false);
   const [error, setError] = useState('');
   const activeChat = useMemo(
     () => chats.find((chat) => chat.id === activeId) || chats[0] || null,
@@ -110,6 +120,38 @@ const DepartmentLiveChatPage = ({ department = 'support' }) => {
     }
   };
 
+  const handleTransfer = async (targetDepartment) => {
+    if (!activeChat?.id || !targetDepartment) return;
+    const currentDepartment = String(activeChat.assignedDepartment || department || '').toLowerCase();
+    if (currentDepartment === targetDepartment) return;
+
+    const reason = window.prompt(
+      `Transfer reason for ${formatSupportDepartment(targetDepartment)}`,
+      `Needs ${formatSupportDepartment(targetDepartment)} follow-up.`
+    );
+    if (reason === null) return;
+
+    setTransferring(true);
+    setError('');
+    try {
+      const updatedChat = await transferSupportChat(activeChat.id, {
+        department: targetDepartment,
+        reason: reason.trim() || `Needs ${formatSupportDepartment(targetDepartment)} follow-up.`
+      });
+      updateChat(activeChat.id, updatedChat);
+    } catch (transferError) {
+      setError(transferError.message || 'Unable to transfer chat.');
+    } finally {
+      setTransferring(false);
+    }
+  };
+
+  const handleTransferSelect = (event) => {
+    const targetDepartment = event.target.value;
+    event.target.value = '';
+    handleTransfer(targetDepartment);
+  };
+
   const handleDeleteMessage = async (message) => {
     if (!activeChat?.id || !message?.id) return;
     if (!window.confirm('Delete this message?')) return;
@@ -160,7 +202,7 @@ const DepartmentLiveChatPage = ({ department = 'support' }) => {
           <aside className="panel-card flex min-h-0 flex-col !p-0">
             <div className="border-b border-slate-100 p-4">
               <h3 className="text-base font-extrabold text-slate-900">Transferred Chats</h3>
-              <p className="text-xs font-semibold text-slate-500">Only {department} assigned chats appear here.</p>
+              <p className="text-xs font-semibold text-slate-500">Chats assigned to {formatSupportDepartment(department)} appear here.</p>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-2">
               {chats.length ? chats.map((chat) => (
@@ -193,29 +235,51 @@ const DepartmentLiveChatPage = ({ department = 'support' }) => {
 
           {activeChat ? (
             <section className="panel-card flex min-h-[560px] flex-col overflow-hidden !p-0">
-              <div className="dash-card-head">
-                <div>
-                  <h3>{activeChat.visitor}</h3>
-                  <p>{activeChat.company} | {activeChat.stateName || 'State not set'} | Support transferred to {department}</p>
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
+                <div className="min-w-0 flex-1 basis-[220px]">
+                  <h3 className="truncate text-[15px] font-extrabold leading-5 text-slate-900">{activeChat.visitor}</h3>
+                  <p className="mt-0.5 truncate text-[12px] font-semibold leading-4 text-slate-500">
+                    {activeChat.company} | {activeChat.stateName || 'State not set'} | Support transferred to {formatSupportDepartment(activeChat.assignedDepartment || department)}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1.5">
                   <button
                     type="button"
                     onClick={() => handleUpdateStatus(['closed', 'resolved'].includes(String(activeChat.status || '').toLowerCase()) ? 'open' : 'resolved')}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black uppercase text-emerald-700 transition-colors hover:bg-emerald-100"
+                    className="inline-flex h-7 items-center justify-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 text-[10px] font-extrabold uppercase leading-none text-emerald-700 transition-colors hover:bg-emerald-100 whitespace-nowrap"
                   >
-                    {['closed', 'resolved'].includes(String(activeChat.status || '').toLowerCase()) ? <FiRefreshCw size={13} /> : <FiCheckCircle size={13} />}
+                    {['closed', 'resolved'].includes(String(activeChat.status || '').toLowerCase()) ? <FiRefreshCw size={12} /> : <FiCheckCircle size={12} />}
                     {['closed', 'resolved'].includes(String(activeChat.status || '').toLowerCase()) ? 'Reopen' : 'Resolve'}
                   </button>
                   <button
                     type="button"
                     disabled={!(activeChat.messages || []).length}
                     onClick={handleClearChat}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-black uppercase text-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-7 items-center justify-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 text-[10px] font-extrabold uppercase leading-none text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
                   >
-                    <FiTrash2 size={13} /> Clear
+                    <FiTrash2 size={12} /> Clear
                   </button>
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black uppercase text-amber-700">{activeChat.assignedDepartment}</span>
+                  <select
+                    value=""
+                    disabled={transferring}
+                    onChange={handleTransferSelect}
+                    className="h-7 rounded-full border border-sky-200 bg-sky-50 px-2.5 text-[10px] font-extrabold uppercase leading-none text-sky-800 outline-none transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Transfer chat"
+                  >
+                    <option value="" disabled>{transferring ? 'Transferring...' : 'Transfer'}</option>
+                    {transferOptions.map((option) => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                        disabled={String(activeChat.assignedDepartment || department || '').toLowerCase() === option.value}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="inline-flex h-7 items-center justify-center rounded-full bg-amber-50 px-2.5 text-[10px] font-extrabold uppercase leading-none text-amber-700 whitespace-nowrap">
+                    {formatSupportDepartment(activeChat.assignedDepartment || department)}
+                  </span>
                 </div>
               </div>
               {['ban', 'block'].includes(String(activeChat.moderation?.action || '').toLowerCase()) ? (
@@ -225,11 +289,11 @@ const DepartmentLiveChatPage = ({ department = 'support' }) => {
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2 border-b border-slate-100 px-4 py-2">
-                  <button type="button" className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-black uppercase text-amber-800" onClick={() => handleModerateChat({ action: 'ban', hours: 24 })}>
-                    <FiClock /> Ban 24h
+                  <button type="button" className="inline-flex h-7 items-center justify-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 text-[10px] font-extrabold uppercase leading-none text-amber-800 whitespace-nowrap" onClick={() => handleModerateChat({ action: 'ban', hours: 24 })}>
+                    <FiClock size={12} /> Ban 24h
                   </button>
-                  <button type="button" className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-black uppercase text-slate-800" onClick={() => handleModerateChat({ action: 'block' })}>
-                    <FiSlash /> Block
+                  <button type="button" className="inline-flex h-7 items-center justify-center gap-1 rounded-full border border-slate-300 bg-slate-100 px-2.5 text-[10px] font-extrabold uppercase leading-none text-slate-800 whitespace-nowrap" onClick={() => handleModerateChat({ action: 'block' })}>
+                    <FiSlash size={12} /> Block
                   </button>
                 </div>
               )}

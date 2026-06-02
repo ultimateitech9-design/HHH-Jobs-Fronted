@@ -153,7 +153,7 @@ const PortalWorkbenchLayout = ({
 
   return (
     <div
-      className={`portal-workbench w-full overflow-x-clip ${isInterviewRoomRoute ? 'h-full overflow-hidden' : 'min-h-screen'} portal-workbench--${portalKey}`}
+      className={`portal-workbench w-full overflow-x-clip min-h-screen portal-workbench--${portalKey}`}
       style={{
         background:
           'radial-gradient(circle at top left, rgba(229,155,23,0.12), transparent 26%), radial-gradient(circle at 100% 0%, rgba(36,95,176,0.1), transparent 24%), linear-gradient(180deg, #f8f6f2 0%, #f3f6fb 100%)'
@@ -217,9 +217,9 @@ const PortalWorkbenchLayout = ({
       )}
 
       <div
-        className={`${isInterviewRoomRoute ? 'h-full min-h-0' : 'min-h-screen'} min-w-0 transition-all ${sidebarMarginClass}`}
+        className={`min-h-screen min-w-0 transition-all ${sidebarMarginClass}`}
       >
-        <div className={`flex flex-col ${isInterviewRoomRoute ? 'h-full min-h-0' : 'min-h-screen'}`}>
+        <div className="flex min-h-screen flex-col">
           {fullWidthHeader ? null : (
             <PortalWorkbenchHeader
               activePortalRole={activePortalRole}
@@ -245,7 +245,7 @@ const PortalWorkbenchLayout = ({
           <motion.main
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`flex flex-1 flex-col ${effectiveMainPaddingClass} ${isInterviewRoomRoute ? 'overflow-hidden' : ''}`}
+            className={`flex flex-1 flex-col ${effectiveMainPaddingClass}`}
           >
             <div className={`mx-auto flex min-h-0 min-w-0 w-full max-w-[1480px] flex-1 flex-col ${isCompactViewportRoute ? 'gap-2.5' : 'gap-2.5 sm:gap-3 md:gap-4'}`}>
               <Outlet />

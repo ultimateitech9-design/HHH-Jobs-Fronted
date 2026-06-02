@@ -33,6 +33,7 @@ const AccountsModuleLayout = () => {
       portalLabel="Accounts Dashboard"
       subtitle="Revenue, invoices, subscription billing, payouts, refunds, and payment settings."
       navItems={accountsNavItems}
+      expandSidebarOnHover
     />
   );
 };

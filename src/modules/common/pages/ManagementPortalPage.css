@@ -85,15 +85,6 @@
   transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
 }
 
-.management-card::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 4px;
-  border-radius: 28px 28px 0 0;
-  opacity: 0.95;
-}
-
 .management-card > * {
   position: relative;
   z-index: 1;
@@ -111,18 +102,10 @@
     0 0 72px rgba(47, 83, 143, 0.08);
 }
 
-.management-card--management::before {
-  background: linear-gradient(90deg, #11213b, #2f538f);
-}
-
 .management-card--employee {
   box-shadow:
     0 22px 48px rgba(17, 33, 59, 0.11),
     0 0 72px rgba(31, 122, 97, 0.08);
-}
-
-.management-card--employee::before {
-  background: linear-gradient(90deg, #c57e12, #e59b17 55%, #f3c86d);
 }
 
 .management-card__icon {
@@ -151,7 +134,7 @@
 .management-card h1,
 .management-card h2 {
   margin: 0;
-  font-size: clamp(2.3rem, 3.6vw, 3.3rem);
+  font-size: clamp(1.55rem, 2.2vw, 2.05rem);
   line-height: 1.05;
   color: #11213b;
   font-family: 'Space Grotesk', sans-serif;
@@ -161,35 +144,41 @@
 .management-card__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 24px;
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
-  transition: transform 0.24s ease;
+  gap: 9px;
+  margin-top: 18px;
+  opacity: 0;
+  transform: translateY(14px);
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
   position: relative;
   z-index: 2;
 }
 
 .management-card:hover .management-card__actions,
 .management-card:focus-within .management-card__actions {
+  opacity: 1;
   transform: translateY(0);
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .management-card__link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-width: 180px;
+  gap: 7px;
+  min-width: 142px;
   cursor: pointer;
-  padding: 14px 20px;
+  padding: 10px 14px;
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.28);
   background: rgba(255, 255, 255, 0.92);
   color: #17325c;
   text-decoration: none;
+  font-size: 0.8rem;
   font-weight: 700;
+  line-height: 1.1;
   box-shadow: 0 10px 20px rgba(17, 33, 59, 0.05);
   transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
@@ -199,11 +188,11 @@
 }
 
 .management-card__link:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   background: linear-gradient(135deg, rgba(197, 126, 18, 0.12), rgba(47, 83, 143, 0.08));
   border-color: rgba(197, 126, 18, 0.28);
   color: #11213b;
-  box-shadow: 0 14px 28px rgba(17, 33, 59, 0.1);
+  box-shadow: 0 10px 20px rgba(17, 33, 59, 0.08);
 }
 
 .management-portal__footer {

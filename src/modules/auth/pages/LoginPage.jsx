@@ -2,12 +2,18 @@ import { Navigate, useLocation, useParams } from 'react-router-dom';
 import LoginPanelContent from '../components/LoginPanelContent';
 import { getLoginPortalConfig, isManagementLoginPortal } from '../config/loginPortals';
 
+const publicLoginPortalKeys = new Set(['student', 'hr', 'campus-connect']);
+
 const LoginPage = () => {
   const location = useLocation();
   const { portalKey } = useParams();
 
   if (isManagementLoginPortal(portalKey)) {
     return <Navigate to={`/management/login/${portalKey}`} replace state={location.state} />;
+  }
+
+  if (portalKey && !publicLoginPortalKeys.has(portalKey)) {
+    return <Navigate to="/login" replace state={location.state} />;
   }
 
   const portalConfig = getLoginPortalConfig(portalKey);

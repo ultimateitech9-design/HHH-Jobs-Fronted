@@ -1,1 +1,0 @@
-import{bH as s}from"./index-omNDN7EC.js";import{S as m}from"./SectionHeader-X_RoMD0_.js";const n=({title:r,subtitle:e,action:o,eyebrow:t=""})=>s.jsx(m,{eyebrow:t,title:r,subtitle:e,action:o});export{n as A};

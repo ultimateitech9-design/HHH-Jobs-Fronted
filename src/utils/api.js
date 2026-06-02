@@ -89,6 +89,8 @@ const buildDevUserHeader = () => {
     email: user.email,
     role: user.role,
     status: user.status || 'active',
+    isHrApproved: user.isHrApproved,
+    is_hr_approved: user.is_hr_approved,
     isEmailVerified: user.isEmailVerified,
     is_email_verified: user.is_email_verified
   }));
@@ -109,7 +111,7 @@ export const apiFetch = async (path, options = {}) => {
     headers['Content-Type'] = 'application/json';
   }
 
-  if (!skipAuth && !headers['X-HHH-Dev-User'] && !headers['x-hhh-dev-user']) {
+  if (!skipAuth && !shouldUseApiAuth && !headers['X-HHH-Dev-User'] && !headers['x-hhh-dev-user']) {
     const devUserHeader = buildDevUserHeader();
     if (devUserHeader) headers['X-HHH-Dev-User'] = devUserHeader;
   }

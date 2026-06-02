@@ -313,7 +313,7 @@ const CampusConnectRegisterPage = () => {
       }
 
       if (payload.alreadyRegistered) {
-        navigate('/management/login/campus-connect', {
+        navigate('/login/campus-connect', {
           replace: true,
           state: {
             signupMessage: payload.message || 'Campus account already exists. Please sign in.'
@@ -581,7 +581,7 @@ const CampusConnectRegisterPage = () => {
 
                 <div className="text-[0.92rem] text-slate-500">
                   Already registered?{' '}
-                  <Link to="/management/login/campus-connect" className="font-semibold text-brand-700 transition-colors hover:text-navy">
+                  <Link to="/login/campus-connect" className="font-semibold text-brand-700 transition-colors hover:text-navy">
                     Campus login
                   </Link>
                 </div>
