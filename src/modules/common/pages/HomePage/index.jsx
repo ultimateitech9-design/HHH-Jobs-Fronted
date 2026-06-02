@@ -193,7 +193,7 @@ const HomePage = () => {
 
     const loadHiringFacets = async () => {
       try {
-        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=60&sectorLimit=90&cityLimit=70&pincodeLimit=40');
+        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=100&sectorLimit=90&cityLimit=110&pincodeLimit=40');
         const payload = response.ok ? await response.json().catch(() => null) : null;
         if (!mounted || !payload?.status) return;
 

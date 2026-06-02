@@ -1,1 +1,0 @@
-import{bM as e}from"./index-C1d3tuib.js";import{A as r}from"./AudienceLandingPage-Bt8lAc9N.js";import"./PublicFeatureCard-My9gxfdq.js";import"./AnimatedSection-BOE488UF.js";import"./PublicPageHero-CI47QgYN.js";import"./PublicSectionHeader-COKtO5q1.js";const p=()=>e.jsx(r,{audienceKey:"freshers"});export{p as default};
