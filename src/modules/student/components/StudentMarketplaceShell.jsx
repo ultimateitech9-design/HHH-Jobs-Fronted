@@ -7,6 +7,7 @@ import {
   FiBriefcase,
   FiCalendar,
   FiGrid,
+  FiFlag,
   FiHome,
   FiMapPin,
   FiTrendingUp
@@ -22,7 +23,9 @@ const defaultOverview = {
   profileCompletion: 0,
   counters: {
     totalApplications: 0,
-    unreadNotifications: 0
+    unreadNotifications: 0,
+    govtJobsApplied: 0,
+    govtJobReminders: 0
   },
   campusConnect: null
 };
@@ -37,6 +40,7 @@ const emptyProfile = {
 const menuItems = [
   { label: 'My home', icon: FiHome, to: '/portal/student/home' },
   { label: 'Jobs', icon: FiBriefcase, to: '/portal/student/home?jobsView=all' },
+  { label: 'Govt Jobs', icon: FiFlag, to: '/portal/student/govt-jobs' },
   { label: 'Saved Jobs', icon: FiBookmark, to: '/portal/student/saved-jobs' },
   { label: 'Campus Connect', icon: FiBookOpen, to: '/portal/student/campus-connect' },
   { label: 'ATS', icon: FiActivity, to: '/portal/student/ats' },
@@ -82,7 +86,9 @@ const StudentMarketplaceShell = ({ children }) => {
         profileCompletion: Number(overviewPayload.profileCompletion || 0),
         counters: {
           totalApplications: Number(overviewPayload.counters?.totalApplications || 0),
-          unreadNotifications: Number(overviewPayload.counters?.unreadNotifications || 0)
+          unreadNotifications: Number(overviewPayload.counters?.unreadNotifications || 0),
+          govtJobsApplied: Number(overviewPayload.counters?.govtJobsApplied || 0),
+          govtJobReminders: Number(overviewPayload.counters?.govtJobReminders || 0)
         },
         campusConnect: overviewPayload.campusConnect || null
       });
@@ -164,6 +170,14 @@ const StudentMarketplaceShell = ({ children }) => {
                 <div>
                   <p className="text-xs text-slate-500">Recruiter actions</p>
                   <p className="mt-1 text-xl font-bold text-brand-700">{overview.counters.unreadNotifications}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Govt forms filled</p>
+                  <p className="mt-1 text-xl font-bold text-brand-700">{overview.counters.govtJobsApplied}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Govt reminders</p>
+                  <p className="mt-1 text-xl font-bold text-brand-700">{overview.counters.govtJobReminders}</p>
                 </div>
               </div>
               <div className="mt-2.5 flex items-center justify-between rounded-2xl bg-white px-3 py-2 text-left text-[11px] font-semibold text-slate-700">

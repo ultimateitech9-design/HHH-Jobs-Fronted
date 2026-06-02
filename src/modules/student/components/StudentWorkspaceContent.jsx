@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiBriefcase, FiFileText, FiMapPin, FiTrendingUp, FiUser } from 'react-icons/fi';
+import { FiBriefcase, FiFileText, FiFlag, FiMapPin, FiTrendingUp, FiUser } from 'react-icons/fi';
 import careerCompassDashboard from '../../../assets/career-compass-dashboard.jpg';
 import { BLOG_BASE_URL } from '../../../shared/utils/externalLinks.js';
 import { getCurrentUser } from '../../../utils/auth';
@@ -14,7 +14,9 @@ const defaultOverview = {
   profileCompletion: 0,
   counters: {
     totalApplications: 0,
-    unreadNotifications: 0
+    unreadNotifications: 0,
+    govtJobsApplied: 0,
+    govtJobReminders: 0
   }
 };
 
@@ -72,7 +74,9 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
         profileCompletion: Number(overviewPayload.profileCompletion || 0),
         counters: {
           totalApplications: Number(overviewPayload.counters?.totalApplications || 0),
-          unreadNotifications: Number(overviewPayload.counters?.unreadNotifications || 0)
+          unreadNotifications: Number(overviewPayload.counters?.unreadNotifications || 0),
+          govtJobsApplied: Number(overviewPayload.counters?.govtJobsApplied || 0),
+          govtJobReminders: Number(overviewPayload.counters?.govtJobReminders || 0)
         },
         pipeline: overviewPayload.pipeline || {}
       });
@@ -108,6 +112,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
   const menuItems = [
     { label: 'My home', icon: FiUser, active: true, to: '/portal/student/home' },
     { label: 'Jobs', icon: FiBriefcase, active: false, to: '/portal/student/jobs' },
+    { label: 'Govt Jobs', icon: FiFlag, active: false, to: '/portal/student/govt-jobs' },
     { label: 'My Applications', icon: FiFileText, active: false, to: '/portal/student/applications' },
     { label: 'Interviews', icon: FiTrendingUp, active: false, to: '/portal/student/interviews' }
   ];
@@ -162,6 +167,14 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
               <div>
                 <p className="text-xs text-slate-500">Recruiter actions</p>
                 <p className="mt-2 text-2xl font-bold text-brand-700">{overview.counters.unreadNotifications}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Govt forms filled</p>
+                <p className="mt-2 text-2xl font-bold text-brand-700">{overview.counters.govtJobsApplied}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Govt reminders</p>
+                <p className="mt-2 text-2xl font-bold text-brand-700">{overview.counters.govtJobReminders}</p>
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700">

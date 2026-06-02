@@ -52,6 +52,7 @@ const publicRoutes = [
   { path: 'campus-connect', element: <CampusConnectPage /> },
   { path: 'retired-employee', element: <RetiredEmployeePage /> },
   { path: 'jobs', element: <StudentExternalJobsPage /> },
+  { path: 'govt-jobs', element: <Navigate to="/portal/student/govt-jobs" replace /> },
   { path: 'global-jobs', element: <Navigate to="/jobs" replace /> },
   { path: 'workflow', element: <Navigate to="/" replace /> },
   { path: 'forbidden', element: <ForbiddenPage /> },

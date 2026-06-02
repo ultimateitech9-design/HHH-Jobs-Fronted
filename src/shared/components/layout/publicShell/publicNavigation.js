@@ -1,6 +1,6 @@
 import { BLOG_BASE_URL } from '../../../utils/externalLinks.js';
 
-export const getPublicNavItems = ({ jobsNavPath, dashboardPath }) => [
+export const getPublicNavItems = ({ jobsNavPath, govtJobsNavPath, govtJobsNavState, dashboardPath }) => [
   {
     key: 'home',
     to: '/',
@@ -40,6 +40,13 @@ export const getPublicNavItems = ({ jobsNavPath, dashboardPath }) => [
     to: jobsNavPath,
     label: 'Jobs',
     matchers: [/^\/jobs(?:\/.*)?$/, /^\/global-jobs(?:\/.*)?$/]
+  },
+  {
+    key: 'govt-jobs',
+    to: govtJobsNavPath,
+    state: govtJobsNavState,
+    label: 'Govt Jobs',
+    matchers: [/^\/govt-jobs(?:\/.*)?$/, /^\/portal\/student\/govt-jobs(?:\/.*)?$/]
   },
   {
     key: 'companies',

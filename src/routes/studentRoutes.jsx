@@ -18,6 +18,7 @@ const StudentServicesPage = lazy(() => import('../modules/student/pages/StudentS
 const StudentAutoApplyPage = lazy(() => import('../modules/student/pages/StudentAutoApplyPage'));
 const StudentNotificationsPage = lazy(() => import('../modules/student/pages/StudentNotificationsPage'));
 const StudentExternalJobsPage = lazy(() => import('../modules/student/pages/StudentExternalJobsPage'));
+const StudentGovtJobsPage = lazy(() => import('../modules/student/pages/StudentGovtJobsPage'));
 const StudentHRInterestsPage = lazy(() => import('../modules/student/pages/StudentHRInterestsPage'));
 const StudentCampusConnectPage = lazy(() => import('../modules/student/pages/StudentCampusConnectPage'));
 const HelpSupportPage = lazy(() => import('../shared/pages/HelpSupportPage'));
@@ -51,6 +52,7 @@ const studentRoutes = [
       { path: 'services', element: <StudentServicesPage /> },
       { path: 'notifications', element: <StudentNotificationsPage /> },
       { path: 'company-reviews', element: <Navigate to="/portal/student/companies" replace /> },
+      { path: 'govt-jobs', element: <StudentGovtJobsPage /> },
       { path: 'global-jobs', element: <StudentExternalJobsPage /> },
       { path: 'hr-interests', element: <StudentHRInterestsPage /> },
       { path: 'help-support', element: <HelpSupportPage /> }

@@ -458,7 +458,10 @@ export const getStudentDashboardOverview = async () => {
         savedJobs: 0,
         upcomingInterviews: 0,
         unreadNotifications: 0,
-        atsChecks: 0
+        atsChecks: 0,
+        govtJobsApplied: 0,
+        govtJobReminders: 0,
+        govtJobsExpiringSoon: 0
       },
       pipeline: {
         applied: 0,
@@ -476,6 +479,13 @@ export const getStudentDashboardOverview = async () => {
       upcomingInterviews: [],
       recentNotifications: [],
       nextInterview: null,
+      govtJobs: {
+        tracked: 0,
+        applied: 0,
+        reminders: 0,
+        expiringSoon: 0,
+        recent: []
+      },
       campusConnect: emptyCampusConnectData
     },
     extract: (payload) => payload?.overview || {}
@@ -491,7 +501,10 @@ export const getStudentDashboardOverview = async () => {
         savedJobs: 0,
         upcomingInterviews: 0,
         unreadNotifications: 0,
-        atsChecks: 0
+        atsChecks: 0,
+        govtJobsApplied: 0,
+        govtJobReminders: 0,
+        govtJobsExpiringSoon: 0
       },
       pipeline: result.data?.pipeline || {
         applied: 0,
@@ -512,6 +525,13 @@ export const getStudentDashboardOverview = async () => {
       recentNotifications: result.data?.recentNotifications || [],
       nextInterview: result.data?.nextInterview || null,
       profileCompletion: Number(result.data?.profileCompletion || 0),
+      govtJobs: result.data?.govtJobs || {
+        tracked: 0,
+        applied: 0,
+        reminders: 0,
+        expiringSoon: 0,
+        recent: []
+      },
       campusConnect: result.data?.campusConnect || clone(emptyCampusConnectData)
     }
   };
@@ -661,6 +681,92 @@ export const getStudentJobById = async (jobId) =>
     path: `/jobs/${jobId}`,
     emptyData: null,
     extract: (payload) => payload?.job || payload || null
+  });
+
+export const getStudentGovtJobs = async (filters = {}) => {
+  const page = Number(filters.page || 1);
+  const limit = Number(filters.limit || 18);
+  const params = new URLSearchParams();
+
+  Object.entries({
+    page,
+    limit,
+    search: filters.search,
+    category: filters.category,
+    state: filters.state,
+    qualLevel: filters.qualLevel,
+    postType: filters.postType,
+    status: filters.status || 'open',
+    tracked: filters.tracked ? 'true' : ''
+  }).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      params.set(key, value);
+    }
+  });
+
+  return safeRequest({
+    path: `/student/govt-jobs?${params.toString()}`,
+    emptyData: {
+      jobs: [],
+      pagination: { page, limit, total: 0, totalPages: 1 },
+      counts: { open: 0, expired: 0 },
+      facets: { categories: [], states: [], qualifications: [] },
+      summary: { tracked: 0, applied: 0, reminders: 0, expiringSoon: 0, recent: [] }
+    },
+    extract: (payload) => ({
+      jobs: payload?.jobs || [],
+      pagination: payload?.pagination || { page, limit, total: 0, totalPages: 1 },
+      counts: payload?.counts || { open: 0, expired: 0 },
+      facets: payload?.facets || { categories: [], states: [], qualifications: [] },
+      summary: payload?.summary || { tracked: 0, applied: 0, reminders: 0, expiringSoon: 0, recent: [] }
+    })
+  });
+};
+
+export const getStudentGovtJobById = async (jobId) =>
+  safeRequest({
+    path: `/student/govt-jobs/${jobId}`,
+    emptyData: null,
+    extract: (payload) => payload?.job || null
+  });
+
+export const updateStudentGovtJobTracker = async (jobId, trackerPayload = {}) =>
+  strictRequest({
+    path: `/student/govt-jobs/${jobId}/tracker`,
+    options: {
+      method: 'PUT',
+      body: JSON.stringify(trackerPayload)
+    },
+    extract: (payload) => ({
+      job: payload?.job || null,
+      tracker: payload?.tracker || null
+    })
+  });
+
+export const markStudentGovtJobApplied = async (jobId, trackerPayload = {}) =>
+  strictRequest({
+    path: `/student/govt-jobs/${jobId}/mark-applied`,
+    options: {
+      method: 'POST',
+      body: JSON.stringify(trackerPayload)
+    },
+    extract: (payload) => ({
+      job: payload?.job || null,
+      tracker: payload?.tracker || null
+    })
+  });
+
+export const setStudentGovtJobReminder = async (jobId, trackerPayload = {}) =>
+  strictRequest({
+    path: `/student/govt-jobs/${jobId}/reminder`,
+    options: {
+      method: 'POST',
+      body: JSON.stringify(trackerPayload)
+    },
+    extract: (payload) => ({
+      job: payload?.job || null,
+      tracker: payload?.tracker || null
+    })
   });
 
 export const getStudentRecommendations = async (filters = {}) => {

@@ -19,11 +19,18 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
   const location = useLocation();
 
   const jobsNavPath = getPublicJobsNavPath(Boolean(user));
+  const isStudentViewer = ['student', 'retired_employee'].includes(String(user?.role || '').trim().toLowerCase());
+  const govtJobsNavPath = isStudentViewer ? '/portal/student/govt-jobs' : '/login/student';
   const defaultLoginPortal = getLoginPortalConfig('default');
 
   const publicNavItems = useMemo(
-    () => getPublicNavItems({ jobsNavPath, dashboardPath }),
-    [dashboardPath, jobsNavPath]
+    () => getPublicNavItems({
+      jobsNavPath,
+      govtJobsNavPath,
+      govtJobsNavState: isStudentViewer ? undefined : { from: '/portal/student/govt-jobs' },
+      dashboardPath
+    }),
+    [dashboardPath, govtJobsNavPath, isStudentViewer, jobsNavPath]
   );
 
   useEffect(() => {
@@ -209,6 +216,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                                 ) : (
                                   <Link
                                     to={child.to}
+                                    state={child.state}
                                     onClick={() => setDropdownOpen(null)}
                                     className={className}
                                   >
@@ -245,6 +253,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                 <Link
                   key={link.key}
                   to={link.to}
+                  state={link.state}
                   className={className}
                 >
                   {link.label}
@@ -352,6 +361,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                             <Link
                               key={child.key}
                               to={child.to}
+                              state={child.state}
                               onClick={() => setIsMenuOpen(false)}
                               className={className}
                             >
@@ -387,6 +397,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                       ) : (
                         <Link
                           to={link.to}
+                          state={link.state}
                           onClick={() => setIsMenuOpen(false)}
                           className={className}
                         >

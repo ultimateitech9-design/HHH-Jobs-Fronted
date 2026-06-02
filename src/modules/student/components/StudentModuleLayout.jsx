@@ -5,6 +5,7 @@ import {
   FiBookmark,
   FiBriefcase,
   FiCalendar,
+  FiFlag,
   FiFileText,
   FiGlobe,
   FiHelpCircle,
@@ -21,6 +22,7 @@ import { getStudentProfile } from '../services/studentApi';
 const studentDashboardNavItems = [
   { to: '/portal/student/companies', label: 'Companies', icon: FiLayers },
   { to: '/portal/student/jobs', label: 'Jobs', icon: FiBriefcase },
+  { to: '/portal/student/govt-jobs', label: 'Govt Jobs', icon: FiFlag },
   { to: '/portal/student/campus-connect', label: 'Campus Connect', icon: FiBookOpen },
   { to: '/portal/student/profile', label: 'Profile', icon: FiUser },
   { to: '/portal/student/ats', label: 'ATS', icon: FiActivity },
@@ -30,6 +32,7 @@ const studentDashboardNavItems = [
     icon: FiGlobe,
     children: [
       { to: '/portal/student/jobs', label: 'Jobs', icon: FiBriefcase },
+      { to: '/portal/student/govt-jobs', label: 'Govt Jobs', icon: FiFlag },
       { to: '/portal/student/global-jobs', label: 'Global Jobs', icon: FiGlobe }
     ]
   },
@@ -47,6 +50,7 @@ const studentHomeNavItems = [
 
 const studentHeaderNavItems = [
   { label: 'Jobs', to: '/portal/student/jobs' },
+  { label: 'Govt Jobs', to: '/portal/student/govt-jobs' },
   { label: 'My Applications', to: '/portal/student/applications' },
   { label: 'Companies', to: '/portal/student/companies' },
   { label: 'Campus Connect', to: '/portal/student/campus-connect' },
