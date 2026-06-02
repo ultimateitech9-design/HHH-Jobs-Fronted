@@ -3,7 +3,19 @@ const UUID_FRAGMENT_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[
 export const extractUuidFromSlug = (value = '') => {
   const rawValue = String(value || '').trim();
   const match = rawValue.match(UUID_FRAGMENT_PATTERN);
-  return match ? match[0].toLowerCase() : rawValue;
+  if (match) return match[0].toLowerCase();
+
+  const lastSegment = rawValue
+    .replace(/^\/+|\/+$/g, '')
+    .split('/')
+    .filter(Boolean)
+    .pop() || '';
+
+  if (!lastSegment || !lastSegment.includes('-')) return lastSegment || rawValue;
+
+  const parts = lastSegment.split('-').filter(Boolean);
+  const candidate = parts[parts.length - 1] || '';
+  return /^[a-z0-9]{6,}$/i.test(candidate) ? candidate : lastSegment;
 };
 
 export const slugify = (value = '') => String(value || '')

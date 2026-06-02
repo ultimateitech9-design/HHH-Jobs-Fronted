@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import {
   FiAlertCircle,
   FiArrowRight,
@@ -11,6 +11,7 @@ import {
   FiMapPin
 } from 'react-icons/fi';
 import { getCurrentUser } from '../../../utils/auth';
+import { getLoginRedirectState } from '../../common/utils/publicAccess';
 import {
   StudentEmptyState,
   StudentNotice,
@@ -32,11 +33,21 @@ import {
 } from '../services/studentApi';
 import { extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
 
-const StudentJobDetailsPage = () => {
+const buildCurrentPath = (location) => `${location.pathname || ''}${location.search || ''}${location.hash || ''}`;
+
+const emptyActionFeedback = () => ({ type: '', text: '', ctaTo: '', ctaLabel: '', ctaState: null });
+
+const StudentJobDetailsPage = ({ publicMode = false }) => {
   const { jobId: jobParam } = useParams();
+  const location = useLocation();
   const jobId = extractUuidFromSlug(jobParam);
   const user = getCurrentUser();
-  const jobsListPath = user?.role === 'retired_employee' ? '/portal/retired/jobs' : '/portal/student/jobs';
+  const currentPath = useMemo(() => buildCurrentPath(location), [location]);
+  const jobsListPath = publicMode && !user
+    ? '/jobs'
+    : user?.role === 'retired_employee'
+      ? '/portal/retired/jobs'
+      : '/portal/student/jobs';
   const resumeSectionPath = '/portal/student/profile?section=resume';
   const [state, setState] = useState({
     loading: true,
@@ -46,10 +57,26 @@ const StudentJobDetailsPage = () => {
     application: null
   });
   const [coverLetter, setCoverLetter] = useState('');
-  const [actionFeedback, setActionFeedback] = useState({ type: '', text: '', ctaTo: '', ctaLabel: '' });
+  const [actionFeedback, setActionFeedback] = useState(emptyActionFeedback);
 
-  const setActionSuccess = (text) => setActionFeedback({ type: 'success', text, ctaTo: '', ctaLabel: '' });
-  const setActionError = (text, ctaTo = '') => setActionFeedback({ type: 'error', text, ctaTo, ctaLabel: ctaTo ? 'Open Resume Section' : '' });
+  const setActionSuccess = (text) => setActionFeedback({ type: 'success', text, ctaTo: '', ctaLabel: '', ctaState: null });
+  const setActionError = (text, ctaTo = '', ctaLabel = '', ctaState = null) => {
+    setActionFeedback({
+      type: 'error',
+      text,
+      ctaTo,
+      ctaLabel: ctaLabel || (ctaTo ? 'Open Resume Section' : ''),
+      ctaState
+    });
+  };
+  const requireCandidateLogin = (ctaLabel = 'Login to Apply') => {
+    setActionError(
+      'Login first to continue with this job.',
+      '/login',
+      ctaLabel,
+      getLoginRedirectState(currentPath, ctaLabel)
+    );
+  };
   const setApplyError = (error) => {
     const text = getFriendlyApplyErrorMessage(error);
     const rawMessage = String(error?.message || '');
@@ -61,13 +88,20 @@ const StudentJobDetailsPage = () => {
     let mounted = true;
 
     const load = async () => {
-      setState((current) => ({ ...current, loading: true, error: '' }));
+        setState((current) => ({ ...current, loading: true, error: '' }));
 
       try {
+        const savedJobsRequest = user?.id
+          ? getStudentSavedJobs()
+          : Promise.resolve({ data: [], error: '' });
+        const applicationsRequest = user?.id
+          ? getStudentApplications()
+          : Promise.resolve({ data: [], error: '' });
+
         const [jobResponse, savedResponse, applicationsResponse] = await Promise.all([
           getStudentJobById(jobId),
-          getStudentSavedJobs(),
-          getStudentApplications()
+          savedJobsRequest,
+          applicationsRequest
         ]);
 
         if (!mounted) return;
@@ -100,7 +134,7 @@ const StudentJobDetailsPage = () => {
     return () => {
       mounted = false;
     };
-  }, [jobId]);
+  }, [jobId, user?.id]);
 
   const salaryLabel = useMemo(() => {
     if (!state.job) return '-';
@@ -137,7 +171,12 @@ const StudentJobDetailsPage = () => {
 
   const handleSaveToggle = async () => {
     if (!state.job) return;
-    setActionFeedback({ type: '', text: '', ctaTo: '', ctaLabel: '' });
+    setActionFeedback(emptyActionFeedback());
+
+    if (!user?.id) {
+      requireCandidateLogin('Login to Save');
+      return;
+    }
 
     if (state.isSaved) {
       try {
@@ -168,7 +207,12 @@ const StudentJobDetailsPage = () => {
   };
 
   const handleApply = async () => {
-    setActionFeedback({ type: '', text: '', ctaTo: '', ctaLabel: '' });
+    setActionFeedback(emptyActionFeedback());
+
+    if (!user?.id) {
+      requireCandidateLogin('Login to Apply');
+      return;
+    }
 
     if (hasApplied) {
       setActionSuccess('You already applied for this job.');
@@ -224,7 +268,11 @@ const StudentJobDetailsPage = () => {
           type={actionFeedback.type}
           text={actionFeedback.text}
           action={actionFeedback.ctaTo ? (
-            <Link to={actionFeedback.ctaTo} className={`${studentSecondaryButtonClassName} px-4 py-2 text-[13px]`}>
+            <Link
+              to={actionFeedback.ctaTo}
+              state={actionFeedback.ctaState || undefined}
+              className={`${studentSecondaryButtonClassName} px-4 py-2 text-[13px]`}
+            >
               {actionFeedback.ctaLabel}
             </Link>
           ) : null}

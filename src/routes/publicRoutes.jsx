@@ -12,6 +12,7 @@ const FreshersPage = lazy(() => import('../modules/common/pages/FreshersPage'));
 const VeteransPage = lazy(() => import('../modules/common/pages/VeteransPage'));
 const CampusConnectPage = lazy(() => import('../modules/common/pages/CampusConnectPage'));
 const StudentExternalJobsPage = lazy(() => import('../modules/student/pages/StudentExternalJobsPage'));
+const StudentJobDetailsPage = lazy(() => import('../modules/student/pages/StudentJobDetailsPage'));
 const StudentGovtJobsPage = lazy(() => import('../modules/student/pages/StudentGovtJobsPage'));
 const StudentGovtJobDetailsPage = lazy(() => import('../modules/student/pages/StudentGovtJobDetailsPage'));
 const ForbiddenPage = lazy(() => import('../modules/common/pages/ForbiddenPage'));
@@ -54,6 +55,7 @@ const publicRoutes = [
   { path: 'campus-connect', element: <CampusConnectPage /> },
   { path: 'retired-employee', element: <RetiredEmployeePage /> },
   { path: 'jobs', element: <StudentExternalJobsPage /> },
+  { path: 'jobs/:jobId', element: <StudentJobDetailsPage publicMode /> },
   { path: 'govt-jobs', element: <StudentGovtJobsPage publicMode /> },
   { path: 'govt-jobs/:jobId', element: <StudentGovtJobDetailsPage publicMode /> },
   { path: 'global-jobs', element: <Navigate to="/jobs" replace /> },
