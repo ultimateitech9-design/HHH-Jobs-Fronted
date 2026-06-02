@@ -41,6 +41,20 @@ const normalizeRazorpaySession = (session = {}) => ({
 
 export const preloadRazorpayCheckout = () => loadRazorpayScript();
 
+const isLocalCheckoutHost = () => {
+  if (typeof window === 'undefined') return true;
+  const host = String(window.location.hostname || '').toLowerCase();
+  return host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local');
+};
+
+const assertRazorpayKeyAllowed = (keyId = '') => {
+  const normalizedKeyId = String(keyId || '').trim();
+  const productionHost = !isLocalCheckoutHost();
+  if (productionHost && normalizedKeyId.startsWith('rzp_test_')) {
+    throw new Error('Razorpay live key is required on production. Payment was not started.');
+  }
+};
+
 const getCheckoutImage = (image) => {
   if (image) return image;
   if (typeof window === 'undefined') return undefined;
@@ -54,6 +68,7 @@ export const openRazorpaySubscriptionCheckout = async (session = {}) => {
   if (!normalizedSession.keyId) {
     throw new Error('Razorpay key is missing from checkout session.');
   }
+  assertRazorpayKeyAllowed(normalizedSession.keyId);
 
   if (!normalizedSession.subscriptionId) {
     throw new Error('Razorpay subscription id is missing from checkout session.');
@@ -101,6 +116,7 @@ export const openRazorpayOrderCheckout = async (session = {}) => {
   if (!normalizedSession.keyId) {
     throw new Error('Razorpay key is missing from checkout session.');
   }
+  assertRazorpayKeyAllowed(normalizedSession.keyId);
 
   if (!normalizedSession.orderId) {
     throw new Error('Razorpay order id is missing from checkout session.');
