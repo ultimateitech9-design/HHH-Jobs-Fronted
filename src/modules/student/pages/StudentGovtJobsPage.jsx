@@ -22,8 +22,7 @@ import {
   StudentNotice,
   StudentPageShell,
   StudentSurfaceCard,
-  studentPrimaryButtonClassName,
-  studentSecondaryButtonClassName
+  studentPrimaryButtonClassName
 } from '../components/StudentExperience';
 import {
   getPublicGovtJobs,
@@ -43,31 +42,35 @@ const makeDefaultFilters = () => ({
   status: 'open',
   tracked: false,
   page: 1,
-  limit: 18
+  limit: 24
 });
 
 const POST_TYPE_OPTIONS = [
-  { value: '', label: 'All updates' },
-  { value: 'RECRUITMENT', label: 'Recruitment' },
-  { value: 'RESULT', label: 'Results' },
-  { value: 'ADMIT_CARD', label: 'Admit Card' },
-  { value: 'ANSWER_KEY', label: 'Answer Key' },
-  { value: 'SYLLABUS', label: 'Syllabus' }
+  { value: '', label: 'All', fullLabel: 'All updates' },
+  { value: 'RECRUITMENT', label: 'Jobs', fullLabel: 'Recruitment' },
+  { value: 'RESULT', label: 'Results', fullLabel: 'Results' },
+  { value: 'ADMIT_CARD', label: 'Admit', fullLabel: 'Admit Card' },
+  { value: 'ANSWER_KEY', label: 'Keys', fullLabel: 'Answer Key' },
+  { value: 'SYLLABUS', label: 'Syllabus', fullLabel: 'Syllabus' }
 ];
 
 const QUAL_LABELS = {
+  '8TH': '8th',
   '10TH': '10th',
   '12TH': '12th',
   DIPLOMA: 'Diploma',
   GRADUATION: 'Graduation',
-  POST_GRADUATION: 'Post Graduation'
+  POST_GRADUATION: 'Post Graduation',
+  PHD: 'PhD'
 };
 
 const compactButtonClassName =
-  'inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60';
 
 const compactPrimaryButtonClassName =
-  'inline-flex items-center justify-center gap-2 rounded-full bg-navy px-3.5 py-2 text-xs font-black text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex items-center justify-center gap-1.5 rounded-full bg-navy px-2.5 py-1.5 text-[11px] font-black text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60';
+
+const govtJobGridClassName = 'grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5';
 
 const buildFiltersFromSearchParams = (searchParams) => {
   const page = parseInt(searchParams.get('page') || '', 10);
@@ -117,6 +120,7 @@ const getDeadlineLabel = (job) => {
 };
 
 const getDeadlineTone = (job) => {
+  if ((job.postType || 'RECRUITMENT') !== 'RECRUITMENT') return 'border-slate-200 bg-slate-50 text-slate-600';
   const daysLeft = getDaysLeft(job.lastDate);
   if (daysLeft === null) return 'border-slate-200 bg-slate-50 text-slate-600';
   if (daysLeft < 0) return 'border-slate-200 bg-slate-100 text-slate-500';
@@ -125,7 +129,30 @@ const getDeadlineTone = (job) => {
   return 'border-emerald-200 bg-emerald-50 text-emerald-700';
 };
 
+const getPostTypeMeta = (value = 'RECRUITMENT') =>
+  POST_TYPE_OPTIONS.find((item) => item.value === value) || POST_TYPE_OPTIONS[1];
+
+const getPrimaryDateLabel = (job = {}) => {
+  const postType = job.postType || 'RECRUITMENT';
+  if (postType === 'RESULT') return `Result: ${formatDate(job.resultDate || job.updatedAt || job.lastDate)}`;
+  if (postType === 'ADMIT_CARD') return `Exam: ${formatDate(job.examDate || job.lastDate)}`;
+  if (postType === 'ANSWER_KEY') return `Key: ${formatDate(job.examDate || job.updatedAt || job.lastDate)}`;
+  if (postType === 'SYLLABUS') return `Updated: ${formatDate(job.updatedAt || job.lastDate)}`;
+  return `Last date: ${formatDate(job.lastDate)}`;
+};
+
+const getTopDateLabel = (job = {}) => {
+  if ((job.postType || 'RECRUITMENT') === 'RECRUITMENT') return getDeadlineLabel(job);
+  return formatDate(job.resultDate || job.examDate || job.updatedAt || job.lastDate);
+};
+
 const normalizeFacetName = (item) => String(item?.name || '').trim();
+
+const getFacetCount = (items = [], name = '') => {
+  const normalized = String(name || '').trim().toUpperCase();
+  const match = (items || []).find((item) => String(item?.name || '').trim().toUpperCase() === normalized);
+  return Number(match?.count || 0);
+};
 
 const openExternal = (url) => {
   if (!url) {
@@ -146,6 +173,7 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
   const isExpired = Boolean(job.isExpired);
   const applyUrl = job.officialApplyUrl || job.applyUrl || job.officialUrl;
   const notificationUrl = job.officialNotificationUrl || job.notifUrl;
+  const postTypeMeta = getPostTypeMeta(job.postType || 'RECRUITMENT');
 
   return (
     <article
@@ -161,82 +189,80 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
         event.preventDefault();
         onOpenDetails?.();
       }}
-      className="group flex min-h-[292px] cursor-pointer flex-col justify-between rounded-[1.2rem] border border-slate-200/80 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.045)] outline-none transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_18px_38px_rgba(15,23,42,0.08)] focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+      className="group flex min-h-[220px] cursor-pointer flex-col justify-between rounded-[1rem] border border-slate-200/80 bg-white p-3 shadow-[0_10px_22px_rgba(15,23,42,0.04)] outline-none transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_16px_32px_rgba(15,23,42,0.075)] focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
     >
       <div>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-blue-700">
+            <div className="flex flex-wrap gap-1.5">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-slate-600">
+                {postTypeMeta.label}
+              </span>
+              <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-blue-700">
                 {job.category || 'Govt'}
               </span>
               {job.verificationStatus === 'VERIFIED' || job.verificationStatus === 'OFFICIAL_LINKED' ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-700">
-                  <FiShield size={11} />
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                  <FiShield size={10} />
                   Official
                 </span>
               ) : null}
-              {job.seededDemo ? (
-                <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
-                  Reference
-                </span>
-              ) : null}
               {hasApplied ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-700">
-                  <FiCheckCircle size={11} />
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                  <FiCheckCircle size={10} />
                   Filled
                 </span>
               ) : null}
             </div>
 
-            <Link to={detailPath} className="mt-3 block">
-              <h2 className="line-clamp-2 font-heading text-lg font-black leading-snug text-navy transition group-hover:text-brand-700">
+            <Link to={detailPath} className="mt-2.5 block">
+              <h2 className="line-clamp-2 font-heading text-[15px] font-black leading-snug text-navy transition group-hover:text-brand-700">
                 {job.title || 'Government job'}
               </h2>
             </Link>
-            <p className="mt-1 text-sm font-semibold text-slate-500">{job.organization || 'Official portal'}</p>
+            <p className="mt-1 line-clamp-1 text-xs font-semibold text-slate-500">{job.organization || 'Official portal'}</p>
           </div>
 
-          <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-black ${getDeadlineTone(job)}`}>
-            {getDeadlineLabel(job)}
+          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-black ${getDeadlineTone(job)}`}>
+            {getTopDateLabel(job)}
           </span>
         </div>
 
-        <div className="mt-4 grid gap-2 text-[12px] font-semibold text-slate-600">
+        <div className="mt-3 grid gap-1.5 text-[11px] font-semibold text-slate-600">
           <p className="flex items-center gap-2">
-            <FiCalendar className="shrink-0 text-slate-400" />
-            <span>Last date: {formatDate(job.lastDate)}</span>
+            <FiCalendar className="shrink-0 text-slate-400" size={12} />
+            <span>{getPrimaryDateLabel(job)}</span>
           </p>
           <p className="flex items-center gap-2">
-            <FiBriefcase className="shrink-0 text-slate-400" />
+            <FiBriefcase className="shrink-0 text-slate-400" size={12} />
             <span className="line-clamp-1">{job.qualification || 'As per notification'}</span>
           </p>
           <p className="flex items-center gap-2">
-            <FiMapPin className="shrink-0 text-slate-400" />
-            <span>{job.state || 'All India'}{job.vacancies ? `, ${Number(job.vacancies).toLocaleString('en-IN')} posts` : ''}</span>
+            <FiMapPin className="shrink-0 text-slate-400" size={12} />
+            <span className="line-clamp-1">{job.state || 'All India'}{job.vacancies ? `, ${Number(job.vacancies).toLocaleString('en-IN')} posts` : ''}</span>
           </p>
         </div>
 
-        <p className="mt-4 line-clamp-2 text-sm leading-6 text-slate-500">
+        <p className="mt-3 line-clamp-1 text-xs leading-5 text-slate-500">
           {job.description || 'Check the official notification before submitting the form.'}
         </p>
       </div>
 
-      <div className="mt-5 border-t border-slate-100 pt-4">
+      <div className="mt-3 border-t border-slate-100 pt-3">
         {reminderEnabled ? (
-          <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-100 bg-amber-50 px-3 py-1.5 text-[12px] font-bold text-amber-700">
-            <FiBell size={13} />
+          <p className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">
+            <FiBell size={12} />
             Reminder {job.tracker?.reminderAt ? formatDate(job.tracker.reminderAt) : 'active'}
           </p>
         ) : null}
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           <Link
             to={detailPath}
             className={compactButtonClassName}
           >
             Details
-            <FiChevronRight size={13} />
+            <FiChevronRight size={12} />
           </Link>
 
           <button
@@ -244,8 +270,8 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
             onClick={() => openExternal(applyUrl)}
             className={compactPrimaryButtonClassName}
           >
-            <FiExternalLink size={13} />
-            Official Apply
+            <FiExternalLink size={12} />
+            Apply
           </button>
 
           {notificationUrl ? (
@@ -254,7 +280,7 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
               onClick={() => openExternal(notificationUrl)}
               className={compactButtonClassName}
             >
-              Notification
+              Notice
             </button>
           ) : null}
 
@@ -266,7 +292,7 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
                 disabled={actionBusy || hasApplied}
                 className={hasApplied ? compactButtonClassName : compactPrimaryButtonClassName}
               >
-                <FiCheckCircle size={13} />
+                <FiCheckCircle size={12} />
                 {hasApplied ? 'Filled' : 'Mark Filled'}
               </button>
 
@@ -277,13 +303,13 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
                   disabled={actionBusy}
                   className={compactButtonClassName}
                 >
-                  {reminderEnabled ? <FiX size={13} /> : <FiBell size={13} />}
+                  {reminderEnabled ? <FiX size={12} /> : <FiBell size={12} />}
                   {reminderEnabled ? 'Remove Reminder' : 'Reminder'}
                 </button>
               ) : null}
             </>
           ) : isLoggedIn ? (
-            <span className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-500">
+            <span className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-500">
               Student account can track
             </span>
           ) : (
@@ -292,7 +318,7 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
               state={{ from: '/portal/student/govt-jobs', portalLabel: 'Login to Track Govt Jobs' }}
               className={compactButtonClassName}
             >
-              <FiBookmark size={13} />
+              <FiBookmark size={12} />
               Login to Track
             </Link>
           )}
@@ -312,9 +338,9 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
   const [filters, setFilters] = useState(() => buildFiltersFromSearchParams(searchParams));
   const [state, setState] = useState({
     jobs: [],
-    pagination: { page: 1, limit: 18, total: 0, totalPages: 1 },
-    counts: { open: 0, expired: 0 },
-    facets: { categories: [], states: [], qualifications: [] },
+    pagination: { page: 1, limit: 24, total: 0, totalPages: 1 },
+    counts: { open: 0, expired: 0, byPostType: {} },
+    facets: { categories: [], states: [], qualifications: [], postTypes: [] },
     summary: { tracked: 0, applied: 0, reminders: 0, expiringSoon: 0, recent: [] },
     loading: true,
     error: ''
@@ -365,8 +391,8 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
     setState({
       jobs: response.data?.jobs || [],
       pagination: response.data?.pagination || { page: requestFilters.page, limit: requestFilters.limit, total: 0, totalPages: 1 },
-      counts: response.data?.counts || { open: 0, expired: 0 },
-      facets: response.data?.facets || { categories: [], states: [], qualifications: [] },
+      counts: response.data?.counts || { open: 0, expired: 0, byPostType: {} },
+      facets: response.data?.facets || { categories: [], states: [], qualifications: [], postTypes: [] },
       summary: response.data?.summary || { tracked: 0, applied: 0, reminders: 0, expiringSoon: 0, recent: [] },
       loading: false,
       error: response.error || ''
@@ -378,11 +404,9 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
   }, [filters, loadJobs]);
 
   const updateFilter = (key, value) => {
-    setFilters((current) => {
-      const next = { ...current, [key]: value, page: 1 };
-      pushFiltersToUrl(next);
-      return next;
-    });
+    const next = { ...filters, [key]: value, page: 1 };
+    setFilters(next);
+    pushFiltersToUrl(next);
   };
 
   const resetFilters = () => {
@@ -392,11 +416,9 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
   };
 
   const setPage = (page) => {
-    setFilters((current) => {
-      const next = { ...current, page };
-      pushFiltersToUrl(next);
-      return next;
-    });
+    const next = { ...filters, page };
+    setFilters(next);
+    pushFiltersToUrl(next);
   };
 
   const refreshAfterAction = async (nextJob) => {
@@ -468,25 +490,35 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
     [filters]
   );
 
+  const getPostTypeBadgeCount = (postType) => {
+    const bucket = filters.status === 'expired' ? 'expired' : filters.status === 'all' ? 'total' : 'open';
+    if (!postType) {
+      if (bucket === 'expired') return Number(state.counts.expired || 0);
+      if (bucket === 'open') return Number(state.counts.open || 0);
+      return Object.values(state.counts.byPostType || {}).reduce((total, item) => total + Number(item?.total || 0), 0);
+    }
+
+    const summary = state.counts.byPostType?.[postType];
+    if (summary) return Number(summary[bucket] || 0);
+    return getFacetCount(state.facets.postTypes, postType);
+  };
+
   const stats = useMemo(() => ([
     {
-      label: 'Open Jobs',
+      label: 'Open',
       value: Number(state.counts.open || 0).toLocaleString('en-IN'),
-      helper: 'Current government listings.',
       icon: FiBriefcase
     },
     canTrackGovtJobs
       ? {
         label: 'Filled Forms',
         value: Number(state.summary.applied || 0).toLocaleString('en-IN'),
-        helper: 'Marked by you.',
         icon: FiCheckCircle,
         tone: 'success'
       }
       : {
-        label: 'Categories',
-        value: Number(state.facets.categories?.length || 0).toLocaleString('en-IN'),
-        helper: 'Browse by department type.',
+        label: 'Results',
+        value: Number(state.counts.byPostType?.RESULT?.open || 0).toLocaleString('en-IN'),
         icon: FiFilter,
         tone: 'info'
       },
@@ -494,29 +526,30 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
       ? {
         label: 'Reminders',
         value: Number(state.summary.reminders || 0).toLocaleString('en-IN'),
-        helper: 'Email and dashboard alerts.',
         icon: FiBell,
         tone: 'warning'
       }
       : {
-        label: 'Expired Archive',
-        value: Number(state.counts.expired || 0).toLocaleString('en-IN'),
-        helper: 'Older notices remain searchable.',
+        label: 'Admit',
+        value: Number(state.counts.byPostType?.ADMIT_CARD?.open || 0).toLocaleString('en-IN'),
         icon: FiCalendar,
         tone: 'warning'
       }
-  ]), [canTrackGovtJobs, state.counts.expired, state.counts.open, state.facets.categories?.length, state.summary.applied, state.summary.reminders]);
+  ]), [canTrackGovtJobs, state.counts.byPostType, state.counts.open, state.summary.applied, state.summary.reminders]);
 
   return (
     <StudentPageShell
       eyebrow="Govt Jobs"
       badge={canTrackGovtJobs ? 'Student tracker' : 'Public vacancies'}
-      title={canTrackGovtJobs ? 'Government jobs and form tracker' : 'Government jobs and vacancies'}
+      title={canTrackGovtJobs ? 'Govt jobs and form tracker' : 'Govt jobs, results and admit cards'}
       subtitle={canTrackGovtJobs
-        ? 'Browse government updates, apply on the official portal, then keep your filled forms and reminders inside HHH Jobs.'
-        : 'Browse open government vacancies, official apply links, notifications, eligibility, states, and deadlines. Registered student accounts can track forms and reminders.'}
+        ? 'Browse official updates, apply on the govt portal, then track filled forms and reminders inside HHH Jobs.'
+        : 'Browse govt vacancies, results, admit cards, answer keys, syllabus updates, official links, eligibility, states, and deadlines.'}
       stats={stats}
-      bodyClassName={publicMode ? 'vw-shell py-8 sm:py-10' : ''}
+      heroSize="mini"
+      statsLayout="inline"
+      heroClassName="!rounded-[1.45rem] sm:!rounded-[1.75rem]"
+      bodyClassName={publicMode ? 'vw-shell py-5 sm:py-6' : ''}
       actions={(
         <>
           {canTrackGovtJobs ? (
@@ -524,13 +557,13 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
               <button
                 type="button"
                 onClick={() => updateFilter('tracked', true)}
-                className={studentPrimaryButtonClassName}
+                className={compactPrimaryButtonClassName}
               >
-                <FiBookmark size={16} />
+                <FiBookmark size={13} />
                 My Tracked Forms
               </button>
-              <Link to="/portal/student/notifications" className={studentSecondaryButtonClassName}>
-                <FiBell size={16} />
+              <Link to="/portal/student/notifications" className={compactButtonClassName}>
+                <FiBell size={13} />
                 Notifications
               </Link>
             </>
@@ -538,14 +571,14 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
             <Link
               to="/login/student"
               state={{ from: '/portal/student/govt-jobs', portalLabel: 'Login to Track Govt Jobs' }}
-              className={studentPrimaryButtonClassName}
+              className={compactPrimaryButtonClassName}
             >
-              <FiBookmark size={16} />
+              <FiBookmark size={13} />
               Student Login to Track
             </Link>
           ) : (
-            <span className={studentSecondaryButtonClassName}>
-              <FiBookmark size={16} />
+            <span className={compactButtonClassName}>
+              <FiBookmark size={13} />
               Student account required to track
             </span>
           )}
@@ -608,7 +641,7 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
             className="h-10 rounded-[14px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-700 outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
           >
             {POST_TYPE_OPTIONS.map((item) => (
-              <option key={item.value || 'all'} value={item.value}>{item.label}</option>
+              <option key={item.value || 'all'} value={item.value}>{item.fullLabel}</option>
             ))}
           </select>
 
@@ -624,7 +657,7 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
           ) : null}
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-1.5">
           {[
             { label: `Open (${Number(state.counts.open || 0).toLocaleString('en-IN')})`, status: 'open', tracked: false },
             { label: `Expired (${Number(state.counts.expired || 0).toLocaleString('en-IN')})`, status: 'expired', tracked: false },
@@ -640,7 +673,7 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
                   setFilters(next);
                   pushFiltersToUrl(next);
                 }}
-                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-black transition ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-black transition ${
                   isActive
                     ? 'bg-navy text-white'
                     : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:bg-brand-50'
@@ -652,17 +685,42 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
             );
           })}
         </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3">
+          <span className="mr-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Type</span>
+          {POST_TYPE_OPTIONS.map((item) => {
+            const isActive = filters.postType === item.value;
+            const count = getPostTypeBadgeCount(item.value);
+            return (
+              <button
+                key={item.value || 'all-updates'}
+                type="button"
+                onClick={() => updateFilter('postType', item.value)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-black transition ${
+                  isActive
+                    ? 'bg-brand-600 text-white shadow-[0_12px_24px_rgba(229,155,23,0.18)]'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700'
+                }`}
+              >
+                {item.label}
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${isActive ? 'bg-white/18 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                  {Number(count || 0).toLocaleString('en-IN')}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </StudentSurfaceCard>
 
       {state.loading ? (
-        <div className="student-job-grid">
-          {Array.from({ length: 6 }, (_, index) => (
-            <div key={index} className="h-[286px] animate-pulse rounded-[1.45rem] border border-slate-200 bg-white/70" />
+        <div className={govtJobGridClassName}>
+          {Array.from({ length: 10 }, (_, index) => (
+            <div key={index} className="h-[220px] animate-pulse rounded-[1rem] border border-slate-200 bg-white/70" />
           ))}
         </div>
       ) : state.jobs.length > 0 ? (
         <>
-          <div className="student-job-grid">
+          <div className={govtJobGridClassName}>
             {state.jobs.map((job) => (
               <GovtJobCard
                 key={job.id}

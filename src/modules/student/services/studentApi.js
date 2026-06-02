@@ -707,8 +707,8 @@ const buildGovtJobsRequest = (filters = {}) => {
   const emptyData = {
     jobs: [],
     pagination: { page, limit, total: 0, totalPages: 1 },
-    counts: { open: 0, expired: 0 },
-    facets: { categories: [], states: [], qualifications: [] },
+    counts: { open: 0, expired: 0, byPostType: {} },
+    facets: { categories: [], states: [], qualifications: [], postTypes: [] },
     summary: { tracked: 0, applied: 0, reminders: 0, expiringSoon: 0, recent: [] },
     viewer: { canTrackGovtJobs: false }
   };
@@ -716,8 +716,8 @@ const buildGovtJobsRequest = (filters = {}) => {
   const extract = (payload) => ({
     jobs: payload?.jobs || [],
     pagination: payload?.pagination || { page, limit, total: 0, totalPages: 1 },
-    counts: payload?.counts || { open: 0, expired: 0 },
-    facets: payload?.facets || { categories: [], states: [], qualifications: [] },
+    counts: payload?.counts || { open: 0, expired: 0, byPostType: {} },
+    facets: payload?.facets || { categories: [], states: [], qualifications: [], postTypes: [] },
     summary: payload?.summary || { tracked: 0, applied: 0, reminders: 0, expiringSoon: 0, recent: [] },
     viewer: payload?.viewer || { canTrackGovtJobs: false }
   });
