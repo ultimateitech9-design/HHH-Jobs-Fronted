@@ -27,6 +27,7 @@ const buildDraftFromEntry = (entry = {}) => {
     stateName: source.stateName || source.state_name || '',
     districtId: source.districtId || source.district_id || '',
     districtName: source.districtName || source.district_name || '',
+    pincode: source.pincode || source.pinCode || source.pin_code || '',
     salaryMin: source.salaryMin != null ? String(source.salaryMin) : '',
     salaryMax: source.salaryMax != null ? String(source.salaryMax) : '',
     employmentType: source.employmentType || 'Full-Time',
@@ -344,6 +345,10 @@ const AddJob = () => {
             <label className="grid gap-0.5">
               <span className={fieldLabelClassName}>Location</span>
               <input className={fieldControlClassName} value={draft.location} onChange={(event) => setField('location', event.target.value)} />
+            </label>
+            <label className="grid gap-0.5">
+              <span className={fieldLabelClassName}>Pincode</span>
+              <input className={fieldControlClassName} value={draft.pincode} onChange={(event) => setField('pincode', event.target.value)} inputMode="numeric" placeholder="201301" />
             </label>
             <label className="grid gap-0.5">
               <span className={fieldLabelClassName}>Employment Type</span>

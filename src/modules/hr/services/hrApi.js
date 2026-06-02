@@ -93,6 +93,7 @@ const defaultJobDraft = {
   stateName: '',
   districtId: '',
   districtName: '',
+  pincode: '',
   description: ''
 };
 
@@ -125,6 +126,8 @@ const formatJobDraftForApi = (draft = {}) => ({
   stateName: draft.stateName,
   districtId: draft.districtId,
   districtName: draft.districtName,
+  cityName: draft.districtName,
+  pincode: draft.pincode,
   description: draft.description
 });
 
@@ -149,6 +152,7 @@ const hydrateJobDraftFromJob = (job = {}) => ({
   stateName: job.stateName || job.state_name || '',
   districtId: job.districtId || job.district_id || '',
   districtName: job.districtName || job.district_name || '',
+  pincode: job.pincode || '',
   description: job.description || ''
 });
 

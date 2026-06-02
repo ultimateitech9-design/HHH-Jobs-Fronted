@@ -42,6 +42,8 @@ const makeDefaultFilters = () => ({
   search: '',
   category: '',
   location: '',
+  city: '',
+  pincode: '',
   source: '',
   remote: false,
   page: 1,
@@ -91,8 +93,10 @@ const buildFiltersFromSearchParams = (searchParams) => {
   return {
     ...defaults,
     search: searchParams.get('search') || searchParams.get('company') || '',
-    category: searchParams.get('category') || '',
-    location: searchParams.get('location') || '',
+    category: searchParams.get('category') || searchParams.get('sector') || searchParams.get('sectorName') || '',
+    location: searchParams.get('location') || searchParams.get('city') || searchParams.get('cityName') || searchParams.get('pincode') || '',
+    city: searchParams.get('city') || searchParams.get('cityName') || '',
+    pincode: searchParams.get('pincode') || searchParams.get('pinCode') || searchParams.get('pin_code') || '',
     source: searchParams.get('source') || '',
     remote: remoteValue === 'true' || remoteValue === '1' || remoteValue === 'yes',
     page: Number.isNaN(page) || page < 1 ? defaults.page : page,
@@ -347,6 +351,9 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
       const portalMetaResponse = await getStudentJobs({
         search: currentFilters.search,
         location: currentFilters.location,
+        city: currentFilters.city,
+        pincode: currentFilters.pincode,
+        sector: currentFilters.category,
         category: currentFilters.category,
         page: 1,
         limit
@@ -364,6 +371,9 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
           ? await getStudentJobs({
             search: currentFilters.search,
             location: currentFilters.location,
+            city: currentFilters.city,
+            pincode: currentFilters.pincode,
+            sector: currentFilters.category,
             category: currentFilters.category,
             page: portalPage,
             limit
@@ -442,7 +452,7 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
   }, []);
 
   const hasFilters = useMemo(
-    () => Boolean(filters.search || filters.category || filters.location || filters.source || filters.remote),
+    () => Boolean(filters.search || filters.category || filters.location || filters.city || filters.pincode || filters.source || filters.remote),
     [filters]
   );
 
@@ -478,7 +488,12 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
   ]), [isAuthenticated, jobsState.jobs, jobsState.pagination?.total, sources.length]);
 
   const updateFilter = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    setFilters((prev) => {
+      if (key === 'location') {
+        return { ...prev, location: value, city: '', pincode: '', page: 1 };
+      }
+      return { ...prev, [key]: value, page: 1 };
+    });
   };
 
   const resetFilters = () => {

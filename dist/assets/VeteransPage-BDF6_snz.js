@@ -1,1 +1,0 @@
-import{bM as e}from"./index-DxT4K7ce.js";import{A as t}from"./AudienceLandingPage-BhttsJK5.js";import"./PublicFeatureCard-C4M1qEEM.js";import"./AnimatedSection-BQm0JLU1.js";import"./PublicPageHero-BSQTrvjU.js";import"./PublicSectionHeader-CY95u28l.js";const n=()=>e.jsx(t,{audienceKey:"veterans"});export{n as default};

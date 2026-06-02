@@ -1104,6 +1104,11 @@ const HrJobsPage = () => {
             </div>
 
             <div className="space-y-1.5">
+              <label className="text-sm font-bold text-neutral-700">Pincode</label>
+              <input value={draft.pincode} onChange={(e) => updateDraftField('pincode', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. 201301" inputMode="numeric" />
+            </div>
+
+            <div className="space-y-1.5">
               <label className="text-sm font-bold text-neutral-700">Min Salary (Annual)</label>
               <input type="number" value={draft.minPrice} onChange={(e) => updateDraftField('minPrice', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. 500000" />
             </div>

@@ -6,6 +6,7 @@ import { HeroSection } from './HeroSection';
 import { TrustedBySection } from './TrustedBySection';
 import { CategoryCards } from './CategoryCards';
 import { FeaturedJobs } from './FeaturedJobs';
+import { HiringFacetsSection } from './HiringFacetsSection';
 import { fallbackFeaturedJobs } from './data/fallbackFeaturedJobs';
 
 const SponsoredCompaniesSection = lazy(() =>
@@ -133,6 +134,13 @@ const HomePage = () => {
   const [jobsError, setJobsError] = useState('');
   const [reloadSeed, setReloadSeed] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [hiringFacets, setHiringFacets] = useState({
+    roles: [],
+    sectors: [],
+    cities: [],
+    pincodes: [],
+    totals: { openJobs: 0, companies: 0 }
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -175,6 +183,35 @@ const HomePage = () => {
     };
 
     loadJobs();
+    return () => {
+      mounted = false;
+    };
+  }, [reloadSeed]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadHiringFacets = async () => {
+      try {
+        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=60&sectorLimit=90&cityLimit=70&pincodeLimit=40');
+        const payload = response.ok ? await response.json().catch(() => null) : null;
+        if (!mounted || !payload?.status) return;
+
+        setHiringFacets({
+          roles: payload.roles || [],
+          sectors: payload.sectors || [],
+          cities: payload.cities || [],
+          pincodes: payload.pincodes || [],
+          totals: payload.totals || { openJobs: 0, companies: 0 }
+        });
+      } catch {
+        if (!mounted) return;
+        setHiringFacets((current) => current);
+      }
+    };
+
+    loadHiringFacets();
+
     return () => {
       mounted = false;
     };
@@ -327,6 +364,8 @@ const HomePage = () => {
       <DeferredSection minHeight={260}>
         <CtaBanner />
       </DeferredSection>
+
+      <HiringFacetsSection facets={hiringFacets} />
     </div>
   );
 };

@@ -34,7 +34,10 @@ export const getExternalJobs = (filters = {}) => {
   const params = new URLSearchParams();
   if (filters.search) params.set('search', filters.search);
   if (filters.category) params.set('category', filters.category);
+  if (filters.sector) params.set('sector', filters.sector);
   if (filters.location) params.set('location', filters.location);
+  if (filters.city) params.set('city', filters.city);
+  if (filters.pincode) params.set('pincode', filters.pincode);
   if (filters.source) params.set('source', filters.source);
   if (filters.remote) params.set('remote', 'true');
   if (filters.page) params.set('page', String(filters.page));

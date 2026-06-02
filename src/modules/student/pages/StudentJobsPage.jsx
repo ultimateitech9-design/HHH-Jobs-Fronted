@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FiBookmark,
   FiChevronLeft,
@@ -30,12 +30,23 @@ const MAX_BACKGROUND_FEED_PAGES = 6;
 const makeDefaultFilters = (audience = '') => ({
   search: '',
   location: '',
+  city: '',
+  pincode: '',
   employmentType: '',
   experienceLevel: '',
   category: '',
   source: '',
   remote: false,
   audience
+});
+
+const makeFiltersFromSearchParams = (audience = '', searchParams = new URLSearchParams()) => ({
+  ...makeDefaultFilters(audience),
+  search: searchParams.get('search') || searchParams.get('company') || '',
+  location: searchParams.get('location') || searchParams.get('city') || searchParams.get('cityName') || searchParams.get('pincode') || '',
+  city: searchParams.get('city') || searchParams.get('cityName') || '',
+  pincode: searchParams.get('pincode') || searchParams.get('pinCode') || searchParams.get('pin_code') || '',
+  category: searchParams.get('category') || searchParams.get('sector') || searchParams.get('sectorName') || ''
 });
 
 const isRemoteLike = (value = '') => /remote|work from home|wfh/i.test(String(value || ''));
@@ -168,9 +179,11 @@ const StudentJobsPage = ({
   embedded = false
 }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const searchParamsKey = searchParams.toString();
   const currentUser = useMemo(() => getCurrentUser(), []);
   const effectiveAudience = forcedAudience || (currentUser?.role === 'retired_employee' ? 'retired_employee' : '');
-  const [filters, setFilters] = useState(() => makeDefaultFilters(effectiveAudience));
+  const [filters, setFilters] = useState(() => makeFiltersFromSearchParams(effectiveAudience, searchParams));
   const [currentPage, setCurrentPage] = useState(1);
   const [jobsState, setJobsState] = useState({
     jobs: [],
@@ -183,9 +196,9 @@ const StudentJobsPage = ({
   });
   const [actionFeedback, setActionFeedback] = useState({ type: '', text: '', ctaTo: '', ctaLabel: '' });
   useEffect(() => {
-    setFilters(makeDefaultFilters(effectiveAudience));
+    setFilters(makeFiltersFromSearchParams(effectiveAudience, searchParams));
     setCurrentPage(1);
-  }, [effectiveAudience]);
+  }, [effectiveAudience, searchParams, searchParamsKey]);
 
   useEffect(() => {
     let mounted = true;
@@ -203,12 +216,18 @@ const StudentJobsPage = ({
       const internalFilters = {
         search: filters.search,
         location: filters.location,
+        city: filters.city,
+        pincode: filters.pincode,
+        sector: filters.category,
         category: filters.category,
         audience: effectiveAudience
       };
       const externalFilters = {
         search: filters.search,
         location: filters.location,
+        city: filters.city,
+        pincode: filters.pincode,
+        sector: filters.category,
         category: filters.category,
         source: filters.source,
         remote: filters.remote
@@ -360,6 +379,8 @@ const StudentJobsPage = ({
     () => Boolean(
       filters.search
       || filters.location
+      || filters.city
+      || filters.pincode
       || filters.employmentType
       || filters.experienceLevel
       || filters.category
@@ -370,7 +391,10 @@ const StudentJobsPage = ({
   );
 
   const updateFilter = (key, value) => {
-    setFilters((current) => ({ ...current, [key]: value }));
+    setFilters((current) => {
+      if (key === 'location') return { ...current, location: value, city: '', pincode: '' };
+      return { ...current, [key]: value };
+    });
     setCurrentPage(1);
   };
 

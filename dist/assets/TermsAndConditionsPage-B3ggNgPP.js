@@ -1,1 +1,0 @@
-import{bM as o}from"./index-DxT4K7ce.js";import{F as t}from"./FooterContentPage-BHIzWnDu.js";import"./PublicPageHero-BSQTrvjU.js";import"./AnimatedSection-BQm0JLU1.js";import"./PublicSectionHeader-CY95u28l.js";import"./PublicCallToAction-D2bGEl9n.js";const p=()=>o.jsx(t,{pageKey:"terms-and-conditions"});export{p as default};
