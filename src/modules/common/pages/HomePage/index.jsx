@@ -199,7 +199,7 @@ const HomePage = () => {
 
     const loadHiringFacets = async () => {
       try {
-        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=40&sectorLimit=44&cityLimit=48');
+        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=650&sectorLimit=120&cityLimit=650');
         const payload = response.ok ? await response.json().catch(() => null) : null;
         if (!mounted || !payload?.status) return;
 
@@ -345,6 +345,12 @@ const HomePage = () => {
         />
       </div>
 
+      {hasHiringFacets ? (
+        <DeferredSection minHeight={300}>
+          <HiringFacetsSection facets={hiringFacets} />
+        </DeferredSection>
+      ) : null}
+
       <DeferredSection minHeight={340}>
         <SponsoredCompaniesSection />
       </DeferredSection>
@@ -373,11 +379,6 @@ const HomePage = () => {
         <CtaBanner />
       </DeferredSection>
 
-      {hasHiringFacets ? (
-        <DeferredSection minHeight={300}>
-          <HiringFacetsSection facets={hiringFacets} />
-        </DeferredSection>
-      ) : null}
     </div>
   );
 };

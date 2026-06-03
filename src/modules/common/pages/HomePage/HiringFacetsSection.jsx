@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
 const GROUP_LIMITS = {
-  role: 28,
-  city: 24,
-  sector: 42
+  role: 48,
+  city: 72,
+  sector: 90
 };
 
 const buildFacetPath = (kind, name) => {
@@ -129,7 +129,7 @@ export function HiringFacetsSection({ facets }) {
         {sectors.length ? (
           <div className="mt-10 border-t border-slate-100 pt-10">
             <FacetGroup
-              title={formatGroupTitle(sectors.length, 'Market Sectors')}
+              title={formatGroupTitle(sectors.length, 'Sectors')}
               kind="sector"
               items={sectors}
               compact

@@ -80,7 +80,7 @@ const buildPublicJobsPath = (job = {}) => {
 
 const getJobHref = (job = {}, isAuthenticated = false, currentUser = null) => {
   if (job.sourceType === 'external') {
-    return buildPublicJobsPath(job);
+    return job.companyWebsite || buildPublicJobsPath(job);
   }
 
   const jobId = job.id || job._id;
@@ -278,7 +278,7 @@ export function FeaturedJobs({
                       </span>
                       <Link to={getJobHref(job, isStudentViewer, currentUser)}>
                         <span className="inline-flex items-center gap-1 text-[12px] font-medium text-brand-700 transition-transform hover:translate-x-1">
-                          Apply Now <ArrowRight className="h-3 w-3" />
+                          Read More <ArrowRight className="h-3 w-3" />
                         </span>
                       </Link>
                     </div>
