@@ -1,12 +1,12 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch } from '../../../../utils/api';
+import { useDeferredMount } from '../../../../shared/hooks/useDeferredMount';
 import './HomePage.css';
 
 import { HeroSection } from './HeroSection';
 import { TrustedBySection } from './TrustedBySection';
 import { CategoryCards } from './CategoryCards';
 import { FeaturedJobs } from './FeaturedJobs';
-import { HiringFacetsSection } from './HiringFacetsSection';
 import { fallbackFeaturedJobs } from './data/fallbackFeaturedJobs';
 
 const SponsoredCompaniesSection = lazy(() =>
@@ -30,8 +30,12 @@ const TestimonialsSection = lazy(() =>
 const CtaBanner = lazy(() =>
   import('./CtaBanner').then((module) => ({ default: module.CtaBanner }))
 );
+const HiringFacetsSection = lazy(() =>
+  import('./HiringFacetsSection').then((module) => ({ default: module.HiringFacetsSection }))
+);
 
 const JOBS_PER_PAGE = 8;
+const INITIAL_PORTAL_JOB_LIMIT = 32;
 
 const mapExternalJobToFeaturedJob = (job = {}) => ({
   id: job.id ? `external-${job.id}` : undefined,
@@ -140,6 +144,7 @@ const HomePage = () => {
     cities: [],
     totals: { openJobs: 0, companies: 0 }
   });
+  const shouldLoadHiringFacets = useDeferredMount(true, { delayMs: 1100, timeoutMs: 3200 });
 
   useEffect(() => {
     let mounted = true;
@@ -150,7 +155,7 @@ const HomePage = () => {
 
       try {
         const [portalResult, externalResult] = await Promise.allSettled([
-          apiFetch('/jobs?page=1&limit=120&status=open'),
+          apiFetch(`/jobs?page=1&limit=${INITIAL_PORTAL_JOB_LIMIT}&status=open`),
           apiFetch(`/external-jobs?page=1&limit=${JOBS_PER_PAGE}`)
         ]);
 
@@ -188,11 +193,13 @@ const HomePage = () => {
   }, [reloadSeed]);
 
   useEffect(() => {
+    if (!shouldLoadHiringFacets) return undefined;
+
     let mounted = true;
 
     const loadHiringFacets = async () => {
       try {
-        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=100&sectorLimit=90&cityLimit=110');
+        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=40&sectorLimit=44&cityLimit=48');
         const payload = response.ok ? await response.json().catch(() => null) : null;
         if (!mounted || !payload?.status) return;
 
@@ -213,7 +220,7 @@ const HomePage = () => {
     return () => {
       mounted = false;
     };
-  }, [reloadSeed]);
+  }, [reloadSeed, shouldLoadHiringFacets]);
 
   useEffect(() => {
     const revealNodes = Array.from(document.querySelectorAll('[data-reveal]'));
@@ -270,6 +277,9 @@ const HomePage = () => {
   const pagedJobs = useMemo(() => {
     return filteredJobs.slice(0, JOBS_PER_PAGE);
   }, [filteredJobs]);
+  const hasHiringFacets = Boolean(
+    hiringFacets.roles.length || hiringFacets.sectors.length || hiringFacets.cities.length
+  );
 
   const handleFiltersChange = (nextFilters) => {
     if (
@@ -363,7 +373,11 @@ const HomePage = () => {
         <CtaBanner />
       </DeferredSection>
 
-      <HiringFacetsSection facets={hiringFacets} />
+      {hasHiringFacets ? (
+        <DeferredSection minHeight={300}>
+          <HiringFacetsSection facets={hiringFacets} />
+        </DeferredSection>
+      ) : null}
     </div>
   );
 };

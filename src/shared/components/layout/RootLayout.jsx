@@ -2,19 +2,20 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../../core/auth/authStore';
 import { syncSessionUser } from '../../../core/auth/sessionSync';
-import NotificationRuntime from '../../../core/notifications/NotificationRuntime';
 import { apiFetch, hasApiAccessToken } from '../../../utils/api';
 import { getDashboardPathByRole } from '../../../utils/auth';
+import { useDeferredMount } from '../../hooks/useDeferredMount';
 import {
   readMaintenanceModeSnapshot,
   subscribeToMaintenanceModeUpdates,
   writeMaintenanceModeSnapshot
 } from '../../utils/maintenanceMode';
-import PublicFooter from './publicShell/PublicFooter';
-import PublicNavbar from './publicShell/PublicNavbar';
-import ScrollToTopButton from './publicShell/ScrollToTopButton';
 
 const AiChatbot = lazy(() => import('../../../components/AiChatbot'));
+const NotificationRuntime = lazy(() => import('../../../core/notifications/NotificationRuntime'));
+const PublicFooter = lazy(() => import('./publicShell/PublicFooter'));
+const PublicNavbar = lazy(() => import('./publicShell/PublicNavbar'));
+const ScrollToTopButton = lazy(() => import('./publicShell/ScrollToTopButton'));
 
 const portalRoutePattern =
   /^\/portal\/(admin|hr|student|platform|audit|dataentry|accounts|sales|support|super-admin|campus-connect)\b/i;
@@ -35,6 +36,12 @@ const RootLayout = () => {
   const [isMaintenanceResolved, setIsMaintenanceResolved] = useState(initialMaintenanceSnapshot.known);
   const navigate = useNavigate();
   const location = useLocation();
+  const dashboardPath = user ? getDashboardPathByRole(user.role) : null;
+  const isPortalWorkbench = portalRoutePattern.test(location.pathname);
+  const isInterviewRoomRoute = /^\/portal\/(?:hr|student)\/interviews\/[^/]+\/room$/i.test(location.pathname);
+  const hidePublicFooter = campusConnectPublicRoutePattern.test(location.pathname);
+  const isAuthorizedMaintenanceUser = ['admin', 'super_admin'].includes(String(user?.role || '').toLowerCase());
+  const shouldMountNotificationRuntime = useDeferredMount(Boolean(userId), { delayMs: 500, timeoutMs: 2000 });
 
   useEffect(() => {
     const refreshHeaderUser = async () => {
@@ -55,13 +62,13 @@ const RootLayout = () => {
     };
   }, [userId]);
 
-  const dashboardPath = user ? getDashboardPathByRole(user.role) : null;
-  const isPortalWorkbench = portalRoutePattern.test(location.pathname);
-  const isInterviewRoomRoute = /^\/portal\/(?:hr|student)\/interviews\/[^/]+\/room$/i.test(location.pathname);
-  const hidePublicFooter = campusConnectPublicRoutePattern.test(location.pathname);
-  const isAuthorizedMaintenanceUser = ['admin', 'super_admin'].includes(String(user?.role || '').toLowerCase());
-
   useEffect(() => {
+    if (isPortalWorkbench || isAuthorizedMaintenanceUser) {
+      setMaintenanceMode(false);
+      setIsMaintenanceResolved(true);
+      return undefined;
+    }
+
     let mounted = true;
 
     const applyMaintenanceSnapshot = (snapshot) => {
@@ -104,7 +111,7 @@ const RootLayout = () => {
       window.removeEventListener('focus', loadMaintenanceMode);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [isAuthorizedMaintenanceUser, isPortalWorkbench]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -156,14 +163,19 @@ const RootLayout = () => {
   const isPublicMaintenanceGatePending = !isPortalWorkbench && !isAuthorizedMaintenanceUser && !isMaintenanceResolved;
   const shouldShowMaintenanceScreen = !isPortalWorkbench && !isAuthorizedMaintenanceUser && maintenanceMode;
   const shouldHidePublicShell = isPublicMaintenanceGatePending || shouldShowMaintenanceScreen;
+  const shouldMountPublicShell = !isPortalWorkbench && !shouldHidePublicShell;
+  const shouldMountFooter = useDeferredMount(shouldMountPublicShell && !hidePublicFooter, { delayMs: 900, timeoutMs: 2600 });
+  const shouldMountChatbot = useDeferredMount(shouldMountPublicShell, { delayMs: 1800, timeoutMs: 3200 });
 
   return (
     <div
       className="min-h-screen overflow-x-clip font-sans text-slate-900"
       style={isPortalWorkbench ? undefined : publicShellStyle}
     >
-      {!isPortalWorkbench && !shouldHidePublicShell ? (
-        <PublicNavbar user={user} dashboardPath={dashboardPath} onLogout={handleLogout} />
+      {shouldMountPublicShell ? (
+        <Suspense fallback={null}>
+          <PublicNavbar user={user} dashboardPath={dashboardPath} onLogout={handleLogout} />
+        </Suspense>
       ) : null}
 
       <main className={`flex flex-col min-h-screen ${!isPortalWorkbench ? 'pt-[calc(var(--public-navbar-height,74px)+2px)]' : ''}`}>
@@ -192,11 +204,23 @@ const RootLayout = () => {
         )}
       </main>
 
-      {!isPortalWorkbench && !hidePublicFooter && !shouldHidePublicShell ? <PublicFooter /> : null}
-      {!isPortalWorkbench && showScrollTop && !isChatbotOpen && !shouldHidePublicShell ? <ScrollToTopButton /> : null}
+      {shouldMountFooter ? (
+        <Suspense fallback={null}>
+          <PublicFooter />
+        </Suspense>
+      ) : null}
+      {shouldMountPublicShell && showScrollTop && !isChatbotOpen ? (
+        <Suspense fallback={null}>
+          <ScrollToTopButton />
+        </Suspense>
+      ) : null}
 
-      <NotificationRuntime />
-      {!isPortalWorkbench && !shouldHidePublicShell ? (
+      {shouldMountNotificationRuntime ? (
+        <Suspense fallback={null}>
+          <NotificationRuntime />
+        </Suspense>
+      ) : null}
+      {shouldMountChatbot ? (
         <Suspense fallback={null}>
           <AiChatbot />
         </Suspense>

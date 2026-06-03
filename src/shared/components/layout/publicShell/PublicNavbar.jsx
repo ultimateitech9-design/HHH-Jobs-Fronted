@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Menu, X } from 'lucide-react';
-import LoginPanelContent from '../../../../modules/auth/components/LoginPanelContent';
 import { getLoginPortalConfig } from '../../../../modules/auth/config/loginPortals';
 import { getPublicJobsNavPath } from '../../../../modules/common/utils/publicAccess';
 import { isExternalHref } from '../../../utils/externalLinks.js';
 import { getPublicNavItems } from './publicNavigation';
+
+const LoginPanelContent = lazy(() => import('../../../../modules/auth/components/LoginPanelContent'));
 
 const pathMatches = (pathname, matchers = []) => matchers.some((matcher) => matcher.test(pathname));
 
@@ -101,18 +102,20 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
             transition={{ type: 'spring', stiffness: 110, damping: 26, mass: 1.05 }}
             className="fixed inset-y-0 right-0 z-[121] flex h-full w-full max-w-[460px] flex-col overflow-y-auto bg-white px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_24px_72px_rgba(15,23,42,0.18)] sm:max-w-[500px] sm:px-5 sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pt-5"
           >
-            <LoginPanelContent
-              portalLabel="Login"
-              allowSocialLogin={defaultLoginPortal.allowSocialLogin}
-              socialRole={defaultLoginPortal.socialRole}
-              showCreateAccount={defaultLoginPortal.showCreateAccount}
-              createAccountPath={defaultLoginPortal.createAccountPath}
-              createAccountLabel={defaultLoginPortal.createAccountLabel}
-              showOtpLogin={defaultLoginPortal.showOtpLogin}
-              allowedLoginRoles={defaultLoginPortal.allowedLoginRoles}
-              showHeader
-              onRequestClose={() => setLoginDrawerOpen(false)}
-            />
+            <Suspense fallback={<div className="h-72 animate-pulse rounded-2xl bg-slate-100" />}>
+              <LoginPanelContent
+                portalLabel="Login"
+                allowSocialLogin={defaultLoginPortal.allowSocialLogin}
+                socialRole={defaultLoginPortal.socialRole}
+                showCreateAccount={defaultLoginPortal.showCreateAccount}
+                createAccountPath={defaultLoginPortal.createAccountPath}
+                createAccountLabel={defaultLoginPortal.createAccountLabel}
+                showOtpLogin={defaultLoginPortal.showOtpLogin}
+                allowedLoginRoles={defaultLoginPortal.allowedLoginRoles}
+                showHeader
+                onRequestClose={() => setLoginDrawerOpen(false)}
+              />
+            </Suspense>
           </motion.aside>
         </AnimatePresence>,
         document.body
