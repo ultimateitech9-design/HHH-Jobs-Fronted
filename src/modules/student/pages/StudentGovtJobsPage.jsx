@@ -71,7 +71,7 @@ const compactButtonClassName =
 const compactPrimaryButtonClassName =
   'inline-flex items-center justify-center gap-1.5 rounded-full bg-navy px-2.5 py-1.5 text-[11px] font-black text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60';
 
-const govtJobGridClassName = 'grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5';
+const govtJobGridClassName = 'grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5';
 
 const buildFiltersFromSearchParams = (searchParams) => {
   const page = parseInt(searchParams.get('page') || '', 10);
@@ -192,7 +192,7 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
         event.preventDefault();
         onOpenDetails?.();
       }}
-      className="group flex min-h-[220px] cursor-pointer flex-col justify-between rounded-[1rem] border border-slate-200/80 bg-white p-3 shadow-[0_10px_22px_rgba(15,23,42,0.04)] outline-none transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_16px_32px_rgba(15,23,42,0.075)] focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+      className="group flex cursor-pointer flex-col rounded-[1rem] border border-slate-200/80 bg-white p-3 shadow-[0_10px_22px_rgba(15,23,42,0.04)] outline-none transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_16px_32px_rgba(15,23,42,0.075)] focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
     >
       <div>
         <div className="flex items-start justify-between gap-3">
@@ -219,11 +219,11 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
             </div>
 
             <Link to={detailPath} className="mt-2.5 block">
-              <h2 className="line-clamp-2 font-heading text-[15px] font-black leading-snug text-navy transition group-hover:text-brand-700">
+              <h2 className="font-heading text-[15px] font-black leading-snug text-navy transition group-hover:text-brand-700">
                 {job.title || 'Government job'}
               </h2>
             </Link>
-            <p className="mt-1 line-clamp-1 text-xs font-semibold text-slate-500">{job.organization || 'Official portal'}</p>
+            <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{job.organization || 'Official portal'}</p>
           </div>
 
           <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-black ${getDeadlineTone(job)}`}>
@@ -238,15 +238,15 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
           </p>
           <p className="flex items-center gap-2">
             <FiBriefcase className="shrink-0 text-slate-400" size={12} />
-            <span className="line-clamp-1">{job.qualification || 'As per notification'}</span>
+            <span className="min-w-0 break-words">{job.qualification || 'As per notification'}</span>
           </p>
           <p className="flex items-center gap-2">
             <FiMapPin className="shrink-0 text-slate-400" size={12} />
-            <span className="line-clamp-1">{job.state || 'All India'}{job.vacancies ? `, ${Number(job.vacancies).toLocaleString('en-IN')} posts` : ''}</span>
+            <span className="min-w-0 break-words">{job.state || 'All India'}{job.vacancies ? `, ${Number(job.vacancies).toLocaleString('en-IN')} posts` : ''}</span>
           </p>
         </div>
 
-        <p className="mt-3 line-clamp-1 text-xs leading-5 text-slate-500">
+        <p className="mt-3 text-xs leading-5 text-slate-500">
           {job.description || 'Check the official notification before submitting the form.'}
         </p>
       </div>
