@@ -19,7 +19,6 @@ import {
   FiShield,
   FiUsers
 } from 'react-icons/fi';
-import { FaRupeeSign } from 'react-icons/fa';
 
 import { getCurrentUser } from '../../../utils/auth';
 import {
@@ -146,12 +145,21 @@ const getHostnameLabel = (url) => {
 
 const getApplyUrl = (job) => job?.officialApplyUrl || job?.applyUrl || job?.officialUrl || '';
 const getNotificationUrl = (job) => job?.officialNotificationUrl || job?.notifUrl || '';
+const RupeeGlyph = ({ size = 13 }) => (
+  <span aria-hidden="true" className="inline-flex font-black leading-none" style={{ fontSize: size }}>
+    ₹
+  </span>
+);
 const formatApplicationFee = (value) => {
   const text = String(value || '').trim();
   if (!text) return '';
   if (/free|see|notification|not specified/i.test(text)) return text;
   if (text.startsWith('₹')) return text;
-  const number = Number(text.replace(/,/g, ''));
+  const normalized = text
+    .replace(/\b(?:rs\.?|inr)\s*/gi, '₹')
+    .replace(/₹\s+/g, '₹');
+  if (normalized.includes('₹')) return normalized;
+  const number = Number(normalized.replace(/,/g, ''));
   return Number.isFinite(number) ? `₹${number.toLocaleString('en-IN')}` : `₹${text}`;
 };
 
@@ -267,7 +275,7 @@ const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
       { icon: FiClock, label: 'Start Date', value: job.startDate ? formatDate(job.startDate) : 'Available now' },
       { icon: FiBriefcase, label: 'Qualification', value: job.qualification || QUAL_LABELS[job.qualLevel] || 'As per notification' },
       { icon: FiUsers, label: 'Age Limit', value: job.ageMin && job.ageMax ? `${job.ageMin}-${job.ageMax} years` : 'See notification' },
-      { icon: FaRupeeSign, label: 'Application Fee', value: formatApplicationFee(job.appFee) || 'See notification' },
+      { icon: RupeeGlyph, label: 'Application Fee', value: formatApplicationFee(job.appFee) || 'See notification' },
       { icon: FiMapPin, label: 'State', value: job.state || 'All India' },
       { icon: FiFileText, label: 'Update Type', value: POST_TYPE_LABELS[job.postType] || job.postType || 'Recruitment' }
     ];
