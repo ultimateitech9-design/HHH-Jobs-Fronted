@@ -58,6 +58,19 @@ const emptyCouponDraft = {
   plan_slugs: ''
 };
 
+const normalizeCouponCode = (value = '') => String(value || '')
+  .trim()
+  .toUpperCase()
+  .replace(/[^A-Z0-9_-]/g, '')
+  .slice(0, 40);
+
+const generateHrFreeTrialCouponCode = () => normalizeCouponCode(`HRFREE${Date.now().toString(36)}`);
+
+const hasRealCouponCode = (coupon = {}) => {
+  const code = normalizeCouponCode(coupon.code || '');
+  return Boolean(code && code !== '-');
+};
+
 const statusToApi = (status) => (status === 'all' ? '' : status);
 
 const getStatusBadge = (status) => {
@@ -128,7 +141,7 @@ const AdminPaymentsPage = () => {
     const nextPlans = plansRes.data || [];
     setCommercialPurchases(purchasesRes.data || []);
     setRolePlans(nextPlans);
-    setCoupons(couponsRes.data || []);
+    setCoupons((couponsRes.data || []).filter(hasRealCouponCode));
     setRolePlanDrafts(Object.fromEntries(nextPlans.map((plan) => [plan.slug, {
       price: String(plan.price ?? ''),
       durationDays: String(plan.durationDays ?? ''),
@@ -398,20 +411,38 @@ const AdminPaymentsPage = () => {
     setMessage('');
 
     try {
+      const normalizedCode = normalizeCouponCode(couponDraft.code);
+      const discountType = couponDraft.discount_type === 'fixed' ? 'fixed' : 'percent';
+      const discountValue = Number(couponDraft.discount_value || 0);
+      const maxUses = couponDraft.max_uses ? Number(couponDraft.max_uses) : null;
+
+      if (!normalizedCode || normalizedCode === '-') {
+        throw new Error('Coupon code is required. Click Make HR Free-Trial Coupon to generate one.');
+      }
+      if (!Number.isFinite(discountValue) || discountValue <= 0) {
+        throw new Error('Discount value must be greater than 0.');
+      }
+      if (discountType === 'percent' && discountValue > 100) {
+        throw new Error('Percent discount cannot be more than 100.');
+      }
+      if (maxUses !== null && (!Number.isFinite(maxUses) || maxUses < 1)) {
+        throw new Error('Max uses must be a valid positive number.');
+      }
+
       const created = await createAdminSalesCoupon({
-        code: couponDraft.code,
-        discount_type: couponDraft.discount_type,
-        discount_value: Number(couponDraft.discount_value || 0),
-        max_uses: couponDraft.max_uses ? Number(couponDraft.max_uses) : null,
+        code: normalizedCode,
+        discount_type: discountType,
+        discount_value: discountValue,
+        max_uses: maxUses,
         valid_until: couponDraft.valid_until || null,
-        audience_roles: couponDraft.audience_roles.split(',').map((item) => item.trim()).filter(Boolean),
+        audience_roles: couponDraft.audience_roles.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean),
         plan_slugs: couponDraft.plan_slugs.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean)
       });
 
-      setCoupons((current) => [created, ...current]);
+      setCoupons((current) => [created, ...current].filter(hasRealCouponCode));
       setCouponPage(1);
       setCouponDraft(emptyCouponDraft);
-      setMessage(`Coupon ${created.code} created.`);
+      setMessage(`Coupon ${created.code || normalizedCode} created.`);
       setTimeout(() => setMessage(''), 3000);
     } catch (actionError) {
       setError(String(actionError.message || 'Unable to create coupon.'));
@@ -525,7 +556,7 @@ const AdminPaymentsPage = () => {
           <h2 className="text-xl font-bold text-primary">Coupon Control</h2>
           <p className="text-sm text-neutral-500 mt-1 mb-5">Create 100% HR coupons for free-trial onboarding or role-based coupons that sales can share during follow-up.</p>
           <form onSubmit={handleCreateCoupon} className="space-y-3">
-            <input value={couponDraft.code} onChange={(e) => setCouponDraft((current) => ({ ...current, code: e.target.value.toUpperCase() }))} placeholder="Coupon code" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold uppercase" />
+            <input required maxLength={40} value={couponDraft.code} onChange={(e) => setCouponDraft((current) => ({ ...current, code: normalizeCouponCode(e.target.value) }))} placeholder="Coupon code" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold uppercase" />
             <div className="grid grid-cols-2 gap-3">
               <select value={couponDraft.discount_type} onChange={(e) => setCouponDraft((current) => ({ ...current, discount_type: e.target.value }))} className="rounded-xl border border-neutral-200 px-3 py-2 font-semibold">
                 <option value="percent">Percent</option>
@@ -543,9 +574,11 @@ const AdminPaymentsPage = () => {
               type="button"
               onClick={() => setCouponDraft((current) => ({
                 ...current,
+                code: normalizeCouponCode(current.code) || generateHrFreeTrialCouponCode(),
                 discount_type: 'percent',
                 discount_value: '100',
-                audience_roles: 'hr'
+                audience_roles: 'hr',
+                plan_slugs: ''
               }))}
               className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100"
             >
