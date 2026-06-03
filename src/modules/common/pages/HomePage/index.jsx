@@ -1,14 +1,19 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch } from '../../../../utils/api';
 import { useDeferredMount } from '../../../../shared/hooks/useDeferredMount';
-import './HomePage.css';
 
 import { HeroSection } from './HeroSection';
-import { TrustedBySection } from './TrustedBySection';
-import { CategoryCards } from './CategoryCards';
-import { FeaturedJobs } from './FeaturedJobs';
 import { fallbackFeaturedJobs } from './data/fallbackFeaturedJobs';
 
+const TrustedBySection = lazy(() =>
+  import('./TrustedBySection').then((module) => ({ default: module.TrustedBySection }))
+);
+const CategoryCards = lazy(() =>
+  import('./CategoryCards').then((module) => ({ default: module.CategoryCards }))
+);
+const FeaturedJobs = lazy(() =>
+  import('./FeaturedJobs').then((module) => ({ default: module.FeaturedJobs }))
+);
 const SponsoredCompaniesSection = lazy(() =>
   import('./SponsoredCompaniesSection').then((module) => ({ default: module.SponsoredCompaniesSection }))
 );
@@ -144,9 +149,12 @@ const HomePage = () => {
     cities: [],
     totals: { openJobs: 0, companies: 0 }
   });
+  const shouldLoadFeaturedJobs = useDeferredMount(true, { delayMs: 700, timeoutMs: 2400 });
   const shouldLoadHiringFacets = useDeferredMount(true, { delayMs: 1100, timeoutMs: 3200 });
 
   useEffect(() => {
+    if (!shouldLoadFeaturedJobs) return undefined;
+
     let mounted = true;
 
     const loadJobs = async () => {
@@ -190,7 +198,7 @@ const HomePage = () => {
     return () => {
       mounted = false;
     };
-  }, [reloadSeed]);
+  }, [reloadSeed, shouldLoadFeaturedJobs]);
 
   useEffect(() => {
     if (!shouldLoadHiringFacets) return undefined;
@@ -221,34 +229,6 @@ const HomePage = () => {
       mounted = false;
     };
   }, [reloadSeed, shouldLoadHiringFacets]);
-
-  useEffect(() => {
-    const revealNodes = Array.from(document.querySelectorAll('[data-reveal]'));
-    if (!revealNodes.length) return undefined;
-
-    if (typeof IntersectionObserver === 'undefined') {
-      revealNodes.forEach((node) => node.classList.add('is-visible'));
-      return undefined;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
-        });
-      },
-      {
-        threshold: 0.18,
-        rootMargin: '0px 0px -10% 0px'
-      }
-    );
-
-    revealNodes.forEach((node) => observer.observe(node));
-
-    return () => observer.disconnect();
-  }, []);
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
@@ -321,7 +301,7 @@ const HomePage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-surface-base">
-      <div data-reveal style={{ '--jg-reveal-delay': '0ms' }}>
+      <div>
         <HeroSection
           filters={filters}
           onFiltersChange={handleFiltersChange}
@@ -330,20 +310,26 @@ const HomePage = () => {
         />
       </div>
 
-      <div data-reveal style={{ '--jg-reveal-delay': '90ms' }}>
+      <DeferredSection minHeight={120} rootMargin="120px 0px">
         <TrustedBySection />
+      </DeferredSection>
+
+      <DeferredSection minHeight={540} rootMargin="180px 0px">
         <CategoryCards
           selectedCategory={selectedCategory}
           onCategorySelect={handleCategorySelect}
           onBrowseAll={handleBrowseAll}
         />
+      </DeferredSection>
+
+      <DeferredSection minHeight={360} rootMargin="220px 0px">
         <FeaturedJobs
           jobs={pagedJobs}
           loading={loadingJobs}
           error={jobsError}
           onRefresh={() => setReloadSeed((current) => current + 1)}
         />
-      </div>
+      </DeferredSection>
 
       {hasHiringFacets ? (
         <DeferredSection minHeight={300}>

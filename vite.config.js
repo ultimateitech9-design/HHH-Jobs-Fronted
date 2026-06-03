@@ -16,7 +16,8 @@ const manualChunks = (id) => {
   }
 
   if (normalizedId.includes('/framer-motion/')) return 'vendor-motion'
-  if (normalizedId.includes('/react-icons/') || normalizedId.includes('/lucide-react/')) return 'vendor-icons'
+  if (normalizedId.includes('/lucide-react/')) return 'vendor-lucide'
+  if (normalizedId.includes('/react-icons/')) return 'vendor-react-icons'
   if (normalizedId.includes('/react-hot-toast/')) return 'vendor-toast'
   if (normalizedId.includes('/zustand/')) return 'vendor-state'
   if (normalizedId.includes('/react-hook-form/') || normalizedId.includes('/react-select/')) return 'vendor-forms'

@@ -32,8 +32,9 @@ const RootLayout = () => {
   const userId = user?.id;
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  const [maintenanceMode, setMaintenanceMode] = useState(initialMaintenanceSnapshot.enabled);
-  const [isMaintenanceResolved, setIsMaintenanceResolved] = useState(initialMaintenanceSnapshot.known);
+  const [maintenanceMode, setMaintenanceMode] = useState(
+    initialMaintenanceSnapshot.known && initialMaintenanceSnapshot.enabled
+  );
   const navigate = useNavigate();
   const location = useLocation();
   const dashboardPath = user ? getDashboardPathByRole(user.role) : null;
@@ -65,7 +66,6 @@ const RootLayout = () => {
   useEffect(() => {
     if (isPortalWorkbench || isAuthorizedMaintenanceUser) {
       setMaintenanceMode(false);
-      setIsMaintenanceResolved(true);
       return undefined;
     }
 
@@ -74,12 +74,11 @@ const RootLayout = () => {
     const applyMaintenanceSnapshot = (snapshot) => {
       if (!mounted || !snapshot) return;
       setMaintenanceMode(Boolean(snapshot.enabled));
-      setIsMaintenanceResolved(Boolean(snapshot.known));
     };
 
     const loadMaintenanceMode = async () => {
       try {
-        const response = await apiFetch('/public/settings', { skipAuth: true, timeoutMs: 6000, cache: 'no-store' });
+        const response = await apiFetch('/public/settings', { skipAuth: true, timeoutMs: 3000, cache: 'no-store' });
         const payload = await response.json().catch(() => null);
         applyMaintenanceSnapshot(writeMaintenanceModeSnapshot(Boolean(payload?.settings?.maintenanceMode)));
       } catch {
@@ -100,7 +99,7 @@ const RootLayout = () => {
     };
 
     loadMaintenanceMode();
-    const intervalId = window.setInterval(loadMaintenanceMode, 15000);
+    const intervalId = window.setInterval(loadMaintenanceMode, 60000);
     window.addEventListener('focus', loadMaintenanceMode);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
@@ -160,7 +159,7 @@ const RootLayout = () => {
     navigate('/login', { replace: true });
   };
 
-  const isPublicMaintenanceGatePending = !isPortalWorkbench && !isAuthorizedMaintenanceUser && !isMaintenanceResolved;
+  const isPublicMaintenanceGatePending = false;
   const shouldShowMaintenanceScreen = !isPortalWorkbench && !isAuthorizedMaintenanceUser && maintenanceMode;
   const shouldHidePublicShell = isPublicMaintenanceGatePending || shouldShowMaintenanceScreen;
   const shouldMountPublicShell = !isPortalWorkbench && !shouldHidePublicShell;
