@@ -13,6 +13,7 @@ const VeteransPage = lazy(() => import('../modules/common/pages/VeteransPage'));
 const CampusConnectPage = lazy(() => import('../modules/common/pages/CampusConnectPage'));
 const StudentExternalJobsPage = lazy(() => import('../modules/student/pages/StudentExternalJobsPage'));
 const StudentJobDetailsPage = lazy(() => import('../modules/student/pages/StudentJobDetailsPage'));
+const FacetDirectoryPage = lazy(() => import('../modules/common/pages/FacetDirectoryPage'));
 const StudentGovtJobsPage = lazy(() => import('../modules/student/pages/StudentGovtJobsPage'));
 const StudentGovtJobDetailsPage = lazy(() => import('../modules/student/pages/StudentGovtJobDetailsPage'));
 const ForbiddenPage = lazy(() => import('../modules/common/pages/ForbiddenPage'));
@@ -54,6 +55,9 @@ const publicRoutes = [
   { path: 'veterans', element: <VeteransPage /> },
   { path: 'campus-connect', element: <CampusConnectPage /> },
   { path: 'retired-employee', element: <RetiredEmployeePage /> },
+  { path: 'jobs/categories', element: <FacetDirectoryPage /> },
+  { path: 'jobs/cities', element: <FacetDirectoryPage /> },
+  { path: 'jobs/sectors', element: <FacetDirectoryPage /> },
   { path: 'jobs', element: <StudentExternalJobsPage /> },
   { path: 'jobs/:jobId', element: <StudentJobDetailsPage publicMode /> },
   { path: 'govt-jobs', element: <StudentGovtJobsPage publicMode /> },

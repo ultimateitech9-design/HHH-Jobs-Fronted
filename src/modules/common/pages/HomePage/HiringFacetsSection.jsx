@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
@@ -6,6 +6,12 @@ const GROUP_LIMITS = {
   role: 48,
   city: 72,
   sector: 90
+};
+
+const GROUP_DIRECTORY_PATHS = {
+  role: '/jobs/categories',
+  city: '/jobs/cities',
+  sector: '/jobs/sectors'
 };
 
 const buildFacetPath = (kind, name) => {
@@ -59,10 +65,9 @@ const FacetChip = ({ kind, item }) => {
 };
 
 const FacetGroup = ({ title, kind, items, compact = false }) => {
-  const [expanded, setExpanded] = useState(false);
   const limit = GROUP_LIMITS[kind] || 24;
   const activeItems = items.filter((item) => item.count > 0).length;
-  const visibleItems = expanded ? items : items.slice(0, limit);
+  const visibleItems = items.slice(0, limit);
   const hiddenCount = Math.max(0, items.length - visibleItems.length);
 
   if (!items.length) return null;
@@ -90,13 +95,12 @@ const FacetGroup = ({ title, kind, items, compact = false }) => {
       </div>
 
       {hiddenCount ? (
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
+        <Link
+          to={GROUP_DIRECTORY_PATHS[kind] || '/jobs'}
           className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[#3f56ad] shadow-sm transition hover:border-[#3f56ad]/40 hover:text-[#31468f] focus:outline-none focus:ring-4 focus:ring-[#3f56ad]/15"
         >
           Show {hiddenCount} more <ArrowRight className="h-4 w-4" />
-        </button>
+        </Link>
       ) : null}
     </section>
   );
