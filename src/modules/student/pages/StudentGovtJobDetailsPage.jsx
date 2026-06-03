@@ -145,11 +145,6 @@ const getHostnameLabel = (url) => {
 
 const getApplyUrl = (job) => job?.officialApplyUrl || job?.applyUrl || job?.officialUrl || '';
 const getNotificationUrl = (job) => job?.officialNotificationUrl || job?.notifUrl || '';
-const RupeeGlyph = ({ size = 13 }) => (
-  <span aria-hidden="true" className="inline-flex font-black leading-none" style={{ fontSize: size }}>
-    ₹
-  </span>
-);
 const formatApplicationFee = (value) => {
   const text = String(value || '').trim();
   if (!text) return '';
@@ -182,7 +177,7 @@ const buildTrackerForm = (job) => ({
   notes: job?.tracker?.notes || ''
 });
 
-const InfoTile = ({ icon: Icon, label, value, tone = 'default' }) => {
+const InfoTile = ({ icon: Icon, symbol, label, value, tone = 'default' }) => {
   const toneClass = tone === 'urgent'
     ? 'border-red-200 bg-red-50/80 text-red-700'
     : tone === 'success'
@@ -192,7 +187,7 @@ const InfoTile = ({ icon: Icon, label, value, tone = 'default' }) => {
   return (
     <div className={`rounded-[1rem] border px-3 py-3 ${toneClass}`}>
       <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] opacity-70">
-        {Icon ? <Icon size={13} /> : null}
+        {symbol ? <span aria-hidden="true" className="inline-flex text-[13px] font-black leading-none">{symbol}</span> : Icon ? <Icon size={13} /> : null}
         {label}
       </p>
       <p className="mt-2 text-sm font-bold leading-5">{value || 'Not specified'}</p>
@@ -275,7 +270,7 @@ const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
       { icon: FiClock, label: 'Start Date', value: job.startDate ? formatDate(job.startDate) : 'Available now' },
       { icon: FiBriefcase, label: 'Qualification', value: job.qualification || QUAL_LABELS[job.qualLevel] || 'As per notification' },
       { icon: FiUsers, label: 'Age Limit', value: job.ageMin && job.ageMax ? `${job.ageMin}-${job.ageMax} years` : 'See notification' },
-      { icon: RupeeGlyph, label: 'Application Fee', value: formatApplicationFee(job.appFee) || 'See notification' },
+      { symbol: '₹', label: 'Application Fee', value: formatApplicationFee(job.appFee) || 'See notification' },
       { icon: FiMapPin, label: 'State', value: job.state || 'All India' },
       { icon: FiFileText, label: 'Update Type', value: POST_TYPE_LABELS[job.postType] || job.postType || 'Recruitment' }
     ];
