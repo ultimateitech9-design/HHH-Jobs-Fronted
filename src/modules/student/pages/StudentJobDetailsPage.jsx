@@ -7,9 +7,9 @@ import {
   FiCheckCircle,
   FiChevronLeft,
   FiClock,
-  FiDollarSign,
   FiMapPin
 } from 'react-icons/fi';
+import { FaRupeeSign } from 'react-icons/fa';
 import { getCurrentUser } from '../../../utils/auth';
 import { getLoginRedirectState } from '../../common/utils/publicAccess';
 import {
@@ -36,6 +36,13 @@ import { extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
 const buildCurrentPath = (location) => `${location.pathname || ''}${location.search || ''}${location.hash || ''}`;
 
 const emptyActionFeedback = () => ({ type: '', text: '', ctaTo: '', ctaLabel: '', ctaState: null });
+const formatSalaryAmount = (value) => {
+  const text = String(value || '').trim();
+  if (!text) return '-';
+  if (text.startsWith('₹')) return text;
+  const number = Number(text.replace(/,/g, ''));
+  return Number.isFinite(number) ? `₹${number.toLocaleString('en-IN')}` : `₹${text}`;
+};
 
 const StudentJobDetailsPage = ({ publicMode = false }) => {
   const { jobId: jobParam } = useParams();
@@ -138,7 +145,10 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
 
   const salaryLabel = useMemo(() => {
     if (!state.job) return '-';
-    return `${state.job.minPrice || '-'} - ${state.job.maxPrice || '-'} ${state.job.salaryType || ''}`.trim();
+    const minSalary = state.job.minPrice ? formatSalaryAmount(state.job.minPrice) : '';
+    const maxSalary = state.job.maxPrice ? formatSalaryAmount(state.job.maxPrice) : '';
+    const salaryRange = minSalary && maxSalary ? `${minSalary} - ${maxSalary}` : minSalary || maxSalary || '-';
+    return `${salaryRange} ${state.job.salaryType || ''}`.trim();
   }, [state.job]);
 
   const applicationStatus = String(state.application?.status || '').toLowerCase();
@@ -318,7 +328,7 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
           </div>
           <div className="rounded-[1rem] border border-emerald-200 bg-emerald-50/80 px-3 py-3">
             <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-emerald-700">
-              <FiDollarSign size={13} />
+              <FaRupeeSign size={12} />
               Salary
             </p>
             <p className="mt-2 font-semibold text-emerald-900">{salaryLabel}</p>

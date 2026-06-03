@@ -105,7 +105,7 @@ const formatPortalSalary = (job) => {
 };
 
 const formatExternalSalary = (job) => {
-  const currency = String(job.salaryCurrency || 'USD').trim();
+  const currency = '₹';
   const minValue = Number(job.salaryMin || 0);
   const maxValue = Number(job.salaryMax || 0);
   if (!minValue && !maxValue) return '';

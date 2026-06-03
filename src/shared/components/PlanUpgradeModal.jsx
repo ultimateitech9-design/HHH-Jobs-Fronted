@@ -2,6 +2,7 @@ import { FiCheck, FiCheckCircle, FiCreditCard, FiGift, FiLock, FiX } from 'react
 import { getPlanBySlug, formatPrice, TRIAL_DAYS } from '../constants/planConfig';
 
 const formatPlanLabel = (value = '') => String(value || '').replace(/[_-]+/g, ' ').trim() || 'No active plan';
+const formatCurrencyAmount = (value) => `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
 const PlanUpgradeModal = ({
   open,
@@ -80,7 +81,7 @@ const PlanUpgradeModal = ({
                           <span className="ml-1 text-xs text-slate-500">after auto-pay setup</span>
                         </>
                       ) : (
-                        <span className="text-xl font-black text-brand-700">{formatPrice(plan.price, plan.currency === 'USD' ? '$' : '₹')}</span>
+                        <span className="text-xl font-black text-brand-700">{formatPrice(plan.price, '₹')}</span>
                       )}
                     </div>
                     {(plan.priceAfterTrial || getPlanBySlug(plan.slug)?.priceAfterTrial || plan.price) > 0 && (
@@ -115,10 +116,10 @@ const PlanUpgradeModal = ({
             />
             {quote ? (
               <div className="mt-4 space-y-2 rounded-xl border border-brand-100 bg-white p-3 text-sm text-slate-600">
-                <div className="flex justify-between"><span>Subtotal</span><span>{quote.currency} {quote.subtotal}</span></div>
-                <div className="flex justify-between text-emerald-700"><span>Discount</span><span>-{quote.currency} {quote.discountAmount}</span></div>
-                <div className="flex justify-between"><span>GST</span><span>{quote.currency} {quote.gstAmount}</span></div>
-                <div className="flex justify-between border-t border-slate-100 pt-2 font-black text-navy"><span>Total</span><span>{quote.currency} {quote.totalAmount}</span></div>
+                <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrencyAmount(quote.subtotal)}</span></div>
+                <div className="flex justify-between text-emerald-700"><span>Discount</span><span>-{formatCurrencyAmount(quote.discountAmount)}</span></div>
+                <div className="flex justify-between"><span>GST</span><span>{formatCurrencyAmount(quote.gstAmount)}</span></div>
+                <div className="flex justify-between border-t border-slate-100 pt-2 font-black text-navy"><span>Total</span><span>{formatCurrencyAmount(quote.totalAmount)}</span></div>
               </div>
             ) : null}
             {message ? <p className="mt-3 text-xs font-semibold leading-5 text-brand-700">{message}</p> : null}

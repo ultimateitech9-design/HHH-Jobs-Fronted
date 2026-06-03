@@ -1,6 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { 
-  FiDollarSign, 
   FiSearch, 
   FiCreditCard, 
   FiTrendingUp, 
@@ -13,6 +12,7 @@ import {
   FiBriefcase,
   FiX
 } from 'react-icons/fi';
+import { FaRupeeSign } from 'react-icons/fa';
 import {
   createAdminSalesCoupon,
   formatDateTime,
@@ -39,6 +39,7 @@ const PAGE_SIZE = 12;
 const COMMERCIAL_PAGE_SIZE = 10;
 const PLAN_PURCHASE_PAGE_SIZE = 10;
 const COUPON_PAGE_SIZE = 6;
+const formatRupeeAmount = (value) => `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
 const emptyDraft = {
   status: 'pending',
@@ -233,7 +234,7 @@ const AdminPaymentsPage = () => {
     return [
       {
         label: 'Gross Platform Revenue',
-        value: `$${paidPurchaseAmount.toFixed(0)}`,
+        value: formatRupeeAmount(paidPurchaseAmount),
         helper: 'From verified plan purchases',
         icon: <FiTrendingUp className="text-emerald-500" />,
         bg: 'bg-emerald-50'
@@ -601,7 +602,7 @@ const AdminPaymentsPage = () => {
                   </td>
                   <td className="p-4 align-top font-semibold text-neutral-700 uppercase">{purchase.audience_role}</td>
                   <td className="p-4 align-top font-bold text-primary">{purchase.role_plan_slug}</td>
-                  <td className="p-4 align-top font-bold text-emerald-600">{purchase.currency || 'INR'} {purchase.total_amount}</td>
+                  <td className="p-4 align-top font-bold text-emerald-600">{formatRupeeAmount(purchase.total_amount)}</td>
                   <td className="p-4 align-top">
                     <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase ${purchase.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : purchase.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-neutral-100 text-neutral-600'}`}>
                       {purchase.status}
@@ -795,7 +796,7 @@ const AdminPaymentsPage = () => {
                     
                     <td className="p-4 align-top">
                       <div className="font-black text-emerald-400 text-lg">
-                        {purchase.currency || 'USD'} {purchase.total_amount}
+                        {formatRupeeAmount(purchase.total_amount)}
                       </div>
                     </td>
                     
@@ -866,7 +867,7 @@ const AdminPaymentsPage = () => {
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
             <div>
               <h2 className="text-xl font-bold text-primary flex items-center gap-2">
-                <FiDollarSign className="text-brand-500" /> Individual Job Payments
+                <FaRupeeSign className="text-brand-500" /> Individual Job Payments
               </h2>
             </div>
 
@@ -955,7 +956,7 @@ const AdminPaymentsPage = () => {
                     
                     <td className="p-4 align-top">
                        <div className="font-black text-primary text-lg">
-                         {payment.currency || 'USD'} {payment.amount}
+                         {formatRupeeAmount(payment.amount)}
                        </div>
                        <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide mt-1">
                          {formatDateTime(payment.paid_at || payment.created_at)}

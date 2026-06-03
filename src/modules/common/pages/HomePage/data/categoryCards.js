@@ -1,13 +1,13 @@
 import {
   FiActivity,
   FiBriefcase,
-  FiDollarSign,
   FiHeadphones,
   FiLayers,
   FiShield,
   FiTrendingUp,
   FiUsers
 } from 'react-icons/fi';
+import { FaRupeeSign } from 'react-icons/fa';
 
 export const categoryCards = [
   {
@@ -41,7 +41,7 @@ export const categoryCards = [
   {
     title: 'Finance & Banking',
     count: '3K+ jobs',
-    icon: FiDollarSign,
+    icon: FaRupeeSign,
     searchTerm: 'Finance & Banking',
     keywords: ['finance', 'banking', 'accountant', 'credit analyst']
   },

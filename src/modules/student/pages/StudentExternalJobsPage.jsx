@@ -75,7 +75,7 @@ const mapPortalJobToExternalCard = (job = {}) => ({
   category: job.category || '',
   experience_level: job.experienceLevel || '',
   seoSlug: job.seoSlug || job.seo_slug || '',
-  salary_currency: '',
+  salary_currency: 'INR',
   salary_min: '',
   salary_max: '',
   tags: Array.isArray(job.skills) ? job.skills : [],
@@ -152,7 +152,7 @@ export const ExternalJobCard = ({
 
   const salaryText = useMemo(() => {
     if (!job.salary_min && !job.salary_max) return null;
-    const currency = job.salary_currency || 'USD';
+    const currency = '₹';
     if (job.salary_min && job.salary_max) {
       return `${currency} ${Number(job.salary_min).toLocaleString()} - ${Number(job.salary_max).toLocaleString()}`;
     }
@@ -160,7 +160,7 @@ export const ExternalJobCard = ({
       return `${currency} ${Number(job.salary_min).toLocaleString()}+`;
     }
     return `Up to ${currency} ${Number(job.salary_max).toLocaleString()}`;
-  }, [job.salary_currency, job.salary_max, job.salary_min]);
+  }, [job.salary_max, job.salary_min]);
   const companyLogoUrl = buildCompanyLogoUrl(job.company_logo, '', job.apply_url || '');
 
   const locationText = job.job_location || 'Remote';

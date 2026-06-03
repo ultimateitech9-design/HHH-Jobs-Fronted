@@ -69,6 +69,8 @@ const supportServices = [
   { label: 'More tools as your profile grows', icon: FiCheckCircle, to: '/portal/student/profile' }
 ];
 
+const formatCurrencyAmount = (value) => `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+
 const StudentServicesPage = () => {
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
@@ -360,7 +362,7 @@ const StudentServicesPage = () => {
               >
                 <p className="text-lg font-bold text-navy">{plan.name}</p>
                 <p className="mt-1 text-sm text-slate-500">{plan.description || 'Student growth plan'}</p>
-                <p className="mt-3 text-2xl font-black text-brand-700">{plan.currency} {plan.price}</p>
+                <p className="mt-3 text-2xl font-black text-brand-700">{formatCurrencyAmount(plan.price)}</p>
               </button>
             ))}
           </div>
@@ -381,10 +383,10 @@ const StudentServicesPage = () => {
             <input value={couponCode} onChange={(event) => setCouponCode(event.target.value.toUpperCase())} placeholder="Coupon code" className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2 font-semibold uppercase" />
             {quote ? (
               <div className="mt-4 rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm">
-                <div className="flex justify-between"><span>Subtotal</span><span>{quote.currency} {quote.subtotal}</span></div>
-                <div className="mt-1 flex justify-between text-emerald-700"><span>Discount</span><span>-{quote.currency} {quote.discountAmount}</span></div>
-                <div className="mt-1 flex justify-between"><span>GST</span><span>{quote.currency} {quote.gstAmount}</span></div>
-                <div className="mt-2 flex justify-between border-t border-brand-200 pt-2 font-black text-brand-800"><span>Total</span><span>{quote.currency} {quote.totalAmount}</span></div>
+                <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrencyAmount(quote.subtotal)}</span></div>
+                <div className="mt-1 flex justify-between text-emerald-700"><span>Discount</span><span>-{formatCurrencyAmount(quote.discountAmount)}</span></div>
+                <div className="mt-1 flex justify-between"><span>GST</span><span>{formatCurrencyAmount(quote.gstAmount)}</span></div>
+                <div className="mt-2 flex justify-between border-t border-brand-200 pt-2 font-black text-brand-800"><span>Total</span><span>{formatCurrencyAmount(quote.totalAmount)}</span></div>
               </div>
             ) : null}
             {billingMessage ? <p className="mt-4 text-sm font-semibold text-brand-700">{billingMessage}</p> : null}

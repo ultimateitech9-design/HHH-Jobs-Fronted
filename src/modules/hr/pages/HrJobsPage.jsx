@@ -93,7 +93,7 @@ const getPlanPostingBuckets = (plan = {}, multiplier = 1) => {
     .filter((bucket) => bucket.value > 0);
 };
 
-const formatMoney = (currency = 'INR', amount = 0) => `${currency} ${Number(amount || 0).toLocaleString('en-IN')}`;
+const formatMoney = (_currency = 'INR', amount = 0) => `₹${Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
 const formatDurationLabel = (days = 0) => {
   const value = Number(days || 0);
@@ -1321,21 +1321,21 @@ const HrJobsPage = () => {
                   {!selectedRolePlanNeedsSalesFollowUp && !selectedRolePlanIsCurrent && roleQuoteLoading && <p className="text-xs text-neutral-400 animate-pulse">Refreshing quote...</p>}
                   {roleQuoteDisplay && (
                     <div className="rounded-lg bg-neutral-50 border border-neutral-100 p-3 space-y-1.5 text-xs">
-                      <div className="flex justify-between text-neutral-600"><span>Subtotal:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.subtotal).toFixed(2)}</span></div>
-                      <div className="flex justify-between text-emerald-600"><span>Discount:</span><span>-{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.discountAmount).toFixed(2)}</span></div>
+                      <div className="flex justify-between text-neutral-600"><span>Subtotal:</span><span>{formatMoney(roleQuoteDisplay.currency, roleQuoteDisplay.subtotal)}</span></div>
+                      <div className="flex justify-between text-emerald-600"><span>Discount:</span><span>-{formatMoney(roleQuoteDisplay.currency, roleQuoteDisplay.discountAmount)}</span></div>
                       {roleQuoteDisplay.upgradeCreditAmount > 0 ? (
                         <div className="flex justify-between text-emerald-700">
-                          <span>Current plan credit:</span><span>-{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.upgradeCreditAmount).toFixed(2)}</span>
+                          <span>Current plan credit:</span><span>-{formatMoney(roleQuoteDisplay.currency, roleQuoteDisplay.upgradeCreditAmount)}</span>
                         </div>
                       ) : null}
-                      <div className="flex justify-between text-neutral-600"><span>GST:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.gstAmount).toFixed(2)}</span></div>
+                      <div className="flex justify-between text-neutral-600"><span>GST:</span><span>{formatMoney(roleQuoteDisplay.currency, roleQuoteDisplay.gstAmount)}</span></div>
                       <div className="flex justify-between text-neutral-600"><span>Job posts:</span><span>{roleQuoteDisplay.includedJobPosts}</span></div>
                       {getPlanPostingBuckets(selectedRolePlan, roleCheckoutQuantity).map((bucket) => (
                         <div key={bucket.slug} className="flex justify-between text-neutral-500">
                           <span>{bucket.label}:</span><span>{bucket.value}</span>
                         </div>
                       ))}
-                      <div className="border-t border-neutral-200 pt-1.5 flex justify-between font-bold text-sm text-brand-700"><span>Total:</span><span>{roleQuoteDisplay.currency} {Number(roleQuoteDisplay.totalAmount).toFixed(2)}</span></div>
+                      <div className="border-t border-neutral-200 pt-1.5 flex justify-between font-bold text-sm text-brand-700"><span>Total:</span><span>{formatMoney(roleQuoteDisplay.currency, roleQuoteDisplay.totalAmount)}</span></div>
                     </div>
                   )}
 
@@ -1406,7 +1406,7 @@ const HrJobsPage = () => {
                             <td className="py-3 pr-3 font-bold text-slate-800">{rolePlanNameBySlug[purchase.role_plan_slug] || purchase.role_plan_slug}</td>
                             <td className="py-3 px-3 text-neutral-600">{purchase.quantity}</td>
                             <td className="py-3 px-3 text-neutral-600">{purchase.coupon_code || '-'}</td>
-                            <td className="py-3 px-3 font-semibold text-slate-700">{purchase.currency || 'INR'} {purchase.total_amount}</td>
+                            <td className="py-3 px-3 font-semibold text-slate-700">{formatMoney(purchase.currency, purchase.total_amount)}</td>
                             <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold border ${getStatusColor(purchase.status)}`}>{purchase.status}</span></td>
                             <td className="py-3 pl-3 text-right text-neutral-500">{formatDateTime(purchase.created_at || purchase.createdAt).split(' ')[0]}</td>
                           </tr>

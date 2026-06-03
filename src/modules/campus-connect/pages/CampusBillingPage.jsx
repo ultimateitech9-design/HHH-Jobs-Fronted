@@ -20,8 +20,8 @@ import {
 import { openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpayCheckout';
 import { TRIAL_DAYS, formatTrialLabel } from '../../../shared/constants/planConfig';
 
-const formatCurrency = (value, currency = 'INR') =>
-  `${currency} ${Number(value || 0).toLocaleString('en-IN')}`;
+const formatCurrency = (value, _currency = 'INR') =>
+  `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
 const formatDate = (value) => {
   if (!value) return '-';

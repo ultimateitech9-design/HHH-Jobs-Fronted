@@ -1,7 +1,6 @@
 import {
   FiBarChart2,
   FiCreditCard,
-  FiDollarSign,
   FiFileText,
   FiLayers,
   FiMessageCircle,
@@ -10,6 +9,7 @@ import {
   FiSettings,
   FiTrendingUp
 } from 'react-icons/fi';
+import { FaRupeeSign } from 'react-icons/fa';
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
 
 const accountsNavItems = [
@@ -17,7 +17,7 @@ const accountsNavItems = [
   { to: '/portal/accounts/transactions', label: 'Transactions', icon: FiCreditCard },
   { to: '/portal/accounts/invoices', label: 'Invoices', icon: FiFileText },
   { to: '/portal/accounts/subscriptions', label: 'Subscriptions', icon: FiLayers },
-  { to: '/portal/accounts/expenses', label: 'Expenses', icon: FiDollarSign },
+  { to: '/portal/accounts/expenses', label: 'Expenses', icon: FaRupeeSign },
   { to: '/portal/accounts/payouts', label: 'Payouts', icon: FiTrendingUp },
   { to: '/portal/accounts/refunds', label: 'Refunds', icon: FiRefreshCcw },
   { to: '/portal/accounts/reports', label: 'Reports', icon: FiBarChart2 },
