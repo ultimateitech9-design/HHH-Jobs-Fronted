@@ -1,0 +1,1 @@
+import{j as t}from"./vendor-react-ZfFbZa9g.js";import{I as o}from"./InterviewRoomPage-CJKs-Na9.js";import"./index-DEjYehAX.js";import"./vendor-state-BTPwYdbD.js";import"./vendor-lucide-Bq-s4ioX.js";import"./vendor-react-icons-B12toWkG.js";const a=()=>t.jsx(o,{portalRole:"student"});export{a as default};

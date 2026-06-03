@@ -171,6 +171,8 @@ const StudentCompaniesPage = () => {
   const openCompany = (company) => {
     const intent = getCompanyEntryIntent({
       companySlug: company.slug,
+      companyName: company.name,
+      company,
       isAuthenticated: true,
       totalJobs: company.totalJobs
     });

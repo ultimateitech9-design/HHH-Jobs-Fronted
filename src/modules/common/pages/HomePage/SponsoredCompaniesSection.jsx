@@ -26,6 +26,8 @@ const CompanyCard = ({ company, isAuthenticated }) => {
   const [logoError, setLogoError] = useState(false);
   const entryIntent = getCompanyEntryIntent({
     companySlug: company.slug,
+    companyName: company.name,
+    company,
     isAuthenticated,
     totalJobs: company.totalJobs
   });

@@ -80,6 +80,8 @@ const CompaniesPage = () => {
   const handleOpenCompany = (company) => {
     const entryIntent = getCompanyEntryIntent({
       companySlug: company.slug,
+      companyName: company.name,
+      company,
       isAuthenticated,
       totalJobs: company.totalJobs
     });

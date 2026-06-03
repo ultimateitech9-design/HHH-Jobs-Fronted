@@ -31,7 +31,7 @@ import {
   readCompanyJobIntent,
   saveCompanyJobIntent
 } from '../utils/companyJobIntent';
-import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
+import { buildCompanySeoPath, buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const SOURCE_COLOR_VARIANTS = [
   'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -304,8 +304,16 @@ const CompanyJobsPage = () => {
       setDetailState((current) => ({ ...current, loading: true, error: '' }));
       const response = await getPublicCompanyDetail(companySlug);
       if (!mounted) return;
+      const company = response.data?.company || null;
+      if (company) {
+        const canonicalPath = buildCompanySeoPath('/companies', company);
+        if (canonicalPath && location.pathname !== canonicalPath) {
+          navigate(canonicalPath, { replace: true });
+        }
+      }
+
       setDetailState({
-        company: response.data?.company || null,
+        company,
         jobs: response.data?.jobs || { total: 0, portal: [], external: [] },
         loading: false,
         error: response.error || ''
@@ -315,7 +323,7 @@ const CompanyJobsPage = () => {
     return () => {
       mounted = false;
     };
-  }, [companySlug]);
+  }, [companySlug, location.pathname, navigate]);
 
   useEffect(() => {
     const intent = readCompanyJobIntent();

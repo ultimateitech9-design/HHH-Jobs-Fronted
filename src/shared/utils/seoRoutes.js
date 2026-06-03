@@ -38,6 +38,44 @@ export const slugify = (value = '') => String(value || '')
   .slice(0, 80);
 
 const cleanBasePath = (basePath = '') => String(basePath || '').replace(/\/+$/, '');
+const MAX_ENTITY_SLUG_LENGTH = 96;
+
+const trimSlug = (value = '', maxLength = MAX_ENTITY_SLUG_LENGTH) => {
+  const slug = String(value || '').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+  if (slug.length <= maxLength) return slug;
+
+  return slug
+    .slice(0, maxLength)
+    .replace(/-[^-]*$/g, '')
+    .replace(/^-+|-+$/g, '') || slug.slice(0, maxLength).replace(/-+$/g, '');
+};
+
+const collapseRepeatedSlugWords = (value = '') => {
+  const words = String(value || '').split('-').filter(Boolean);
+  const collapsed = [];
+
+  words.forEach((word) => {
+    if (word !== collapsed[collapsed.length - 1]) {
+      collapsed.push(word);
+    }
+  });
+
+  return collapsed.join('-');
+};
+
+const dedupeSlugWords = (value = '') => {
+  const words = String(value || '').split('-').filter(Boolean);
+  const seen = new Set();
+  const deduped = [];
+
+  words.forEach((word) => {
+    if (seen.has(word)) return;
+    seen.add(word);
+    deduped.push(word);
+  });
+
+  return deduped.join('-');
+};
 
 const joinSlugParts = (...parts) => {
   const slug = parts
@@ -50,24 +88,51 @@ const joinSlugParts = (...parts) => {
   return slug || 'details';
 };
 
+const joinEntitySlugParts = (...parts) =>
+  trimSlug(collapseRepeatedSlugWords(joinSlugParts(...parts)));
+
+const joinCanonicalSlugParts = (...parts) =>
+  trimSlug(collapseRepeatedSlugWords(joinSlugParts(...parts)));
+
+const joinCanonicalJobSlugParts = (...parts) =>
+  trimSlug(dedupeSlugWords(joinSlugParts(...parts)));
+
+const pickShortestNonEmptySlug = (...candidates) => {
+  const uniqueCandidates = [...new Set(candidates.map((candidate) => String(candidate || '').trim()).filter(Boolean))];
+  if (uniqueCandidates.length === 0) return '';
+
+  return uniqueCandidates.sort((left, right) => left.length - right.length)[0];
+};
+
 export const buildSeoPath = (basePath, ...parts) =>
   `${cleanBasePath(basePath)}/${joinSlugParts(...parts)}`;
 
 export const buildSeoEntityPath = (basePath, id, ...parts) => {
   const entityId = extractUuidFromSlug(id);
   if (!entityId) return cleanBasePath(basePath) || '/';
-  return `${cleanBasePath(basePath)}/${joinSlugParts(...parts)}-${entityId}`;
+  return `${cleanBasePath(basePath)}/${joinEntitySlugParts(...parts)}-${entityId}`;
 };
 
-export const buildJobSeoPath = (basePath, job = {}) =>
-  buildSeoEntityPath(
+export const buildJobSeoPath = (basePath, job = {}) => {
+  const title = job.jobTitle || job.job_title || job.title;
+  const company = job.companyName || job.company_name || job.company;
+  const location = job.cityName || job.city_name || job.jobLocation || job.job_location || job.location;
+  const rawSeoSlug = job.seoSlug || job.seo_slug;
+  const structuredSlug = joinCanonicalJobSlugParts(title, company, location);
+  const explicitSlug = joinCanonicalJobSlugParts(rawSeoSlug);
+  const primarySlug = pickShortestNonEmptySlug(structuredSlug, explicitSlug);
+
+  return buildSeoEntityPath(
     basePath,
     job.details_id || job.id || job._id || job.portalJobId || job.jobId || job.job_id,
-    job.seoSlug,
-    job.jobTitle || job.job_title || job.title,
-    job.companyName || job.company_name || job.company,
-    job.cityName || job.city_name || job.jobLocation || job.job_location || job.location
+    primarySlug || 'details'
   );
+};
+
+export const buildCompanySeoPath = (basePath = '/companies', company = {}) =>
+  `${cleanBasePath(basePath)}/${joinCanonicalSlugParts(
+    company.slug || company.companySlug || company.company_slug || company.name || company.companyName || company.company_name
+  ) || 'company'}`;
 
 export const buildGovtJobSeoPath = (basePath, job = {}) =>
   buildSeoPath(

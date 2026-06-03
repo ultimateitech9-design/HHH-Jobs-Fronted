@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   FiAlertCircle,
   FiArrowRight,
@@ -31,7 +31,7 @@ import {
   removeSavedJobForStudent,
   saveJobForStudent
 } from '../services/studentApi';
-import { extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
+import { buildJobSeoPath, extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
 
 const buildCurrentPath = (location) => `${location.pathname || ''}${location.search || ''}${location.hash || ''}`;
 
@@ -47,6 +47,7 @@ const formatSalaryAmount = (value) => {
 const StudentJobDetailsPage = ({ publicMode = false }) => {
   const { jobId: jobParam } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const jobId = extractUuidFromSlug(jobParam);
   const user = getCurrentUser();
   const currentPath = useMemo(() => buildCurrentPath(location), [location]);
@@ -114,6 +115,13 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
         if (!mounted) return;
 
         const job = jobResponse.data;
+        if (job) {
+          const canonicalPath = buildJobSeoPath(jobsListPath, job);
+          if (canonicalPath && location.pathname !== canonicalPath) {
+            navigate(canonicalPath, { replace: true });
+          }
+        }
+
         const savedSet = new Set((savedResponse.data || []).map((item) => item.jobId || item.job_id));
         const matchedApplication = (applicationsResponse.data || []).find((item) =>
           String(item.jobId || item.job_id || item.job?.id || '') === String(jobId)
@@ -141,7 +149,7 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
     return () => {
       mounted = false;
     };
-  }, [jobId, user?.id]);
+  }, [jobId, jobsListPath, location.pathname, navigate, user?.id]);
 
   const salaryLabel = useMemo(() => {
     if (!state.job) return '-';

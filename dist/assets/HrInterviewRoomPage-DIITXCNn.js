@@ -1,0 +1,1 @@
+import{j as o}from"./vendor-react-ZfFbZa9g.js";import{I as r}from"./InterviewRoomPage-CJKs-Na9.js";import"./index-DEjYehAX.js";import"./vendor-state-BTPwYdbD.js";import"./vendor-lucide-Bq-s4ioX.js";import"./vendor-react-icons-B12toWkG.js";const s=()=>o.jsx(r,{portalRole:"hr"});export{s as default};

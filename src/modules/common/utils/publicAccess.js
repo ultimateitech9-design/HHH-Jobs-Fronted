@@ -1,3 +1,5 @@
+import { buildCompanySeoPath } from '../../../shared/utils/seoRoutes';
+
 export const JOB_GATE_PORTAL_LABEL = 'Login to Unlock Jobs';
 
 export const shouldLockJobBoards = (isAuthenticated) => !isAuthenticated;
@@ -9,8 +11,12 @@ export const getLoginRedirectState = (fromPath, portalLabel = JOB_GATE_PORTAL_LA
   portalLabel
 });
 
-export const getCompanyEntryIntent = ({ companySlug, isAuthenticated, totalJobs = 0 }) => {
-  const companyPath = `/companies/${companySlug}`;
+export const getCompanyEntryIntent = ({ companySlug, companyName, company = {}, isAuthenticated, totalJobs = 0 }) => {
+  const companyPath = buildCompanySeoPath('/companies', {
+    ...company,
+    name: company.name || companyName,
+    slug: company.slug || companySlug
+  });
   const hasJobs = Number(totalJobs || 0) > 0;
 
   if (shouldLockJobBoards(isAuthenticated)) {

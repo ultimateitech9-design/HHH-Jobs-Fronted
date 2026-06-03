@@ -2,8 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/jpeg" href="/favicon.jpeg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon-circle.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      document.documentElement.dataset.shell = /^\/(?:portal|management)\b/i.test(window.location.pathname) ? 'portal' : 'public';
+    </script>
+    <style>
+      :root{--public-navbar-height:74px;--navy:#061a3a;--gold:#d1901f;--gold-dark:#b87808;--brand:#187a69;--teal:#247fa8}
+      *{box-sizing:border-box}body{margin:0;background:#f7f8fb;color:#0f172a;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit;text-decoration:none}button,input{font:inherit}
+      .vw-shell{width:min(100% - 2rem,1180px);margin-inline:auto}.font-heading{font-family:Manrope,Inter,system-ui,sans-serif}.text-navy{color:var(--navy)}.text-gold-dark{color:var(--gold-dark)}.bg-gold{background:var(--gold)}.hidden{display:none}.block{display:block}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .gradient-text{background:linear-gradient(135deg,var(--gold-dark),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}.gradient-gold{background:linear-gradient(135deg,#f2c768,var(--gold))}.gradient-primary,.btn-primary{background:linear-gradient(135deg,var(--brand),var(--teal));color:#fff}.btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:0;border-radius:999px;font-weight:700;box-shadow:0 18px 42px rgba(24,122,105,.16)}
+      .public-navbar{position:fixed;inset:0 0 auto;z-index:50;background:rgba(255,255,255,.9);box-shadow:0 1px 0 rgba(15,23,42,.06);backdrop-filter:blur(14px)}.public-navbar__inner{min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding-block:.5rem}.public-navbar__brand{display:flex;min-width:0;align-items:center;gap:.625rem}.public-navbar__brand img{width:56px;height:56px;-o-object-fit:contain;object-fit:contain}.public-navbar__brand-text{display:flex;min-width:0;flex-direction:column;line-height:1}.public-navbar__brand-text span:first-child{font:800 1rem/1 Manrope,Inter,sans-serif;color:var(--navy)}.public-navbar__brand-text span:last-child{margin-top:.35rem;font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-dark)}
+      html[data-shell="public"] #root main{padding-top:76px}.home-hero{position:relative;display:flex;min-height:60vh;align-items:center;overflow:hidden;background:linear-gradient(135deg,#fff 0%,#fbf8f2 48%,#eef3fb 100%);padding-bottom:1.5rem}.home-hero__shell{position:relative;z-index:1;padding-top:.75rem;padding-bottom:1rem}.home-hero__grid{display:grid;align-items:center;gap:1.5rem}.home-hero__badge{display:inline-flex;align-items:center;gap:.5rem;border:1px solid rgba(6,26,58,.1);border-radius:999px;background:rgba(6,26,58,.05);padding:.375rem 1rem;color:var(--navy);font-size:.875rem;font-weight:700}.home-hero__badge span{width:.5rem;height:.5rem;border-radius:999px;background:var(--gold)}
+      .home-hero__title{margin:.95rem 0 0;color:var(--navy);font:800 2rem/1.05 Manrope,Inter,sans-serif;letter-spacing:0}.home-hero__title span{display:block}.home-hero__copy{max-width:36rem;margin:1rem 0 0;color:#475569;font-size:.95rem;line-height:1.75}.home-hero__trust{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-top:1rem;color:#475569;font-size:.875rem}.home-hero__trust span{display:inline-flex;align-items:center;gap:.45rem}
+      .home-hero__search{position:relative;z-index:2;display:flex;flex-direction:column;gap:.5rem;margin-top:1.5rem;border:1px solid #e2e8f0;border-radius:24px;background:#fff;padding:.375rem;box-shadow:0 22px 54px rgba(6,26,58,.1)}.home-hero__search>div{display:flex;flex:1;align-items:center;gap:.5rem;padding-inline:.75rem}.home-hero__search input{width:100%;border:0;background:transparent;padding:.75rem 0;color:#0f172a;outline:0}.home-hero__search button{min-height:44px;padding-inline:1.5rem}
+      .home-hero__quick-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;margin-top:1rem}.home-hero__quick-tags button{border:1px solid transparent;border-radius:999px;background:rgba(6,26,58,.05);padding:.25rem .75rem;color:var(--navy);font-size:.75rem;font-weight:600}.home-hero__actions{display:flex;flex-direction:column;gap:.75rem;margin-top:1.5rem}.home-hero__actions a{flex:1}.home-hero__actions span{display:inline-flex;min-height:42px;width:100%;align-items:center;justify-content:center;gap:.4rem;border-radius:999px;padding:.5rem 1rem;font-size:.85rem;font-weight:700}.home-hero__stats{display:grid;gap:1rem;margin-top:1.75rem}.home-hero__stats p{margin:0}.home-hero__stats p:first-child{color:var(--navy);font:800 1.5rem/1.2 Manrope,Inter,sans-serif}.home-hero__stats p:last-child{margin-top:.25rem;color:#64748b;font-size:.875rem}
+      @media (min-width:640px){.sm\:flex-row{flex-direction:row}.sm\:flex-nowrap{flex-wrap:nowrap}.sm\:flex-1{flex:1}.home-hero__title{font-size:2.25rem}.home-hero__stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+      @media (min-width:1024px){.lg\:flex{display:flex}.lg\:block{display:block}.lg\:hidden{display:none}.home-hero__grid{grid-template-columns:minmax(0,1fr) minmax(320px,36rem);gap:2.5rem}.home-hero__search{flex-direction:row}.home-hero__content{padding-right:1rem}.home-hero__title{font-size:3rem}.home-hero__copy{font-size:1rem}.home-hero__stats p:first-child{font-size:1.75rem}}
+    </style>
 
     <!-- Primary Meta Tags -->
     <title>HHH-Jobs, India's Leading &amp; No 1 Job Portal &amp; Platform. Job search- India Local &amp; International.</title>
@@ -78,15 +94,13 @@
     }
     </script>
 
-    <!-- Preconnect for performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&family=Space+Grotesk:wght@500;600;700;800&display=swap" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet" />
     <!-- DNS prefetch for API -->
     <link rel="dns-prefetch" href="https://api.hhh-jobs.com" />
-    <script type="module" crossorigin src="/assets/index-C5x_-0RI.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BEhcD922.css">
+    <script type="module" crossorigin src="/assets/index-DEjYehAX.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-ZfFbZa9g.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-state-BTPwYdbD.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-lucide-Bq-s4ioX.js">
+    <link rel="preload" as="style" crossorigin href="/assets/index-JK30EEYR.css" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" crossorigin href="/assets/index-JK30EEYR.css"></noscript>
   </head>
   <body>
     <div id="root"></div>

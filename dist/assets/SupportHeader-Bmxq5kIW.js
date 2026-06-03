@@ -1,0 +1,1 @@
+import{j as p}from"./vendor-react-ZfFbZa9g.js";import{S as s}from"./SectionHeader-BChVHs5m.js";const S=({eyebrow:o,title:r,subtitle:e,action:t})=>p.jsx(s,{eyebrow:o||"Support",title:r,subtitle:e,action:t});export{S};
