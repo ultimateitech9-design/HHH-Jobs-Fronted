@@ -25,7 +25,7 @@ import { getExternalJobSources, getExternalJobs } from '../../platform/services/
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const FEED_PAGE_LIMIT = 50;
-const DEFAULT_JOBS_PER_PAGE = 12;
+const DEFAULT_JOBS_PER_PAGE = 15;
 const MAX_BACKGROUND_FEED_PAGES = 6;
 
 const makeDefaultFilters = (audience = '') => ({
