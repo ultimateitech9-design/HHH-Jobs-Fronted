@@ -72,10 +72,7 @@ export const buildJobSeoPath = (basePath, job = {}) =>
 export const buildGovtJobSeoPath = (basePath, job = {}) =>
   buildSeoPath(
     basePath,
-    job.seoSlug || job.seo_slug,
-    job.title,
-    job.organization,
-    job.state || job.category
+    job.seoSlug || job.seo_slug || joinSlugParts(job.title, job.organization, job.state || job.category)
   );
 
 export const buildCampusDriveSeoPath = (basePath, drive = {}) =>
