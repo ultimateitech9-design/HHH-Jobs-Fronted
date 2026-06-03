@@ -139,24 +139,24 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
   return (
     <div className="fixed z-[70]" style={{ bottom: 'max(1rem, 2vw)', right: 'max(1rem, 2vw)' }}>
       {open ? (
-        <section className="flex h-[min(74vh,560px)] max-h-[calc(100vh-2rem)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-          <header className="flex items-center justify-between border-b border-slate-100 bg-slate-950 px-4 py-3 text-white">
+        <section className="flex h-[min(68vh,460px)] max-h-[calc(100vh-2rem)] w-[min(90vw,320px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:w-[320px]">
+          <header className="flex items-center justify-between border-b border-slate-100 bg-slate-950 px-3 py-2.5 text-white">
             <div>
-              <p className="text-sm font-extrabold">Live Support</p>
-              <p className="text-[11px] font-semibold text-slate-300">{supportDeskLabel}</p>
+              <p className="text-[13px] font-extrabold">Live Support</p>
+              <p className="max-w-[220px] truncate text-[10px] font-semibold text-slate-300">{supportDeskLabel}</p>
             </div>
             <div className="flex items-center gap-1">
-              <button type="button" className="rounded-full p-2 hover:bg-white/10" onClick={() => setOpen(false)} aria-label="Minimize live chat">
-                <FiMinus size={15} />
+              <button type="button" className="rounded-full p-1.5 hover:bg-white/10" onClick={() => setOpen(false)} aria-label="Minimize live chat">
+                <FiMinus size={14} />
               </button>
               <button
                 type="button"
-                className="rounded-full p-2 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full p-1.5 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={handleClearMessages}
                 disabled={!chat?.id || !(chat.messages || []).length || loading}
                 aria-label="Clear chat messages"
               >
-                <FiTrash2 size={15} />
+                <FiTrash2 size={14} />
               </button>
             </div>
           </header>
@@ -168,23 +168,23 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
               </div>
             </div>
           ) : !chat?.id ? (
-            <div className="grid gap-2 border-b border-slate-100 p-3">
+            <div className="grid gap-2 border-b border-slate-100 p-2.5">
               <input
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-amber-400"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold outline-none focus:border-amber-400"
                 placeholder="Subject"
               />
               <input
                 value={stateName}
                 onChange={(event) => setStateName(event.target.value)}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-amber-400"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold outline-none focus:border-amber-400"
                 placeholder="State / location"
               />
             </div>
           ) : null}
 
-          {canUseLiveSupport ? <div className="flex-1 space-y-2 overflow-y-auto bg-slate-50 p-3">
+          {canUseLiveSupport ? <div className="flex-1 space-y-2 overflow-y-auto bg-slate-50 p-2.5">
             {isWaitingForSupport ? (
               <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-800">
                 <FiClock className="mt-0.5 shrink-0" size={14} />
@@ -196,13 +196,13 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
                 const isAgent = item.role === 'agent';
                 const initial = String(item.author || (isAgent ? 'S' : portalLabel)).trim().charAt(0).toUpperCase() || 'U';
                 return (
-                  <div key={item.id || item.createdAt} className={`flex items-end gap-2 ${isAgent ? 'justify-start' : 'justify-end'}`}>
+                  <div key={item.id || item.createdAt} className={`flex items-end gap-1.5 ${isAgent ? 'justify-start' : 'justify-end'}`}>
                     {isAgent ? (
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-900 text-[11px] font-black text-white shadow-sm">
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-900 text-[10px] font-black text-white shadow-sm">
                         {initial}
                       </span>
                     ) : null}
-                    <div className={`max-w-[82%] rounded-2xl px-3 py-2 text-sm shadow-sm ${isAgent ? 'bg-white text-slate-700' : 'bg-amber-500 text-white'}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-2.5 py-2 text-xs shadow-sm ${isAgent ? 'bg-white text-slate-700' : 'bg-amber-500 text-white'}`}>
                       <div className="flex items-start gap-2">
                         <p className="min-w-0 flex-1 whitespace-pre-wrap break-words">{item.message}</p>
                         <button
@@ -221,7 +221,7 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
                       <p className={`mt-1 text-[10px] font-semibold ${isAgent ? 'text-slate-400' : 'text-amber-50'}`}>{item.author}</p>
                     </div>
                     {!isAgent ? (
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-amber-100 text-[11px] font-black text-amber-800 shadow-sm">
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-amber-100 text-[10px] font-black text-amber-800 shadow-sm">
                         {initial}
                       </span>
                     ) : null}
@@ -238,22 +238,22 @@ const LiveSupportChatWidget = ({ portalKey = '' }) => {
 
           {status ? <p className="border-t border-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">{status}</p> : null}
 
-          {canUseLiveSupport ? <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-slate-100 bg-white p-3">
+          {canUseLiveSupport ? <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-slate-100 bg-white p-2.5">
             <textarea
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               onKeyDown={handleEnterToSend}
-              rows={2}
-              className="min-h-[44px] flex-1 resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-amber-400"
+              rows={1}
+              className="min-h-[40px] flex-1 resize-none rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold outline-none focus:border-amber-400"
               placeholder="Type your message..."
             />
             <button
               type="submit"
               disabled={loading || !message.trim()}
-              className="grid h-11 w-11 place-items-center rounded-xl bg-amber-500 text-white shadow-sm transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500 text-white shadow-sm transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-300"
               aria-label="Send live support message"
             >
-              <FiSend size={17} />
+              <FiSend size={16} />
             </button>
           </form> : null}
         </section>
