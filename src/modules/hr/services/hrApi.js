@@ -220,6 +220,21 @@ export const getHrJobs = async () =>
     extract: (payload) => payload?.jobs || []
   });
 
+export const getHrDashboard = async () =>
+  safeRequest({
+    path: '/hr/dashboard',
+    emptyData: {
+      jobs: [],
+      analytics: null,
+      interviews: [],
+      jobApplications: [],
+      campusDrives: [],
+      campusApplications: [],
+      recentActivity: []
+    },
+    extract: (payload) => payload?.dashboard || {}
+  });
+
 export const getPricingPlans = async () =>
   safeRequest({
     path: '/pricing/plans',

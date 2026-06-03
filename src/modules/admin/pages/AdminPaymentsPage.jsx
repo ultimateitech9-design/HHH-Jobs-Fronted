@@ -523,7 +523,7 @@ const AdminPaymentsPage = () => {
 
         <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm p-6">
           <h2 className="text-xl font-bold text-primary">Coupon Control</h2>
-          <p className="text-sm text-neutral-500 mt-1 mb-5">Admin creates role-based coupons that sales can later share during follow-up.</p>
+          <p className="text-sm text-neutral-500 mt-1 mb-5">Create 100% HR coupons for free-trial onboarding or role-based coupons that sales can share during follow-up.</p>
           <form onSubmit={handleCreateCoupon} className="space-y-3">
             <input value={couponDraft.code} onChange={(e) => setCouponDraft((current) => ({ ...current, code: e.target.value.toUpperCase() }))} placeholder="Coupon code" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold uppercase" />
             <div className="grid grid-cols-2 gap-3">
@@ -539,6 +539,18 @@ const AdminPaymentsPage = () => {
             </div>
             <input value={couponDraft.audience_roles} onChange={(e) => setCouponDraft((current) => ({ ...current, audience_roles: e.target.value }))} placeholder="Roles: hr,campus_connect,student" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold" />
             <input value={couponDraft.plan_slugs} onChange={(e) => setCouponDraft((current) => ({ ...current, plan_slugs: e.target.value }))} placeholder="Plan slugs: hr_growth,student_plus" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold" />
+            <button
+              type="button"
+              onClick={() => setCouponDraft((current) => ({
+                ...current,
+                discount_type: 'percent',
+                discount_value: '100',
+                audience_roles: 'hr'
+              }))}
+              className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100"
+            >
+              Make HR Free-Trial Coupon
+            </button>
             <button type="submit" disabled={savingCoupon} className="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white hover:bg-brand-500 disabled:opacity-50">
               {savingCoupon ? 'Creating...' : 'Create Coupon'}
             </button>

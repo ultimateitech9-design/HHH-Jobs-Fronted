@@ -4,13 +4,8 @@ import { FiBriefcase, FiUsers, FiCalendar, FiTrendingUp, FiArrowRight, FiPlus, F
 import StatusPill from '../../../shared/components/StatusPill';
 import FeatureGate from '../../../shared/components/FeatureGate';
 import {
-  fetchHrCampusDriveApplications,
-  fetchHrCampusDrives,
   formatInterviewDateTime,
-  getApplicantsForJob,
-  getHrAnalytics,
-  getHrInterviews,
-  getHrJobs,
+  getHrDashboard,
   getHrRecentActivity
 } from '../services/hrApi';
 import { getCurrentUser } from '../../../utils/auth';
@@ -118,54 +113,21 @@ const HrDashboardPage = () => {
       setState((current) => ({ ...current, loading: true, error: '' }));
 
       try {
-        const [jobsRes, analyticsRes, interviewsRes, campusDrivesRes, activityRes] = await Promise.all([
-          getHrJobs(),
-          getHrAnalytics(),
-          getHrInterviews(),
-          fetchHrCampusDrives(),
-          getHrRecentActivity()
-        ]);
+        const dashboardRes = await getHrDashboard();
 
         if (!mounted) return;
-
-        const jobs = jobsRes.data || [];
-        const campusDrives = campusDrivesRes.data || [];
-        const jobsWithApplicants = jobs.slice(0, 20);
-        const drivesWithApplicants = campusDrives.slice(0, 20);
-
-        const [jobApplicantGroups, campusApplicantGroups] = await Promise.all([
-          Promise.all(jobsWithApplicants.map((job) =>
-            getApplicantsForJob(job.id || job._id)
-              .then((response) => (response.data || []).map((application) => ({
-                ...application,
-                sourceType: 'job',
-                job
-              })))
-              .catch(() => [])
-          )),
-          Promise.all(drivesWithApplicants.map((drive) =>
-            fetchHrCampusDriveApplications(drive.id, { all: true, limit: 100 })
-              .then((response) => (response.applications || []).map((application) => ({
-                ...application,
-                sourceType: 'campus',
-                drive: response.drive || drive
-              })))
-              .catch(() => [])
-          ))
-        ]);
-
-        if (!mounted) return;
+        const dashboard = dashboardRes.data || {};
 
         setState({
           loading: false,
-          error: '',
-          jobs,
-          analytics: analyticsRes.data,
-          interviews: interviewsRes.data || [],
-          jobApplications: jobApplicantGroups.flat(),
-          campusDrives,
-          campusApplications: campusApplicantGroups.flat(),
-          recentActivity: activityRes.data || []
+          error: dashboardRes.error || '',
+          jobs: dashboard.jobs || [],
+          analytics: dashboard.analytics || null,
+          interviews: dashboard.interviews || [],
+          jobApplications: dashboard.jobApplications || [],
+          campusDrives: dashboard.campusDrives || [],
+          campusApplications: dashboard.campusApplications || [],
+          recentActivity: dashboard.recentActivity || []
         });
       } catch (error) {
         if (!mounted) return;

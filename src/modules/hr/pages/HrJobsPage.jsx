@@ -804,9 +804,18 @@ const HrJobsPage = () => {
       if (response?.alreadyAuthorized) {
         await loadRolePricingState();
         await loadPricingState();
-        setMessage(hasExistingRecruiterPlan
-          ? 'Recruiter auto-pay is already enabled for this plan.'
-          : 'Recruiter auto-pay is already enabled. The trial will move into recurring billing automatically.');
+        setMessage(response?.mode === 'coupon_free_trial'
+          ? 'Free trial activated with coupon. No Razorpay payment is required for this trial.'
+          : response?.mode === 'zero_amount_checkout'
+            ? 'Recruiter plan activated successfully. No payment was required.'
+            : hasExistingRecruiterPlan
+              ? 'Recruiter auto-pay is already enabled for this plan.'
+              : 'Recruiter auto-pay is already enabled. The trial will move into recurring billing automatically.');
+        setRoleCheckoutForm((current) => ({
+          ...current,
+          quantity: 1,
+          couponCode: ''
+        }));
         return;
       }
 
@@ -1344,6 +1353,8 @@ const HrJobsPage = () => {
                       ? 'Your current plan stays active until its listed expiry date.'
                       : selectedRolePlanRequiresSales
                       ? 'No auto-pay is started for Enterprise. A sales lead is created for manual follow-up.'
+                      : roleQuoteDisplay && Number(roleQuoteDisplay.totalAmount || 0) <= 0
+                      ? 'This coupon makes the checkout free. The trial activates without Razorpay payment.'
                       : selectedRolePlanIsPendingSetup
                       ? 'Auto-pay is still pending for this plan. Complete Razorpay authorisation to start the trial.'
                       : hasPendingAutopaySetup && !hasExistingRecruiterPlan
