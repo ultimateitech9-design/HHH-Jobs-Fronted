@@ -8,15 +8,13 @@ import {
   FiUsers
 } from 'react-icons/fi';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import DashboardLoadingSkeleton from '../../../shared/components/dashboard/DashboardLoadingSkeleton';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
 import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import StatusPill from '../../../shared/components/StatusPill';
 import {
   formatDateTime,
-  getAdminAnalytics,
-  getAdminJobs,
-  getAdminReports,
-  getAdminUsers
+  getAdminDashboard
 } from '../services/adminApi';
 
 const AdminDashboardPage = () => {
@@ -37,26 +35,20 @@ const AdminDashboardPage = () => {
       setState((current) => ({ ...current, loading: true, error: '' }));
 
       try {
-        const [analyticsRes, hrRes, jobsRes, reportsRes] = await Promise.all([
-          getAdminAnalytics(),
-          getAdminUsers({ role: 'hr', approved: false, limit: 8 }),
-          getAdminJobs({ approvalStatus: 'pending', limit: 8 }),
-          getAdminReports({ status: 'open', limit: 8 })
-        ]);
+        const dashboardRes = await getAdminDashboard();
 
         if (!mounted) return;
 
-        const pendingHr = hrRes.data || [];
-        const pendingJobs = jobsRes.data || [];
+        const dashboard = dashboardRes.data || {};
 
         setState({
           loading: false,
           error: '',
-          isDemo: [analyticsRes, hrRes, jobsRes, reportsRes].some((item) => item.isDemo),
-          analytics: analyticsRes.data || null,
-          pendingHr,
-          pendingJobs,
-          openReports: reportsRes.data || []
+          isDemo: Boolean(dashboardRes.isDemo),
+          analytics: dashboard.analytics || null,
+          pendingHr: dashboard.pendingHr || [],
+          pendingJobs: dashboard.pendingJobs || [],
+          openReports: dashboard.openReports || []
         });
       } catch (error) {
         if (!mounted) return;
@@ -153,11 +145,7 @@ const AdminDashboardPage = () => {
   ), [state.pendingHr, state.pendingJobs, state.openReports]);
 
   return (
-    <div className="relative overflow-hidden pb-3">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[410px] bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.14),transparent_40%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.88))]" />
-      <div className="pointer-events-none absolute right-0 top-24 -z-10 h-40 w-40 rounded-full bg-amber-100/55 blur-3xl" />
-      <div className="pointer-events-none absolute left-10 top-64 -z-10 h-36 w-36 rounded-full bg-sky-100/45 blur-3xl" />
-
+    <div className="admin-dashboard-page pb-3">
       <div className="mb-4">
         <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Admin Console</p>
         <h1 className="mt-1 text-2xl font-black tracking-tight text-navy sm:text-3xl">Admin Dashboard</h1>
@@ -177,11 +165,11 @@ const AdminDashboardPage = () => {
         </div>
       ) : null}
 
-      {state.loading ? <p className="module-note">Loading admin dashboard...</p> : null}
+      {state.loading ? <DashboardLoadingSkeleton panels={2} /> : null}
 
       {!state.loading ? (
         <>
-          <div className="relative z-20 mt-4 rounded-[1.75rem] border border-slate-200/80 bg-white/88 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md">
+          <div className="mt-4 rounded-[1.1rem] border border-slate-200 bg-white p-3 shadow-sm">
             <div className="mb-2 flex items-center justify-between gap-3 px-1">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Quick Access</p>

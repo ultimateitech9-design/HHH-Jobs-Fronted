@@ -145,7 +145,7 @@ const PortalWorkbenchHeader = ({
               </button>
 
               <Link to="/" className="flex items-center gap-2">
-                <img src="/hhh-job-logo.png" alt="HHH Jobs" className="h-8 w-8 object-contain sm:h-9 sm:w-9" />
+                <img src="/hhh-job-logo-128.png" alt="HHH Jobs" className="h-8 w-8 object-contain sm:h-9 sm:w-9" />
                 <div className="hidden sm:block">
                   <p className="font-heading text-base font-bold tracking-tight text-gold-dark">HHH Jobs</p>
                 </div>

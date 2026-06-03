@@ -97,6 +97,34 @@ export const getAdminAnalytics = async () =>
     extract: (payload) => payload?.analytics || {}
   });
 
+export const getAdminDashboard = async () =>
+  safeRequest({
+    path: '/admin/dashboard',
+    emptyData: {
+      analytics: {
+        totalUsers: 0,
+        totalHr: 0,
+        approvedHr: 0,
+        totalStudents: 0,
+        activeUsers: 0,
+        blockedUsers: 0,
+        bannedUsers: 0,
+        totalJobs: 0,
+        openJobs: 0,
+        closedJobs: 0,
+        deletedJobs: 0,
+        pendingJobs: 0,
+        totalApplications: 0,
+        reportsOpen: 0,
+        reportsTotal: 0
+      },
+      pendingHr: [],
+      pendingJobs: [],
+      openReports: []
+    },
+    extract: (payload) => payload?.dashboard || {}
+  });
+
 // Users & HR approvals
 export const getAdminUsers = async (filters = {}) =>
   safeRequest({

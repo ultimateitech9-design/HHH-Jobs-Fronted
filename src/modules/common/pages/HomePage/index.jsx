@@ -149,8 +149,8 @@ const HomePage = () => {
     cities: [],
     totals: { openJobs: 0, companies: 0 }
   });
-  const shouldLoadFeaturedJobs = useDeferredMount(true, { delayMs: 700, timeoutMs: 2400 });
-  const shouldLoadHiringFacets = useDeferredMount(true, { delayMs: 1100, timeoutMs: 3200 });
+  const shouldLoadFeaturedJobs = useDeferredMount(true, { delayMs: 1200, timeoutMs: 3000 });
+  const shouldLoadHiringFacets = useDeferredMount(true, { delayMs: 3600, timeoutMs: 8000 });
 
   useEffect(() => {
     if (!shouldLoadFeaturedJobs) return undefined;
@@ -207,7 +207,7 @@ const HomePage = () => {
 
     const loadHiringFacets = async () => {
       try {
-        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=650&sectorLimit=120&cityLimit=650');
+        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=72&sectorLimit=90&cityLimit=96');
         const payload = response.ok ? await response.json().catch(() => null) : null;
         if (!mounted || !payload?.status) return;
 

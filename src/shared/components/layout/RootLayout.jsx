@@ -45,6 +45,10 @@ const RootLayout = () => {
   const shouldMountNotificationRuntime = useDeferredMount(Boolean(userId), { delayMs: 3000, timeoutMs: 6500 });
 
   useEffect(() => {
+    document.documentElement.dataset.shell = isPortalWorkbench ? 'portal' : 'public';
+  }, [isPortalWorkbench]);
+
+  useEffect(() => {
     const refreshHeaderUser = async () => {
       if (!userId || !hasApiAccessToken()) return;
 

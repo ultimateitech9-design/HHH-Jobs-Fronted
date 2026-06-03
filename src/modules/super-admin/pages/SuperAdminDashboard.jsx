@@ -1,10 +1,10 @@
-import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import AdminHeader from '../components/AdminHeader';
 import AdminSidebar from '../components/AdminSidebar';
 import ReportsChart from '../components/ReportsChart';
 import StatusBadge from '../components/StatusBadge';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import DashboardLoadingSkeleton from '../../../shared/components/dashboard/DashboardLoadingSkeleton';
 import Pagination from '../../../shared/components/Pagination';
 import { getDashboardWorkspaceButtonClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import useDashboardStats from '../hooks/useDashboardStats';
@@ -282,7 +282,7 @@ const SuperAdminDashboard = () => {
   return (
     <div className="super-admin-dashboard space-y-3 pb-2">
       {error ? <p className="form-error">{error}</p> : null}
-      {loading ? <p className="module-note">Loading super admin dashboard...</p> : null}
+      {loading ? <DashboardLoadingSkeleton panels={4} /> : null}
 
       {!loading && dashboard ? (
         <>
@@ -414,4 +414,3 @@ const SuperAdminDashboard = () => {
 };
 
 export default SuperAdminDashboard;
-

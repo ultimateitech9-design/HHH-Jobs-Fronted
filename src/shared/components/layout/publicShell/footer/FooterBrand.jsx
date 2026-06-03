@@ -7,7 +7,7 @@ const FooterBrand = () => {
     <div className="sm:col-span-2 lg:col-span-1">
       <div className="mb-4 flex items-center gap-3">
         <img
-          src="/hhh-job-logo.png"
+          src="/hhh-job-logo-128.png"
           alt="HHH Jobs"
           className="h-10 w-10 rounded-2xl object-cover ring-1 ring-white/10"
         />

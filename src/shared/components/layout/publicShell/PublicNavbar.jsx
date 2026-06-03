@@ -121,7 +121,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
         <div className="public-navbar__inner vw-shell flex min-h-16 items-center justify-between gap-3 py-2 sm:gap-4">
           <Link to="/" className="public-navbar__brand group flex min-w-0 items-center gap-2.5">
             <img
-              src="/hhh-job-logo.png"
+              src="/hhh-job-logo-128.png"
               alt="HHH Jobs"
               className="h-14 w-14 object-contain"
               width="56"

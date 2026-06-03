@@ -64,11 +64,12 @@ const FacetChip = ({ kind, item }) => {
   );
 };
 
-const FacetGroup = ({ title, kind, items, compact = false }) => {
+const FacetGroup = ({ title, kind, items, totalCount, compact = false }) => {
   const limit = GROUP_LIMITS[kind] || 24;
   const activeItems = items.filter((item) => item.count > 0).length;
   const visibleItems = items.slice(0, limit);
-  const hiddenCount = Math.max(0, items.length - visibleItems.length);
+  const resolvedTotalCount = Math.max(Number(totalCount || 0), items.length);
+  const hiddenCount = Math.max(0, resolvedTotalCount - visibleItems.length);
 
   if (!items.length) return null;
 
@@ -110,6 +111,9 @@ export function HiringFacetsSection({ facets }) {
   const roles = useMemo(() => normalizeItems(facets?.roles), [facets?.roles]);
   const sectors = useMemo(() => normalizeItems(facets?.sectors), [facets?.sectors]);
   const cities = useMemo(() => normalizeItems(facets?.cities), [facets?.cities]);
+  const roleTotal = Number(facets?.totals?.roles || roles.length);
+  const sectorTotal = Number(facets?.totals?.sectors || sectors.length);
+  const cityTotal = Number(facets?.totals?.cities || cities.length);
   const hasAnyFacet = roles.length || sectors.length || cities.length;
 
   if (!hasAnyFacet) return null;
@@ -119,23 +123,26 @@ export function HiringFacetsSection({ facets }) {
       <div className="mx-auto w-[92vw]">
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-12">
           <FacetGroup
-            title={formatGroupTitle(roles.length, 'Job Categories')}
+            title={formatGroupTitle(roleTotal, 'Job Categories')}
             kind="role"
             items={roles}
+            totalCount={roleTotal}
           />
           <FacetGroup
-            title={formatGroupTitle(cities.length, 'Cities')}
+            title={formatGroupTitle(cityTotal, 'Cities')}
             kind="city"
             items={cities}
+            totalCount={cityTotal}
           />
         </div>
 
         {sectors.length ? (
           <div className="mt-10 border-t border-slate-100 pt-10">
             <FacetGroup
-              title={formatGroupTitle(sectors.length, 'Sectors')}
+              title={formatGroupTitle(sectorTotal, 'Sectors')}
               kind="sector"
               items={sectors}
+              totalCount={sectorTotal}
               compact
             />
           </div>

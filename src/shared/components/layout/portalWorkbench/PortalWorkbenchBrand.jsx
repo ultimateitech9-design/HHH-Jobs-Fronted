@@ -13,7 +13,7 @@ const PortalWorkbenchBrand = ({
       <div className="flex h-16 items-center justify-between border-b border-slate-200/80 px-4">
         <Link to={brandPath} onClick={onClose} className="flex items-center gap-3">
           <img
-            src="/hhh-job-logo.png"
+            src="/hhh-job-logo-128.png"
             alt="HHH Jobs"
             className="h-10 w-10 rounded-2xl object-cover"
           />
@@ -54,7 +54,7 @@ const PortalWorkbenchBrand = ({
     <div className="flex h-16 items-center gap-3 border-b border-slate-200/80 px-4">
       <Link to={brandPath} className="flex min-w-0 items-center gap-3">
         <img
-          src="/hhh-job-logo.png"
+          src="/hhh-job-logo-128.png"
           alt="HHH Jobs"
           className="h-10 w-10 rounded-2xl object-cover"
         />
