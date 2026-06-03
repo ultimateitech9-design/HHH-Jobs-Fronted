@@ -123,15 +123,16 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
         }
 
         const savedSet = new Set((savedResponse.data || []).map((item) => item.jobId || item.job_id));
+        const resolvedLoadedJobId = job?.id || job?._id || jobId;
         const matchedApplication = (applicationsResponse.data || []).find((item) =>
-          String(item.jobId || item.job_id || item.job?.id || '') === String(jobId)
+          String(item.jobId || item.job_id || item.job?.id || '') === String(resolvedLoadedJobId)
         ) || null;
 
         setState({
           loading: false,
           error: job ? '' : 'Job not found.',
           job,
-          isSaved: savedSet.has(jobId),
+          isSaved: savedSet.has(resolvedLoadedJobId),
           application: matchedApplication
         });
       } catch (error) {
@@ -150,6 +151,8 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
       mounted = false;
     };
   }, [jobId, jobsListPath, location.pathname, navigate, user?.id]);
+
+  const resolvedJobId = state.job?.id || state.job?._id || jobId;
 
   const salaryLabel = useMemo(() => {
     if (!state.job) return '-';
@@ -198,7 +201,7 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
 
     if (state.isSaved) {
       try {
-        await removeSavedJobForStudent(jobId);
+        await removeSavedJobForStudent(resolvedJobId);
       } catch (error) {
         setActionError(error.message || 'Unable to unsave job.');
         return;
@@ -209,7 +212,7 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
     }
 
     try {
-      await saveJobForStudent(jobId);
+      await saveJobForStudent(resolvedJobId);
     } catch (error) {
       if (/already saved/i.test(String(error.message || ''))) {
         setState((current) => ({ ...current, isSaved: true }));
@@ -238,11 +241,11 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
     }
 
     try {
-      const application = await applyToJob({ jobId, coverLetter });
+      const application = await applyToJob({ jobId: resolvedJobId, coverLetter });
       setState((current) => ({
         ...current,
         application: application || {
-          jobId,
+          jobId: resolvedJobId,
           status: 'applied',
           appliedAt: new Date().toISOString()
         }

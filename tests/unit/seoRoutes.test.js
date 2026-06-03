@@ -14,7 +14,7 @@ test('buildJobSeoPath keeps job URLs short and removes repeated SEO words', () =
 
   assert.equal(
     path,
-    '/jobs/administrative-executive-ultimate-itech-ghitorni-new-delhi-58b268e6-197f-46fb-a146-2d1234567890'
+    '/jobs/administrative-executive-ultimate-itech-ghitorni-new-delhi'
   );
 });
 

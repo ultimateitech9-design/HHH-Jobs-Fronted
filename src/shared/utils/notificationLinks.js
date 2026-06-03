@@ -10,7 +10,7 @@ const parseNotificationMeta = (meta) => {
 };
 
 const buildHrJobApplicantsLink = ({ jobId, applicationId }) => {
-  const base = `/portal/hr/jobs/job-${jobId}/applicants`;
+  const base = `/portal/hr/jobs/${jobId}/applicants`;
   return applicationId ? `${base}?applicationId=${applicationId}` : base;
 };
 
@@ -25,6 +25,16 @@ export const resolveNotificationLink = (notification = {}) => {
     'application_offer_response',
     'application_status_update'
   ].includes(type);
+
+  if (
+    explicitLink
+    && (
+      explicitLink.startsWith('/portal/hr/jobs/')
+      || explicitLink.startsWith('/hr/jobs/')
+    )
+  ) {
+    return explicitLink.startsWith('/hr/jobs/') ? `/portal${explicitLink}` : explicitLink;
+  }
 
   if (
     jobId

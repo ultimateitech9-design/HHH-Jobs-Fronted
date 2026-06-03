@@ -11,11 +11,7 @@ export const extractUuidFromSlug = (value = '') => {
     .filter(Boolean)
     .pop() || '';
 
-  if (!lastSegment || !lastSegment.includes('-')) return lastSegment || rawValue;
-
-  const parts = lastSegment.split('-').filter(Boolean);
-  const candidate = parts[parts.length - 1] || '';
-  return /^[a-z0-9]{6,}$/i.test(candidate) ? candidate : lastSegment;
+  return lastSegment || rawValue;
 };
 
 export const extractSeoPathSegment = (value = '') => {
@@ -122,11 +118,7 @@ export const buildJobSeoPath = (basePath, job = {}) => {
   const explicitSlug = joinCanonicalJobSlugParts(rawSeoSlug);
   const primarySlug = pickShortestNonEmptySlug(structuredSlug, explicitSlug);
 
-  return buildSeoEntityPath(
-    basePath,
-    job.details_id || job.id || job._id || job.portalJobId || job.jobId || job.job_id,
-    primarySlug || 'details'
-  );
+  return `${cleanBasePath(basePath)}/${primarySlug || 'details'}`;
 };
 
 export const buildCompanySeoPath = (basePath = '/companies', company = {}) =>
