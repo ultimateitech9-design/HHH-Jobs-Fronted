@@ -80,6 +80,7 @@ const buildSystemLogFallback = ({ filters = {}, page = 1, limit = 10 } = {}) => 
 export const getSuperAdminDashboard = async () =>
   safeRequest({
     path: `${SUPER_ADMIN_BASE}/dashboard`,
+    options: { timeoutMs: 15000 },
     emptyData: {},
     fallbackData: buildDashboardFallback,
     extract: (payload) => {

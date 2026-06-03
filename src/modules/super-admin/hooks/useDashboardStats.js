@@ -7,14 +7,21 @@ const useDashboardStats = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let mounted = true;
+
     const load = async () => {
       const response = await getSuperAdminDashboard();
+      if (!mounted) return;
       setDashboard(response.data || null);
       setError(response.error || '');
       setLoading(false);
     };
 
     load();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return { dashboard, loading, error };

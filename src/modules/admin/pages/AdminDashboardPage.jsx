@@ -39,15 +39,15 @@ const AdminDashboardPage = () => {
       try {
         const [analyticsRes, hrRes, jobsRes, reportsRes] = await Promise.all([
           getAdminAnalytics(),
-          getAdminUsers({ role: 'hr' }),
-          getAdminJobs(),
-          getAdminReports({ status: 'open' })
+          getAdminUsers({ role: 'hr', approved: false, limit: 8 }),
+          getAdminJobs({ approvalStatus: 'pending', limit: 8 }),
+          getAdminReports({ status: 'open', limit: 8 })
         ]);
 
         if (!mounted) return;
 
-        const pendingHr = (hrRes.data || []).filter((user) => !user.is_hr_approved);
-        const pendingJobs = (jobsRes.data || []).filter((job) => String(job.approvalStatus || '').toLowerCase() === 'pending');
+        const pendingHr = hrRes.data || [];
+        const pendingJobs = jobsRes.data || [];
 
         setState({
           loading: false,

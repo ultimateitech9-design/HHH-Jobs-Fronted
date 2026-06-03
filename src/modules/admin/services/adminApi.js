@@ -124,7 +124,12 @@ export const getAdminJobs = async (filters = {}) =>
   readEntityCollection({
     path: '/admin/jobs',
     key: 'jobs',
-    params: { status: filters.status || '' },
+    params: {
+      status: filters.status || '',
+      approvalStatus: filters.approvalStatus || filters.approval_status || '',
+      page: filters.page || '',
+      limit: filters.limit || ''
+    },
     emptyData: []
   });
 
@@ -156,7 +161,11 @@ export const getAdminReports = async (filters = {}) =>
   readEntityCollection({
     path: '/admin/reports',
     key: 'reports',
-    params: { status: filters.status || '' },
+    params: {
+      status: filters.status || '',
+      page: filters.page || '',
+      limit: filters.limit || ''
+    },
     emptyData: []
   });
 
