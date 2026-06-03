@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   FiAlertCircle,
   FiBell,
@@ -37,7 +37,7 @@ import {
   markStudentGovtJobApplied,
   updateStudentGovtJobTracker
 } from '../services/studentApi';
-import { buildGovtJobSeoPath, extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
+import { buildGovtJobSeoPath, extractSeoPathSegment } from '../../../shared/utils/seoRoutes';
 
 const QUAL_LABELS = {
   '10TH': '10th',
@@ -217,7 +217,9 @@ const DetailBlock = ({ title, children, icon: Icon, tone = 'default' }) => {
 
 const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
   const { jobId: jobParam } = useParams();
-  const jobId = extractUuidFromSlug(jobParam);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const jobId = extractSeoPathSegment(jobParam);
   const currentUser = getCurrentUser();
   const canTrackGovtJobs = currentUser?.role === 'student';
   const isLoggedIn = Boolean(currentUser?.id);
@@ -260,6 +262,15 @@ const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
   const hasApplied = Boolean(job?.hasApplied || job?.tracker?.status === 'applied');
   const reminderEnabled = Boolean(job?.tracker?.reminderEnabled || job?.reminderEnabled);
   const isExpired = Boolean(job?.isExpired);
+
+  useEffect(() => {
+    if (!job) return;
+
+    const cleanPath = buildGovtJobSeoPath(publicMode && !canTrackGovtJobs ? '/govt-jobs' : '/portal/student/govt-jobs', job);
+    if (cleanPath && cleanPath !== location.pathname) {
+      navigate(`${cleanPath}${location.search || ''}${location.hash || ''}`, { replace: true });
+    }
+  }, [canTrackGovtJobs, job, location.hash, location.pathname, location.search, navigate, publicMode]);
 
   const metricTiles = useMemo(() => {
     if (!job) return [];

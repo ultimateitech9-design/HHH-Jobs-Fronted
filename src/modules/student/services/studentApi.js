@@ -1,5 +1,5 @@
 import { apiFetch } from '../../../utils/api';
-import { extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
+import { extractSeoPathSegment, extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
 
 const clone = (value) => {
   if (value === null || value === undefined) return value;
@@ -748,7 +748,7 @@ const emptyGovtJobDetail = {
 
 export const getPublicGovtJobById = async (jobId) =>
   safeRequest({
-    path: `/public/govt-jobs/${extractUuidFromSlug(jobId)}`,
+    path: `/public/govt-jobs/${encodeURIComponent(extractSeoPathSegment(jobId))}`,
     emptyData: emptyGovtJobDetail,
     extract: extractGovtJobDetail
   });
@@ -765,7 +765,7 @@ export const getStudentGovtJobs = async (filters = {}) => {
 
 export const getStudentGovtJobById = async (jobId) =>
   safeRequest({
-    path: `/student/govt-jobs/${extractUuidFromSlug(jobId)}`,
+    path: `/student/govt-jobs/${encodeURIComponent(extractSeoPathSegment(jobId))}`,
     emptyData: emptyGovtJobDetail,
     extract: (payload) => ({
       job: payload?.job || null,

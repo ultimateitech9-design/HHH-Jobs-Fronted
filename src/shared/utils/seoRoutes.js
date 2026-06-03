@@ -18,8 +18,18 @@ export const extractUuidFromSlug = (value = '') => {
   return /^[a-z0-9]{6,}$/i.test(candidate) ? candidate : lastSegment;
 };
 
+export const extractSeoPathSegment = (value = '') => {
+  const rawValue = String(value || '').trim();
+  return rawValue
+    .replace(/^\/+|\/+$/g, '')
+    .split('/')
+    .filter(Boolean)
+    .pop() || rawValue;
+};
+
 export const slugify = (value = '') => String(value || '')
   .normalize('NFKD')
+  .replace(UUID_FRAGMENT_PATTERN, ' ')
   .replace(/[\u0300-\u036f]/g, '')
   .toLowerCase()
   .replace(/&/g, ' and ')
@@ -40,6 +50,9 @@ const joinSlugParts = (...parts) => {
   return slug || 'details';
 };
 
+export const buildSeoPath = (basePath, ...parts) =>
+  `${cleanBasePath(basePath)}/${joinSlugParts(...parts)}`;
+
 export const buildSeoEntityPath = (basePath, id, ...parts) => {
   const entityId = extractUuidFromSlug(id);
   if (!entityId) return cleanBasePath(basePath) || '/';
@@ -57,10 +70,9 @@ export const buildJobSeoPath = (basePath, job = {}) =>
   );
 
 export const buildGovtJobSeoPath = (basePath, job = {}) =>
-  buildSeoEntityPath(
+  buildSeoPath(
     basePath,
-    job.id || job._id || job.jobId || job.job_id,
-    job.seoSlug,
+    job.seoSlug || job.seo_slug,
     job.title,
     job.organization,
     job.state || job.category
