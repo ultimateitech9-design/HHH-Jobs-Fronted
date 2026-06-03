@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import Editor from '@monaco-editor/react';
 import {
   FiArrowLeft,
   FiCalendar,
@@ -41,6 +40,8 @@ import {
   updateInterviewWorkspace,
   uploadInterviewRecording
 } from '../services/interviewRoomApi';
+
+const CodeEditor = lazy(() => import('@monaco-editor/react'));
 
 const SPEECH_RECOGNITION =
   typeof window !== 'undefined'
@@ -2930,20 +2931,28 @@ const InterviewRoomPage = ({ portalRole = 'hr' }) => {
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
                   <div className="min-h-[320px] min-w-0 flex-1 border-b border-slate-200 xl:min-h-0 xl:border-b-0 xl:border-r xl:border-slate-200">
-                    <Editor
-                      height="100%"
-                      language={codeEditorLanguage}
-                      theme="vs-light"
-                      value={codeEditorContent}
-                      onChange={handleCodeEditorChange}
-                      options={{
-                        fontSize: 13,
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
-                        padding: { top: 12, bottom: 12 }
-                      }}
-                    />
+                    <Suspense
+                      fallback={
+                        <div className="flex h-full min-h-[320px] items-center justify-center bg-slate-50 text-xs font-semibold text-slate-500">
+                          Loading editor...
+                        </div>
+                      }
+                    >
+                      <CodeEditor
+                        height="100%"
+                        language={codeEditorLanguage}
+                        theme="vs-light"
+                        value={codeEditorContent}
+                        onChange={handleCodeEditorChange}
+                        options={{
+                          fontSize: 13,
+                          minimap: { enabled: false },
+                          scrollBeyondLastLine: false,
+                          automaticLayout: true,
+                          padding: { top: 12, bottom: 12 }
+                        }}
+                      />
+                    </Suspense>
                   </div>
                   <div className="flex min-h-[220px] w-full shrink-0 flex-col bg-slate-950 text-slate-100 xl:min-h-0 xl:w-[320px]">
                     <div className="flex items-center justify-between border-b border-slate-800 px-3 py-2">

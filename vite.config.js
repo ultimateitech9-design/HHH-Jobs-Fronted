@@ -21,7 +21,6 @@ const manualChunks = (id) => {
   if (normalizedId.includes('/react-hot-toast/')) return 'vendor-toast'
   if (normalizedId.includes('/zustand/')) return 'vendor-state'
   if (normalizedId.includes('/react-hook-form/') || normalizedId.includes('/react-select/')) return 'vendor-forms'
-  if (normalizedId.includes('/@monaco-editor/') || normalizedId.includes('/monaco-editor/')) return 'vendor-editor'
   if (normalizedId.includes('/sweetalert2/')) return 'vendor-dialogs'
 
   return undefined

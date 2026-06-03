@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, BriefcaseBusiness, Trash2, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -165,26 +164,16 @@ const PortalNotificationsDrawer = ({
   if (typeof document === 'undefined') return null;
 
   return createPortal(
-    <AnimatePresence>
-      {open ? (
-        <>
-          <motion.button
-            type="button"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[95] bg-slate-950/18 backdrop-blur-[2px]"
-            onClick={onClose}
-            aria-label="Close notifications"
-          />
+    open ? (
+      <>
+        <button
+          type="button"
+          className="fixed inset-0 z-[95] bg-slate-950/18 backdrop-blur-[2px]"
+          onClick={onClose}
+          aria-label="Close notifications"
+        />
 
-          <motion.aside
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', stiffness: 130, damping: 24, mass: 1 }}
-            className="fixed inset-y-0 right-0 z-[96] flex h-full w-full max-w-[420px] flex-col overflow-hidden border-l border-slate-200 bg-white shadow-[0_22px_72px_rgba(15,23,42,0.18)]"
-          >
+        <aside className="fixed inset-y-0 right-0 z-[96] flex h-full w-full max-w-[420px] flex-col overflow-hidden border-l border-slate-200 bg-white shadow-[0_22px_72px_rgba(15,23,42,0.18)]">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-brand-600">Alerts</p>
@@ -324,10 +313,9 @@ const PortalNotificationsDrawer = ({
                 <p className="text-center text-xs font-medium text-slate-400">Alerts panel ready</p>
               )}
             </div>
-          </motion.aside>
-        </>
-      ) : null}
-    </AnimatePresence>,
+        </aside>
+      </>
+    ) : null,
     document.body
   );
 };

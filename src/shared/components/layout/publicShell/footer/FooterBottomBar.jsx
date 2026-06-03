@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { footerSocialLinks } from './footerSocialLinks';
 
@@ -33,17 +32,16 @@ const FooterBottomBar = () => {
           }
 
           return (
-            <motion.a
+            <a
               key={item.label}
               href={item.href}
-              whileHover={{ y: -2 }}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-[13px] text-white/54 transition-colors hover:border-gold/30 hover:text-gold"
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-[13px] text-white/54 transition-colors hover:-translate-y-0.5 hover:border-gold/30 hover:text-gold"
               target={shouldOpenInNewTab ? '_blank' : undefined}
               rel={shouldOpenInNewTab ? 'noreferrer' : undefined}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4" aria-hidden="true" />
               <span>{item.label}</span>
-            </motion.a>
+            </a>
           );
         })}
       </div>

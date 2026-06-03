@@ -42,7 +42,7 @@ const RootLayout = () => {
   const isInterviewRoomRoute = /^\/portal\/(?:hr|student)\/interviews\/[^/]+\/room$/i.test(location.pathname);
   const hidePublicFooter = campusConnectPublicRoutePattern.test(location.pathname);
   const isAuthorizedMaintenanceUser = ['admin', 'super_admin'].includes(String(user?.role || '').toLowerCase());
-  const shouldMountNotificationRuntime = useDeferredMount(Boolean(userId), { delayMs: 500, timeoutMs: 2000 });
+  const shouldMountNotificationRuntime = useDeferredMount(Boolean(userId), { delayMs: 3000, timeoutMs: 6500 });
 
   useEffect(() => {
     const refreshHeaderUser = async () => {
@@ -163,8 +163,8 @@ const RootLayout = () => {
   const shouldShowMaintenanceScreen = !isPortalWorkbench && !isAuthorizedMaintenanceUser && maintenanceMode;
   const shouldHidePublicShell = isPublicMaintenanceGatePending || shouldShowMaintenanceScreen;
   const shouldMountPublicShell = !isPortalWorkbench && !shouldHidePublicShell;
-  const shouldMountFooter = useDeferredMount(shouldMountPublicShell && !hidePublicFooter, { delayMs: 900, timeoutMs: 2600 });
-  const shouldMountChatbot = useDeferredMount(shouldMountPublicShell, { delayMs: 1800, timeoutMs: 3200 });
+  const shouldMountFooter = useDeferredMount(shouldMountPublicShell && !hidePublicFooter, { delayMs: 4500, timeoutMs: 9000 });
+  const shouldMountChatbot = useDeferredMount(shouldMountPublicShell, { delayMs: 6500, timeoutMs: 12000 });
 
   return (
     <div

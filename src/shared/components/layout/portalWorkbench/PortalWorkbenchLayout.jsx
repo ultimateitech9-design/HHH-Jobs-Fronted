@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   getCurrentUser,
   getNotificationPathByRole,
@@ -9,7 +8,6 @@ import {
   resolvePortalViewRole
 } from '../../../../utils/auth';
 import useAuthStore from '../../../../core/auth/authStore';
-import LiveSupportChatWidget from '../../LiveSupportChatWidget';
 import PortalWorkbenchHeader from './PortalWorkbenchHeader';
 import PortalWorkbenchMobileDrawer from './PortalWorkbenchMobileDrawer';
 import PortalWorkbenchSidebar from './PortalWorkbenchSidebar';
@@ -17,6 +15,8 @@ import {
   PORTAL_SIDEBAR_COLLAPSED_WIDTH,
   PORTAL_SIDEBAR_EXPANDED_WIDTH
 } from './portalWorkbench.constants';
+
+const LiveSupportChatWidget = lazy(() => import('../../LiveSupportChatWidget'));
 
 const normalizePath = (value = '') => String(value || '').replace(/\/+$/, '');
 
@@ -67,6 +67,7 @@ const PortalWorkbenchLayout = ({
   const [sidebarOpen, setSidebarOpen] = useState(!expandSidebarOnHover);
   const [sidebarPinned, setSidebarPinned] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [shouldMountSupportWidget, setShouldMountSupportWidget] = useState(false);
 
   const flattenedNavItems = useMemo(() => flattenNavItems(navItems), [navItems]);
   const activePortalRole = useMemo(
@@ -118,6 +119,11 @@ const PortalWorkbenchLayout = ({
     setSidebarPinned(false);
     setSidebarOpen(false);
   }, [expandSidebarOnHover]);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => setShouldMountSupportWidget(true), 5500);
+    return () => window.clearTimeout(timerId);
+  }, []);
 
   const handleLogout = () => {
     clearAuth();
@@ -194,9 +200,8 @@ const PortalWorkbenchLayout = ({
       ) : null}
 
       {hideSidebar ? null : (
-        <motion.aside
-          initial={false}
-          animate={{ width: sidebarOpen ? PORTAL_SIDEBAR_EXPANDED_WIDTH : PORTAL_SIDEBAR_COLLAPSED_WIDTH }}
+        <aside
+          style={{ width: sidebarOpen ? PORTAL_SIDEBAR_EXPANDED_WIDTH : PORTAL_SIDEBAR_COLLAPSED_WIDTH }}
           className={sidebarClassName}
           onMouseEnter={expandSidebarOnHover ? handleSidebarMouseEnter : undefined}
           onMouseLeave={expandSidebarOnHover ? handleSidebarMouseLeave : undefined}
@@ -213,7 +218,7 @@ const PortalWorkbenchLayout = ({
             onLogout={handleLogout}
             onCollapseToggle={handleSidebarToggle}
           />
-        </motion.aside>
+        </aside>
       )}
 
       <div
@@ -242,18 +247,20 @@ const PortalWorkbenchLayout = ({
             />
           )}
 
-          <motion.main
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+          <main
             className={`flex flex-1 flex-col ${effectiveMainPaddingClass}`}
           >
             <div className={`flex min-h-0 min-w-0 w-full flex-1 flex-col ${isCompactViewportRoute ? 'gap-2.5' : 'gap-2.5 sm:gap-3 md:gap-4'}`}>
               <Outlet />
             </div>
-          </motion.main>
+          </main>
         </div>
       </div>
-      <LiveSupportChatWidget portalKey={portalKey} />
+      {shouldMountSupportWidget ? (
+        <Suspense fallback={null}>
+          <LiveSupportChatWidget portalKey={portalKey} />
+        </Suspense>
+      ) : null}
     </div>
   );
 };

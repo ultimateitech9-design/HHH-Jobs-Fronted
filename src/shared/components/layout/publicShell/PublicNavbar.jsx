@@ -1,7 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { getLoginPortalConfig } from '../../../../modules/auth/config/loginPortals';
 import { getPublicJobsNavPath } from '../../../../modules/common/utils/publicAccess';
@@ -85,21 +84,12 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
   const loginDrawer =
     loginDrawerOpen && !user && typeof document !== 'undefined'
       ? createPortal(
-        <AnimatePresence>
-          <motion.div
-            key="login-drawer-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+        <>
+          <div
             className="fixed inset-0 z-[120] bg-slate-950/12 backdrop-blur-[3px]"
             onClick={() => setLoginDrawerOpen(false)}
           />
-          <motion.aside
-            key="login-drawer-panel"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', stiffness: 110, damping: 26, mass: 1.05 }}
+          <aside
             className="fixed inset-y-0 right-0 z-[121] flex h-full w-full max-w-[460px] flex-col overflow-y-auto bg-white px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_24px_72px_rgba(15,23,42,0.18)] sm:max-w-[500px] sm:px-5 sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pt-5"
           >
             <Suspense fallback={<div className="h-72 animate-pulse rounded-2xl bg-slate-100" />}>
@@ -116,29 +106,27 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                 onRequestClose={() => setLoginDrawerOpen(false)}
               />
             </Suspense>
-          </motion.aside>
-        </AnimatePresence>,
+          </aside>
+        </>,
         document.body
       )
       : null;
 
   return (
     <>
-      <motion.header
+      <header
         ref={headerRef}
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ type: 'spring', stiffness: 100, damping: 20 }}
         className="fixed inset-x-0 top-0 z-50 bg-white/86 backdrop-blur-xl"
       >
         <div className="vw-shell flex min-h-16 items-center justify-between gap-3 py-2 sm:gap-4">
           <Link to="/" className="group flex min-w-0 items-center gap-2.5">
-            <motion.img
+            <img
               src="/hhh-job-logo.png"
               alt="HHH Jobs"
               className="h-14 w-14 object-contain"
-              whileHover={{ rotate: [0, -5, 5, 0], scale: 1.1 }}
-              transition={{ duration: 0.5 }}
+              width="56"
+              height="56"
+              decoding="async"
             />
             <div className="min-w-0 flex flex-col leading-none">
               <span className="truncate font-heading text-base font-bold text-navy transition-colors group-hover:text-gold-dark sm:text-lg">
@@ -181,54 +169,39 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                       />
                     </button>
 
-                    <AnimatePresence>
-                      {dropdownOpen === link.key ? (
-                        <motion.div
-                          initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                          className="absolute left-0 top-full mt-1 min-w-[220px] rounded-[22px] border border-slate-200/80 bg-white p-2 shadow-dropdown"
-                        >
-                          {link.children.map((child, index) => {
-                            const isChildActive = isNavItemActive(child);
-                            const isExternal = isExternalHref(child.to);
-                            const className = `block rounded-2xl px-3 py-2 text-sm transition-all ${isChildActive
-                                ? 'bg-brand-50 text-navy'
-                                : 'text-slate-500 hover:bg-gold/5 hover:text-navy'
-                              }`;
+                    {dropdownOpen === link.key ? (
+                      <div className="absolute left-0 top-full mt-1 min-w-[220px] rounded-[22px] border border-slate-200/80 bg-white p-2 shadow-dropdown">
+                        {link.children.map((child) => {
+                          const isChildActive = isNavItemActive(child);
+                          const isExternal = isExternalHref(child.to);
+                          const className = `block rounded-2xl px-3 py-2 text-sm transition-all ${isChildActive
+                              ? 'bg-brand-50 text-navy'
+                              : 'text-slate-500 hover:bg-gold/5 hover:text-navy'
+                            }`;
 
-                            return (
-                              <motion.div
-                                key={child.key}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                              >
-                                {isExternal ? (
-                                  <a
-                                    href={child.to}
-                                    onClick={() => setDropdownOpen(null)}
-                                    className={className}
-                                  >
-                                    {child.label}
-                                  </a>
-                                ) : (
-                                  <Link
-                                    to={child.to}
-                                    state={child.state}
-                                    onClick={() => setDropdownOpen(null)}
-                                    className={className}
-                                  >
-                                    {child.label}
-                                  </Link>
-                                )}
-                              </motion.div>
-                            );
-                          })}
-                        </motion.div>
-                      ) : null}
-                    </AnimatePresence>
+                          return isExternal ? (
+                            <a
+                              key={child.key}
+                              href={child.to}
+                              onClick={() => setDropdownOpen(null)}
+                              className={className}
+                            >
+                              {child.label}
+                            </a>
+                          ) : (
+                            <Link
+                              key={child.key}
+                              to={child.to}
+                              state={child.state}
+                              onClick={() => setDropdownOpen(null)}
+                              className={className}
+                            >
+                              {child.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ) : null}
                   </div>
                 );
               }
@@ -297,48 +270,35 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                   Log in
                 </Link>
                 <Link to="/sign-up">
-                  <motion.span
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <span
                     className="inline-flex rounded-full gradient-gold px-4 py-2 text-sm font-semibold text-primary shadow-lg shadow-gold/20"
                   >
                     Start Free
-                  </motion.span>
+                  </span>
                 </Link>
               </>
             )}
           </div>
 
-          <motion.button
+          <button
             type="button"
-            whileTap={{ scale: 0.9 }}
+            aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             className="rounded-xl p-2 text-slate-700 lg:hidden"
             onClick={() => setIsMenuOpen((open) => !open)}
           >
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </motion.button>
+          </button>
         </div>
 
-        <AnimatePresence>
-          {isMenuOpen ? (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-slate-200 bg-white/96 lg:hidden"
-            >
-              <div className="vw-shell flex flex-col gap-2 py-4">
-                {publicNavItems.map((link, index) => {
+        {isMenuOpen ? (
+          <div className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-slate-200 bg-white/96 lg:hidden">
+            <div className="vw-shell flex flex-col gap-2 py-4">
+              {publicNavItems.map((link) => {
                   const isActive = isNavItemActive(link);
 
                   if (link.children) {
                     return (
-                      <motion.div
-                        key={link.key}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
+                      <div key={link.key}>
                         <p className="px-3 py-2 text-sm font-semibold text-navy">{link.label}</p>
                         {link.children.map((child) => {
                           const isChildActive = isNavItemActive(child);
@@ -369,7 +329,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                             </Link>
                           );
                         })}
-                      </motion.div>
+                      </div>
                     );
                   }
 
@@ -379,32 +339,25 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                       : 'text-slate-600 hover:bg-slate-50 hover:text-navy'
                     }`;
 
-                  return (
-                    <motion.div
+                  return isExternal ? (
+                    <a
                       key={link.key}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
+                      href={link.to}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={className}
                     >
-                      {isExternal ? (
-                        <a
-                          href={link.to}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={className}
-                        >
-                          {link.label}
-                        </a>
-                      ) : (
-                        <Link
-                          to={link.to}
-                          state={link.state}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={className}
-                        >
-                          {link.label}
-                        </Link>
-                      )}
-                    </motion.div>
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      key={link.key}
+                      to={link.to}
+                      state={link.state}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={className}
+                    >
+                      {link.label}
+                    </Link>
                   );
                 })}
 
@@ -450,11 +403,10 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                     </>
                   )}
                 </div>
-              </div>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-      </motion.header>
+            </div>
+          </div>
+        ) : null}
+      </header>
       {loginDrawer}
     </>
   );

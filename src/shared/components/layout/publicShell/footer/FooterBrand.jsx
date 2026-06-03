@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FiPhone } from 'react-icons/fi';
+import { Phone } from 'lucide-react';
 import { HHH_JOBS_MASTER_CONTACT_NUMBERS } from '../../../../constants/contactInfo';
 
 const FooterBrand = () => {
@@ -25,7 +25,7 @@ const FooterBrand = () => {
 
       <div className="mt-4 flex flex-col gap-1.5 text-sm text-white/78">
         <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-gold">
-          <FiPhone className="h-3.5 w-3.5" />
+          <Phone className="h-3.5 w-3.5" aria-hidden="true" />
           Master Contact
         </span>
         <div className="flex flex-wrap gap-x-3 gap-y-1">
