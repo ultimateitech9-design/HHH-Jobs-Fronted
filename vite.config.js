@@ -26,9 +26,21 @@ const manualChunks = (id) => {
   return undefined
 }
 
+const deferEntryStylesheet = () => ({
+  name: 'defer-entry-stylesheet',
+  apply: 'build',
+  enforce: 'post',
+  transformIndexHtml(html) {
+    return html.replace(
+      /<link rel="stylesheet" crossorigin href="(\/assets\/index-[^"]+\.css)">/,
+      `<link rel="preload" as="style" crossorigin href="$1" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" crossorigin href="$1"></noscript>`
+    )
+  }
+})
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), deferEntryStylesheet()],
   build: {
     chunkSizeWarningLimit: 450,
     rollupOptions: {

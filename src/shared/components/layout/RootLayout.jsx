@@ -10,11 +10,11 @@ import {
   subscribeToMaintenanceModeUpdates,
   writeMaintenanceModeSnapshot
 } from '../../utils/maintenanceMode';
+import PublicNavbar from './publicShell/PublicNavbar';
 
 const AiChatbot = lazy(() => import('../../../components/AiChatbot'));
 const NotificationRuntime = lazy(() => import('../../../core/notifications/NotificationRuntime'));
 const PublicFooter = lazy(() => import('./publicShell/PublicFooter'));
-const PublicNavbar = lazy(() => import('./publicShell/PublicNavbar'));
 const ScrollToTopButton = lazy(() => import('./publicShell/ScrollToTopButton'));
 
 const portalRoutePattern =
@@ -172,9 +172,7 @@ const RootLayout = () => {
       style={isPortalWorkbench ? undefined : publicShellStyle}
     >
       {shouldMountPublicShell ? (
-        <Suspense fallback={null}>
-          <PublicNavbar user={user} dashboardPath={dashboardPath} onLogout={handleLogout} />
-        </Suspense>
+        <PublicNavbar user={user} dashboardPath={dashboardPath} onLogout={handleLogout} />
       ) : null}
 
       <main className={`flex flex-col min-h-screen ${!isPortalWorkbench ? 'pt-[calc(var(--public-navbar-height,74px)+2px)]' : ''}`}>

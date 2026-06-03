@@ -39,26 +39,26 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
   }, []);
 
   return (
-    <section className="relative flex min-h-[60vh] items-center overflow-hidden bg-gradient-to-br from-white via-[#fbf8f2] to-[#eef3fb] pb-6 pt-0">
-      <div className="vw-shell relative z-10 pb-4 pt-3">
-        <div className="grid items-center gap-6 lg:grid-cols-2 lg:gap-10">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-navy/10 bg-navy/5 px-4 py-1.5 text-sm font-semibold text-navy">
+    <section className="home-hero relative flex min-h-[60vh] items-center overflow-hidden bg-gradient-to-br from-white via-[#fbf8f2] to-[#eef3fb] pb-6 pt-0">
+      <div className="home-hero__shell vw-shell relative z-10 pb-4 pt-3">
+        <div className="home-hero__grid grid items-center gap-6 lg:grid-cols-2 lg:gap-10">
+          <div className="home-hero__content">
+            <div className="home-hero__badge inline-flex items-center gap-2 rounded-full border border-navy/10 bg-navy/5 px-4 py-1.5 text-sm font-semibold text-navy">
               <span className="h-2 w-2 rounded-full bg-gold" />
               Trusted by 10,000+ companies
             </div>
 
-            <h1 className="mt-4 font-heading text-3xl font-bold leading-[1.05] text-navy sm:text-4xl lg:text-[3rem]">
+            <h1 className="home-hero__title mt-4 font-heading text-3xl font-bold leading-[1.05] text-navy sm:text-4xl lg:text-[3rem]">
               Find Genuine Jobs.
               <span className="gradient-text block">Hire the Best Talent.</span>
             </h1>
 
-            <p className="mt-4 max-w-xl text-[15px] leading-7 text-slate-600 lg:text-base">
+            <p className="home-hero__copy mt-4 max-w-xl text-[15px] leading-7 text-slate-600 lg:text-base">
               A trusted job portal for students, professionals, retired employees, and recruiters. Discover
               opportunities, hiring support, and public guidance inside a cleaner, more professional experience.
             </p>
 
-            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+            <div className="home-hero__trust mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-600">
               {trustBadges.map((badge) => (
                 <span key={badge} className="inline-flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-gold" />
@@ -69,7 +69,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
 
             <form
               onSubmit={onSearch}
-              className="relative z-20 mt-6 flex flex-col gap-2 rounded-[24px] border border-slate-200 bg-white p-1.5 shadow-strong shadow-navy/5 sm:flex-row"
+              className="home-hero__search relative z-20 mt-6 flex flex-col gap-2 rounded-[24px] border border-slate-200 bg-white p-1.5 shadow-strong shadow-navy/5 sm:flex-row"
             >
               <div className="flex flex-1 items-center gap-2 px-3">
                 <Search className="h-4 w-4 text-slate-400" />
@@ -97,7 +97,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               </button>
             </form>
 
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <div className="home-hero__quick-tags mt-4 flex flex-wrap justify-center gap-2">
               {quickTags.map((tag) => (
                 <button
                   key={tag}
@@ -110,7 +110,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               ))}
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-nowrap">
+            <div className="home-hero__actions mt-6 flex flex-col gap-3 sm:flex-row sm:flex-nowrap">
               <Link to="/jobs" className="sm:flex-1">
                 <span className={`${heroActionButtonClass} btn-primary`}>
                   Explore Opportunities
@@ -140,7 +140,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               </Link>
             </div>
 
-            <div className="mt-7 grid gap-4 sm:grid-cols-3">
+            <div className="home-hero__stats mt-7 grid gap-4 sm:grid-cols-3">
               {statItems.map((item) => (
                 <div key={item.label}>
                   <p className="font-heading text-2xl font-bold text-navy lg:text-[1.75rem]">{item.value}</p>

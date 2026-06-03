@@ -116,10 +116,10 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
     <>
       <header
         ref={headerRef}
-        className="fixed inset-x-0 top-0 z-50 bg-white/86 backdrop-blur-xl"
+        className="public-navbar fixed inset-x-0 top-0 z-50 bg-white/86 backdrop-blur-xl"
       >
-        <div className="vw-shell flex min-h-16 items-center justify-between gap-3 py-2 sm:gap-4">
-          <Link to="/" className="group flex min-w-0 items-center gap-2.5">
+        <div className="public-navbar__inner vw-shell flex min-h-16 items-center justify-between gap-3 py-2 sm:gap-4">
+          <Link to="/" className="public-navbar__brand group flex min-w-0 items-center gap-2.5">
             <img
               src="/hhh-job-logo.png"
               alt="HHH Jobs"
@@ -128,7 +128,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
               height="56"
               decoding="async"
             />
-            <div className="min-w-0 flex flex-col leading-none">
+            <div className="public-navbar__brand-text min-w-0 flex flex-col leading-none">
               <span className="truncate font-heading text-base font-bold text-navy transition-colors group-hover:text-gold-dark sm:text-lg">
                 HHH Jobs
               </span>

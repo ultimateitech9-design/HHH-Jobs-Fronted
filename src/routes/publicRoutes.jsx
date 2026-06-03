@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
+import HomePage from '../modules/common/pages/HomePage';
 
-const HomePage = lazy(() => import('../modules/common/pages/HomePage'));
 const PublicAtsPage = lazy(() => import('../modules/common/pages/PublicAtsPage'));
 const ServicesPage = lazy(() => import('../modules/common/pages/ServicesPage'));
 const EmpVerifyPage = lazy(() => import('../modules/common/pages/EmpVerifyPage'));
