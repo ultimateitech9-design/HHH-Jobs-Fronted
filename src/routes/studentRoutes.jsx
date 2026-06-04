@@ -2,11 +2,12 @@ import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
 import { PORTAL_ACCESS } from './portalAccess';
+import StudentModuleLayout from '../modules/student/components/StudentModuleLayout';
+import StudentCompaniesPage from '../modules/student/pages/StudentCompaniesPage';
+import StudentJobsPage from '../modules/student/pages/StudentJobsPage';
+import StudentServicesPage from '../modules/student/pages/StudentServicesPage';
 
-const StudentModuleLayout = lazy(() => import('../modules/student/components/StudentModuleLayout'));
-const StudentCompaniesPage = lazy(() => import('../modules/student/pages/StudentCompaniesPage'));
 const StudentProfilePage = lazy(() => import('../modules/student/pages/StudentProfilePage'));
-const StudentJobsPage = lazy(() => import('../modules/student/pages/StudentJobsPage'));
 const StudentJobDetailsPage = lazy(() => import('../modules/student/pages/StudentJobDetailsPage'));
 const StudentApplicationsPage = lazy(() => import('../modules/student/pages/StudentApplicationsPage'));
 const StudentSavedJobsPage = lazy(() => import('../modules/student/pages/StudentSavedJobsPage'));
@@ -14,7 +15,6 @@ const StudentInterviewsPage = lazy(() => import('../modules/student/pages/Studen
 const StudentInterviewRoomPage = lazy(() => import('../modules/student/pages/StudentInterviewRoomPage'));
 const StudentAnalyticsPage = lazy(() => import('../modules/student/pages/StudentAnalyticsPage'));
 const StudentAtsPage = lazy(() => import('../modules/student/pages/StudentAtsPage'));
-const StudentServicesPage = lazy(() => import('../modules/student/pages/StudentServicesPage'));
 const StudentAutoApplyPage = lazy(() => import('../modules/student/pages/StudentAutoApplyPage'));
 const StudentNotificationsPage = lazy(() => import('../modules/student/pages/StudentNotificationsPage'));
 const StudentExternalJobsPage = lazy(() => import('../modules/student/pages/StudentExternalJobsPage'));

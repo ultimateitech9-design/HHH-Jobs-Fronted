@@ -26,7 +26,7 @@ import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
 const FEED_PAGE_LIMIT = 50;
 const DEFAULT_JOBS_PER_PAGE = 15;
-const MAX_BACKGROUND_FEED_PAGES = 6;
+const MAX_BACKGROUND_FEED_PAGES = 2;
 
 const makeDefaultFilters = (audience = '') => ({
   search: '',
@@ -62,9 +62,19 @@ const sourceMapFromList = (sources = []) => ({
   ...Object.fromEntries(sources.map((source) => [source.key, source]))
 });
 
-const interleaveJobs = (internalJobs = [], externalJobs = []) => {
-  return [...internalJobs, ...externalJobs];
+const toTimestamp = (value) => {
+  const timestamp = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(timestamp) ? timestamp : 0;
 };
+
+const compareJobsByFreshness = (left = {}, right = {}) =>
+  toTimestamp(right.updatedAt || right.updated_at || right.postingDate || right.posting_date || right.createdAt || right.created_at)
+  - toTimestamp(left.updatedAt || left.updated_at || left.postingDate || left.posting_date || left.createdAt || left.created_at);
+
+const interleaveJobs = (internalJobs = [], externalJobs = []) => [
+  ...[...internalJobs].sort(compareJobsByFreshness),
+  ...[...externalJobs].sort(compareJobsByFreshness)
+];
 
 const buildCompanySourceKey = (companyName = '') => {
   const normalized = String(companyName || '')
@@ -310,24 +320,23 @@ const StudentJobsPage = ({
         return response;
       };
 
-      const [firstInternalFeed, firstExternalFeed] = await Promise.all([
-        loadFirstFeed({
-          enabled: shouldLoadInternal,
-          fetcher: getStudentJobs,
-          fetchFilters: internalFilters,
-          onLoaded: (response) => {
-            internalFeed = response;
-          }
-        }),
-        loadFirstFeed({
-          enabled: shouldLoadExternal,
-          fetcher: getExternalJobs,
-          fetchFilters: externalFilters,
-          onLoaded: (response) => {
-            externalFeed = response;
-          }
-        })
-      ]);
+      const firstInternalFeed = await loadFirstFeed({
+        enabled: shouldLoadInternal,
+        fetcher: getStudentJobs,
+        fetchFilters: internalFilters,
+        onLoaded: (response) => {
+          internalFeed = response;
+        }
+      });
+
+      const firstExternalFeed = await loadFirstFeed({
+        enabled: shouldLoadExternal,
+        fetcher: getExternalJobs,
+        fetchFilters: externalFilters,
+        onLoaded: (response) => {
+          externalFeed = response;
+        }
+      });
 
       if (!mounted) return;
       publishJobs({ loading: false });

@@ -4510,8 +4510,27 @@ select {
 
 .student-job-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+
+@media (min-width: 640px) {
+  .student-job-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .student-job-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1536px) {
+  .student-job-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .student-job-card {
