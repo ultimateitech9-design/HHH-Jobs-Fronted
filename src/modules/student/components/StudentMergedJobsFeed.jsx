@@ -424,7 +424,7 @@ const StudentMergedJobsFeed = () => {
 
   const handleCardAction = (job) => {
     if (job.__kind === 'internal') {
-      navigate(buildJobSeoPath('/portal/student/jobs', job));
+      navigate(buildJobSeoPath('/portal/student/jobs', job), { state: { job } });
       return;
     }
 
@@ -441,7 +441,9 @@ const StudentMergedJobsFeed = () => {
       // Ignore analytics failures so applying is never blocked.
     }
 
-    navigate(buildJobSeoPath('/portal/student/jobs', recommendation.job));
+    navigate(buildJobSeoPath('/portal/student/jobs', recommendation.job), {
+      state: { job: recommendation.job }
+    });
   };
 
   const handleSendDigest = async () => {

@@ -456,7 +456,7 @@ const StudentJobsPage = ({
     if (job?.__kind === 'internal') {
       const detailId = job.details_id || job.id;
       if (detailId) {
-        navigate(buildJobSeoPath(detailsPathBase, job));
+        navigate(buildJobSeoPath(detailsPathBase, job), { state: { job } });
       }
       return;
     }

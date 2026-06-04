@@ -307,6 +307,14 @@ const StudentApplicationsPage = () => {
                       companyName: app.companyName || app.job?.companyName
                     })
                     : '';
+                  const linkedJob = targetId
+                    ? {
+                      ...(app.job || {}),
+                      id: targetId,
+                      jobTitle: app.jobTitle || app.job?.jobTitle,
+                      companyName: app.companyName || app.job?.companyName
+                    }
+                    : null;
                   const currentStatus = String(app.status || 'applied').toLowerCase();
                   const progressStatus = getProgressStatus(currentStatus);
                   const progressIndex = getTimelineProgress(progressStatus);
@@ -364,7 +372,11 @@ const StudentApplicationsPage = () => {
                         </div>
 
                         {jobDetailPath ? (
-                          <Link to={jobDetailPath} className={`${studentSecondaryButtonClassName} min-h-8 shrink-0 px-3 py-1.5 text-xs`}>
+                          <Link
+                            to={jobDetailPath}
+                            state={linkedJob ? { job: linkedJob } : undefined}
+                            className={`${studentSecondaryButtonClassName} min-h-8 shrink-0 px-3 py-1.5 text-xs`}
+                          >
                             View job
                             <FiChevronRight size={13} />
                           </Link>

@@ -225,6 +225,7 @@ const StudentWorkspaceContent = ({ showSalaryExplorer = false, showPipeline = fa
                   <Link
                     key={job.id || job._id}
                     to={buildJobSeoPath('/portal/student/jobs', job)}
+                    state={{ job }}
                     className="rounded-[1.6rem] border border-slate-200 bg-white p-4 transition hover:border-brand-200 hover:shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-3">

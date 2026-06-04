@@ -420,7 +420,7 @@ const CompanyJobsPage = () => {
     }
 
     setResumeIntent(null);
-    navigate(getPortalJobPathByRole(userRole, job));
+    navigate(getPortalJobPathByRole(userRole, job), { state: { job } });
   };
 
   const handleCompanySubscription = async () => {
@@ -721,7 +721,9 @@ const CompanyJobsPage = () => {
                           );
                           return;
                         }
-                        navigate(getPortalJobPathByRole(userRole, nextIntent));
+                        navigate(getPortalJobPathByRole(userRole, nextIntent), {
+                          state: { job: nextIntent }
+                        });
                       }}
                       className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 via-amber-500 to-orange-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_36px_rgba(245,158,11,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(245,158,11,0.34)]"
                     >

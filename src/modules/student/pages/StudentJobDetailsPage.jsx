@@ -49,6 +49,9 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const jobLookupKey = String(jobParam || '').trim();
+  const routeStateJob = location.state?.job && typeof location.state.job === 'object'
+    ? location.state.job
+    : null;
   const user = getCurrentUser();
   const currentPath = useMemo(() => buildCurrentPath(location), [location]);
   const jobsListPath = publicMode && !user
@@ -93,6 +96,18 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
   };
 
   useEffect(() => {
+    if (jobLookupKey !== 'details' || !routeStateJob) return;
+
+    const canonicalPath = buildJobSeoPath(jobsListPath, routeStateJob);
+    if (canonicalPath && canonicalPath !== location.pathname) {
+      navigate(canonicalPath, {
+        replace: true,
+        state: { ...location.state, job: routeStateJob }
+      });
+    }
+  }, [jobLookupKey, jobsListPath, location.pathname, location.state, navigate, routeStateJob]);
+
+  useEffect(() => {
     let mounted = true;
 
     const load = async () => {
@@ -118,7 +133,10 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
         if (job) {
           const canonicalPath = buildJobSeoPath(jobsListPath, job);
           if (canonicalPath && location.pathname !== canonicalPath) {
-            navigate(canonicalPath, { replace: true });
+            navigate(canonicalPath, {
+              replace: true,
+              state: { ...location.state, job }
+            });
           }
         }
 
@@ -150,7 +168,7 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
     return () => {
       mounted = false;
     };
-  }, [jobLookupKey, jobsListPath, location.pathname, navigate, user?.id]);
+  }, [jobLookupKey, jobsListPath, location.pathname, location.state, navigate, user?.id]);
 
   const resolvedJobId = state.job?.id || state.job?._id || extractUuidFromSlug(jobLookupKey);
 

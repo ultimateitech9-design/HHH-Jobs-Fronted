@@ -188,7 +188,11 @@ const StudentSavedJobsPage = () => {
                     </div>
 
                     <div className="relative z-10 mt-6 flex flex-wrap gap-3 border-t border-slate-100 pt-5">
-                      <Link to={buildJobSeoPath('/portal/student/jobs', { ...job, id: jobId })} className={studentSecondaryButtonClassName}>
+                      <Link
+                        to={buildJobSeoPath('/portal/student/jobs', { ...job, id: jobId })}
+                        state={{ job: { ...job, id: jobId } }}
+                        className={studentSecondaryButtonClassName}
+                      >
                         View Details
                         <FiArrowRight size={14} />
                       </Link>
