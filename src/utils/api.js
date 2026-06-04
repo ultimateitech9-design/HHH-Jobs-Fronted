@@ -75,6 +75,7 @@ const looksLikeJwt = (token) => /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+
 
 const hasUsableApiToken = (token) =>
   Boolean(token)
+  && looksLikeJwt(token)
   && !/^(managed-|local-|pending-)/i.test(String(token))
   && isEmailVerifiedUser(getCurrentUser());
 
@@ -100,6 +101,8 @@ export const hasApiAccessToken = () => {
   const token = getToken();
   return hasUsableApiToken(token);
 };
+
+export const hasBackendAuthSession = () => hasApiAccessToken() || Boolean(buildDevUserHeader());
 
 export const apiFetch = async (path, options = {}) => {
   const token = getToken();
@@ -145,7 +148,7 @@ export const apiFetch = async (path, options = {}) => {
   }
   if (timeoutId) globalThis.clearTimeout(timeoutId);
 
-  if (shouldUseApiAuth && response.status === 401 && looksLikeJwt(token)) {
+  if (!skipAuth && token && getCurrentUser() && response.status === 401) {
     clearAuthSession();
   }
 
