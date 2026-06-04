@@ -1,5 +1,0 @@
-src\modules\admin\pages\AdminApplicationsPage.jsx:          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
-src\modules\admin\pages\AdminJobsPage.jsx:          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
-src\modules\admin\pages\AdminPaymentsPage.jsx:          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
-src\modules\admin\pages\AdminReportsPage.jsx:          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">
-src\modules\admin\pages\AdminUsersPage.jsx:          <h1 className="text-3xl font-extrabold font-heading text-primary tracking-tight mb-2 flex items-center gap-3">

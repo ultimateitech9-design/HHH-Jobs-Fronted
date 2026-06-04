@@ -1,1 +1,64 @@
-node_modules
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+coverage/
+.vite/
+
+# Environment and secrets
+.env
+.env.*
+!.env.sample
+!.env.template
+!.env.schema
+!.env.schema.json
+!.env.docs
+.envrc
+.direnv/
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+secrets/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Local reports and test artifacts
+playwright-report/
+test-results/
+.nyc_output/
+
+# Local scratch/debug files
+tmp-*/
+tmp-*.png
+tmp-*.jpg
+tmp-*.jpeg
+pw_log*.txt
+test_*.txt
+vite-preview-visual.log
+admin_headers.txt
+
+# Generated document exports
+docs/manuals/*.pdf
+
+# Editors and OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
