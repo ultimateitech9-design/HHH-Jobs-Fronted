@@ -20,6 +20,10 @@ import { Link } from 'react-router-dom';
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
 import usePlanAccess from '../../../shared/hooks/usePlanAccess';
 import { getHrJobs, getPricingPlans } from '../services/hrApi';
+import {
+  formatRoleTrialProgressLabel,
+  isUsableRoleSubscription
+} from '../../../shared/utils/roleSubscriptions';
 
 const hrNavItems = [
   { to: '/portal/hr/dashboard', label: 'Dashboard', icon: FiHome },
@@ -58,15 +62,8 @@ const formatPlanName = (value = '') => {
   return fallbackPlanNames[slug] || slug.replace(/^hr_/, '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const hasDisplayableSubscription = (subscription = null) => {
-  if (!subscription?.role_plan_slug) return false;
-  const status = String(subscription.status || '').toLowerCase();
-  if (['cancelled', 'canceled', 'expired'].includes(status)) return false;
-  if (subscription?.meta?.pendingAutopaySetup || status === 'pending') return false;
-  if (!subscription?.autopay_enabled && (status === 'trialing' || subscription?.meta?.isTrial)) return false;
-  if (!subscription.ends_at) return true;
-  return new Date(subscription.ends_at).getTime() >= Date.now();
-};
+const hasDisplayableSubscription = (subscription = null) =>
+  Boolean(subscription?.role_plan_slug) && isUsableRoleSubscription(subscription);
 
 const HrModuleLayout = () => {
   const { currentPlanConfig, isActive, loading, planName, subscription, isTrialing, trialDaysRemaining, subscriptionDaysRemaining } = usePlanAccess();
@@ -92,7 +89,7 @@ const HrModuleLayout = () => {
     : !displayableSubscription
       ? 'No active subscription'
       : (isTrialing || subscription?.meta?.isTrial)
-        ? `${trialDaysRemaining || subscriptionDaysRemaining || 0} trial days left`
+        ? formatRoleTrialProgressLabel(subscription, trialDaysRemaining || subscriptionDaysRemaining || 0)
         : isActive
           ? `${subscriptionDaysRemaining || 0} days left`
           : 'Plan selected, auto-pay pending';

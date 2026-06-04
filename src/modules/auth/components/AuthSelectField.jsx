@@ -1,7 +1,10 @@
-const AuthSelectField = ({ label, options = [], error, helper, className = '', ...selectProps }) => {
+const AuthSelectField = ({ label, options = [], error, helper, required = false, hideErrorText = false, className = '', ...selectProps }) => {
   return (
     <label className="grid h-fit content-start gap-1.5 text-sm font-semibold text-slate-700">
-      {label}
+      <span>
+        {label}
+        {required ? <span className="ml-1 text-amber-600">*</span> : null}
+      </span>
       <select
         {...selectProps}
         aria-invalid={Boolean(error)}
@@ -17,7 +20,7 @@ const AuthSelectField = ({ label, options = [], error, helper, className = '', .
           </option>
         ))}
       </select>
-      {error ? <span className="text-xs font-medium text-rose-600">{error}</span> : null}
+      {error && !hideErrorText ? <span className="text-xs font-medium text-rose-600">{error}</span> : null}
       {!error && helper ? <span className="text-xs font-medium text-slate-500">{helper}</span> : null}
     </label>
   );

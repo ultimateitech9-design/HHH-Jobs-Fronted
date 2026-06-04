@@ -79,6 +79,8 @@ const signupRoleButtons = [
   }
 ];
 
+const isRequiredSignupError = (value = '') => /required|select company sector|select company state|enter company city\/district|enter company location/i.test(String(value || ''));
+
 const SignupPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -639,12 +641,14 @@ const SignupPage = () => {
                 <div className="space-y-4">
                   <AuthInputField
                     label="Full name"
+                    required
                     type="text"
                     value={form.name}
                     onChange={(event) => handleChange('name', event.target.value)}
                     placeholder={form.role === 'hr' ? 'Enter contact person name' : 'What is your name?'}
                     disabled={isSubmitting || Boolean(socialLoading)}
                     error={fieldErrors.name}
+                    hideErrorText={isRequiredSignupError(fieldErrors.name)}
                     className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                   />
 
@@ -652,17 +656,20 @@ const SignupPage = () => {
                     <>
                       <AuthInputField
                         label="Company name"
+                        required={form.role === 'hr'}
                         type="text"
                         value={form.companyName}
                         onChange={(event) => handleChange('companyName', event.target.value)}
                         placeholder="Enter your company name"
                         disabled={isSubmitting || Boolean(socialLoading)}
                         error={fieldErrors.companyName}
+                        hideErrorText={isRequiredSignupError(fieldErrors.companyName)}
                         helper="This helps us set up your recruiter workspace."
                         className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                       />
                       <AuthSelectField
                         label="Company sector"
+                        required={form.role === 'hr'}
                         value={form.sectorId}
                         onChange={(event) => handleSectorSelect(event.target.value)}
                         options={[
@@ -671,12 +678,14 @@ const SignupPage = () => {
                         ]}
                         disabled={isSubmitting || Boolean(socialLoading)}
                         error={fieldErrors.sectorId}
+                        hideErrorText={isRequiredSignupError(fieldErrors.sectorId)}
                         className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] focus:!border-gold/60 focus:!bg-white"
                       />
                       <div className="grid gap-3 md:grid-cols-2">
                         {states.length > 0 ? (
                           <AuthSelectField
                             label="Company state"
+                            required={form.role === 'hr'}
                             value={form.stateId}
                             onChange={(event) => handleStateSelect(event.target.value)}
                             options={[
@@ -685,23 +694,27 @@ const SignupPage = () => {
                             ]}
                             disabled={isSubmitting || Boolean(socialLoading)}
                             error={fieldErrors.stateId}
+                            hideErrorText={isRequiredSignupError(fieldErrors.stateId)}
                             className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] focus:!border-gold/60 focus:!bg-white"
                           />
                         ) : (
                           <AuthInputField
                             label="Company state"
+                            required={form.role === 'hr'}
                             type="text"
                             value={form.stateName}
                             onChange={(event) => handleChange('stateName', event.target.value)}
                             placeholder="Enter company state"
                             disabled={isSubmitting || Boolean(socialLoading)}
                             error={fieldErrors.stateId}
+                            hideErrorText={isRequiredSignupError(fieldErrors.stateId)}
                             className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                           />
                         )}
                         {districts.length > 0 ? (
                           <AuthSelectField
                             label="City / district"
+                            required={form.role === 'hr'}
                             value={form.districtId}
                             onChange={(event) => handleDistrictSelect(event.target.value)}
                             options={[
@@ -710,29 +723,34 @@ const SignupPage = () => {
                             ]}
                             disabled={isSubmitting || Boolean(socialLoading)}
                             error={fieldErrors.districtName}
+                            hideErrorText={isRequiredSignupError(fieldErrors.districtName)}
                             className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] focus:!border-gold/60 focus:!bg-white"
                           />
                         ) : (
                           <AuthInputField
                             label="City / district"
+                            required={form.role === 'hr'}
                             type="text"
                             value={form.districtName}
                             onChange={(event) => handleChange('districtName', event.target.value)}
                             placeholder="Enter city or district"
                             disabled={isSubmitting || Boolean(socialLoading)}
                             error={fieldErrors.districtName}
+                            hideErrorText={isRequiredSignupError(fieldErrors.districtName)}
                             className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                           />
                         )}
                       </div>
                       <AuthInputField
                         label="Company location"
+                        required={form.role === 'hr'}
                         type="text"
                         value={form.location}
                         onChange={(event) => handleChange('location', event.target.value)}
                         placeholder="Office area, city, or full address"
                         disabled={isSubmitting || Boolean(socialLoading)}
                         error={fieldErrors.location}
+                        hideErrorText={isRequiredSignupError(fieldErrors.location)}
                         helper="Used for nearby job search and sales/support zone routing."
                         className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                       />
@@ -741,22 +759,26 @@ const SignupPage = () => {
 
                   <AuthInputField
                     label="Email ID"
+                    required
                     type="email"
                     value={form.email}
                     onChange={(event) => handleChange('email', event.target.value)}
                     placeholder="Tell us your Email ID"
                     disabled={isSubmitting || Boolean(socialLoading)}
                     error={fieldErrors.email}
+                    hideErrorText={isRequiredSignupError(fieldErrors.email)}
                     className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                   />
 
                   <AuthPasswordField
                     label="Password"
+                    required
                     value={form.password}
                     onChange={(event) => handleChange('password', event.target.value)}
                     placeholder="Create a secure password"
                     disabled={isSubmitting || Boolean(socialLoading)}
                     error={fieldErrors.password}
+                    hideErrorText={isRequiredSignupError(fieldErrors.password)}
                     helper={PASSWORD_POLICY_HELPER}
                     showPassword={showPassword}
                     onTogglePassword={() => setShowPassword((current) => !current)}
@@ -774,6 +796,7 @@ const SignupPage = () => {
                     />
                     <AuthInputField
                       label="Mobile number"
+                      required
                       type="tel"
                       inputMode="numeric"
                       value={form.mobile}
@@ -781,6 +804,7 @@ const SignupPage = () => {
                       placeholder={`Enter your ${selectedCountry.digits}-digit mobile number`}
                       disabled={isSubmitting || Boolean(socialLoading)}
                       error={fieldErrors.mobile}
+                      hideErrorText={isRequiredSignupError(fieldErrors.mobile)}
                       className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
                     />
                   </div>

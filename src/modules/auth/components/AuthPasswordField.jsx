@@ -4,6 +4,8 @@ const AuthPasswordField = ({
   label,
   error,
   helper,
+  required = false,
+  hideErrorText = false,
   showPassword,
   onTogglePassword,
   className = '',
@@ -11,7 +13,10 @@ const AuthPasswordField = ({
 }) => {
   return (
     <label className="grid h-fit content-start gap-1.5 text-sm font-semibold text-slate-700">
-      {label}
+      <span>
+        {label}
+        {required ? <span className="ml-1 text-amber-600">*</span> : null}
+      </span>
       <div
         className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 transition-all ${
           error
@@ -36,7 +41,7 @@ const AuthPasswordField = ({
           {showPassword ? <FiEyeOff size={17} /> : <FiEye size={17} />}
         </button>
       </div>
-      {error ? <span className="text-xs font-medium text-rose-600">{error}</span> : null}
+      {error && !hideErrorText ? <span className="text-xs font-medium text-rose-600">{error}</span> : null}
       {!error && helper ? <span className="text-xs font-medium text-slate-500">{helper}</span> : null}
     </label>
   );

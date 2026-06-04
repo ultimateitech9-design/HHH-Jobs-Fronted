@@ -38,6 +38,11 @@ import {
 import { openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpayCheckout';
 import { hrStarterPricing } from '../../../shared/config/pricingCatalog';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
+import {
+  formatRoleTrialProgressLabel,
+  isPendingRoleSubscriptionSetup,
+  isUsableRoleSubscription
+} from '../../../shared/utils/roleSubscriptions';
 
 const initialRoleCheckoutForm = {
   planSlug: '',
@@ -61,23 +66,9 @@ const isFreePlan = (plan = {}) => {
 const isDisabledPostingPlan = (plan = {}) => String(plan.slug || '').toLowerCase() === 'free';
 const buildHrApplicantsPath = (job = {}) => `${buildJobSeoPath('/portal/hr/jobs', job)}/applicants`;
 
-const isUsableRoleSubscription = (subscription = null) => {
-  if (!subscription) return false;
-  const status = String(subscription.status || '').toLowerCase();
-  if (!['active', 'trialing'].includes(status)) return false;
-  if (subscription?.meta?.pendingAutopaySetup || subscription?.meta?.pendingPlanChangeSetup) return false;
-  if (!subscription.autopay_enabled && (status === 'trialing' || subscription?.meta?.isTrial)) return false;
-  if (!subscription.ends_at) return true;
-  return new Date(subscription.ends_at).getTime() >= Date.now();
-};
-
 const isPendingAutopayRoleSubscription = (subscription = null) =>
   Boolean(subscription?.role_plan_slug)
-  && (
-    subscription?.meta?.pendingAutopaySetup
-    || String(subscription?.status || '').toLowerCase() === 'pending'
-    || (!subscription?.autopay_enabled && (String(subscription?.status || '').toLowerCase() === 'trialing' || subscription?.meta?.isTrial))
-  );
+  && isPendingRoleSubscriptionSetup(subscription);
 
 const getPlanPostingBuckets = (plan = {}, multiplier = 1) => {
   const buckets = plan?.meta?.jobPostingCredits || {};
@@ -361,6 +352,16 @@ const HrJobsPage = () => {
     () => isPendingAutopayRoleSubscription(currentRoleSubscription),
     [currentRoleSubscription]
   );
+  const currentTrialProgressLabel = useMemo(() => {
+    if (!currentRoleSubscription?.meta?.isTrial) return '';
+    const endsAt = currentRoleSubscription.trial_ends_at || currentRoleSubscription.ends_at;
+    if (!endsAt) return '';
+    const remainingDays = Math.max(
+      0,
+      Math.ceil((new Date(endsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    );
+    return formatRoleTrialProgressLabel(currentRoleSubscription, remainingDays);
+  }, [currentRoleSubscription]);
   const selectedRolePlanIsPendingSetup = useMemo(
     () => hasPendingAutopaySetup
       && String(currentRoleSubscription?.role_plan_slug || '').toLowerCase() === String(selectedRolePlan?.slug || '').toLowerCase(),
@@ -1192,7 +1193,7 @@ const HrJobsPage = () => {
                     {isPendingAutopayRoleSubscription(currentRoleSubscription)
                       ? 'Auto-pay must be authorised before this plan becomes active.'
                       : currentRoleSubscription?.meta?.isTrial
-                      ? `Trial until ${formatDateTime(currentRoleSubscription.trial_ends_at || currentRoleSubscription.ends_at)}`
+                      ? `${currentTrialProgressLabel || 'Trial active'}${currentRoleSubscription?.trial_ends_at || currentRoleSubscription?.ends_at ? ` • Valid till ${formatDateTime(currentRoleSubscription.trial_ends_at || currentRoleSubscription.ends_at)}` : ''}`
                       : (currentRoleSubscription?.ends_at
                         ? `Active until ${formatDateTime(currentRoleSubscription.ends_at)}`
                         : 'Choose a plan to unlock recruiter-side billing.')}
