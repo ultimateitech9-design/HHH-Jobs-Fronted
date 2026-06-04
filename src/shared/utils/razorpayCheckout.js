@@ -34,6 +34,11 @@ const loadRazorpayScript = () => {
 const normalizeRazorpaySession = (session = {}) => ({
   ...session,
   keyId: session.keyId || session.key_id || session.razorpayKeyId || session.razorpay_key_id || '',
+  requireLive: typeof session.requireLive === 'boolean'
+    ? session.requireLive
+    : typeof session.require_live === 'boolean'
+      ? session.require_live
+      : undefined,
   subscriptionId: session.subscriptionId || session.subscription_id || session.razorpaySubscriptionId || session.razorpay_subscription_id || '',
   localSubscriptionId: session.localSubscriptionId || session.local_subscription_id || '',
   shortUrl: session.shortUrl || session.short_url || ''
@@ -47,10 +52,11 @@ const isLocalCheckoutHost = () => {
   return host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local');
 };
 
-const assertRazorpayKeyAllowed = (keyId = '') => {
+const assertRazorpayKeyAllowed = (keyId = '', { requireLive } = {}) => {
   const normalizedKeyId = String(keyId || '').trim();
   const productionHost = !isLocalCheckoutHost();
-  if (productionHost && normalizedKeyId.startsWith('rzp_test_')) {
+  const mustUseLiveKey = typeof requireLive === 'boolean' ? requireLive : productionHost;
+  if (mustUseLiveKey && normalizedKeyId.startsWith('rzp_test_')) {
     throw new Error('Razorpay live key is required on production. Payment was not started.');
   }
 };
@@ -68,7 +74,7 @@ export const openRazorpaySubscriptionCheckout = async (session = {}) => {
   if (!normalizedSession.keyId) {
     throw new Error('Razorpay key is missing from checkout session.');
   }
-  assertRazorpayKeyAllowed(normalizedSession.keyId);
+  assertRazorpayKeyAllowed(normalizedSession.keyId, { requireLive: normalizedSession.requireLive });
 
   if (!normalizedSession.subscriptionId) {
     throw new Error('Razorpay subscription id is missing from checkout session.');
@@ -116,7 +122,7 @@ export const openRazorpayOrderCheckout = async (session = {}) => {
   if (!normalizedSession.keyId) {
     throw new Error('Razorpay key is missing from checkout session.');
   }
-  assertRazorpayKeyAllowed(normalizedSession.keyId);
+  assertRazorpayKeyAllowed(normalizedSession.keyId, { requireLive: normalizedSession.requireLive });
 
   if (!normalizedSession.orderId) {
     throw new Error('Razorpay order id is missing from checkout session.');
