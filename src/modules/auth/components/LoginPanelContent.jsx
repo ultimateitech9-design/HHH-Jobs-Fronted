@@ -169,7 +169,6 @@ const LoginPanelContent = ({
     beginPendingVerificationSession({
       email,
       emailWarning,
-      allowedLoginRoles: normalizedAllowedLoginRoles,
       role: normalizedRole,
       source: 'login'
     });
@@ -177,7 +176,6 @@ const LoginPanelContent = ({
       state: {
         email,
         emailWarning,
-        allowedLoginRoles: normalizedAllowedLoginRoles,
         role: normalizedRole,
         source: 'login'
       },
