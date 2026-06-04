@@ -679,7 +679,7 @@ export const getJobSectors = async () =>
 
 export const getStudentJobById = async (jobId) =>
   safeRequest({
-    path: `/jobs/${extractUuidFromSlug(jobId)}`,
+    path: `/jobs/${encodeURIComponent(extractSeoPathSegment(jobId))}`,
     emptyData: null,
     extract: (payload) => payload?.job || payload || null
   });

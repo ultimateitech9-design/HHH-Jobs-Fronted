@@ -48,7 +48,7 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
   const { jobId: jobParam } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const jobId = extractUuidFromSlug(jobParam);
+  const jobLookupKey = String(jobParam || '').trim();
   const user = getCurrentUser();
   const currentPath = useMemo(() => buildCurrentPath(location), [location]);
   const jobsListPath = publicMode && !user
@@ -107,7 +107,7 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
           : Promise.resolve({ data: [], error: '' });
 
         const [jobResponse, savedResponse, applicationsResponse] = await Promise.all([
-          getStudentJobById(jobId),
+          getStudentJobById(jobLookupKey),
           savedJobsRequest,
           applicationsRequest
         ]);
@@ -123,7 +123,7 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
         }
 
         const savedSet = new Set((savedResponse.data || []).map((item) => item.jobId || item.job_id));
-        const resolvedLoadedJobId = job?.id || job?._id || jobId;
+        const resolvedLoadedJobId = job?.id || job?._id || jobLookupKey;
         const matchedApplication = (applicationsResponse.data || []).find((item) =>
           String(item.jobId || item.job_id || item.job?.id || '') === String(resolvedLoadedJobId)
         ) || null;
@@ -150,9 +150,9 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
     return () => {
       mounted = false;
     };
-  }, [jobId, jobsListPath, location.pathname, navigate, user?.id]);
+  }, [jobLookupKey, jobsListPath, location.pathname, navigate, user?.id]);
 
-  const resolvedJobId = state.job?.id || state.job?._id || jobId;
+  const resolvedJobId = state.job?.id || state.job?._id || extractUuidFromSlug(jobLookupKey);
 
   const salaryLabel = useMemo(() => {
     if (!state.job) return '-';
