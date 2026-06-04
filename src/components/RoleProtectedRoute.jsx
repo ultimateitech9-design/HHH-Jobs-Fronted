@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import useAuthStore from '../core/auth/authStore';
 import { syncSessionUser } from '../core/auth/sessionSync';
 import { hasApiAccessToken, hasBackendAuthSession } from '../utils/api';
 import { clearAuthSession, getCurrentUser, hasRole, isAuthenticated } from '../utils/auth';
@@ -41,10 +42,13 @@ const ApiSessionRedirect = ({ to, state }) => {
 
 const RoleProtectedRoute = ({ roles, children }) => {
   const location = useLocation();
-  const [resolvedRole, setResolvedRole] = useState(() => getCurrentUser()?.role || null);
+  const authUser = useAuthStore((state) => state.user);
+  const authToken = useAuthStore((state) => state.token);
+  const initialUser = authUser || getCurrentUser();
+  const [resolvedRole, setResolvedRole] = useState(() => initialUser?.role || null);
   const [isSyncingRole, setIsSyncingRole] = useState(false);
-  const authenticated = isAuthenticated();
-  const currentUser = getCurrentUser();
+  const currentUser = authUser || getCurrentUser();
+  const authenticated = Boolean(authToken && currentUser) || isAuthenticated();
   const currentRole = currentUser?.role || null;
 
   useEffect(() => {
