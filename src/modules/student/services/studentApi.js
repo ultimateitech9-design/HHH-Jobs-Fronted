@@ -649,6 +649,7 @@ export const getStudentJobs = async (filters = {}) => {
     sectorName: filters.sectorName,
     category: filters.category,
     audience: filters.audience,
+    includeExpiredOpen: filters.includeExpiredOpen ?? true,
     includeUnapproved: filters.includeUnapproved ?? false,
     status: 'open'
   }).forEach(([key, value]) => {
