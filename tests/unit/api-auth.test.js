@@ -85,6 +85,39 @@ test('protected API 401 clears stale dashboard sessions', async () => {
   }
 });
 
+test('valid API sessions send bearer and proxy-safe auth headers', async () => {
+  setupBrowserGlobals();
+  const originalFetch = globalThis.fetch;
+  let requestHeaders = null;
+
+  globalThis.fetch = async (_url, init) => {
+    requestHeaders = init?.headers || {};
+    return new Response(JSON.stringify({ status: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  try {
+    const authModule = await import('../../src/utils/auth.js');
+    const apiModule = await import('../../src/utils/api.js');
+
+    authModule.setAuthSession('header.payload.signature', {
+      id: 'hr-user-proxy-header',
+      role: 'hr',
+      isEmailVerified: true
+    });
+
+    const response = await apiModule.apiFetch('/hr/dashboard');
+
+    assert.equal(response.status, 200);
+    assert.equal(requestHeaders.Authorization, 'Bearer header.payload.signature');
+    assert.equal(requestHeaders['X-HHH-Auth-Token'], 'header.payload.signature');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('passive auth refresh 401 does not destroy a fresh portal session', async () => {
   setupBrowserGlobals();
   const originalFetch = globalThis.fetch;

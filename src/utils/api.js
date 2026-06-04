@@ -129,6 +129,14 @@ export const apiFetch = async (path, options = {}) => {
     headers.Authorization = `Bearer ${token}`;
   }
 
+  if (
+    shouldUseApiAuth
+    && !headers['X-HHH-Auth-Token']
+    && !headers['x-hhh-auth-token']
+  ) {
+    headers['X-HHH-Auth-Token'] = token;
+  }
+
   const targetUrl = apiUrl(path);
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
   const timeoutId = controller && timeoutMs > 0 ? globalThis.setTimeout(() => controller.abort(), timeoutMs) : null;
