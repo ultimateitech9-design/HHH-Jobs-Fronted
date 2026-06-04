@@ -804,6 +804,19 @@ const HrJobsPage = () => {
       });
 
       if (response?.alreadyAuthorized) {
+        if (response.subscription) {
+          setCurrentRoleSubscription(response.subscription);
+          setRoleSubscriptions((current) => {
+            const next = current.filter((item) => item.id !== response.subscription.id);
+            return [response.subscription, ...next];
+          });
+        }
+        if (response.purchase) {
+          setRolePurchases((current) => {
+            const next = current.filter((item) => item.id !== response.purchase.id);
+            return [response.purchase, ...next];
+          });
+        }
         await loadRolePricingState();
         await loadPricingState();
         invalidatePlanAccessCache('hr');
