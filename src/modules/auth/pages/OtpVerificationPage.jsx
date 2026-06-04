@@ -55,6 +55,15 @@ const getVerificationSuccessDestination = ({ payloadRedirectTo = '', role = '' }
   return getRoleSafeRedirectPath(role);
 };
 
+const withVerifiedAuthFlags = (user = null) => {
+  if (!user) return null;
+  return {
+    ...user,
+    isEmailVerified: true,
+    is_email_verified: true
+  };
+};
+
 const OtpVerificationPage = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [notice, setNotice] = useState('');
@@ -271,7 +280,7 @@ const OtpVerificationPage = () => {
         return;
       }
 
-      const nextUser = payload.user?.role === 'student'
+      const nextUser = withVerifiedAuthFlags(payload.user?.role === 'student'
         ? {
           ...payload.user,
           studentCandidateId: payload.user?.studentCandidateId || generateStudentCandidateId({
@@ -287,12 +296,12 @@ const OtpVerificationPage = () => {
               mobile: payload.user?.mobile || payload.user?.phone || ''
             })
           }
-          : payload.user;
+          : payload.user);
 
       const destination = getVerificationSuccessDestination({
         payloadRedirectTo: payload.redirectTo,
         role: nextUser?.role
-      });
+      }) || getDashboardPathByRole(nextUser?.role);
 
       clearPendingVerificationSession();
       setAuthSession(payload.token, nextUser);
@@ -301,7 +310,7 @@ const OtpVerificationPage = () => {
       try {
         const payload = verifyLocalSignupOtp({ email, otp: otpCode });
 
-        const nextUser = payload.user?.role === 'student'
+        const nextUser = withVerifiedAuthFlags(payload.user?.role === 'student'
           ? {
             ...payload.user,
             studentCandidateId: payload.user?.studentCandidateId || generateStudentCandidateId({
@@ -317,12 +326,12 @@ const OtpVerificationPage = () => {
                 mobile: payload.user?.mobile || payload.user?.phone || ''
               })
             }
-            : payload.user;
+            : payload.user);
 
         const destination = getVerificationSuccessDestination({
           payloadRedirectTo: payload.redirectTo,
           role: nextUser?.role
-        });
+        }) || getDashboardPathByRole(nextUser?.role);
 
         clearPendingVerificationSession();
         setAuthSession(payload.token, nextUser);
