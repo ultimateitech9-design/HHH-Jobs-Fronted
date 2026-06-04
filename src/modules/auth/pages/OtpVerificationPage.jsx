@@ -41,30 +41,6 @@ const normalizeAllowedLoginRoles = (allowedLoginRoles = []) => (
     : []
 );
 
-const isRoleAllowedOnVerificationPage = (role, allowedLoginRoles = []) => {
-  const normalizedRole = normalizeRole(role);
-  if (!normalizedRole) return false;
-  if (!allowedLoginRoles.length) return true;
-  return allowedLoginRoles.includes(normalizedRole);
-};
-
-const buildPortalRoleErrorMessage = (allowedLoginRoles = []) => {
-  const includesStudentHrCampus =
-    allowedLoginRoles.includes('student')
-    && allowedLoginRoles.includes('hr')
-    && allowedLoginRoles.includes('campus_connect');
-
-  if (includesStudentHrCampus && allowedLoginRoles.length === 3) {
-    return 'This login page only allows Student, HR, and Campus Connect accounts. Use the dedicated management login page for management dashboards.';
-  }
-
-  if (allowedLoginRoles.includes('student') && allowedLoginRoles.includes('hr') && allowedLoginRoles.length === 2) {
-    return 'This login page only allows Student and HR accounts. Use the dedicated management login page for management dashboards.';
-  }
-
-  return 'This account is not allowed on the selected login page.';
-};
-
 const getRoleSafeRedirectPath = (role) => {
   const normalizedRole = normalizeRole(role);
   if (!normalizedRole) return '';
@@ -271,22 +247,10 @@ const OtpVerificationPage = () => {
     focusOtpInput(Math.min(pasted.length - 1, 5));
   };
 
-  const getBlockedPortalRoleError = () => {
-    if (!verificationRole || !allowedLoginRoles.length) return '';
-    if (isRoleAllowedOnVerificationPage(verificationRole, allowedLoginRoles)) return '';
-    return buildPortalRoleErrorMessage(allowedLoginRoles);
-  };
-
   const handleVerify = async () => {
     const otpCode = otp.join('');
     setNotice('');
     setError('');
-
-    const blockedPortalRoleError = getBlockedPortalRoleError();
-    if (blockedPortalRoleError) {
-      setError(blockedPortalRoleError);
-      return;
-    }
 
     if (otpCode.length !== 6) {
       setError('Enter the complete 6-digit OTP.');
@@ -330,11 +294,6 @@ const OtpVerificationPage = () => {
         role: nextUser?.role
       });
 
-      if (verificationRole && !isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
-        setError(buildPortalRoleErrorMessage(allowedLoginRoles));
-        return;
-      }
-
       clearPendingVerificationSession();
       setAuthSession(payload.token, nextUser);
       navigate(destination, { replace: true });
@@ -364,11 +323,6 @@ const OtpVerificationPage = () => {
           payloadRedirectTo: payload.redirectTo,
           role: nextUser?.role
         });
-
-        if (verificationRole && !isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
-          setError(buildPortalRoleErrorMessage(allowedLoginRoles));
-          return;
-        }
 
         clearPendingVerificationSession();
         setAuthSession(payload.token, nextUser);
