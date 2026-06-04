@@ -43,7 +43,6 @@ const RoleProtectedRoute = ({ roles, children }) => {
   const location = useLocation();
   const [resolvedRole, setResolvedRole] = useState(() => getCurrentUser()?.role || null);
   const [isSyncingRole, setIsSyncingRole] = useState(false);
-  const [sessionStatus, setSessionStatus] = useState('checking');
   const authenticated = isAuthenticated();
   const currentUser = getCurrentUser();
   const currentRole = currentUser?.role || null;
@@ -84,50 +83,6 @@ const RoleProtectedRoute = ({ roles, children }) => {
     };
   }, [authenticated, currentUser, roleAllowed]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const verifyPortalSession = async () => {
-      if (!authenticated) {
-        setSessionStatus('ready');
-        return;
-      }
-
-      if (!hasBackendAuthSession()) {
-        clearAuthSession();
-        setSessionStatus('invalid');
-        return;
-      }
-
-      if (!hasApiAccessToken()) {
-        setSessionStatus('ready');
-        return;
-      }
-
-      setSessionStatus('checking');
-      try {
-        const result = await syncSessionUser({ minIntervalMs: 15 * 1000 });
-        if (cancelled) return;
-        setResolvedRole(result?.user?.role || getCurrentUser()?.role || null);
-        setSessionStatus('ready');
-      } catch (error) {
-        if (cancelled) return;
-        if (error?.status === 401) {
-          clearAuthSession();
-          setSessionStatus('invalid');
-          return;
-        }
-        setSessionStatus('ready');
-      }
-    };
-
-    verifyPortalSession();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [authenticated, location.pathname]);
-
   if (!authenticated) {
     return (
       <Navigate
@@ -138,11 +93,7 @@ const RoleProtectedRoute = ({ roles, children }) => {
     );
   }
 
-  if (sessionStatus === 'checking') {
-    return null;
-  }
-
-  if (sessionStatus === 'invalid' || !hasBackendAuthSession()) {
+  if (!hasBackendAuthSession()) {
     return (
       <ApiSessionRedirect
         to={resolvePortalLoginPath(location.pathname)}

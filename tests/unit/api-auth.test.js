@@ -84,3 +84,37 @@ test('protected API 401 clears stale dashboard sessions', async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test('passive auth refresh 401 does not destroy a fresh portal session', async () => {
+  setupBrowserGlobals();
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    status: false,
+    message: 'User session is invalid'
+  }), {
+    status: 401,
+    headers: { 'Content-Type': 'application/json' }
+  });
+
+  try {
+    const authModule = await import('../../src/utils/auth.js');
+    const apiModule = await import('../../src/utils/api.js');
+
+    authModule.setAuthSession('header.payload.signature', {
+      id: 'hr-user-3',
+      role: 'hr',
+      isEmailVerified: true
+    });
+
+    const response = await apiModule.apiFetch('/auth/me', {
+      clearAuthOnUnauthorized: false
+    });
+
+    assert.equal(response.status, 401);
+    assert.equal(authModule.getToken(), 'header.payload.signature');
+    assert.equal(authModule.getCurrentUser()?.role, 'hr');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

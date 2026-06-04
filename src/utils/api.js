@@ -106,7 +106,13 @@ export const hasBackendAuthSession = () => hasApiAccessToken() || Boolean(buildD
 
 export const apiFetch = async (path, options = {}) => {
   const token = getToken();
-  const { timeoutMs = 0, signal: callerSignal, skipAuth = false, ...fetchOptions } = options;
+  const {
+    timeoutMs = 0,
+    signal: callerSignal,
+    skipAuth = false,
+    clearAuthOnUnauthorized = true,
+    ...fetchOptions
+  } = options;
   const shouldUseApiAuth = !skipAuth && hasUsableApiToken(token);
   const headers = { ...(fetchOptions.headers || {}) };
 
@@ -148,7 +154,7 @@ export const apiFetch = async (path, options = {}) => {
   }
   if (timeoutId) globalThis.clearTimeout(timeoutId);
 
-  if (!skipAuth && token && getCurrentUser() && response.status === 401) {
+  if (clearAuthOnUnauthorized && !skipAuth && token && getCurrentUser() && response.status === 401) {
     clearAuthSession();
   }
 

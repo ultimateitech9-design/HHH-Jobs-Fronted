@@ -67,7 +67,9 @@ export const syncSessionUser = async ({
   }
 
   inflightSessionSync = (async () => {
-    const response = await apiFetch('/auth/me');
+    const response = await apiFetch('/auth/me', {
+      clearAuthOnUnauthorized: false
+    });
     const payload = await response.json().catch(() => null);
 
     if (!response.ok) {
