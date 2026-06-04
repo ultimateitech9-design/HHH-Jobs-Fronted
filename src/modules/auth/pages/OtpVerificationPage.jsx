@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
 import {
   beginPendingVerificationSession,
-  clearPendingVerificationSession,
   getDashboardPathByRole,
   getPendingVerificationSession,
   getStoredUser,
@@ -57,11 +56,44 @@ const getVerificationSuccessDestination = ({ payloadRedirectTo = '', role = '' }
 
 const withVerifiedAuthFlags = (user = null) => {
   if (!user) return null;
+  const normalizedRole = normalizeRole(user.role);
   return {
     ...user,
+    role: normalizedRole || user.role || 'student',
     isEmailVerified: true,
     is_email_verified: true
   };
+};
+
+const buildVerifiedSessionUser = ({ payloadUser = null, fallbackRole = '', email = '' } = {}) => {
+  const role = normalizeRole(payloadUser?.role || fallbackRole) || 'student';
+  const baseUser = withVerifiedAuthFlags({
+    ...(payloadUser || {}),
+    email: payloadUser?.email || email,
+    role
+  });
+
+  if (role === 'student') {
+    return {
+      ...baseUser,
+      studentCandidateId: baseUser?.studentCandidateId || generateStudentCandidateId({
+        name: baseUser?.name || '',
+        mobile: baseUser?.mobile || baseUser?.phone || ''
+      })
+    };
+  }
+
+  if (role === 'retired_employee') {
+    return {
+      ...baseUser,
+      retiredEmployeeId: baseUser?.retiredEmployeeId || generateRetiredEmployeeId({
+        name: baseUser?.name || '',
+        mobile: baseUser?.mobile || baseUser?.phone || ''
+      })
+    };
+  }
+
+  return baseUser;
 };
 
 const OtpVerificationPage = () => {
@@ -280,60 +312,44 @@ const OtpVerificationPage = () => {
         return;
       }
 
-      const nextUser = withVerifiedAuthFlags(payload.user?.role === 'student'
-        ? {
-          ...payload.user,
-          studentCandidateId: payload.user?.studentCandidateId || generateStudentCandidateId({
-            name: payload.user?.name || '',
-            mobile: payload.user?.mobile || payload.user?.phone || ''
-          })
-        }
-        : payload.user?.role === 'retired_employee'
-          ? {
-            ...payload.user,
-            retiredEmployeeId: payload.user?.retiredEmployeeId || generateRetiredEmployeeId({
-              name: payload.user?.name || '',
-              mobile: payload.user?.mobile || payload.user?.phone || ''
-            })
-          }
-          : payload.user);
+      if (!payload.token) {
+        setError('OTP verified, but login session was not created. Please try signing in again.');
+        return;
+      }
+
+      const nextUser = buildVerifiedSessionUser({
+        payloadUser: payload.user,
+        fallbackRole: verificationRole,
+        email
+      });
 
       const destination = getVerificationSuccessDestination({
         payloadRedirectTo: payload.redirectTo,
         role: nextUser?.role
       }) || getDashboardPathByRole(nextUser?.role);
 
-      clearPendingVerificationSession();
       setAuthSession(payload.token, nextUser);
       navigate(destination, { replace: true });
     } catch (requestError) {
       try {
         const payload = verifyLocalSignupOtp({ email, otp: otpCode });
 
-        const nextUser = withVerifiedAuthFlags(payload.user?.role === 'student'
-          ? {
-            ...payload.user,
-            studentCandidateId: payload.user?.studentCandidateId || generateStudentCandidateId({
-              name: payload.user?.name || '',
-              mobile: payload.user?.mobile || payload.user?.phone || ''
-            })
-          }
-          : payload.user?.role === 'retired_employee'
-            ? {
-              ...payload.user,
-              retiredEmployeeId: payload.user?.retiredEmployeeId || generateRetiredEmployeeId({
-                name: payload.user?.name || '',
-                mobile: payload.user?.mobile || payload.user?.phone || ''
-              })
-            }
-            : payload.user);
+        if (!payload.token) {
+          setError('OTP verified, but login session was not created. Please try signing in again.');
+          return;
+        }
+
+        const nextUser = buildVerifiedSessionUser({
+          payloadUser: payload.user,
+          fallbackRole: verificationRole,
+          email
+        });
 
         const destination = getVerificationSuccessDestination({
           payloadRedirectTo: payload.redirectTo,
           role: nextUser?.role
         }) || getDashboardPathByRole(nextUser?.role);
 
-        clearPendingVerificationSession();
         setAuthSession(payload.token, nextUser);
         navigate(destination, { replace: true });
       } catch (fallbackError) {

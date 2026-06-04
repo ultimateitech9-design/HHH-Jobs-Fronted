@@ -101,6 +101,18 @@ const ADMIN_PORTAL_SWITCH_ROLES = Object.freeze([
   'campus_connect'
 ]);
 const ADMIN_ACCESS_ROLES = new Set(['admin', 'super_admin']);
+const ROLE_ALIASES = Object.freeze({
+  candidate: 'student',
+  jobseeker: 'student',
+  job_seeker: 'student',
+  student_candidate: 'student',
+  retired: 'retired_employee',
+  retired_professional: 'retired_employee',
+  campusconnect: 'campus_connect',
+  campus: 'campus_connect',
+  data_entry: 'dataentry',
+  superadmin: 'super_admin'
+});
 
 const notifyAuthChange = () => {
   if (typeof window !== 'undefined') {
@@ -237,9 +249,7 @@ export const isAuthenticated = () => Boolean(getToken() && getCurrentUser());
 export const normalizeRole = (role) => {
   const normalized = String(role || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
   if (!normalized) return null;
-  if (normalized === 'data_entry') return 'dataentry';
-  if (normalized === 'superadmin') return 'super_admin';
-  return normalized;
+  return ROLE_ALIASES[normalized] || normalized;
 };
 
 export const getUserRole = () => normalizeRole(getCurrentUser()?.role);

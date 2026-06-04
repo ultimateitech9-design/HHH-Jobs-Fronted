@@ -33,6 +33,10 @@ test('canonicalizes dashboard paths for portal redirects', async () => {
   const { authModule } = await setupAuthModule();
 
   assert.equal(authModule.getDashboardPathByRole('student'), '/portal/student/companies');
+  assert.equal(authModule.getDashboardPathByRole('candidate'), '/portal/student/companies');
+  assert.equal(authModule.getDashboardPathByRole('job-seeker'), '/portal/student/companies');
+  assert.equal(authModule.getDashboardPathByRole('student_candidate'), '/portal/student/companies');
+  assert.equal(authModule.getDashboardPathByRole('retired'), '/portal/student/companies');
   assert.equal(authModule.getDashboardPathByRole('hr'), '/portal/hr/dashboard');
   assert.equal(authModule.getDashboardPathByRole('platform'), '/portal/platform/dashboard');
   assert.equal(authModule.getDashboardPathByRole('audit'), '/portal/audit/dashboard');
@@ -44,6 +48,8 @@ test('canonicalizes dashboard paths for portal redirects', async () => {
   assert.equal(authModule.normalizeRedirectPath('/platform'), '/portal/platform/dashboard');
   assert.equal(authModule.normalizeRedirectPath('/audit/events'), '/portal/audit/events');
   assert.equal(authModule.normalizeRedirectPath('/portal/student/jobs'), '/portal/student/jobs');
+  assert.equal(authModule.normalizeRole('campus-connect'), 'campus_connect');
+  assert.equal(authModule.normalizeRole('data entry'), 'dataentry');
 });
 
 test('clears malformed auth sessions instead of leaving stale tokens', async () => {
