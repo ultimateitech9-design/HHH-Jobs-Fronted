@@ -27,6 +27,14 @@ import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 const FEED_PAGE_LIMIT = 50;
 const DEFAULT_JOBS_PER_PAGE = 15;
 const MAX_BACKGROUND_FEED_PAGES = 2;
+const RESPONSIVE_JOBS_PER_PAGE = [
+  { minWidth: 1700, count: 18 },
+  { minWidth: 1440, count: 15 },
+  { minWidth: 1200, count: 12 },
+  { minWidth: 900, count: 9 },
+  { minWidth: 640, count: 8 },
+  { minWidth: 0, count: 6 }
+];
 
 const makeDefaultFilters = (audience = '') => ({
   search: '',
@@ -75,6 +83,9 @@ const interleaveJobs = (internalJobs = [], externalJobs = []) => [
   ...[...internalJobs].sort(compareJobsByFreshness),
   ...[...externalJobs].sort(compareJobsByFreshness)
 ];
+
+const resolveJobsPerPageForViewport = (width = 0) =>
+  RESPONSIVE_JOBS_PER_PAGE.find((entry) => width >= entry.minWidth)?.count || DEFAULT_JOBS_PER_PAGE;
 
 const buildCompanySourceKey = (companyName = '') => {
   const normalized = String(companyName || '')
@@ -206,6 +217,27 @@ const StudentJobsPage = ({
     sectors: []
   });
   const [actionFeedback, setActionFeedback] = useState({ type: '', text: '', ctaTo: '', ctaLabel: '' });
+  const [responsiveJobsPerPage, setResponsiveJobsPerPage] = useState(() => {
+    if (typeof window === 'undefined') return jobsPerPage;
+    return resolveJobsPerPageForViewport(window.innerWidth);
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const syncJobsPerPage = () => {
+      setResponsiveJobsPerPage(resolveJobsPerPageForViewport(window.innerWidth));
+    };
+
+    syncJobsPerPage();
+    window.addEventListener('resize', syncJobsPerPage);
+    return () => window.removeEventListener('resize', syncJobsPerPage);
+  }, []);
+
+  const effectiveJobsPerPage = jobsPerPage === DEFAULT_JOBS_PER_PAGE
+    ? responsiveJobsPerPage
+    : jobsPerPage;
+
   useEffect(() => {
     setFilters(makeFiltersFromSearchParams(effectiveAudience, searchParams));
     setCurrentPage(1);
@@ -373,11 +405,11 @@ const StudentJobsPage = ({
   }, [effectiveAudience, filters]);
 
   const totalJobs = jobsState.jobs.length;
-  const totalPages = Math.max(1, Math.ceil(totalJobs / jobsPerPage));
+  const totalPages = Math.max(1, Math.ceil(totalJobs / effectiveJobsPerPage));
   const paginatedJobs = useMemo(() => {
-    const startIndex = (currentPage - 1) * jobsPerPage;
-    return jobsState.jobs.slice(startIndex, startIndex + jobsPerPage);
-  }, [currentPage, jobsPerPage, jobsState.jobs]);
+    const startIndex = (currentPage - 1) * effectiveJobsPerPage;
+    return jobsState.jobs.slice(startIndex, startIndex + effectiveJobsPerPage);
+  }, [currentPage, effectiveJobsPerPage, jobsState.jobs]);
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
@@ -558,7 +590,7 @@ const StudentJobsPage = ({
         <div className="space-y-4">
           {jobsState.loading ? (
             <div className="student-job-grid">
-              {Array.from({ length: jobsPerPage }, (_, index) => (
+              {Array.from({ length: effectiveJobsPerPage }, (_, index) => (
                 <ExternalJobCardSkeleton key={index} />
               ))}
             </div>
