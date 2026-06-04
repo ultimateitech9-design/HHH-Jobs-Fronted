@@ -110,15 +110,57 @@ export const buildSeoEntityPath = (basePath, id, ...parts) => {
 };
 
 export const buildJobSeoPath = (basePath, job = {}) => {
-  const title = job.jobTitle || job.job_title || job.title;
-  const company = job.companyName || job.company_name || job.company;
-  const location = job.cityName || job.city_name || job.jobLocation || job.job_location || job.location;
-  const rawSeoSlug = job.seoSlug || job.seo_slug;
-  const structuredSlug = joinCanonicalJobSlugParts(title, company, location);
-  const explicitSlug = joinCanonicalJobSlugParts(rawSeoSlug);
+  const nestedJob = job?.job && typeof job.job === 'object' ? job.job : {};
+  const title = job.jobTitle
+    || job.job_title
+    || job.title
+    || job.roleTitle
+    || nestedJob.jobTitle
+    || nestedJob.job_title
+    || nestedJob.title
+    || nestedJob.roleTitle;
+  const company = job.companyName
+    || job.company_name
+    || job.company
+    || nestedJob.companyName
+    || nestedJob.company_name
+    || nestedJob.company;
+  const location = job.cityName
+    || job.city_name
+    || job.jobLocation
+    || job.job_location
+    || job.location
+    || nestedJob.cityName
+    || nestedJob.city_name
+    || nestedJob.jobLocation
+    || nestedJob.job_location
+    || nestedJob.location;
+  const rawSeoSlug = job.seoSlug
+    || job.seo_slug
+    || job.slug
+    || nestedJob.seoSlug
+    || nestedJob.seo_slug
+    || nestedJob.slug;
+  const fallbackIdentifier = extractUuidFromSlug(
+    job.id
+      || job._id
+      || job.jobId
+      || job.job_id
+      || nestedJob.id
+      || nestedJob._id
+      || nestedJob.jobId
+      || nestedJob.job_id
+      || ''
+  );
+  const structuredSlug = [title, company, location].some(Boolean)
+    ? joinCanonicalJobSlugParts(title, company, location)
+    : '';
+  const explicitSlug = rawSeoSlug
+    ? joinCanonicalJobSlugParts(rawSeoSlug)
+    : '';
   const primarySlug = pickShortestNonEmptySlug(structuredSlug, explicitSlug);
 
-  return `${cleanBasePath(basePath)}/${primarySlug || 'details'}`;
+  return `${cleanBasePath(basePath)}/${primarySlug || fallbackIdentifier || 'details'}`;
 };
 
 export const buildCompanySeoPath = (basePath = '/companies', company = {}) =>

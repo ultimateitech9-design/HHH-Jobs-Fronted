@@ -26,3 +26,26 @@ test('buildCompanySeoPath prefers clean canonical company slugs', () => {
     '/companies/ultimate-itech-private-limited'
   );
 });
+
+test('buildJobSeoPath uses nested job fields before falling back to a generic details slug', () => {
+  assert.equal(
+    buildJobSeoPath('/portal/student/jobs', {
+      job: {
+        id: '6f0c1a3c-09ae-4070-8ea1-574819fa469a',
+        job_title: 'Data Processing Clerk',
+        company_name: 'Ultimate Itech',
+        job_location: 'Ghitorni, New Delhi'
+      }
+    }),
+    '/portal/student/jobs/data-processing-clerk-ultimate-itech-ghitorni-new-delhi'
+  );
+});
+
+test('buildJobSeoPath falls back to id when dashboard payload lacks seo fields', () => {
+  assert.equal(
+    buildJobSeoPath('/portal/student/jobs', {
+      id: '6f0c1a3c-09ae-4070-8ea1-574819fa469a'
+    }),
+    '/portal/student/jobs/6f0c1a3c-09ae-4070-8ea1-574819fa469a'
+  );
+});
