@@ -164,10 +164,23 @@ const LoginPanelContent = ({
     });
   }, [error]);
 
-  const redirectToOtpVerification = ({ email, emailWarning = '' }) => {
-    beginPendingVerificationSession({ email, emailWarning, allowedLoginRoles: normalizedAllowedLoginRoles });
+  const redirectToOtpVerification = ({ email, emailWarning = '', role = '' }) => {
+    const normalizedRole = normalizeRole(role);
+    beginPendingVerificationSession({
+      email,
+      emailWarning,
+      allowedLoginRoles: normalizedAllowedLoginRoles,
+      role: normalizedRole,
+      source: 'login'
+    });
     navigate('/verify-otp', {
-      state: { email, emailWarning, allowedLoginRoles: normalizedAllowedLoginRoles },
+      state: {
+        email,
+        emailWarning,
+        allowedLoginRoles: normalizedAllowedLoginRoles,
+        role: normalizedRole,
+        source: 'login'
+      },
       replace: true
     });
   };
@@ -200,9 +213,20 @@ const LoginPanelContent = ({
       }
 
       if (payload.requiresOtpVerification) {
+        const pendingVerificationRole = normalizeRole(payload.user?.role);
+        if (
+          pendingVerificationRole
+          && !isRoleAllowedOnLoginPage(pendingVerificationRole, normalizedAllowedLoginRoles)
+        ) {
+          clearAuthSession();
+          setError(buildPortalRoleErrorMessage(normalizedAllowedLoginRoles));
+          return;
+        }
+
         redirectToOtpVerification({
           email: form.email,
-          emailWarning: payload.emailWarning || ''
+          emailWarning: payload.emailWarning || '',
+          role: pendingVerificationRole
         });
         return;
       }

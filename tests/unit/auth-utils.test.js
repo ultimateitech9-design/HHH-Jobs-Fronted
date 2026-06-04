@@ -32,14 +32,14 @@ const setupAuthModule = async () => {
 test('canonicalizes dashboard paths for portal redirects', async () => {
   const { authModule } = await setupAuthModule();
 
-  assert.equal(authModule.getDashboardPathByRole('student'), '/portal/student/home');
+  assert.equal(authModule.getDashboardPathByRole('student'), '/portal/student/companies');
   assert.equal(authModule.getDashboardPathByRole('hr'), '/portal/hr/dashboard');
   assert.equal(authModule.getDashboardPathByRole('platform'), '/portal/platform/dashboard');
   assert.equal(authModule.getDashboardPathByRole('audit'), '/portal/audit/dashboard');
   assert.equal(authModule.getDashboardPathByRole('super_admin'), '/portal/super-admin/dashboard');
   assert.equal(authModule.getDashboardPathByRole('dataentry'), '/portal/dataentry/dashboard');
   assert.equal(authModule.getDashboardPathByRole('accounts'), '/portal/accounts/overview');
-  assert.equal(authModule.normalizeRedirectPath('/student'), '/portal/student/home');
+  assert.equal(authModule.normalizeRedirectPath('/student'), '/portal/student/companies');
   assert.equal(authModule.normalizeRedirectPath('/hr/analytics'), '/portal/hr/analytics');
   assert.equal(authModule.normalizeRedirectPath('/platform'), '/portal/platform/dashboard');
   assert.equal(authModule.normalizeRedirectPath('/audit/events'), '/portal/audit/events');
@@ -76,16 +76,20 @@ test('starts pending verification without leaving an authenticated session behin
   authModule.setAuthSession('valid-token', { id: 'user-1', role: 'student', isEmailVerified: true });
   authModule.beginPendingVerificationSession({
     email: '  Pending.User@example.com ',
-    otp: '12a34567',
-    emailWarning: 'Check mailbox'
+    emailWarning: 'Check mailbox',
+    role: ' HR ',
+    source: ' login ',
+    allowedLoginRoles: ['HR', 'student']
   });
 
   assert.equal(storage.getItem('job_portal_token'), null);
   assert.equal(storage.getItem('job_portal_user'), null);
   assert.deepEqual(authModule.getPendingVerificationSession(), {
     email: 'pending.user@example.com',
-    otp: '123456',
-    emailWarning: 'Check mailbox'
+    emailWarning: 'Check mailbox',
+    role: 'hr',
+    source: 'login',
+    allowedLoginRoles: ['hr', 'student']
   });
   assert.equal(authModule.isAuthenticated(), false);
 });

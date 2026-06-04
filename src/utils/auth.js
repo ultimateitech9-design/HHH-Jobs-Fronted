@@ -169,6 +169,8 @@ export const getPendingVerificationSession = () => {
   return {
     email,
     emailWarning: String(pendingSession.emailWarning || '').trim(),
+    role: normalizeRole(pendingSession.role),
+    source: String(pendingSession.source || '').trim().toLowerCase(),
     allowedLoginRoles: Array.isArray(pendingSession.allowedLoginRoles)
       ? pendingSession.allowedLoginRoles
         .map((role) => normalizeRole(role))
@@ -177,13 +179,21 @@ export const getPendingVerificationSession = () => {
   };
 };
 
-export const beginPendingVerificationSession = ({ email = '', emailWarning = '', allowedLoginRoles = [] } = {}) => {
+export const beginPendingVerificationSession = ({
+  email = '',
+  emailWarning = '',
+  allowedLoginRoles = [],
+  role = '',
+  source = ''
+} = {}) => {
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const normalizedAllowedLoginRoles = Array.isArray(allowedLoginRoles)
     ? allowedLoginRoles
       .map((role) => normalizeRole(role))
       .filter(Boolean)
     : [];
+  const normalizedRole = normalizeRole(role);
+  const normalizedSource = String(source || '').trim().toLowerCase();
 
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
@@ -192,6 +202,8 @@ export const beginPendingVerificationSession = ({ email = '', emailWarning = '',
     localStorage.setItem(PENDING_VERIFICATION_KEY, JSON.stringify({
       email: normalizedEmail,
       emailWarning: String(emailWarning || '').trim(),
+      role: normalizedRole,
+      source: normalizedSource,
       allowedLoginRoles: normalizedAllowedLoginRoles
     }));
   } else {

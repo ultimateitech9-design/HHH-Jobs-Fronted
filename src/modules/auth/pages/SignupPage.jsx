@@ -374,9 +374,19 @@ const SignupPage = () => {
   };
 
   const redirectToOtpVerification = ({ email, emailWarning = '' }) => {
-    beginPendingVerificationSession({ email, emailWarning });
+    beginPendingVerificationSession({
+      email,
+      emailWarning,
+      role: form.role,
+      source: 'signup'
+    });
     navigate('/verify-otp', {
-      state: { email, emailWarning },
+      state: {
+        email,
+        emailWarning,
+        role: form.role,
+        source: 'signup'
+      },
       replace: true
     });
   };

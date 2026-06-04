@@ -264,9 +264,19 @@ const CampusConnectRegisterPage = () => {
   };
 
   const redirectToOtpVerification = ({ email, emailWarning = '' }) => {
-    beginPendingVerificationSession({ email, emailWarning });
+    beginPendingVerificationSession({
+      email,
+      emailWarning,
+      role: 'campus_connect',
+      source: 'signup'
+    });
     navigate('/verify-otp', {
-      state: { email, emailWarning },
+      state: {
+        email,
+        emailWarning,
+        role: 'campus_connect',
+        source: 'signup'
+      },
       replace: true
     });
   };

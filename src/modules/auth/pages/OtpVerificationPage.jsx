@@ -121,18 +121,31 @@ const OtpVerificationPage = () => {
     || legacyPendingEmail
     || ''
   ).trim().toLowerCase();
+  const matchingPendingVerification = pendingVerification?.email === email ? pendingVerification : null;
   const emailWarning = String(
     location.state?.emailWarning
     || queryEmailWarning
-    || pendingVerification?.emailWarning
+    || matchingPendingVerification?.emailWarning
     || ''
   );
-  const allowedLoginRoles = normalizeAllowedLoginRoles(
+  const verificationRole = normalizeRole(
+    location.state?.role
+    || matchingPendingVerification?.role
+    || ''
+  );
+  const verificationSource = String(
+    location.state?.source
+    || matchingPendingVerification?.source
+    || ''
+  ).trim().toLowerCase();
+  const rawAllowedLoginRoles =
     location.state?.allowedLoginRoles
     || effectiveQueryAllowedLoginRoles
-    || pendingVerification?.allowedLoginRoles
-    || []
-  );
+    || matchingPendingVerification?.allowedLoginRoles
+    || [];
+  const allowedLoginRoles = verificationSource === 'signup'
+    ? []
+    : normalizeAllowedLoginRoles(rawAllowedLoginRoles);
   const allowedLoginRolesKey = allowedLoginRoles.join('|');
 
   useEffect(() => {
@@ -144,10 +157,12 @@ const OtpVerificationPage = () => {
     beginPendingVerificationSession({
       email,
       emailWarning,
+      role: verificationRole,
+      source: verificationSource,
       allowedLoginRoles: allowedLoginRolesKey ? allowedLoginRolesKey.split('|') : []
     });
     focusOtpInput(0);
-  }, [allowedLoginRolesKey, email, emailWarning, navigate]);
+  }, [allowedLoginRolesKey, email, emailWarning, navigate, verificationRole, verificationSource]);
 
   useEffect(() => {
     const normalizedWarning = String(emailWarning || '').trim();
@@ -256,10 +271,22 @@ const OtpVerificationPage = () => {
     focusOtpInput(Math.min(pasted.length - 1, 5));
   };
 
+  const getBlockedPortalRoleError = () => {
+    if (!verificationRole || !allowedLoginRoles.length) return '';
+    if (isRoleAllowedOnVerificationPage(verificationRole, allowedLoginRoles)) return '';
+    return buildPortalRoleErrorMessage(allowedLoginRoles);
+  };
+
   const handleVerify = async () => {
     const otpCode = otp.join('');
     setNotice('');
     setError('');
+
+    const blockedPortalRoleError = getBlockedPortalRoleError();
+    if (blockedPortalRoleError) {
+      setError(blockedPortalRoleError);
+      return;
+    }
 
     if (otpCode.length !== 6) {
       setError('Enter the complete 6-digit OTP.');
@@ -303,7 +330,7 @@ const OtpVerificationPage = () => {
         role: nextUser?.role
       });
 
-      if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
+      if (verificationRole && !isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
         setError(buildPortalRoleErrorMessage(allowedLoginRoles));
         return;
       }
@@ -338,7 +365,7 @@ const OtpVerificationPage = () => {
           role: nextUser?.role
         });
 
-        if (!isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
+        if (verificationRole && !isRoleAllowedOnVerificationPage(nextUser?.role, allowedLoginRoles)) {
           setError(buildPortalRoleErrorMessage(allowedLoginRoles));
           return;
         }
@@ -379,7 +406,13 @@ const OtpVerificationPage = () => {
 
       setCounter(60);
       setNotice('A fresh OTP is on the way. Check your inbox and spam folder.');
-      beginPendingVerificationSession({ email, emailWarning: '', allowedLoginRoles });
+      beginPendingVerificationSession({
+        email,
+        emailWarning: '',
+        allowedLoginRoles,
+        role: verificationRole,
+        source: verificationSource
+      });
       setOtp(['', '', '', '', '', '']);
       focusOtpInput(0);
     } catch (requestError) {
@@ -387,7 +420,13 @@ const OtpVerificationPage = () => {
         resendLocalSignupOtp(email);
         setCounter(60);
         setNotice('A fresh OTP has been generated for this session.');
-        beginPendingVerificationSession({ email, emailWarning: '', allowedLoginRoles });
+        beginPendingVerificationSession({
+          email,
+          emailWarning: '',
+          allowedLoginRoles,
+          role: verificationRole,
+          source: verificationSource
+        });
         setOtp(['', '', '', '', '', '']);
         focusOtpInput(0);
       } catch (fallbackError) {
