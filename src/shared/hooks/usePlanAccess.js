@@ -20,6 +20,27 @@ import {
 
 const cache = {};
 const CACHE_TTL = 5 * 60 * 1000;
+const PLAN_ACCESS_INVALIDATED_EVENT = 'hhh:plan-access-invalidated';
+
+const invalidatePlanAccessCacheEntry = (audienceRole = '') => {
+  if (audienceRole) {
+    cache[audienceRole] = { data: null, timestamp: 0, loading: false };
+    return;
+  }
+
+  Object.keys(cache).forEach((key) => {
+    cache[key] = { data: null, timestamp: 0, loading: false };
+  });
+};
+
+export const invalidatePlanAccessCache = (audienceRole = '') => {
+  invalidatePlanAccessCacheEntry(audienceRole);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(PLAN_ACCESS_INVALIDATED_EVENT, {
+      detail: { audienceRole }
+    }));
+  }
+};
 
 export const usePlanAccess = () => {
   const user = getCurrentUser();
@@ -68,6 +89,20 @@ export const usePlanAccess = () => {
     fetchSubscription();
   }, [fetchSubscription]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const handleInvalidation = (event) => {
+      const targetAudienceRole = event?.detail?.audienceRole || '';
+      if (targetAudienceRole && targetAudienceRole !== audienceRole) return;
+      invalidatePlanAccessCacheEntry(audienceRole);
+      fetchSubscription();
+    };
+
+    window.addEventListener(PLAN_ACCESS_INVALIDATED_EVENT, handleInvalidation);
+    return () => window.removeEventListener(PLAN_ACCESS_INVALIDATED_EVENT, handleInvalidation);
+  }, [audienceRole, fetchSubscription]);
+
   const currentPlanSlug = subscription?.role_plan_slug || 'free';
   const currentTier = PLAN_TIERS[currentPlanSlug] || 0;
   const planName = subscription?.plan_name || currentPlanSlug;
@@ -94,9 +129,7 @@ export const usePlanAccess = () => {
   }, [audienceRole]);
 
   const refresh = useCallback(() => {
-    if (audienceRole) {
-      cache[audienceRole] = { data: null, timestamp: 0, loading: false };
-    }
+    invalidatePlanAccessCacheEntry(audienceRole);
     return fetchSubscription();
   }, [audienceRole, fetchSubscription]);
 

@@ -37,6 +37,7 @@ import {
 } from '../services/hrApi';
 import { openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpayCheckout';
 import { hrStarterPricing } from '../../../shared/config/pricingCatalog';
+import { invalidatePlanAccessCache } from '../../../shared/hooks/usePlanAccess';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 import {
   formatRoleTrialProgressLabel,
@@ -805,6 +806,7 @@ const HrJobsPage = () => {
       if (response?.alreadyAuthorized) {
         await loadRolePricingState();
         await loadPricingState();
+        invalidatePlanAccessCache('hr');
         setMessage(response?.mode === 'coupon_free_trial'
           ? 'Free trial activated with coupon. No Razorpay payment is required for this trial.'
           : response?.mode === 'zero_amount_checkout'
@@ -844,6 +846,7 @@ const HrJobsPage = () => {
 
         await loadRolePricingState();
         await loadPricingState();
+        invalidatePlanAccessCache('hr');
         setMessage(hasExistingRecruiterPlan
           ? `Recruiter plan ${selectedRolePlanChangeType === 'downgrade' ? 'downgraded' : selectedRolePlanChangeType === 'upgrade' ? 'upgraded' : 'changed'} successfully. No new trial was applied.`
           : 'HR trial is active and Razorpay auto-pay is now enabled for renewal.');
@@ -857,6 +860,7 @@ const HrJobsPage = () => {
 
       await loadRolePricingState();
       await loadPricingState();
+      invalidatePlanAccessCache('hr');
       setMessage(
         response?.purchase?.status === 'paid'
           ? 'Recruiter plan activated successfully.'

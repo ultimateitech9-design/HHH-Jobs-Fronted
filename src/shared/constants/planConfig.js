@@ -302,7 +302,8 @@ export const isSubscriptionActive = (subscription) => {
 
 export const isTrialing = (subscription) => {
   if (!subscription) return false;
-  return String(subscription.status || '').toLowerCase() === 'trialing';
+  const status = String(subscription.status || '').toLowerCase();
+  return status === 'trialing' || (status === 'active' && Boolean(subscription.meta?.isTrial));
 };
 
 export const getTrialRemainingDays = (subscription) => {
