@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
+import useAuthStore from '../../../core/auth/authStore';
 import {
   beginPendingVerificationSession,
   getDashboardPathByRole,
@@ -9,8 +10,7 @@ import {
   isRedirectPathAllowedForRole,
   isEmailVerifiedUser,
   normalizeRole,
-  normalizeRedirectPath,
-  setAuthSession
+  normalizeRedirectPath
 } from '../../../utils/auth';
 import { generateRetiredEmployeeId, generateStudentCandidateId } from '../../../utils/hrIdentity';
 import { resendLocalSignupOtp, verifyLocalSignupOtp } from '../../../utils/localAuthFallback';
@@ -105,6 +105,7 @@ const OtpVerificationPage = () => {
   const inputRefs = useRef([]);
   const navigate = useNavigate();
   const location = useLocation();
+  const setAuthData = useAuthStore((state) => state.setAuthData);
   const focusOtpInput = (index) => {
     requestAnimationFrame(() => {
       const nextInput = inputRefs.current[index];
@@ -328,7 +329,7 @@ const OtpVerificationPage = () => {
         role: nextUser?.role
       }) || getDashboardPathByRole(nextUser?.role);
 
-      setAuthSession(payload.token, nextUser);
+      setAuthData(payload.token, nextUser);
       navigate(destination, { replace: true });
     } catch (requestError) {
       try {
@@ -350,7 +351,7 @@ const OtpVerificationPage = () => {
           role: nextUser?.role
         }) || getDashboardPathByRole(nextUser?.role);
 
-        setAuthSession(payload.token, nextUser);
+        setAuthData(payload.token, nextUser);
         navigate(destination, { replace: true });
       } catch (fallbackError) {
         setError(fallbackError.message || 'Unable to verify OTP right now.');
