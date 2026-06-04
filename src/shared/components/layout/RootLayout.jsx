@@ -1,8 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../../core/auth/authStore';
-import { syncSessionUser } from '../../../core/auth/sessionSync';
-import { apiFetch, hasApiAccessToken } from '../../../utils/api';
+import { apiFetch } from '../../../utils/api';
 import { getDashboardPathByRole } from '../../../utils/auth';
 import { useDeferredMount } from '../../hooks/useDeferredMount';
 import {
@@ -47,25 +46,6 @@ const RootLayout = () => {
   useEffect(() => {
     document.documentElement.dataset.shell = isPortalWorkbench ? 'portal' : 'public';
   }, [isPortalWorkbench]);
-
-  useEffect(() => {
-    const refreshHeaderUser = async () => {
-      if (!userId || !hasApiAccessToken()) return;
-
-      try {
-        await syncSessionUser({ minIntervalMs: 3 * 60 * 1000 });
-      } catch {
-        // Ignore passive header refresh failures.
-      }
-    };
-
-    refreshHeaderUser();
-    window.addEventListener('focus', refreshHeaderUser);
-
-    return () => {
-      window.removeEventListener('focus', refreshHeaderUser);
-    };
-  }, [userId]);
 
   useEffect(() => {
     if (isPortalWorkbench || isAuthorizedMaintenanceUser) {
