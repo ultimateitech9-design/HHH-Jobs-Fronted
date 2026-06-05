@@ -88,7 +88,7 @@ export const openRazorpaySubscriptionCheckout = async (session = {}) => {
         key: normalizedSession.keyId,
         subscription_id: normalizedSession.subscriptionId,
         name: normalizedSession.name || 'HHH Jobs',
-        description: normalizedSession.description || 'Pay ₹1 to authorise auto-pay after your trial period.',
+        description: normalizedSession.description || 'Enable auto-pay after your trial period.',
         image: getCheckoutImage(normalizedSession.image),
         prefill: normalizedSession.prefill || {},
         notes: normalizedSession.notes || {},
