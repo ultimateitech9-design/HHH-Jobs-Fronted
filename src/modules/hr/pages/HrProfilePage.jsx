@@ -65,6 +65,26 @@ const mergeProfileForm = (...sources) => (
   }, { ...EMPTY_HR_PROFILE_FORM })
 );
 
+const mergeUserWithProfile = (user = {}, profile = {}) => ({
+  ...user,
+  companyName: profile.companyName || user.companyName,
+  companyWebsite: profile.companyWebsite || user.companyWebsite,
+  companySize: profile.companySize || user.companySize,
+  industryType: profile.industryType || user.industryType,
+  sectorId: profile.sectorId || user.sectorId,
+  sectorName: profile.sectorName || user.sectorName,
+  foundedYear: profile.foundedYear || user.foundedYear,
+  companyType: profile.companyType || user.companyType,
+  location: profile.location || user.location,
+  stateId: profile.stateId || user.stateId,
+  stateName: profile.stateName || user.stateName,
+  districtId: profile.districtId || user.districtId,
+  districtName: profile.districtName || user.districtName,
+  about: profile.about || user.about,
+  logoUrl: profile.logoUrl || user.logoUrl,
+  hrEmployerId: user.hrEmployerId
+});
+
 const HrProfilePage = () => {
   const currentUser = getCurrentUser();
   const [form, setForm] = useState(EMPTY_HR_PROFILE_FORM);
@@ -90,10 +110,14 @@ const HrProfilePage = () => {
       if (!mounted) return;
 
       const nextProfile = mergeProfileForm(
-        buildProfileFallbackFromUser(currentUser),
-        response.data
+        response.data,
+        buildProfileFallbackFromUser(currentUser)
       );
       setForm(nextProfile);
+      const token = getToken();
+      if (token && currentUser) {
+        setAuthSession(token, mergeUserWithProfile(currentUser, nextProfile));
+      }
       setSectors(sectorsResponse.data || []);
       setStates(statesResponse.data || []);
       if (nextProfile.stateId) {
@@ -171,21 +195,7 @@ const HrProfilePage = () => {
       setForm(updated);
       const token = getToken();
       if (token && currentUser) {
-        setAuthSession(token, {
-          ...currentUser,
-          companyName: updated.companyName || currentUser.companyName,
-          companyWebsite: updated.companyWebsite || currentUser.companyWebsite,
-          companySize: updated.companySize || currentUser.companySize,
-          industryType: updated.industryType || currentUser.industryType,
-          sectorId: updated.sectorId || currentUser.sectorId,
-          sectorName: updated.sectorName || currentUser.sectorName,
-          location: updated.location || currentUser.location,
-          stateId: updated.stateId || currentUser.stateId,
-          stateName: updated.stateName || currentUser.stateName,
-          districtId: updated.districtId || currentUser.districtId,
-          districtName: updated.districtName || currentUser.districtName,
-          hrEmployerId: currentUser?.hrEmployerId
-        });
+        setAuthSession(token, mergeUserWithProfile(currentUser, updated));
       }
       setSuccess('Company profile updated successfully.');
       setTimeout(() => setSuccess(''), 3000); // Clear success message after 3s
