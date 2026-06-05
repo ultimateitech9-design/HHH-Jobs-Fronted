@@ -40,13 +40,13 @@ export default function CampusProfilePage() {
       if (data && Object.keys(data).length > 0) {
         setForm({
           name: data.name || '',
-          city: data.city || '',
-          state: data.state || '',
+          city: data.city || data.district_name || data.districtName || '',
+          state: data.state || data.state_name || data.stateName || '',
           affiliation: data.affiliation || '',
           establishedYear: data.established_year || '',
           website: data.website || '',
-          contactEmail: data.contact_email || '',
-          contactPhone: data.contact_phone || '',
+          contactEmail: data.contact_email || data.contactEmail || data.email || '',
+          contactPhone: data.contact_phone || data.contactPhone || data.mobile || '',
           about: data.about || '',
           placementOfficerName: data.placement_officer_name || '',
           logoUrl: data.logo_url || ''

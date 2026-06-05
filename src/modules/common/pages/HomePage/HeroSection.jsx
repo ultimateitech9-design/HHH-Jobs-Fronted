@@ -7,11 +7,6 @@ import { normalizeRole } from '../../../../utils/auth';
 
 const trustBadges = ['Verified Jobs', 'AI Matching', 'Free to Apply'];
 const quickTags = ['Remote', 'Full-time', 'Internship', 'Part-time', 'Freelance'];
-const statItems = [
-  { label: 'Active jobs', value: '50,000+' },
-  { label: 'Companies hiring', value: '10,000+' },
-  { label: 'Verified listings', value: '98%' }
-];
 const heroActionButtonClass =
   'inline-flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-1';
 
@@ -20,12 +15,28 @@ const canShowDesktopVisual = () =>
   && typeof window.matchMedia === 'function'
   && window.matchMedia('(min-width: 1024px)').matches;
 
-export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipClick }) {
+const formatLiveCount = (value) => {
+  if (value === null || value === undefined || value === '') return '--';
+  const count = Number(value);
+  if (!Number.isFinite(count)) return '--';
+  return new Intl.NumberFormat('en-IN').format(Math.max(0, count));
+};
+
+const buildStatItems = (stats = {}) => [
+  { label: 'Active jobs', value: formatLiveCount(stats.openJobs) },
+  { label: 'Companies hiring', value: formatLiveCount(stats.companies) },
+  { label: 'Job categories', value: formatLiveCount(stats.roles) }
+];
+
+export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipClick, stats = {} }) {
   const user = useAuthStore((state) => state.user);
   const [showDesktopVisual, setShowDesktopVisual] = useState(canShowDesktopVisual);
   const isHrUser = normalizeRole(user?.role) === 'hr';
   const hrJobsPath = '/portal/hr/jobs';
   const postJobPath = isHrUser ? hrJobsPath : '/login/hr';
+  const statItems = buildStatItems(stats);
+  const activeJobsLabel = formatLiveCount(stats.openJobs);
+  const companiesLabel = formatLiveCount(stats.companies);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
@@ -45,7 +56,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
           <div className="home-hero__content">
             <div className="home-hero__badge inline-flex items-center gap-2 rounded-full border border-navy/10 bg-navy/5 px-4 py-1.5 text-sm font-semibold text-navy">
               <span className="h-2 w-2 rounded-full bg-gold" />
-              Trusted by 10,000+ companies
+              {companiesLabel === '--' ? 'Live hiring network' : `${companiesLabel} companies hiring`}
             </div>
 
             <h1 className="home-hero__title mt-4 font-heading text-3xl font-bold leading-[1.05] text-navy sm:text-4xl lg:text-[3rem]">
@@ -159,7 +170,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
                 width="576"
                 height="520"
                 decoding="async"
-                fetchPriority="high"
+                fetchpriority="high"
                 className="relative z-10 max-h-[520px] w-full rounded-[30px] border border-gold/10 object-cover shadow-strong"
               />
 
@@ -169,8 +180,8 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
                     <Briefcase className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-900">2,500+ Jobs</p>
-                    <p className="text-xs text-slate-500">Added this week</p>
+                    <p className="text-sm font-bold text-slate-900">{activeJobsLabel} Jobs</p>
+                    <p className="text-xs text-slate-500">Live in database</p>
                   </div>
                 </div>
               </div>
@@ -178,7 +189,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               <div className="absolute -right-3 -top-3 z-20 rounded-3xl border border-slate-200 bg-white px-4 py-2.5 shadow-strong">
                 <div className="flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-success-500" />
-                  <p className="text-sm font-bold text-slate-900">98% Verified</p>
+                  <p className="text-sm font-bold text-slate-900">Live listings</p>
                 </div>
               </div>
 
@@ -188,8 +199,8 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
                     <Users className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-900">10K+ Hired</p>
-                    <p className="text-[10px] text-slate-500">This month</p>
+                    <p className="text-xs font-bold text-slate-900">{companiesLabel} Companies</p>
+                    <p className="text-[10px] text-slate-500">Hiring now</p>
                   </div>
                 </div>
               </div>

@@ -1,14 +1,21 @@
 import { motion } from 'framer-motion';
 import StatCounter from './StatCounter';
 
-const stats = [
-  { end: 50000, label: 'Active Job Listings', suffix: '+' },
-  { end: 10000, label: 'Companies Hiring', suffix: '+' },
-  { end: 500000, label: 'Registered Users', suffix: '+' },
-  { end: 98, label: 'Verified Jobs', suffix: '%' }
+const toLiveNumber = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, number) : 0;
+};
+
+const buildStats = (totals = {}) => [
+  { end: toLiveNumber(totals.openJobs), label: 'Active Job Listings', suffix: '' },
+  { end: toLiveNumber(totals.companies), label: 'Companies Hiring', suffix: '' },
+  { end: toLiveNumber(totals.roles), label: 'Job Categories', suffix: '' },
+  { end: toLiveNumber(totals.cities), label: 'Hiring Cities', suffix: '' }
 ];
 
-export function StatsSection() {
+export function StatsSection({ totals = {} }) {
+  const stats = buildStats(totals);
+
   return (
     <section className="gradient-primary relative overflow-hidden py-20">
       <motion.div

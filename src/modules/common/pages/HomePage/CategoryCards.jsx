@@ -56,7 +56,6 @@ export function CategoryCards({ selectedCategory, onCategorySelect, onBrowseAll 
                     <Icon size={24} />
                   </div>
                   <h3 className="font-heading font-semibold text-slate-900">{category.title}</h3>
-                  <p className="mt-1 text-sm text-slate-500">{category.count}</p>
                   <p className="mt-3 text-xs text-slate-500">{formatCategoryHint(category.keywords)}</p>
                 </div>
               </article>

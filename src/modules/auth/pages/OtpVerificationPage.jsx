@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { apiFetch, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
+import { apiFetch, areDemoFallbacksEnabled, AUTH_REQUEST_TIMEOUT_MS } from '../../../utils/api';
 import useAuthStore from '../../../core/auth/authStore';
 import {
   beginPendingVerificationSession,
@@ -334,7 +334,7 @@ const OtpVerificationPage = () => {
       setAuthData(payload.token, nextUser);
       navigate(destination, { replace: true });
     } catch (requestError) {
-      if (verificationRole === 'hr') {
+      if (!areDemoFallbacksEnabled()) {
         setError(requestError.message || 'Unable to verify OTP right now. Please try again.');
         return;
       }
@@ -405,6 +405,11 @@ const OtpVerificationPage = () => {
       setOtp(['', '', '', '', '', '']);
       focusOtpInput(0);
     } catch (requestError) {
+      if (!areDemoFallbacksEnabled()) {
+        setError(normalizeOtpErrorMessage(requestError.message || 'Network error while resending OTP.'));
+        return;
+      }
+
       try {
         resendLocalSignupOtp(email);
         setCounter(60);

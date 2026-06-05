@@ -64,7 +64,7 @@ function SkeletonCard() {
 const getJobExcerpt = (job = {}) => {
   const excerpt = String(job.description || '').trim();
   if (!excerpt) {
-    return 'Clearer role expectations, verified employer visibility, and faster application movement.';
+    return 'Role details are available from the hiring source.';
   }
   return excerpt.length > 150 ? `${excerpt.slice(0, 147).trimEnd()}...` : excerpt;
 };
@@ -252,29 +252,29 @@ export function FeaturedJobs({
                     </div>
 
                     <h3 className="line-clamp-2 font-sans text-[0.88rem] font-medium leading-[1.15rem] text-slate-900 transition-colors group-hover:text-brand-700">
-                      {job.jobTitle || 'Open Role'}
+                      {job.jobTitle || 'Role title not provided'}
                     </h3>
-                    <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500">{job.companyName || 'Hiring Company'}</p>
+                    <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500">{job.companyName || 'Company not provided'}</p>
                     <p className="mt-1.5 line-clamp-2 text-[11px] leading-[18px] text-slate-600">{getJobExcerpt(job)}</p>
 
                     <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-[10.5px] text-slate-500">
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {job.jobLocation || 'India'}
+                        {job.jobLocation || 'Location not provided'}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock3 className="h-3 w-3" />
-                        {job.jobType || job.employmentType || 'Full-time'}
+                        {job.jobType || job.employmentType || 'Type not provided'}
                       </span>
                       <span className="flex items-center gap-1">
                         <Briefcase className="h-3 w-3" />
-                        {job.experienceLevel || 'Competitive'}
+                        {job.experienceLevel || 'Experience not provided'}
                       </span>
                     </div>
 
                     <div className="mt-2.5 flex items-center justify-between border-t border-slate-200/90 pt-2">
                       <span className="text-[10.5px] text-slate-500">
-                        {job.sourceType === 'external' ? 'Live-feed role' : job.isFallback ? 'Verified fallback role' : 'Recently updated'}
+                        {job.sourceType === 'external' ? 'Live-feed role' : 'Recently updated'}
                       </span>
                       <Link to={getJobHref(job, isStudentViewer, currentUser)}>
                         <span className="inline-flex items-center gap-1 text-[12px] font-medium text-brand-700 transition-transform hover:translate-x-1">

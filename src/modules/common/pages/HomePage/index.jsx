@@ -1,13 +1,10 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../../../utils/api';
 import { useDeferredMount } from '../../../../shared/hooks/useDeferredMount';
 
 import { HeroSection } from './HeroSection';
-import { fallbackFeaturedJobs } from './data/fallbackFeaturedJobs';
 
-const TrustedBySection = lazy(() =>
-  import('./TrustedBySection').then((module) => ({ default: module.TrustedBySection }))
-);
 const CategoryCards = lazy(() =>
   import('./CategoryCards').then((module) => ({ default: module.CategoryCards }))
 );
@@ -20,17 +17,11 @@ const SponsoredCompaniesSection = lazy(() =>
 const WhyHHHJobs = lazy(() =>
   import('./WhyHHHJobs').then((module) => ({ default: module.WhyHHHJobs }))
 );
-const CampusConnectSection = lazy(() =>
-  import('./CampusConnectSection').then((module) => ({ default: module.CampusConnectSection }))
-);
 const HowItWorks = lazy(() =>
   import('./HowItWorks').then((module) => ({ default: module.HowItWorks }))
 );
 const StatsSection = lazy(() =>
   import('./StatsSection').then((module) => ({ default: module.StatsSection }))
-);
-const TestimonialsSection = lazy(() =>
-  import('./TestimonialsSection').then((module) => ({ default: module.TestimonialsSection }))
 );
 const CtaBanner = lazy(() =>
   import('./CtaBanner').then((module) => ({ default: module.CtaBanner }))
@@ -47,17 +38,17 @@ const mapExternalJobToFeaturedJob = (job = {}) => ({
   externalId: job.id,
   sourceType: 'external',
   sourceKey: job.source_key || '',
-  companyName: job.company_name || 'Verified company',
+  companyName: job.company_name || '',
   companyLogo: job.company_logo || '',
   companyWebsite: job.apply_url || '',
-  jobTitle: job.job_title || 'Open Role',
-  jobLocation: job.job_location || 'Remote',
-  employmentType: job.employment_type || 'Full-time',
+  jobTitle: job.job_title || '',
+  jobLocation: job.job_location || '',
+  employmentType: job.employment_type || '',
   experienceLevel: job.experience_level || '',
   category: job.category || '',
   description: Array.isArray(job.tags) && job.tags.length
     ? job.tags.slice(0, 6).join(', ')
-    : 'Verified live-feed role from HHH Jobs external hiring sources.',
+    : '',
   postedAt: job.posted_at || job.created_at || ''
 });
 
@@ -133,6 +124,7 @@ const DeferredSection = ({ children, minHeight = 220, rootMargin = '260px 0px' }
 };
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
     keyword: '',
     location: '',
@@ -147,7 +139,7 @@ const HomePage = () => {
     roles: [],
     sectors: [],
     cities: [],
-    totals: { openJobs: 0, companies: 0 }
+    totals: { openJobs: null, companies: null, roles: null, sectors: null, cities: null }
   });
   const shouldLoadFeaturedJobs = useDeferredMount(true, { delayMs: 1200, timeoutMs: 3000 });
   const shouldLoadHiringFacets = useDeferredMount(true, { delayMs: 3600, timeoutMs: 8000 });
@@ -170,26 +162,22 @@ const HomePage = () => {
         const portalResponse = portalResult.status === 'fulfilled' ? portalResult.value : null;
         const externalResponse = externalResult.status === 'fulfilled' ? externalResult.value : null;
 
-        if (!portalResponse?.ok) {
-          if (!mounted) return;
-          setJobs(fallbackFeaturedJobs);
-          setJobsError('');
-          setLoadingJobs(false);
-          return;
-        }
-
-        const portalPayload = await portalResponse.json().catch(() => null);
+        const portalPayload = portalResponse?.ok ? await portalResponse.json().catch(() => null) : null;
         const externalPayload = externalResponse?.ok ? await externalResponse.json().catch(() => null) : null;
 
         if (!mounted) return;
-        const portalJobs = portalPayload?.jobs?.length ? portalPayload.jobs : fallbackFeaturedJobs;
+        const portalJobs = portalPayload?.jobs || [];
         const externalJobs = externalPayload?.data?.jobs || [];
-        setJobs(mergeFeaturedJobs(portalJobs, externalJobs));
+        const nextJobs = mergeFeaturedJobs(portalJobs, externalJobs);
+        setJobs(nextJobs);
+        setJobsError(nextJobs.length || portalResponse?.ok || externalResponse?.ok
+          ? ''
+          : 'Unable to load live jobs right now.');
         setLoadingJobs(false);
       } catch {
         if (!mounted) return;
-        setJobs(fallbackFeaturedJobs);
-        setJobsError('');
+        setJobs([]);
+        setJobsError('Unable to load live jobs right now.');
         setLoadingJobs(false);
       }
     };
@@ -215,7 +203,7 @@ const HomePage = () => {
           roles: payload.roles || [],
           sectors: payload.sectors || [],
           cities: payload.cities || [],
-          totals: payload.totals || { openJobs: 0, companies: 0 }
+          totals: payload.totals || { openJobs: 0, companies: 0, roles: 0, sectors: 0, cities: 0 }
         });
       } catch {
         if (!mounted) return;
@@ -278,7 +266,16 @@ const HomePage = () => {
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    scrollToJobsSection();
+    const params = new URLSearchParams();
+    const keyword = filters.keyword.trim();
+    const location = filters.location.trim();
+    const experience = filters.experience.trim();
+
+    if (keyword) params.set('search', keyword);
+    if (location) params.set('location', location);
+    if (experience && experience !== 'Any Experience') params.set('experience', experience);
+
+    navigate(`/jobs${params.toString() ? `?${params.toString()}` : ''}`);
   };
 
   const handleCategorySelect = (_searchTerm, category) => {
@@ -296,7 +293,9 @@ const HomePage = () => {
   const handleKeywordChipClick = (keyword) => {
     setSelectedCategory(null);
     setFilters((current) => ({ ...current, keyword }));
-    scrollToJobsSection();
+    const params = new URLSearchParams();
+    params.set('search', keyword);
+    navigate(`/jobs?${params.toString()}`);
   };
 
   return (
@@ -307,12 +306,9 @@ const HomePage = () => {
           onFiltersChange={handleFiltersChange}
           onSearch={handleSearchSubmit}
           onKeywordChipClick={handleKeywordChipClick}
+          stats={hiringFacets.totals}
         />
       </div>
-
-      <DeferredSection minHeight={120} rootMargin="120px 0px">
-        <TrustedBySection />
-      </DeferredSection>
 
       <DeferredSection minHeight={540} rootMargin="180px 0px">
         <CategoryCards
@@ -346,19 +342,11 @@ const HomePage = () => {
       </DeferredSection>
 
       <DeferredSection minHeight={320}>
-        <CampusConnectSection />
-      </DeferredSection>
-
-      <DeferredSection minHeight={320}>
         <HowItWorks />
       </DeferredSection>
 
       <DeferredSection minHeight={260}>
-        <StatsSection />
-      </DeferredSection>
-
-      <DeferredSection minHeight={340}>
-        <TestimonialsSection />
+        <StatsSection totals={hiringFacets.totals} />
       </DeferredSection>
 
       <DeferredSection minHeight={260}>
