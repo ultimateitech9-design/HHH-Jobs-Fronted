@@ -9,10 +9,12 @@ import {
   FiRefreshCw,
   FiUser
 } from 'react-icons/fi';
+import AuthSelectField from '../../auth/components/AuthSelectField';
 import { getCampusProfile, updateCampusProfile } from '../services/campusConnectApi';
+import { apiFetch } from '../../../utils/api';
 
 const EMPTY_FORM = {
-  name: '', city: '', state: '', affiliation: '', establishedYear: '',
+  name: '', city: '', state: '', stateId: '', stateName: '', districtId: '', districtName: '', affiliation: '', establishedYear: '',
   website: '', contactEmail: '', contactPhone: '', about: '',
   placementOfficerName: '', logoUrl: ''
 };
@@ -22,6 +24,8 @@ export default function CampusProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [flash, setFlash] = useState({ type: '', text: '' });
+  const [states, setStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
   const timerRef = useRef(null);
 
   const showFlash = (type, text) => {
@@ -35,13 +39,44 @@ export default function CampusProfilePage() {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    getCampusProfile().then(({ data, error }) => {
+    Promise.all([
+      getCampusProfile(),
+      apiFetch('/jobs/meta/states')
+        .then((res) => res.json())
+        .then((payload) => payload?.states || [])
+        .catch(() => [])
+    ]).then(async ([{ data, error }, stateRows]) => {
       if (!mounted) return;
+      setStates(stateRows);
       if (data && Object.keys(data).length > 0) {
+        const stateName = data.state_name || data.stateName || data.state || '';
+        const selectedState = data.state_id
+          ? stateRows.find((item) => String(item.id) === String(data.state_id))
+          : stateRows.find((item) => String(item.name || '').toLowerCase() === String(stateName).toLowerCase());
+        let districtRows = [];
+        if (selectedState?.id) {
+          try {
+            const response = await apiFetch(`/jobs/meta/districts?stateId=${encodeURIComponent(selectedState.id)}`);
+            const payload = await response.json();
+            districtRows = payload?.districts || [];
+          } catch {
+            districtRows = [];
+          }
+          if (mounted) setDistricts(districtRows);
+        }
+        if (!mounted) return;
+        const districtName = data.district_name || data.districtName || data.city || '';
+        const selectedDistrict = data.district_id
+          ? districtRows.find((item) => String(item.id) === String(data.district_id))
+          : districtRows.find((item) => String(item.name || '').toLowerCase() === String(districtName).toLowerCase());
         setForm({
           name: data.name || '',
-          city: data.city || data.district_name || data.districtName || '',
-          state: data.state || data.state_name || data.stateName || '',
+          city: data.city || districtName || '',
+          state: data.state || stateName || '',
+          stateId: selectedState?.id || data.state_id || '',
+          stateName: selectedState?.name || stateName || '',
+          districtId: selectedDistrict?.id || data.district_id || '',
+          districtName: selectedDistrict?.name || districtName || '',
           affiliation: data.affiliation || '',
           establishedYear: data.established_year || '',
           website: data.website || '',
@@ -59,6 +94,40 @@ export default function CampusProfilePage() {
   }, []);
 
   const update = (field, value) => setForm((f) => ({ ...f, [field]: value }));
+
+  const handleStateSelect = async (stateId) => {
+    const selectedState = states.find((item) => String(item.id) === String(stateId));
+    setForm((current) => ({
+      ...current,
+      stateId,
+      stateName: selectedState?.name || '',
+      state: selectedState?.name || '',
+      districtId: '',
+      districtName: '',
+      city: ''
+    }));
+    setDistricts([]);
+
+    if (!stateId) return;
+
+    try {
+      const response = await apiFetch(`/jobs/meta/districts?stateId=${encodeURIComponent(stateId)}`);
+      const payload = await response.json();
+      setDistricts(payload?.districts || []);
+    } catch {
+      setDistricts([]);
+    }
+  };
+
+  const handleDistrictSelect = (districtId) => {
+    const selectedDistrict = districts.find((item) => String(item.id) === String(districtId));
+    setForm((current) => ({
+      ...current,
+      districtId,
+      districtName: selectedDistrict?.name || '',
+      city: selectedDistrict?.name || ''
+    }));
+  };
 
   const handleSave = async () => {
     if (!form.name) { showFlash('error', 'College name is required.'); return; }
@@ -159,14 +228,48 @@ export default function CampusProfilePage() {
               className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-slate-500">City</label>
-            <input value={form.city} onChange={(e) => update('city', e.target.value)}
-              placeholder="e.g. Mumbai" className={inputClass} />
+            {districts.length > 0 ? (
+              <AuthSelectField
+                label="City / district"
+                value={form.districtId}
+                onChange={(event) => handleDistrictSelect(event.target.value)}
+                searchable
+                placeholder="Select city / district"
+                options={[
+                  { value: '', label: 'Select city / district' },
+                  ...districts.map((district) => ({ value: district.id, label: district.name }))
+                ]}
+                className="!rounded-xl !border-slate-200 !bg-white !px-4 !py-3 !text-sm focus:!border-brand-300 focus:!ring-2 focus:!ring-brand-100"
+              />
+            ) : (
+              <>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-500">City / district</label>
+                <input value={form.city} onChange={(e) => update('city', e.target.value)}
+                  placeholder="e.g. Mumbai" className={inputClass} />
+              </>
+            )}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-slate-500">State</label>
-            <input value={form.state} onChange={(e) => update('state', e.target.value)}
-              placeholder="e.g. Maharashtra" className={inputClass} />
+            {states.length > 0 ? (
+              <AuthSelectField
+                label="State"
+                value={form.stateId}
+                onChange={(event) => handleStateSelect(event.target.value)}
+                searchable
+                placeholder="Select state"
+                options={[
+                  { value: '', label: 'Select state' },
+                  ...states.map((state) => ({ value: state.id, label: state.name }))
+                ]}
+                className="!rounded-xl !border-slate-200 !bg-white !px-4 !py-3 !text-sm focus:!border-brand-300 focus:!ring-2 focus:!ring-brand-100"
+              />
+            ) : (
+              <>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-500">State</label>
+                <input value={form.state} onChange={(e) => update('state', e.target.value)}
+                  placeholder="e.g. Maharashtra" className={inputClass} />
+              </>
+            )}
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-slate-500">Affiliation / University</label>

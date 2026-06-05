@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiArrowRight, FiCheck, FiShield, FiUsers } from 'react-icons/fi';
 import AnimatedSection from '../../../shared/components/AnimatedSection';
@@ -21,6 +21,10 @@ const initialFormState = {
   mobile: '',
   city: '',
   state: '',
+  stateId: '',
+  stateName: '',
+  districtId: '',
+  districtName: '',
   affiliation: '',
   establishedYear: '',
   website: '',
@@ -158,6 +162,8 @@ const CampusConnectRegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [states, setStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
   const formRef = useRef(null);
 
   const redirectAfterSignupRaw = new URLSearchParams(location.search).get('redirect');
@@ -166,6 +172,19 @@ const CampusConnectRegisterPage = () => {
     : '/portal/campus-connect/dashboard';
 
   const selectedCountry = useMemo(() => getSelectedCountry(form.countryCode), [form.countryCode]);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch('/jobs/meta/states')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setStates(data?.states || []);
+      })
+      .catch(() => {
+        if (!cancelled) setStates([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const focusFirstInvalidField = () => {
     requestAnimationFrame(() => {
@@ -214,6 +233,55 @@ const CampusConnectRegisterPage = () => {
       mobile: validateCampusField('mobile', cleanedMobile, nextForm)
     }));
 
+    if (error) setError('');
+  };
+
+  const handleStateSelect = async (stateId) => {
+    const state = states.find((item) => String(item.id) === String(stateId));
+    const nextForm = {
+      ...form,
+      stateId,
+      stateName: state?.name || '',
+      state: state?.name || '',
+      districtId: '',
+      districtName: '',
+      city: ''
+    };
+
+    setForm(nextForm);
+    setDistricts([]);
+    setFieldErrors((current) => ({
+      ...current,
+      state: validateCampusField('state', nextForm.state, nextForm),
+      city: validateCampusField('city', nextForm.city, nextForm)
+    }));
+    if (error) setError('');
+
+    if (!stateId) return;
+
+    try {
+      const response = await apiFetch(`/jobs/meta/districts?stateId=${encodeURIComponent(stateId)}`);
+      const data = await response.json();
+      setDistricts(data?.districts || []);
+    } catch {
+      setDistricts([]);
+    }
+  };
+
+  const handleDistrictSelect = (districtId) => {
+    const district = districts.find((item) => String(item.id) === String(districtId));
+    const nextForm = {
+      ...form,
+      districtId,
+      districtName: district?.name || '',
+      city: district?.name || ''
+    };
+
+    setForm(nextForm);
+    setFieldErrors((current) => ({
+      ...current,
+      city: validateCampusField('city', nextForm.city, nextForm)
+    }));
     if (error) setError('');
   };
 
@@ -301,6 +369,10 @@ const CampusConnectRegisterPage = () => {
       contactEmail: (form.contactEmail || form.email).trim(),
       city: form.city.trim(),
       state: form.state.trim(),
+      stateId: form.stateId,
+      stateName: (form.stateName || form.state).trim(),
+      districtId: form.districtId,
+      districtName: (form.districtName || form.city).trim(),
       affiliation: form.affiliation.trim(),
       establishedYear: form.establishedYear.trim(),
       website: form.website.trim(),
@@ -479,27 +551,61 @@ const CampusConnectRegisterPage = () => {
             {currentStep === 2 && (
               <AnimatedSection>
                 <div className="grid gap-4 md:grid-cols-2">
+                {states.length > 0 ? (
+                  <AuthSelectField
+                    label="State"
+                    value={form.stateId}
+                    onChange={(event) => handleStateSelect(event.target.value)}
+                    searchable
+                    placeholder="Select state"
+                    options={[
+                      { value: '', label: 'Select state' },
+                      ...states.map((state) => ({ value: state.id, label: state.name }))
+                    ]}
+                    disabled={isSubmitting}
+                    error={fieldErrors.state}
+                    className="!rounded-[1.1rem] !border-slate-200 !bg-white/80 !px-4 !py-3.5 !text-[0.95rem] focus:!border-brand-300 focus:!bg-white"
+                  />
+                ) : (
                   <AuthInputField
-                    label="City"
-                  type="text"
-                  value={form.city}
-                  onChange={(event) => handleChange('city', event.target.value)}
-                  placeholder="e.g. Greater Noida"
-                  disabled={isSubmitting}
-                  error={fieldErrors.city}
-                  className="!rounded-[1.1rem] !border-slate-200 !bg-white/80 !px-4 !py-3.5 !text-[0.95rem] focus:!border-brand-300 focus:!bg-white"
-                />
+                    label="State"
+                    type="text"
+                    value={form.state}
+                    onChange={(event) => handleChange('state', event.target.value)}
+                    placeholder="e.g. Uttar Pradesh"
+                    disabled={isSubmitting}
+                    error={fieldErrors.state}
+                    className="!rounded-[1.1rem] !border-slate-200 !bg-white/80 !px-4 !py-3.5 !text-[0.95rem] focus:!border-brand-300 focus:!bg-white"
+                  />
+                )}
 
-                <AuthInputField
-                  label="State"
-                  type="text"
-                  value={form.state}
-                  onChange={(event) => handleChange('state', event.target.value)}
-                  placeholder="e.g. Uttar Pradesh"
-                  disabled={isSubmitting}
-                  error={fieldErrors.state}
-                  className="!rounded-[1.1rem] !border-slate-200 !bg-white/80 !px-4 !py-3.5 !text-[0.95rem] focus:!border-brand-300 focus:!bg-white"
-                />
+                {districts.length > 0 ? (
+                  <AuthSelectField
+                    label="City / district"
+                    value={form.districtId}
+                    onChange={(event) => handleDistrictSelect(event.target.value)}
+                    searchable
+                    placeholder="Select city / district"
+                    options={[
+                      { value: '', label: 'Select city / district' },
+                      ...districts.map((district) => ({ value: district.id, label: district.name }))
+                    ]}
+                    disabled={isSubmitting}
+                    error={fieldErrors.city}
+                    className="!rounded-[1.1rem] !border-slate-200 !bg-white/80 !px-4 !py-3.5 !text-[0.95rem] focus:!border-brand-300 focus:!bg-white"
+                  />
+                ) : (
+                  <AuthInputField
+                    label="City / district"
+                    type="text"
+                    value={form.city}
+                    onChange={(event) => handleChange('city', event.target.value)}
+                    placeholder="e.g. Greater Noida"
+                    disabled={isSubmitting}
+                    error={fieldErrors.city}
+                    className="!rounded-[1.1rem] !border-slate-200 !bg-white/80 !px-4 !py-3.5 !text-[0.95rem] focus:!border-brand-300 focus:!bg-white"
+                  />
+                )}
 
                 <AuthInputField
                   label="Affiliation / University"
