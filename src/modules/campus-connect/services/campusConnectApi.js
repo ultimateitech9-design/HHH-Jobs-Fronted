@@ -32,6 +32,19 @@ export const updateCampusProfile = (payload) =>
     extract: (p) => p.profile
   });
 
+export const uploadCampusProfileLogo = (file) => {
+  const formData = new FormData();
+  formData.append('logo', file);
+  return strictRequest({
+    path: '/campus-connect/profile/logo',
+    options: { method: 'POST', body: formData },
+    extract: (p) => ({
+      logoUrl: p.logoUrl || p.profile?.logo_url || p.profile?.logoUrl || '',
+      profile: p.profile || {}
+    })
+  });
+};
+
 // ── Students ──────────────────────────────────────────────────────────────────
 export const getCampusStudents = (params = {}) => {
   const qs = new URLSearchParams(

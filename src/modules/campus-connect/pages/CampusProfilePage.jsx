@@ -3,14 +3,16 @@ import {
   FiCheckCircle,
   FiEdit2,
   FiGlobe,
+  FiImage,
   FiMail,
   FiMapPin,
   FiPhone,
   FiRefreshCw,
+  FiUpload,
   FiUser
 } from 'react-icons/fi';
 import AuthSelectField from '../../auth/components/AuthSelectField';
-import { getCampusProfile, updateCampusProfile } from '../services/campusConnectApi';
+import { getCampusProfile, updateCampusProfile, uploadCampusProfileLogo } from '../services/campusConnectApi';
 import { apiFetch } from '../../../utils/api';
 
 const EMPTY_FORM = {
@@ -19,13 +21,66 @@ const EMPTY_FORM = {
   placementOfficerName: '', logoUrl: ''
 };
 
+const compressImageFile = (file) => new Promise((resolve, reject) => {
+  if (!file?.type?.startsWith('image/')) {
+    reject(new Error('Please choose an image file.'));
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onerror = () => reject(new Error('Unable to read image file.'));
+  reader.onload = () => {
+    const image = new Image();
+    image.onerror = () => reject(new Error('Unable to load image file.'));
+    image.onload = () => {
+      const maxSize = 720;
+      const scale = Math.min(1, maxSize / Math.max(image.width || maxSize, image.height || maxSize));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round((image.width || maxSize) * scale));
+      canvas.height = Math.max(1, Math.round((image.height || maxSize) * scale));
+      const context = canvas.getContext('2d');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Unable to compress image.'));
+          return;
+        }
+        resolve(new File([blob], 'college-logo.webp', { type: 'image/webp' }));
+      }, 'image/webp', 0.82);
+    };
+    image.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+const hydrateProfileForm = (profile = {}) => ({
+  name: profile.name || '',
+  city: profile.city || profile.district_name || profile.districtName || '',
+  state: profile.state || profile.state_name || profile.stateName || '',
+  stateId: profile.state_id || profile.stateId || '',
+  stateName: profile.state_name || profile.stateName || profile.state || '',
+  districtId: profile.district_id || profile.districtId || '',
+  districtName: profile.district_name || profile.districtName || profile.city || '',
+  affiliation: profile.affiliation || '',
+  establishedYear: profile.established_year || profile.establishedYear || '',
+  website: profile.website || '',
+  contactEmail: profile.contact_email || profile.contactEmail || profile.email || '',
+  contactPhone: profile.contact_phone || profile.contactPhone || profile.mobile || '',
+  about: profile.about || '',
+  placementOfficerName: profile.placement_officer_name || profile.placementOfficerName || '',
+  logoUrl: profile.logo_url || profile.logoUrl || ''
+});
+
 export default function CampusProfilePage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [flash, setFlash] = useState({ type: '', text: '' });
   const [states, setStates] = useState([]);
   const [districts, setDistricts] = useState([]);
+  const logoInputRef = useRef(null);
   const timerRef = useRef(null);
 
   const showFlash = (type, text) => {
@@ -70,21 +125,13 @@ export default function CampusProfilePage() {
           ? districtRows.find((item) => String(item.id) === String(data.district_id))
           : districtRows.find((item) => String(item.name || '').toLowerCase() === String(districtName).toLowerCase());
         setForm({
-          name: data.name || '',
+          ...hydrateProfileForm(data),
           city: data.city || districtName || '',
           state: data.state || stateName || '',
           stateId: selectedState?.id || data.state_id || '',
           stateName: selectedState?.name || stateName || '',
           districtId: selectedDistrict?.id || data.district_id || '',
-          districtName: selectedDistrict?.name || districtName || '',
-          affiliation: data.affiliation || '',
-          establishedYear: data.established_year || '',
-          website: data.website || '',
-          contactEmail: data.contact_email || data.contactEmail || data.email || '',
-          contactPhone: data.contact_phone || data.contactPhone || data.mobile || '',
-          about: data.about || '',
-          placementOfficerName: data.placement_officer_name || '',
-          logoUrl: data.logo_url || ''
+          districtName: selectedDistrict?.name || districtName || ''
         });
       }
       if (error) showFlash('error', error);
@@ -133,12 +180,35 @@ export default function CampusProfilePage() {
     if (!form.name) { showFlash('error', 'College name is required.'); return; }
     setSaving(true);
     try {
-      await updateCampusProfile(form);
+      const updated = await updateCampusProfile(form);
+      setForm((current) => ({ ...current, ...hydrateProfileForm(updated) }));
       showFlash('success', 'College profile saved successfully.');
     } catch (err) {
       showFlash('error', err.message || 'Failed to save profile.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleLogoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setLogoUploading(true);
+    try {
+      const compressedFile = await compressImageFile(file);
+      const uploaded = await uploadCampusProfileLogo(compressedFile);
+      setForm((current) => ({
+        ...current,
+        ...hydrateProfileForm(uploaded.profile),
+        logoUrl: uploaded.logoUrl || uploaded.profile?.logo_url || current.logoUrl
+      }));
+      showFlash('success', 'College logo uploaded and compressed automatically.');
+    } catch (err) {
+      showFlash('error', err.message || 'Unable to upload college logo.');
+    } finally {
+      setLogoUploading(false);
     }
   };
 
@@ -188,12 +258,28 @@ export default function CampusProfilePage() {
           </div>
         ) : (
           <div className="flex gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-brand-100 bg-white text-2xl font-bold text-brand-600">
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              disabled={logoUploading}
+              className="group relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-brand-100 bg-white text-2xl font-bold text-brand-600 disabled:opacity-70"
+              title="Upload college logo"
+            >
               {form.logoUrl
                 ? <img src={form.logoUrl} alt="College logo" className="h-full w-full object-cover" />
-                : (form.name || 'C').charAt(0).toUpperCase()
+                : <FiImage className="text-brand-300" />
               }
-            </div>
+              <span className="absolute inset-0 flex items-center justify-center bg-slate-950/50 text-white opacity-0 transition group-hover:opacity-100">
+                {logoUploading ? <FiRefreshCw className="animate-spin" /> : <FiUpload />}
+              </span>
+            </button>
             <div>
               <h2 className="text-xl font-bold text-navy">{form.name || 'Your College Name'}</h2>
               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
@@ -202,6 +288,15 @@ export default function CampusProfilePage() {
                 {form.establishedYear && <span>Est. {form.establishedYear}</span>}
                 {form.website && <span className="flex items-center gap-1"><FiGlobe size={11} />{form.website}</span>}
               </div>
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={logoUploading}
+                className="mt-3 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1.5 text-xs font-bold text-brand-700 shadow-sm transition hover:bg-brand-50 disabled:opacity-70"
+              >
+                {logoUploading ? <FiRefreshCw size={13} className="animate-spin" /> : <FiUpload size={13} />}
+                {logoUploading ? 'Compressing...' : 'Upload logo'}
+              </button>
             </div>
           </div>
         )}
@@ -290,6 +385,15 @@ export default function CampusProfilePage() {
             <label className="mb-1.5 block text-xs font-semibold text-slate-500">Logo URL</label>
             <input value={form.logoUrl} onChange={(e) => update('logoUrl', e.target.value)}
               placeholder="https://yoursite.com/logo.png" className={inputClass} />
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              disabled={logoUploading}
+              className="mt-2 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 hover:bg-brand-100 disabled:opacity-70"
+            >
+              {logoUploading ? <FiRefreshCw size={13} className="animate-spin" /> : <FiUpload size={13} />}
+              {logoUploading ? 'Uploading...' : 'Upload file instead'}
+            </button>
           </div>
           </div>
         )}
