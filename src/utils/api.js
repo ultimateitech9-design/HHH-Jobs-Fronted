@@ -1,6 +1,8 @@
 import { clearAuthSession, getCurrentUser, getToken, isEmailVerifiedUser } from './auth.js';
 
 const env = import.meta.env || {};
+const PRODUCTION_API_BASE_URL = 'https://api.hhh-jobs.com';
+const LEGACY_RENDER_API_NAME = 'hhh-jobs-backend';
 
 const isLocalOrigin = (value = '') => /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?$/i.test(String(value).trim());
 
@@ -19,17 +21,37 @@ const normalizeLoopbackHost = (value = '') => {
   }
 };
 
-const configuredApiBase = normalizeLoopbackHost(
+const normalizeKnownApiBase = (value = '') => {
+  const normalized = normalizeLoopbackHost(value);
+  if (!normalized) return '';
+
+  try {
+    const url = new URL(normalized);
+    const hostname = url.hostname.toLowerCase();
+    if (hostname.includes(LEGACY_RENDER_API_NAME) && hostname.endsWith('.onrender.com')) {
+      return PRODUCTION_API_BASE_URL;
+    }
+  } catch (error) {
+    const lowered = normalized.toLowerCase();
+    if (lowered.includes(LEGACY_RENDER_API_NAME) && lowered.includes('onrender.com')) {
+      return PRODUCTION_API_BASE_URL;
+    }
+  }
+
+  return normalized;
+};
+
+const configuredApiBase = normalizeKnownApiBase(
   env.VITE_API_BASE_URL
   || env.VITE_API_URL
   || ''
 );
 
 const browserOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-const deployedApiFallbackBase = normalizeLoopbackHost(
+const deployedApiFallbackBase = normalizeKnownApiBase(
   env.VITE_DEPLOYED_API_BASE_URL
   || env.VITE_LIVE_API_BASE_URL
-  || 'https://hhh-jobs-backend.onrender.com'
+  || PRODUCTION_API_BASE_URL
 );
 
 const deriveLocalRuntimeBase = (origin) => {
