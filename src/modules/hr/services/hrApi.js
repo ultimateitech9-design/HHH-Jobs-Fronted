@@ -172,7 +172,8 @@ const normalizeHrProfile = (profile = {}) => ({
   districtId: profile.district_id || profile.districtId || '',
   districtName: profile.district_name || profile.districtName || '',
   about: profile.about || '',
-  logoUrl: profile.logo_url || profile.logoUrl || ''
+  logoUrl: profile.logo_url || profile.logoUrl || '',
+  hrEmployerId: profile.hrEmployerId || profile.hr_employer_id || profile.employeeCode || profile.employee_code || ''
 });
 
 export const getHrProfile = async () => {

@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fi';
 import { getHrProfile, getJobDistricts, getJobSectors, getJobStates, updateHrProfile, uploadHrProfileLogo } from '../services/hrApi';
 import { getCurrentUser, getToken, setAuthSession } from '../../../utils/auth';
+import { generateHrEmployerId } from '../../../utils/hrIdentity';
 
 const EMPTY_HR_PROFILE_FORM = {
   companyName: '',
@@ -33,10 +34,26 @@ const EMPTY_HR_PROFILE_FORM = {
   districtId: '',
   districtName: '',
   about: '',
-  logoUrl: ''
+  logoUrl: '',
+  hrEmployerId: '',
+  employeeCode: ''
 };
 
 const hasText = (value) => String(value ?? '').trim().length > 0;
+const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
+const isReadableHrId = (value) => /^HHHJ-[A-Z0-9]+-[0-9]{3}-[0-9]{4}$/i.test(String(value || '').trim());
+
+const resolveHrEmployerId = ({ user = {}, profile = {} } = {}) => {
+  const directValue = user.hrEmployerId || user.employeeCode || profile.hrEmployerId || profile.employeeCode;
+  if (isReadableHrId(directValue)) return String(directValue).trim().toUpperCase();
+  if (directValue && !isUuid(directValue)) return String(directValue).trim().toUpperCase();
+
+  const companyName = profile.companyName || user.companyName || user.name || '';
+  const mobile = user.mobile || '';
+  if (!companyName && !mobile) return 'Not assigned';
+
+  return generateHrEmployerId({ companyName, mobile });
+};
 
 const buildProfileFallbackFromUser = (user = {}) => ({
   companyName: user.companyName || user.company_name || '',
@@ -53,7 +70,9 @@ const buildProfileFallbackFromUser = (user = {}) => ({
   districtId: user.districtId || user.district_id || '',
   districtName: user.districtName || user.district_name || user.city || '',
   about: user.about || user.companyAbout || '',
-  logoUrl: user.logoUrl || user.logo_url || user.companyLogo || ''
+  logoUrl: user.logoUrl || user.logo_url || user.companyLogo || '',
+  hrEmployerId: user.hrEmployerId || user.hr_employer_id || '',
+  employeeCode: user.employeeCode || user.employee_code || ''
 });
 
 const mergeProfileForm = (...sources) => (
@@ -83,7 +102,8 @@ const mergeUserWithProfile = (user = {}, profile = {}) => ({
   districtName: profile.districtName || user.districtName,
   about: profile.about || user.about,
   logoUrl: profile.logoUrl || user.logoUrl,
-  hrEmployerId: user.hrEmployerId
+  employeeCode: profile.employeeCode || user.employeeCode,
+  hrEmployerId: resolveHrEmployerId({ user, profile })
 });
 
 const compressImageFile = (file) => new Promise((resolve, reject) => {
@@ -132,7 +152,7 @@ const HrProfilePage = () => {
   const [isDemo, setIsDemo] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const hrEmployerId = currentUser?.hrEmployerId || currentUser?.companyId || currentUser?.id || 'Not assigned';
+  const hrEmployerId = resolveHrEmployerId({ user: currentUser, profile: form });
 
   useEffect(() => {
     let mounted = true;
