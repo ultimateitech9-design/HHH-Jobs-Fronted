@@ -79,6 +79,8 @@ const signupRoleButtons = [
   }
 ];
 
+const OTHER_SECTOR_OPTION = { id: '__other__', name: 'Other' };
+
 const isRequiredSignupError = (value = '') => /required|select company sector|select company state|enter company city\/district|enter company location/i.test(String(value || ''));
 
 const SignupPage = () => {
@@ -249,7 +251,9 @@ const SignupPage = () => {
   };
 
   const handleSectorSelect = (sectorId) => {
-    const sector = sectors.find((item) => item.id === sectorId);
+    const sector = sectorId === OTHER_SECTOR_OPTION.id
+      ? OTHER_SECTOR_OPTION
+      : sectors.find((item) => item.id === sectorId);
     setForm((current) => ({
       ...current,
       sectorId,
@@ -441,7 +445,7 @@ const SignupPage = () => {
     const signupPayload = {
       name: form.name.trim(),
       companyName: form.companyName.trim(),
-      sectorId: form.sectorId,
+      sectorId: form.sectorId === OTHER_SECTOR_OPTION.id ? '' : form.sectorId,
       sectorName: form.sectorName,
       location: form.location.trim(),
       stateId: form.stateId,
@@ -685,9 +689,14 @@ const SignupPage = () => {
                         required={form.role === 'hr'}
                         value={form.sectorId}
                         onChange={(event) => handleSectorSelect(event.target.value)}
+                        searchable
+                        placeholder="Select company sector"
                         options={[
                           { value: '', label: 'Select company sector' },
-                          ...sectors.map((sector) => ({ value: sector.id, label: sector.name }))
+                          ...sectors
+                            .filter((sector) => String(sector.name || '').trim().toLowerCase() !== 'other')
+                            .map((sector) => ({ value: sector.id, label: sector.name })),
+                          { value: OTHER_SECTOR_OPTION.id, label: OTHER_SECTOR_OPTION.name }
                         ]}
                         disabled={isSubmitting || Boolean(socialLoading)}
                         error={fieldErrors.sectorId}
@@ -701,6 +710,8 @@ const SignupPage = () => {
                             required={form.role === 'hr'}
                             value={form.stateId}
                             onChange={(event) => handleStateSelect(event.target.value)}
+                            searchable
+                            placeholder="Select state"
                             options={[
                               { value: '', label: 'Select state' },
                               ...states.map((state) => ({ value: state.id, label: state.name }))
@@ -730,6 +741,8 @@ const SignupPage = () => {
                             required={form.role === 'hr'}
                             value={form.districtId}
                             onChange={(event) => handleDistrictSelect(event.target.value)}
+                            searchable
+                            placeholder="Select city / district"
                             options={[
                               { value: '', label: 'Select city / district' },
                               ...districts.map((district) => ({ value: district.id, label: district.name }))
