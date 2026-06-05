@@ -1,1 +1,0 @@
-import{j as a}from"./vendor-react-ZfFbZa9g.js";import{m as t}from"./vendor-motion-Cw2t2ju0.js";const p=({children:o,className:i="",delay:n=0,as:r="div"})=>{const e=t[r]||t.div;return a.jsx(e,{className:i,initial:{opacity:0,y:24},whileInView:{opacity:1,y:0},viewport:{once:!0,amount:.2},transition:{duration:.55,delay:n},children:o})};export{p as A};

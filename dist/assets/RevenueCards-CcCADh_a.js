@@ -1,1 +1,0 @@
-import{j as r}from"./vendor-react-ZfFbZa9g.js";import{S as a}from"./StatCard-Dnfb8Utl.js";const o=({cards:t=[]})=>r.jsx("div",{className:"stats-grid",children:t.map(s=>r.jsx(a,{...s},s.label))});export{o as R};
