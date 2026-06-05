@@ -20,7 +20,7 @@ import {
 
 const cache = {};
 const CACHE_TTL = 5 * 60 * 1000;
-const PLAN_ACCESS_INVALIDATED_EVENT = 'hhh:plan-access-invalidated';
+export const PLAN_ACCESS_INVALIDATED_EVENT = 'hhh:plan-access-invalidated';
 
 const invalidatePlanAccessCacheEntry = (audienceRole = '') => {
   if (audienceRole) {
@@ -54,20 +54,21 @@ export const usePlanAccess = () => {
   const [subscription, setSubscription] = useState(cachedRoleState?.data || null);
   const [loading, setLoading] = useState(!cachedRoleState?.data);
 
-  const fetchSubscription = useCallback(async () => {
+  const fetchSubscription = useCallback(async (force = false) => {
     if (!audienceRole) return;
     const roleCache = cache[audienceRole] || { data: null, timestamp: 0, loading: false };
     cache[audienceRole] = roleCache;
 
     const now = Date.now();
-    if (roleCache.data && (now - roleCache.timestamp) < CACHE_TTL) {
+    if (!force && roleCache.data && (now - roleCache.timestamp) < CACHE_TTL) {
       setSubscription(roleCache.data);
       setLoading(false);
       return;
     }
 
-    if (roleCache.loading) return;
+    if (roleCache.loading && !force) return;
     roleCache.loading = true;
+    setLoading(true);
 
     try {
       const response = await apiFetch(`/pricing/role-subscriptions/current?audienceRole=${audienceRole}`, {
@@ -98,7 +99,7 @@ export const usePlanAccess = () => {
       const targetAudienceRole = event?.detail?.audienceRole || '';
       if (targetAudienceRole && targetAudienceRole !== audienceRole) return;
       invalidatePlanAccessCacheEntry(audienceRole);
-      fetchSubscription();
+      fetchSubscription(true);
     };
 
     window.addEventListener(PLAN_ACCESS_INVALIDATED_EVENT, handleInvalidation);
@@ -132,7 +133,7 @@ export const usePlanAccess = () => {
 
   const refresh = useCallback(() => {
     invalidatePlanAccessCacheEntry(audienceRole);
-    return fetchSubscription();
+    return fetchSubscription(true);
   }, [audienceRole, fetchSubscription]);
 
   return {

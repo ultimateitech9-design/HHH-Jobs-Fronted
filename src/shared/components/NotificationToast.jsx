@@ -71,7 +71,7 @@ const NotificationToast = () => {
   if (toasts.length === 0) return null;
 
   return createPortal(
-    <div className="pointer-events-none fixed right-4 top-4 z-toast flex w-full max-w-sm flex-col gap-2">
+    <div className="pointer-events-none fixed bottom-4 left-4 right-4 z-toast flex flex-col items-end gap-2 sm:left-auto sm:max-w-sm">
       {toasts.map((toast) => (
         <div key={toast.id} className="pointer-events-auto">
           <ToastItem toast={toast} onDismiss={dismiss} />

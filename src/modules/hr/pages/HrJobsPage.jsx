@@ -39,6 +39,7 @@ import { openRazorpaySubscriptionCheckout } from '../../../shared/utils/razorpay
 import { hrStarterPricing } from '../../../shared/config/pricingCatalog';
 import { invalidatePlanAccessCache } from '../../../shared/hooks/usePlanAccess';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
+import { notify } from '../../../shared/utils/toastBus';
 import {
   formatRoleTrialProgressLabel,
   isPendingRoleSubscriptionSetup,
@@ -510,6 +511,16 @@ const HrJobsPage = () => {
     }));
   };
 
+  const refreshRecruiterPlanState = async () => {
+    invalidatePlanAccessCache('hr');
+    await Promise.all([
+      loadRolePricingState(),
+      loadPricingState()
+    ]);
+    invalidatePlanAccessCache('hr');
+    window.setTimeout(() => invalidatePlanAccessCache('hr'), 500);
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -575,6 +586,17 @@ const HrJobsPage = () => {
       active = false;
     };
   }, [selectedRolePlan, selectedRolePlanNeedsSalesFollowUp, selectedRolePlanIsCurrent, roleCheckoutQuantity, roleCheckoutForm.couponCode]);
+
+  useEffect(() => {
+    if (error) {
+      notify.error('Action failed', error);
+      return;
+    }
+
+    if (message) {
+      notify.success('Success', message);
+    }
+  }, [error, message]);
 
   useEffect(() => {
     if (!requestedAudience || editingJobId) return;
@@ -788,7 +810,7 @@ const HrJobsPage = () => {
             ? `HR wants to switch from ${currentRolePlan?.name || currentRoleSubscription?.role_plan_slug || 'current plan'} to ${selectedRolePlan.name || selectedRolePlan.slug}. Please call and understand the issue before changing the plan.`
             : ''
         });
-        await loadRolePricingState();
+        await refreshRecruiterPlanState();
         setMessage(selectedRolePlanChangeType === 'downgrade'
           ? 'Sales team has been notified for this downgrade request. They will contact the HR before changing the plan.'
           : 'Sales team has been notified. They will contact you for Enterprise pricing and rollout.');
@@ -817,9 +839,7 @@ const HrJobsPage = () => {
             return [response.purchase, ...next];
           });
         }
-        await loadRolePricingState();
-        await loadPricingState();
-        invalidatePlanAccessCache('hr');
+        await refreshRecruiterPlanState();
         setMessage(response?.mode === 'coupon_free_trial'
           ? 'Free trial activated with coupon. No Razorpay payment is required for this trial.'
           : response?.mode === 'zero_amount_checkout'
@@ -857,9 +877,7 @@ const HrJobsPage = () => {
           audienceRole: 'hr'
         });
 
-        await loadRolePricingState();
-        await loadPricingState();
-        invalidatePlanAccessCache('hr');
+        await refreshRecruiterPlanState();
         setMessage(hasExistingRecruiterPlan
           ? `Recruiter plan ${selectedRolePlanChangeType === 'downgrade' ? 'downgraded' : selectedRolePlanChangeType === 'upgrade' ? 'upgraded' : 'changed'} successfully. No new trial was applied.`
           : 'HR trial is active and Razorpay auto-pay is now enabled for renewal.');
@@ -871,9 +889,7 @@ const HrJobsPage = () => {
         return;
       }
 
-      await loadRolePricingState();
-      await loadPricingState();
-      invalidatePlanAccessCache('hr');
+      await refreshRecruiterPlanState();
       setMessage(
         response?.purchase?.status === 'paid'
           ? 'Recruiter plan activated successfully.'
@@ -914,17 +930,6 @@ const HrJobsPage = () => {
           ))}
         </div>
       </header>
-
-      {error && (
-        <div className="admin-ops-alert admin-ops-alert--error animate-fade-in">
-          <FiXCircle size={20} className="shrink-0" /> <span className="font-semibold">{error}</span>
-        </div>
-      )}
-      {message && !error && (
-        <div className="admin-ops-alert admin-ops-alert--success animate-fade-in">
-          <FiCheckCircle size={20} className="shrink-0" /> <span className="font-semibold">{message}</span>
-        </div>
-      )}
 
       {/* JOBS TAB */}
       {activeTab === 'jobs' && (

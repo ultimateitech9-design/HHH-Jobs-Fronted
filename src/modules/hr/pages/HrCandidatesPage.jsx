@@ -31,6 +31,8 @@ import {
   viewHrCandidateResume
 } from '../services/hrApi';
 import UpgradePlanModal from '../../../shared/components/UpgradePlanModal';
+import { PLAN_ACCESS_INVALIDATED_EVENT } from '../../../shared/hooks/usePlanAccess';
+import { notify } from '../../../shared/utils/toastBus';
 
 const EMPTY_FILTERS = {
   search: '',
@@ -222,6 +224,25 @@ export default function HrCandidatesPage() {
     runSearch(EMPTY_FILTERS, 1, DEFAULT_PAGE_SIZE);
     loadTemplates();
   }, [runSearch]);
+
+  useEffect(() => {
+    if (!error) return;
+    notify.error('Candidate DB access', error);
+  }, [error]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const handlePlanRefresh = (event) => {
+      const targetAudienceRole = event?.detail?.audienceRole || '';
+      if (targetAudienceRole && targetAudienceRole !== 'hr') return;
+      runSearch(filters, pagination.page || 1, pageSize);
+      loadTemplates();
+    };
+
+    window.addEventListener(PLAN_ACCESS_INVALIDATED_EVENT, handlePlanRefresh);
+    return () => window.removeEventListener(PLAN_ACCESS_INVALIDATED_EVENT, handlePlanRefresh);
+  }, [filters, pageSize, pagination.page, runSearch]);
 
   const activeFilterCount = useMemo(
     () => Object.entries(filters).filter(([key, value]) => (key === 'availableOnly' ? value : String(value).trim())).length,
@@ -497,8 +518,6 @@ export default function HrCandidatesPage() {
         requiredTier={1}
         audienceRole="hr"
       />
-
-      {error ? <div className="admin-ops-alert admin-ops-alert--error text-sm">{error}</div> : null}
 
       <section className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className={`${panelClass} space-y-4 lg:sticky lg:top-4 lg:self-start`}>
