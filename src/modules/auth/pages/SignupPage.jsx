@@ -360,6 +360,7 @@ const SignupPage = () => {
 
   const shouldUseLocalSignupFallback = (response, payload) => {
     if (!areDemoFallbacksEnabled()) return false;
+    if (form.role === 'hr') return false;
     if (!response || response.status < 500) return false;
 
     const message = String(payload?.message || '').toLowerCase();
@@ -458,6 +459,8 @@ const SignupPage = () => {
       const response = await apiFetch('/auth/signup', {
         method: 'POST',
         body: JSON.stringify(signupPayload),
+        skipAuth: true,
+        clearAuthOnUnauthorized: false,
         timeoutMs: AUTH_REQUEST_TIMEOUT_MS
       });
       const payload = await readResponsePayload(response);
@@ -505,7 +508,7 @@ const SignupPage = () => {
 
       navigate(normalizeRedirectPath(nextPath, nextUser?.role), { replace: true });
     } catch (requestError) {
-      if (areDemoFallbacksEnabled()) {
+      if (areDemoFallbacksEnabled() && form.role !== 'hr') {
         try {
           completeLocalSignupFallback(signupPayload);
           return;

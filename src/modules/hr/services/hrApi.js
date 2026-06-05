@@ -223,6 +223,7 @@ export const getHrJobs = async () =>
 export const getHrDashboard = async () =>
   safeRequest({
     path: '/hr/dashboard',
+    options: { clearAuthOnUnauthorized: false },
     emptyData: {
       jobs: [],
       analytics: null,
@@ -346,6 +347,7 @@ export const getRolePlanSubscriptions = async (filters = {}) =>
 export const getCurrentRolePlanSubscription = async (audienceRole = 'hr') =>
   safeRequest({
     path: `/pricing/role-subscriptions/current?${buildQueryString({ audienceRole })}`,
+    options: { clearAuthOnUnauthorized: false },
     emptyData: null,
     extract: (payload) => payload?.subscription || null
   });
@@ -444,6 +446,7 @@ export const getHrAnalytics = async () =>
 export const getHrRecentActivity = async () =>
   safeRequest({
     path: '/hr/recent-activity',
+    options: { clearAuthOnUnauthorized: false },
     emptyData: [],
     extract: (payload) => payload?.activities || []
   });
@@ -677,6 +680,16 @@ export const viewHrCandidateResume = async (studentId) =>
     extract: (payload) => ({
       access: payload?.access || null,
       resume: payload?.resume || null
+    })
+  });
+
+export const viewHrCandidateProfile = async (studentId) =>
+  strictRequest({
+    path: `/hr/candidates/${studentId}/profile-view`,
+    options: { method: 'POST', body: JSON.stringify({}) },
+    extract: (payload) => ({
+      access: payload?.access || null,
+      candidate: payload?.candidate || null
     })
   });
 

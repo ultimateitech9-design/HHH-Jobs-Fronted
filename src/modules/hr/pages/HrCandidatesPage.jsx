@@ -27,6 +27,7 @@ import {
   searchHrCandidatesV2,
   sendBulkCandidateInterest,
   sendCandidateInterest,
+  viewHrCandidateProfile,
   viewHrCandidateResume
 } from '../services/hrApi';
 import UpgradePlanModal from '../../../shared/components/UpgradePlanModal';
@@ -406,6 +407,47 @@ export default function HrCandidatesPage() {
     }
   };
 
+  const handleViewProfile = async (candidate) => {
+    if (!candidate?.id) return;
+
+    setActionState((current) => ({ ...current, [`profile_${candidate.id}`]: 'opening' }));
+    setError('');
+
+    try {
+      const response = await viewHrCandidateProfile(candidate.id);
+      if (response.access) {
+        setAccess((current) => ({ ...current, ...response.access }));
+        setSummary((current) => ({
+          ...current,
+          studentDbViewsUsed: response.access.studentDbViewsUsed,
+          studentDbViewsRemaining: response.access.studentDbViewsRemaining,
+          studentDbViewLimit: response.access.studentDbViewLimit
+        }));
+      }
+
+      if (response.candidate) {
+        setCandidates((current) =>
+          current.map((item) =>
+            item.id === candidate.id
+              ? {
+                  ...item,
+                  ...response.candidate,
+                  access: {
+                    ...item.access,
+                    ...response.candidate.access
+                  }
+                }
+              : item
+          )
+        );
+      }
+    } catch (profileError) {
+      setError(profileError.message || 'Unable to open candidate profile.');
+    } finally {
+      setActionState((current) => ({ ...current, [`profile_${candidate.id}`]: '' }));
+    }
+  };
+
   const applyTemplateToSingle = (templateId) => {
     setInterestTemplateId(templateId);
     const template = templates.find((item) => item.id === templateId);
@@ -606,6 +648,7 @@ export default function HrCandidatesPage() {
                     actionState={actionState}
                     onSelect={() => handleSelect(candidate.id)}
                     onShortlist={() => toggleShortlist(candidate)}
+                    onViewProfile={() => handleViewProfile(candidate)}
                     onViewResume={() => handleViewResume(candidate)}
                     onInterest={() => {
                       setInterestModal(candidate);
@@ -738,10 +781,11 @@ function Field({ label, value, onChange, placeholder, type = 'text' }) {
   );
 }
 
-function CandidateCard({ candidate, selected, selectingEnabled, actionState, onSelect, onShortlist, onViewResume, onInterest }) {
+function CandidateCard({ candidate, selected, selectingEnabled, actionState, onSelect, onShortlist, onViewProfile, onViewResume, onInterest }) {
   const interestStatus = candidate.crm?.interestStatus;
   const shortlistLoading = actionState[`shortlist_${candidate.id}`] === 'saving';
   const interestLoading = actionState[candidate.id] === 'sending';
+  const profileLoading = actionState[`profile_${candidate.id}`] === 'opening';
   const resumeLoading = actionState[`resume_${candidate.id}`] === 'opening';
   const verification = candidate.verification || {};
 
@@ -830,7 +874,15 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
             {candidate.access?.requiresUpgrade || !candidate.access?.canBrowseFullProfile ? (
               <div className="flex items-start gap-2">
                 <FiLock size={14} className="mt-0.5 shrink-0 text-amber-600" />
-                <p>{candidate.access.blurReason}</p>
+                <div className="space-y-1">
+                  <p>{candidate.access.blurReason}</p>
+                  {!candidate.access?.requiresUpgrade && candidate.access?.hasPaidAccess ? (
+                    <button type="button" onClick={onViewProfile} disabled={profileLoading} className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline disabled:cursor-not-allowed disabled:opacity-60">
+                      {profileLoading ? <FiRefreshCw size={13} className="animate-spin" /> : <FiEye size={13} />}
+                      View profile
+                    </button>
+                  ) : null}
+                </div>
               </div>
             ) : candidate.access?.canViewContact ? (
               <div className="flex flex-wrap items-center gap-3">
@@ -843,7 +895,9 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
                 <FiEye size={14} className="mt-0.5 shrink-0 text-brand-600" />
                 <div className="space-y-1">
                   <p>{candidate.access?.blurReason || 'Contact details unlock after the student accepts your connection request.'}</p>
-                  <ResumeAction candidate={candidate} loading={resumeLoading} onViewResume={onViewResume} />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <ResumeAction candidate={candidate} loading={resumeLoading} onViewResume={onViewResume} />
+                  </div>
                 </div>
               </div>
             )}

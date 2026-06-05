@@ -304,6 +304,8 @@ const OtpVerificationPage = () => {
       const response = await apiFetch('/auth/verify-otp', {
         method: 'POST',
         body: JSON.stringify({ email, otp: otpCode }),
+        skipAuth: true,
+        clearAuthOnUnauthorized: false,
         timeoutMs: AUTH_REQUEST_TIMEOUT_MS
       });
       const payload = await response.json();
@@ -332,6 +334,11 @@ const OtpVerificationPage = () => {
       setAuthData(payload.token, nextUser);
       navigate(destination, { replace: true });
     } catch (requestError) {
+      if (verificationRole === 'hr') {
+        setError(requestError.message || 'Unable to verify OTP right now. Please try again.');
+        return;
+      }
+
       try {
         const payload = verifyLocalSignupOtp({ email, otp: otpCode });
 
@@ -370,6 +377,8 @@ const OtpVerificationPage = () => {
       const response = await apiFetch('/auth/send-otp', {
         method: 'POST',
         body: JSON.stringify({ email }),
+        skipAuth: true,
+        clearAuthOnUnauthorized: false,
         timeoutMs: AUTH_REQUEST_TIMEOUT_MS
       });
 

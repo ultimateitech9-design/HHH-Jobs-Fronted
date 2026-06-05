@@ -70,7 +70,9 @@ export const usePlanAccess = () => {
     roleCache.loading = true;
 
     try {
-      const response = await apiFetch(`/pricing/role-subscriptions/current?audienceRole=${audienceRole}`);
+      const response = await apiFetch(`/pricing/role-subscriptions/current?audienceRole=${audienceRole}`, {
+        clearAuthOnUnauthorized: false
+      });
       const payload = await response.json();
       const sub = payload?.subscription || null;
 
