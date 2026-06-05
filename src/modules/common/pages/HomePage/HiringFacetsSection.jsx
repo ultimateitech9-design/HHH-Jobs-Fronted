@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
 const GROUP_LIMITS = {
-  role: 48,
-  city: 72,
-  sector: 90
+  role: 16,
+  city: 16,
+  sector: 20
 };
 
 const GROUP_DIRECTORY_PATHS = {
@@ -41,7 +41,12 @@ const normalizeItems = (items = []) => (Array.isArray(items) ? items : [])
       hasHiring: Boolean(item?.hasHiring ?? count > 0)
     };
   })
-  .filter((item) => item.name);
+  .filter((item) => item.name)
+  .sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    if (b.totalCount !== a.totalCount) return b.totalCount - a.totalCount;
+    return a.name.localeCompare(b.name);
+  });
 
 const FacetChip = ({ kind, item }) => {
   const active = item.count > 0;
