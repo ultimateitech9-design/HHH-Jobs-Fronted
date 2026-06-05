@@ -32,6 +32,9 @@ import {
 const initialFormState = {
   name: '',
   companyName: '',
+  companyWebsite: '',
+  companyType: '',
+  companySize: '',
   sectorId: '',
   sectorName: '',
   location: '',
@@ -340,6 +343,9 @@ const SignupPage = () => {
       return {
         ...payload.user,
         companyName: form.companyName,
+        companyWebsite: form.companyWebsite,
+        companyType: form.companyType,
+        companySize: form.companySize,
         sectorId: form.sectorId,
         sectorName: form.sectorName,
         location: form.location,
@@ -445,6 +451,9 @@ const SignupPage = () => {
     const signupPayload = {
       name: form.name.trim(),
       companyName: form.companyName.trim(),
+      companyWebsite: form.companyWebsite.trim(),
+      companyType: form.companyType,
+      companySize: form.companySize,
       sectorId: form.sectorId === OTHER_SECTOR_OPTION.id ? '' : form.sectorId,
       sectorName: form.sectorName,
       location: form.location.trim(),
@@ -703,6 +712,50 @@ const SignupPage = () => {
                         hideErrorText={isRequiredSignupError(fieldErrors.sectorId)}
                         className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] focus:!border-gold/60 focus:!bg-white"
                       />
+                      <AuthInputField
+                        label="Website URL"
+                        type="url"
+                        value={form.companyWebsite}
+                        onChange={(event) => handleChange('companyWebsite', event.target.value)}
+                        placeholder="https://www.example.com"
+                        disabled={isSubmitting || Boolean(socialLoading)}
+                        className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] placeholder:!text-slate-400 focus:!border-gold/60 focus:!bg-white"
+                      />
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <AuthSelectField
+                          label="Company type"
+                          value={form.companyType}
+                          onChange={(event) => handleChange('companyType', event.target.value)}
+                          placeholder="Select company type"
+                          options={[
+                            { value: '', label: 'Select company type' },
+                            { value: 'Startup', label: 'Startup' },
+                            { value: 'Private Limited', label: 'Private Limited' },
+                            { value: 'MNC', label: 'MNC' },
+                            { value: 'Agency', label: 'Agency' },
+                            { value: 'Government', label: 'Government' },
+                            { value: 'Other', label: 'Other' }
+                          ]}
+                          disabled={isSubmitting || Boolean(socialLoading)}
+                          className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] focus:!border-gold/60 focus:!bg-white"
+                        />
+                        <AuthSelectField
+                          label="Employee size"
+                          value={form.companySize}
+                          onChange={(event) => handleChange('companySize', event.target.value)}
+                          placeholder="Select employee size"
+                          options={[
+                            { value: '', label: 'Select employee size' },
+                            { value: '1-10', label: '1-10 Employees' },
+                            { value: '11-50', label: '11-50 Employees' },
+                            { value: '51-200', label: '51-200 Employees' },
+                            { value: '201-500', label: '201-500 Employees' },
+                            { value: '500+', label: '500+ Employees' }
+                          ]}
+                          disabled={isSubmitting || Boolean(socialLoading)}
+                          className="!rounded-[1.1rem] !border-slate-200 !bg-[#f7f5ef] !px-4 !py-3.5 !text-[0.95rem] focus:!border-gold/60 focus:!bg-white"
+                        />
+                      </div>
                       <div className="grid gap-3 md:grid-cols-2">
                         {states.length > 0 ? (
                           <AuthSelectField

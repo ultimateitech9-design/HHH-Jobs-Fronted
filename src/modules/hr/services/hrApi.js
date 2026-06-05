@@ -213,6 +213,22 @@ export const updateHrProfile = async (formState) => {
   return normalizeHrProfile(updated);
 };
 
+export const uploadHrProfileLogo = async (file) => {
+  const formData = new FormData();
+  formData.append('logo', file);
+
+  const response = await strictRequest({
+    path: '/hr/profile/logo',
+    options: { method: 'POST', body: formData },
+    extract: (payload) => payload || {}
+  });
+
+  return {
+    logoUrl: response.logoUrl || response.profile?.logo_url || response.profile?.logoUrl || '',
+    profile: normalizeHrProfile(response.profile || {})
+  };
+};
+
 export const getHrJobs = async () =>
   safeRequest({
     path: '/hr/jobs',

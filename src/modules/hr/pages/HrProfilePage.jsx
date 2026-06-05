@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { 
   FiBriefcase, 
   FiGlobe, 
@@ -12,9 +12,10 @@ import {
   FiXCircle,
   FiSave,
   FiHash,
-  FiShield
+  FiShield,
+  FiUpload
 } from 'react-icons/fi';
-import { getHrProfile, getJobDistricts, getJobSectors, getJobStates, updateHrProfile } from '../services/hrApi';
+import { getHrProfile, getJobDistricts, getJobSectors, getJobStates, updateHrProfile, uploadHrProfileLogo } from '../services/hrApi';
 import { getCurrentUser, getToken, setAuthSession } from '../../../utils/auth';
 
 const EMPTY_HR_PROFILE_FORM = {
@@ -85,14 +86,49 @@ const mergeUserWithProfile = (user = {}, profile = {}) => ({
   hrEmployerId: user.hrEmployerId
 });
 
+const compressImageFile = (file) => new Promise((resolve, reject) => {
+  if (!file?.type?.startsWith('image/')) {
+    reject(new Error('Please choose an image file.'));
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onerror = () => reject(new Error('Unable to read image file.'));
+  reader.onload = () => {
+    const image = new Image();
+    image.onerror = () => reject(new Error('Unable to load image file.'));
+    image.onload = () => {
+      const maxSize = 720;
+      const scale = Math.min(1, maxSize / Math.max(image.width || maxSize, image.height || maxSize));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round((image.width || maxSize) * scale));
+      canvas.height = Math.max(1, Math.round((image.height || maxSize) * scale));
+      const context = canvas.getContext('2d');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Unable to compress image.'));
+          return;
+        }
+        resolve(new File([blob], 'company-logo.webp', { type: 'image/webp' }));
+      }, 'image/webp', 0.82);
+    };
+    image.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
 const HrProfilePage = () => {
   const currentUser = getCurrentUser();
+  const logoInputRef = useRef(null);
   const [form, setForm] = useState(EMPTY_HR_PROFILE_FORM);
   const [sectors, setSectors] = useState([]);
   const [states, setStates] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -181,6 +217,32 @@ const HrProfilePage = () => {
     });
   };
 
+  const handleLogoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setLogoUploading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const compressedFile = await compressImageFile(file);
+      const uploaded = await uploadHrProfileLogo(compressedFile);
+      const nextProfile = mergeProfileForm(uploaded.profile, form, { logoUrl: uploaded.logoUrl });
+      setForm(nextProfile);
+      const token = getToken();
+      if (token && currentUser) {
+        setAuthSession(token, mergeUserWithProfile(currentUser, nextProfile));
+      }
+      setSuccess('Company logo uploaded and compressed automatically.');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (uploadError) {
+      setError(uploadError.message || 'Unable to upload company logo.');
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
   const handleSave = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -249,6 +311,13 @@ const HrProfilePage = () => {
             
             {/* Left Side: Logo & Basic Overview */}
             <div className="w-full lg:w-1/3 shrink-0 flex flex-col items-center lg:items-start text-center lg:text-left">
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl bg-neutral-50 border-2 border-dashed border-neutral-200 flex flex-col items-center justify-center p-2 mb-6 shadow-sm overflow-hidden relative group">
                 {form.logoUrl ? (
                   <img src={form.logoUrl} alt="Company Logo" className="w-full h-full object-contain" />
@@ -258,11 +327,35 @@ const HrProfilePage = () => {
                     <span className="text-xs font-bold text-neutral-400">No Logo</span>
                   </>
                 )}
-                {/* Overlay for generic aesthetics - in a real app this would be an upload button */}
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                   <span className="text-white text-xs font-bold bg-black/50 px-3 py-1.5 rounded-lg backdrop-blur-sm">Image URL Field</span>
+                <div className="absolute inset-0 bg-black/45 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={logoUploading}
+                    className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-black text-primary shadow-sm disabled:opacity-60"
+                  >
+                    {logoUploading ? (
+                      <span className="h-4 w-4 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                    ) : (
+                      <FiUpload />
+                    )}
+                    {logoUploading ? 'Uploading' : 'Upload logo'}
+                  </button>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={logoUploading}
+                className="mb-5 inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 hover:bg-brand-100 disabled:opacity-60"
+              >
+                {logoUploading ? (
+                  <span className="h-4 w-4 rounded-full border-2 border-brand-200 border-t-brand-700 animate-spin" />
+                ) : (
+                  <FiUpload />
+                )}
+                {logoUploading ? 'Compressing...' : 'Upload company logo'}
+              </button>
               
               <h2 className="text-2xl font-bold text-primary mb-1 w-full truncate">
                 {form.companyName || 'Your Company'}
