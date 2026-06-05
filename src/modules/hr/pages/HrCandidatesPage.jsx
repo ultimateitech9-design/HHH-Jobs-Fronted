@@ -159,6 +159,15 @@ function ResumeAction({ candidate, loading, onViewResume }) {
   );
 }
 
+function ProfileViewAction({ loading, onViewProfile }) {
+  return (
+    <button type="button" onClick={onViewProfile} disabled={loading} className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline disabled:cursor-not-allowed disabled:opacity-60">
+      {loading ? <FiRefreshCw size={13} className="animate-spin" /> : <FiEye size={13} />}
+      View profile
+    </button>
+  );
+}
+
 export default function HrCandidatesPage() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [loading, setLoading] = useState(true);
@@ -876,18 +885,14 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
                 <FiLock size={14} className="mt-0.5 shrink-0 text-amber-600" />
                 <div className="space-y-1">
                   <p>{candidate.access.blurReason}</p>
-                  {!candidate.access?.requiresUpgrade && candidate.access?.hasPaidAccess ? (
-                    <button type="button" onClick={onViewProfile} disabled={profileLoading} className="inline-flex items-center gap-1.5 font-bold text-brand-700 hover:underline disabled:cursor-not-allowed disabled:opacity-60">
-                      {profileLoading ? <FiRefreshCw size={13} className="animate-spin" /> : <FiEye size={13} />}
-                      View profile
-                    </button>
-                  ) : null}
+                  {candidate.access?.hasPaidAccess ? <ProfileViewAction loading={profileLoading} onViewProfile={onViewProfile} /> : null}
                 </div>
               </div>
             ) : candidate.access?.canViewContact ? (
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 text-slate-700"><FiUser size={13} /> {candidate.user?.email || 'Email unavailable'}</span>
                 <span className="inline-flex items-center gap-1.5 text-slate-700"><FiSend size={13} /> {candidate.user?.mobile || 'Mobile unavailable'}</span>
+                <ProfileViewAction loading={profileLoading} onViewProfile={onViewProfile} />
                 <ResumeAction candidate={candidate} loading={resumeLoading} onViewResume={onViewResume} />
               </div>
             ) : (
@@ -896,6 +901,7 @@ function CandidateCard({ candidate, selected, selectingEnabled, actionState, onS
                 <div className="space-y-1">
                   <p>{candidate.access?.blurReason || 'Contact details unlock after the student accepts your connection request.'}</p>
                   <div className="flex flex-wrap items-center gap-3">
+                    <ProfileViewAction loading={profileLoading} onViewProfile={onViewProfile} />
                     <ResumeAction candidate={candidate} loading={resumeLoading} onViewResume={onViewResume} />
                   </div>
                 </div>

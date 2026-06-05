@@ -8,6 +8,7 @@ import {
   resolvePortalViewRole
 } from '../../../../utils/auth';
 import useAuthStore from '../../../../core/auth/authStore';
+import { syncSessionUser } from '../../../../core/auth/sessionSync';
 import PortalWorkbenchHeader from './PortalWorkbenchHeader';
 import PortalWorkbenchMobileDrawer from './PortalWorkbenchMobileDrawer';
 import PortalWorkbenchSidebar from './PortalWorkbenchSidebar';
@@ -109,6 +110,36 @@ const PortalWorkbenchLayout = ({
       window.removeEventListener('storage', sync);
     };
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return undefined;
+
+    let mounted = true;
+    const refreshUser = async (force = false) => {
+      try {
+        const result = await syncSessionUser({ force, minIntervalMs: 45 * 1000 });
+        if (mounted && result?.user) setUser(result.user);
+      } catch {
+        // Passive session sync should never interrupt an already-rendered workspace.
+      }
+    };
+    const handleFocus = () => refreshUser(true);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refreshUser(true);
+    };
+
+    refreshUser(false);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    const timerId = window.setInterval(() => refreshUser(false), 60 * 1000);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.clearInterval(timerId);
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     setMobileMenuOpen(false);

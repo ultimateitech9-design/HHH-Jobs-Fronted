@@ -30,7 +30,14 @@ const useAuthStore = create((set, get) => ({
   },
 
   refreshUser: (updatedUser) => {
-    set((state) => ({ user: { ...state.user, ...updatedUser } }));
+    set((state) => {
+      if (!updatedUser || typeof updatedUser !== 'object') return { user: state.user };
+      const nextUser = { ...(state.user || {}), ...(updatedUser || {}) };
+      if (state.token && nextUser?.id) {
+        setAuthSession(state.token, nextUser);
+      }
+      return { user: nextUser };
+    });
   },
 
   // Computed helpers

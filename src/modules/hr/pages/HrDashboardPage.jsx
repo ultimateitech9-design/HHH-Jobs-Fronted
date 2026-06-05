@@ -8,6 +8,7 @@ import {
   getHrDashboard,
   getHrRecentActivity
 } from '../services/hrApi';
+import useAuthStore from '../../../core/auth/authStore';
 import { getCurrentUser } from '../../../utils/auth';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 
@@ -103,7 +104,7 @@ const HrDashboardPage = () => {
     recentActivity: []
   });
 
-  const user = getCurrentUser();
+  const user = useAuthStore((authState) => authState.user) || getCurrentUser();
   const isApprovedHr = Boolean(user?.isHrApproved);
 
   useEffect(() => {
@@ -335,7 +336,7 @@ const HrDashboardPage = () => {
       {!isApprovedHr && (
         <div className="flex items-center gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-[13px] font-medium text-amber-800">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500 animate-pulse" />
-          Your HR account is pending admin approval. Some features are restricted.
+          Your employer profile is not verified yet. Hiring tools stay available; admin verification adds a verified badge.
         </div>
       )}
 

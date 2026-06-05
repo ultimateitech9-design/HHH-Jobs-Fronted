@@ -17,25 +17,57 @@ import {
 import { getHrProfile, getJobDistricts, getJobSectors, getJobStates, updateHrProfile } from '../services/hrApi';
 import { getCurrentUser, getToken, setAuthSession } from '../../../utils/auth';
 
+const EMPTY_HR_PROFILE_FORM = {
+  companyName: '',
+  companyWebsite: '',
+  companySize: '',
+  industryType: '',
+  sectorId: '',
+  sectorName: '',
+  foundedYear: '',
+  companyType: '',
+  location: '',
+  stateId: '',
+  stateName: '',
+  districtId: '',
+  districtName: '',
+  about: '',
+  logoUrl: ''
+};
+
+const hasText = (value) => String(value ?? '').trim().length > 0;
+
+const buildProfileFallbackFromUser = (user = {}) => ({
+  companyName: user.companyName || user.company_name || '',
+  companyWebsite: user.companyWebsite || user.company_website || '',
+  companySize: user.companySize || user.company_size || '',
+  industryType: user.industryType || user.industry_type || user.sectorName || user.sector_name || '',
+  sectorId: user.sectorId || user.sector_id || '',
+  sectorName: user.sectorName || user.sector_name || user.industryType || user.industry_type || '',
+  foundedYear: user.foundedYear || user.founded_year || '',
+  companyType: user.companyType || user.company_type || '',
+  location: user.location || user.companyLocation || user.company_location || '',
+  stateId: user.stateId || user.state_id || '',
+  stateName: user.stateName || user.state_name || user.state || '',
+  districtId: user.districtId || user.district_id || '',
+  districtName: user.districtName || user.district_name || user.city || '',
+  about: user.about || user.companyAbout || '',
+  logoUrl: user.logoUrl || user.logo_url || user.companyLogo || ''
+});
+
+const mergeProfileForm = (...sources) => (
+  Object.keys(EMPTY_HR_PROFILE_FORM).reduce((acc, key) => {
+    const value = sources
+      .map((source) => source?.[key])
+      .find((item) => hasText(item));
+    acc[key] = value || '';
+    return acc;
+  }, { ...EMPTY_HR_PROFILE_FORM })
+);
+
 const HrProfilePage = () => {
   const currentUser = getCurrentUser();
-  const [form, setForm] = useState({
-    companyName: '',
-    companyWebsite: '',
-    companySize: '',
-    industryType: '',
-    sectorId: '',
-    sectorName: '',
-    foundedYear: '',
-    companyType: '',
-    location: '',
-    stateId: '',
-    stateName: '',
-    districtId: '',
-    districtName: '',
-    about: '',
-    logoUrl: ''
-  });
+  const [form, setForm] = useState(EMPTY_HR_PROFILE_FORM);
   const [sectors, setSectors] = useState([]);
   const [states, setStates] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -57,11 +89,15 @@ const HrProfilePage = () => {
       ]);
       if (!mounted) return;
 
-      setForm(response.data);
+      const nextProfile = mergeProfileForm(
+        buildProfileFallbackFromUser(currentUser),
+        response.data
+      );
+      setForm(nextProfile);
       setSectors(sectorsResponse.data || []);
       setStates(statesResponse.data || []);
-      if (response.data?.stateId) {
-        const districtsResponse = await getJobDistricts(response.data.stateId);
+      if (nextProfile.stateId) {
+        const districtsResponse = await getJobDistricts(nextProfile.stateId);
         if (mounted) setDistricts(districtsResponse.data || []);
       }
       setIsDemo(Boolean(response.isDemo));
@@ -138,6 +174,16 @@ const HrProfilePage = () => {
         setAuthSession(token, {
           ...currentUser,
           companyName: updated.companyName || currentUser.companyName,
+          companyWebsite: updated.companyWebsite || currentUser.companyWebsite,
+          companySize: updated.companySize || currentUser.companySize,
+          industryType: updated.industryType || currentUser.industryType,
+          sectorId: updated.sectorId || currentUser.sectorId,
+          sectorName: updated.sectorName || currentUser.sectorName,
+          location: updated.location || currentUser.location,
+          stateId: updated.stateId || currentUser.stateId,
+          stateName: updated.stateName || currentUser.stateName,
+          districtId: updated.districtId || currentUser.districtId,
+          districtName: updated.districtName || currentUser.districtName,
           hrEmployerId: currentUser?.hrEmployerId
         });
       }
