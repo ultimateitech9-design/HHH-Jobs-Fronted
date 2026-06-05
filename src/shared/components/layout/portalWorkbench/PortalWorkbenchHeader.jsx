@@ -133,8 +133,8 @@ const PortalWorkbenchHeader = ({
           notifications={notifications}
         />
 
-        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 py-1.5 backdrop-blur-xl">
-          <div className="vw-shell-wide grid grid-cols-[auto_1fr_auto] items-center gap-2 lg:gap-2.5">
+        <header className="portal-marketplace-header sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 py-1.5 backdrop-blur-xl">
+          <div className="portal-marketplace-header__inner vw-shell-wide grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 lg:gap-2.5">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -152,7 +152,7 @@ const PortalWorkbenchHeader = ({
               </Link>
             </div>
 
-            <nav ref={navRef} className="hidden min-w-0 items-center justify-center gap-5 xl:flex xl:gap-8">
+            <nav ref={navRef} className="portal-marketplace-header__nav hidden min-w-0 items-center justify-center gap-5 xl:flex xl:gap-8">
               {headerNavItems.map((item) => {
                 const hasChildren = Array.isArray(item.children) && item.children.length > 0;
                 const isOpen = openDropdown === item.label;
@@ -163,7 +163,7 @@ const PortalWorkbenchHeader = ({
                     <Link
                       key={item.label}
                       to={item.to}
-                      className="text-[0.92rem] font-medium text-slate-700 transition-colors hover:text-navy"
+                      className="portal-marketplace-header__nav-link text-[0.92rem] font-medium text-slate-700 transition-colors hover:text-navy"
                     >
                       {item.label}
                     </Link>
@@ -175,7 +175,7 @@ const PortalWorkbenchHeader = ({
                     <button
                       type="button"
                       onClick={() => setOpenDropdown((current) => (current === item.label ? '' : item.label))}
-                      className={`inline-flex items-center gap-1 text-[0.92rem] font-medium transition-colors ${
+                      className={`portal-marketplace-header__nav-link inline-flex items-center gap-1 text-[0.92rem] font-medium transition-colors ${
                         isActive || isOpen ? 'text-navy' : 'text-slate-700 hover:text-navy'
                       }`}
                     >
@@ -203,7 +203,7 @@ const PortalWorkbenchHeader = ({
             </nav>
 
             <div className="ml-auto flex items-center gap-2 sm:gap-2.5">
-              <div className="hidden h-[2.125rem] items-center rounded-full border border-slate-200 bg-white pl-3.5 pr-1 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:flex md:w-[170px] lg:w-[200px] xl:w-[240px]">
+              <div className="portal-marketplace-header__search hidden h-[2.125rem] items-center rounded-full border border-slate-200 bg-white pl-3.5 pr-1 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:flex md:w-[170px] lg:w-[200px] xl:w-[240px]">
                 <input
                   placeholder={headerSearchPlaceholder || searchPlaceholder || 'Search jobs here'}
                   className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"

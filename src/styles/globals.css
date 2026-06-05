@@ -5449,6 +5449,53 @@ select {
   height: 17px;
 }
 
+.portal-marketplace-header__inner {
+  column-gap: clamp(0.45rem, 0.9vw, 0.9rem);
+}
+
+.portal-marketplace-header__nav {
+  min-width: 0;
+  max-width: 100%;
+  gap: clamp(0.8rem, 1.65vw, 2rem);
+  overflow: hidden;
+}
+
+.portal-marketplace-header__nav-link {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  line-height: 1.15;
+  font-size: clamp(0.78rem, 0.82vw, 0.92rem);
+}
+
+.portal-marketplace-header__search {
+  width: clamp(11.5rem, 15.5vw, 15rem) !important;
+}
+
+@media (min-width: 1280px) and (max-width: 1420px) {
+  .portal-marketplace-header__nav {
+    gap: clamp(0.58rem, 1.05vw, 1.05rem);
+  }
+
+  .portal-marketplace-header__nav-link {
+    font-size: clamp(0.72rem, 0.72vw, 0.82rem);
+  }
+
+  .portal-marketplace-header__search {
+    width: clamp(10.5rem, 13.25vw, 12rem) !important;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1320px) {
+  .portal-marketplace-header__inner {
+    width: min(96vw, 100%);
+  }
+
+  .portal-marketplace-header__nav {
+    gap: 0.55rem;
+  }
+}
+
 .portal-workbench--student .portal-support {
   display: none;
 }
