@@ -385,19 +385,19 @@ const HrJobsPage = () => {
     if (selectedRolePlanIsPendingSetup) {
       return {
         title: 'Complete Auto-pay Setup',
-        detail: 'Then your 2 months trial will start'
+        detail: 'Pay ₹1 to authorise'
       };
     }
     if (hasPendingAutopaySetup && !hasExistingRecruiterPlan) {
       return {
         title: 'Switch Plan + Enable Auto-pay',
-        detail: 'Then your 2 months trial will start'
+        detail: 'Pay ₹1 to authorise'
       };
     }
     if (!hasExistingRecruiterPlan) {
       return {
         title: 'Start 2 Months Trial',
-        detail: 'Enable Razorpay auto-pay first'
+        detail: 'Pay ₹1 to authorise auto-pay'
       };
     }
     if (selectedRolePlanChangeType === 'downgrade') {
@@ -1379,16 +1379,16 @@ const HrJobsPage = () => {
                       : roleQuoteDisplay && Number(roleQuoteDisplay.totalAmount || 0) <= 0
                       ? 'This coupon makes the checkout free. The trial activates without Razorpay payment.'
                       : selectedRolePlanIsPendingSetup
-                      ? 'Auto-pay is still pending for this plan. Complete Razorpay authorisation to start the trial.'
+                      ? 'Auto-pay is still pending for this plan. Razorpay will collect ₹1 only for authorisation, then your trial starts.'
                       : hasPendingAutopaySetup && !hasExistingRecruiterPlan
-                      ? 'A previous trial setup is pending. Authorising now will switch the pending setup to the selected plan.'
+                      ? 'A previous trial setup is pending. Authorising ₹1 now will switch the pending setup to the selected plan.'
                       : hasExistingRecruiterPlan
                       ? selectedRolePlanChangeType === 'downgrade'
                         ? 'No payment is collected for downgrade here. Sales gets the HR details and will follow up before switching the plan.'
-                        : selectedRolePlanChangeType === 'upgrade'
-                        ? 'Existing recruiters upgrade without another free trial. Razorpay auto-pay authorisation is required for the new plan.'
-                        : 'Existing recruiters change plans without another free trial. Razorpay auto-pay authorisation is required for the new plan.'
-                      : 'Checkout authorises Razorpay auto-pay first. Your free trial starts only after authorisation succeeds.'}
+                      : selectedRolePlanChangeType === 'upgrade'
+                        ? 'Existing recruiters upgrade without another free trial. Razorpay collects ₹1 to authorise auto-pay for the new plan.'
+                        : 'Existing recruiters change plans without another free trial. Razorpay collects ₹1 to authorise auto-pay for the new plan.'
+                      : 'Checkout collects ₹1 to authorise Razorpay auto-pay first. Your free trial starts only after authorisation succeeds.'}
                   </p>
 
                   <button
