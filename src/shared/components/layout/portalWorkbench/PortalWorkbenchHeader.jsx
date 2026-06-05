@@ -203,20 +203,6 @@ const PortalWorkbenchHeader = ({
             </nav>
 
             <div className="ml-auto flex items-center gap-2 sm:gap-2.5">
-              <div className="portal-marketplace-header__search hidden h-[2.125rem] items-center rounded-full border border-slate-200 bg-white pl-3.5 pr-1 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:flex md:w-[170px] lg:w-[200px] xl:w-[240px]">
-                <input
-                  placeholder={headerSearchPlaceholder || searchPlaceholder || 'Search jobs here'}
-                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
-                />
-                <button
-                  type="button"
-                  aria-label="Search jobs"
-                  className="inline-flex h-[1.625rem] w-[1.625rem] items-center justify-center rounded-full gradient-primary text-white"
-                >
-                  <Search className="h-4 w-4" />
-                </button>
-              </div>
-
               {headerBadge?.to ? (
                 <Link
                   to={headerBadge.to}
