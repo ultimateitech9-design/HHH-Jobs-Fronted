@@ -5465,11 +5465,11 @@ select {
   word-break: keep-all;
   overflow-wrap: normal;
   line-height: 1.15;
-  font-size: clamp(0.78rem, 0.82vw, 0.92rem);
+  font-size: clamp(0.88rem, 0.9vw, 0.95rem);
 }
 
 .portal-marketplace-header__search {
-  width: clamp(11.5rem, 15.5vw, 15rem) !important;
+  width: clamp(10.75rem, 14.5vw, 14.5rem) !important;
 }
 
 @media (min-width: 1280px) and (max-width: 1420px) {
@@ -5478,11 +5478,11 @@ select {
   }
 
   .portal-marketplace-header__nav-link {
-    font-size: clamp(0.72rem, 0.72vw, 0.82rem);
+    font-size: clamp(0.82rem, 0.8vw, 0.88rem);
   }
 
   .portal-marketplace-header__search {
-    width: clamp(10.5rem, 13.25vw, 12rem) !important;
+    width: clamp(9.5rem, 11.8vw, 11rem) !important;
   }
 }
 
