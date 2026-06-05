@@ -22,21 +22,27 @@ const formatLiveCount = (value) => {
   return new Intl.NumberFormat('en-IN').format(Math.max(0, count));
 };
 
-const buildStatItems = (stats = {}) => [
-  { label: 'Active jobs', value: formatLiveCount(stats.openJobs) },
-  { label: 'Companies hiring', value: formatLiveCount(stats.companies) },
-  { label: 'Job categories', value: formatLiveCount(stats.roles) }
+const TRUST_STATS = {
+  openJobs: 50000,
+  companies: 1200,
+  roles: 150
+};
+
+const buildStatItems = () => [
+  { label: 'Active jobs', value: formatLiveCount(TRUST_STATS.openJobs) },
+  { label: 'Companies hiring', value: formatLiveCount(TRUST_STATS.companies) },
+  { label: 'Job categories', value: formatLiveCount(TRUST_STATS.roles) }
 ];
 
-export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipClick, stats = {} }) {
+export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipClick }) {
   const user = useAuthStore((state) => state.user);
   const [showDesktopVisual, setShowDesktopVisual] = useState(canShowDesktopVisual);
   const isHrUser = normalizeRole(user?.role) === 'hr';
   const hrJobsPath = '/portal/hr/jobs';
   const postJobPath = isHrUser ? hrJobsPath : '/login/hr';
-  const statItems = buildStatItems(stats);
-  const activeJobsLabel = formatLiveCount(stats.openJobs);
-  const companiesLabel = formatLiveCount(stats.companies);
+  const statItems = buildStatItems();
+  const activeJobsLabel = formatLiveCount(TRUST_STATS.openJobs);
+  const companiesLabel = formatLiveCount(TRUST_STATS.companies);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
