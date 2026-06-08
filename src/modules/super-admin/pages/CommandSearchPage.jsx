@@ -9,21 +9,20 @@ import { USER_ROLE_LABELS } from '../constants/userRoles';
 import { getCommandSearchResults, updateUserStatus } from '../services/usersApi';
 import { formatDateTime } from '../utils/formatDate';
 
-const STATUS_OPTIONS = ['active', 'blocked', 'banned'];
+const STATUS_OPTIONS = [
+  { value: '', label: 'All statuses' },
+  { value: 'active', label: 'Active' },
+  { value: 'restricted', label: 'Restricted' }
+];
 const COMMAND_SEARCH_ROLE_OPTIONS = [
   { value: '', label: 'All records' },
-  { value: 'public_accounts', label: 'All user accounts' },
-  { value: 'hr_accounts', label: 'HR / company accounts' },
+  { value: 'public_accounts', label: 'User accounts' },
+  { value: 'hr_accounts', label: 'HR accounts' },
   { value: 'candidate_accounts', label: 'Students / professionals' },
   { value: 'campus_accounts', label: 'Campus accounts' },
-  { value: 'internal_staff', label: 'All internal staff' },
-  { value: 'super_admin', label: 'Super admins' },
-  { value: 'admin', label: 'Admin staff' },
-  { value: 'support', label: 'Support staff' },
-  { value: 'sales', label: 'Sales staff' },
-  { value: 'dataentry', label: 'Data Entry staff' },
-  { value: 'accounts', label: 'Accounts / finance staff' }
+  { value: 'internal_staff', label: 'Internal staff records' }
 ];
+const USER_STATUS_OPTIONS = ['active', 'blocked', 'banned'];
 
 const formatRole = (role = '') => USER_ROLE_LABELS[role] || String(role || '-').replace(/_/g, ' ');
 
@@ -224,7 +223,7 @@ const CommandSearchPage = () => {
               disabled={savingUserId === row.id}
               onChange={(event) => handleStatusChange(row, event.target.value)}
             >
-              {STATUS_OPTIONS.map((status) => (
+              {USER_STATUS_OPTIONS.map((status) => (
                 <option key={status} value={status}>{status}</option>
               ))}
             </select>
@@ -245,19 +244,19 @@ const CommandSearchPage = () => {
       <DashboardStatsCards cards={cards} />
 
       <section className="panel-card">
-        <div className="filter-bar">
+        <div className="command-search-bar">
           <div className="filter-bar__search">
             <div className="relative">
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
-                className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm font-semibold text-slate-800 shadow-sm outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+                className="command-search-bar__input"
                 value={filters.search}
                 onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-                placeholder="Search email, phone, user ID, employee code, company, or campus"
+                placeholder="Search email, phone, user ID, employee code, company, or campus..."
               />
             </div>
           </div>
-          <label className="filter-bar__field">
+          <label className="command-search-bar__field">
             Record type
             <select value={filters.role} onChange={(event) => setFilters((current) => ({ ...current, role: event.target.value }))}>
               {COMMAND_SEARCH_ROLE_OPTIONS.map((option) => (
@@ -265,12 +264,11 @@ const CommandSearchPage = () => {
               ))}
             </select>
           </label>
-          <label className="filter-bar__field">
+          <label className="command-search-bar__field">
             Status
             <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
-              <option value="">All</option>
               {STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>{status}</option>
+                <option key={status.value || 'all'} value={status.value}>{status.label}</option>
               ))}
             </select>
           </label>
