@@ -3,14 +3,12 @@ import { useLocation } from 'react-router-dom';
 import DataTable from '../../../shared/components/DataTable';
 import AdminHeader from '../components/AdminHeader';
 import DashboardStatsCards from '../components/DashboardStatsCards';
-import FilterBar from '../components/FilterBar';
 import Pagination from '../components/Pagination';
 import StatusBadge from '../components/StatusBadge';
 import { getActivityLogs } from '../services/reportsApi';
 import { formatDateTime } from '../utils/formatDate';
 
 const PAGE_SIZE = 10;
-const INITIAL_FILTERS = { search: '', level: '', module: '' };
 
 const PAGE_CONFIG = {
   student: {
@@ -26,8 +24,6 @@ const PAGE_CONFIG = {
     subtitle: 'Track campus connect activity across profiles, students, drives, and company requests.'
   }
 };
-
-const normalizeText = (value = '') => String(value || '').trim().toLowerCase();
 
 const getRoleGroupFromPath = (pathname = '') => {
   if (pathname.includes('/hr-activity-log')) return 'hr';
@@ -66,16 +62,13 @@ const ActivityLogPage = () => {
   const pageConfig = PAGE_CONFIG[roleGroup] || PAGE_CONFIG.student;
 
   const [logs, setLogs] = useState([]);
-  const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [pagination, setPagination] = useState({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
   const [summary, setSummary] = useState({ totalEvents: 0, criticalEvents: 0, warningEvents: 0, managementActions: 0 });
-  const [moduleOptions, setModuleOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
-    setFilters(INITIAL_FILTERS);
     setPagination({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
   }, [roleGroup]);
 
@@ -84,14 +77,13 @@ const ActivityLogPage = () => {
       setLoading(true);
       const response = await getActivityLogs({
         roleGroup,
-        filters,
+        filters: {},
         page: pagination.page,
         limit: PAGE_SIZE
       });
 
       setLogs(response.data?.logs || []);
       setSummary(response.data?.summary || { totalEvents: 0, criticalEvents: 0, warningEvents: 0, managementActions: 0 });
-      setModuleOptions(response.data?.modules || []);
       setPagination(response.data?.pagination || { page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
       setError(response.error || '');
       setIsDemo(Boolean(response.isDemo));
@@ -99,7 +91,7 @@ const ActivityLogPage = () => {
     };
 
     load();
-  }, [filters, pagination.page, roleGroup]);
+  }, [pagination.page, roleGroup]);
 
   const cards = useMemo(() => [
     { label: 'Total Events', value: String(summary.totalEvents || 0), helper: 'Current filtered activity volume', tone: 'info' },
@@ -185,28 +177,6 @@ const ActivityLogPage = () => {
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
       <section className="panel-card min-w-0">
-        <FilterBar
-          filters={filters}
-          onChange={(key, value) => {
-            setFilters((current) => ({ ...current, [key]: value }));
-            setPagination((current) => ({ ...current, page: 1 }));
-          }}
-          fields={[
-            {
-              key: 'module',
-              label: 'Module',
-              options: moduleOptions
-                .filter(Boolean)
-                .map((value) => ({ value, label: formatOptionLabel(value) }))
-            },
-            {
-              key: 'level',
-              label: 'Level',
-              options: ['critical', 'warning', 'error', 'info']
-                .map((value) => ({ value, label: formatOptionLabel(value) }))
-            }
-          ]}
-        />
         {loading ? <p className="module-note">Loading activity logs...</p> : null}
         <DataTable columns={columns} rows={logs} compact searchable searchPlaceholder="Search activity by actor, action, module, or details" />
         <Pagination
