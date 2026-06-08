@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { FiArrowLeft, FiBriefcase, FiCreditCard, FiFileText, FiUser } from 'react-icons/fi';
+import {
+  FiActivity,
+  FiArrowLeft,
+  FiBriefcase,
+  FiCreditCard,
+  FiFileText,
+  FiShield,
+  FiUser
+} from 'react-icons/fi';
 import AdminHeader from '../components/AdminHeader';
 import DashboardStatsCards from '../components/DashboardStatsCards';
 import StatusBadge from '../components/StatusBadge';
@@ -74,6 +82,36 @@ const normalizeRecentItems = (recent = {}) => ({
   })) : []
 });
 
+const getWorkspaceCopy = (role = '') => {
+  const normalizedRole = String(role || '').toLowerCase();
+  if (normalizedRole === 'hr' || normalizedRole === 'company_admin') {
+    return {
+      title: 'HR live support workspace',
+      summary: 'Use this to inspect recruiter-side jobs, applications, billing, quota, and company profile signals from real DB data.',
+      focus: ['Job posting flow', 'Plan and payment status', 'Candidate/application pipeline', 'Company profile health']
+    };
+  }
+  if (normalizedRole === 'student' || normalizedRole === 'professional' || normalizedRole === 'retired_employee') {
+    return {
+      title: 'Student / professional support workspace',
+      summary: 'Use this to inspect candidate profile, applications, saved jobs, interviews, payments, and activity signals.',
+      focus: ['Profile completion', 'Applications and saved jobs', 'Interview workflow', 'Resume/profile access']
+    };
+  }
+  if (normalizedRole === 'campus_connect') {
+    return {
+      title: 'Campus connect support workspace',
+      summary: 'Use this to inspect college profile, campus drives, students, company connections, billing, and activity signals.',
+      focus: ['College profile setup', 'Student records', 'Campus drives', 'Company connection requests']
+    };
+  }
+  return {
+    title: 'Internal record workspace',
+    summary: 'Use this to inspect employee/admin/support activity and account status. Internal staff do not have customer dashboards.',
+    focus: ['Account status', 'Recent activity', 'Permission scope', 'Operational actions']
+  };
+};
+
 const UserSupportContextPage = () => {
   const { userId, view = 'dashboard' } = useParams();
   const [context, setContext] = useState(null);
@@ -126,6 +164,8 @@ const UserSupportContextPage = () => {
   const recentItems = useMemo(() => normalizeRecentItems(context?.recent || {}), [context]);
   const profileFields = context?.profile?.fields || [];
   const currentView = view === 'profile' ? 'profile' : 'dashboard';
+  const workspace = useMemo(() => getWorkspaceCopy(context?.user?.role), [context?.user?.role]);
+  const liveLinks = context?.links?.live || {};
 
   return (
     <div className="module-page module-page--admin">
@@ -172,71 +212,126 @@ const UserSupportContextPage = () => {
             </div>
           </section>
 
-          <DashboardStatsCards cards={cards} />
-
           {currentView === 'profile' ? (
-            <section className="panel-card">
-              <div className="mb-4 flex items-center gap-2">
-                <FiFileText className="text-brand-600" />
-                <h3 className="text-lg font-black text-slate-950">{safeValue(context.profile?.title || 'Profile details')}</h3>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {profileFields.map((field) => (
-                  <div key={field.label} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{safeValue(field.label)}</p>
-                    <p className="mt-2 break-words text-sm font-bold text-slate-800">{safeValue(field.value)}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : (
-            <div className="grid gap-4 xl:grid-cols-3">
-              <section className="panel-card xl:col-span-2">
+            <>
+              <section className="panel-card">
                 <div className="mb-4 flex items-center gap-2">
-                  <FiBriefcase className="text-brand-600" />
-                  <h3 className="text-lg font-black text-slate-950">Recent jobs and applications</h3>
+                  <FiFileText className="text-brand-600" />
+                  <h3 className="text-lg font-black text-slate-950">{safeValue(context.profile?.title || 'Profile details')}</h3>
                 </div>
-                <div className="grid gap-3 lg:grid-cols-2">
-                  {recentItems.jobs.slice(0, 6).map((job) => (
-                    <article key={job.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                      <strong className="block truncate text-slate-900">{job.title}</strong>
-                      <p className="mt-1 text-xs text-slate-500">{job.status} - {safeDateTime(job.createdAt)}</p>
-                    </article>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">User ID</p>
+                    <p className="mt-2 break-words font-mono text-sm font-bold text-slate-800">{safeValue(context.user?.id)}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Phone</p>
+                    <p className="mt-2 break-words text-sm font-bold text-slate-800">{safeValue(context.user?.phone)}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Last active</p>
+                    <p className="mt-2 break-words text-sm font-bold text-slate-800">{safeDateTime(context.user?.lastActiveAt)}</p>
+                  </div>
+                  {profileFields.map((field) => (
+                    <div key={field.label} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{safeValue(field.label)}</p>
+                      <p className="mt-2 break-words text-sm font-bold text-slate-800">{safeValue(field.value)}</p>
+                    </div>
                   ))}
-                  {recentItems.applications.slice(0, 6).map((application) => (
-                    <article key={application.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                      <strong className="block truncate text-slate-900">{application.title}</strong>
-                      <p className="mt-1 text-xs text-slate-500">{application.status} - {safeDateTime(application.createdAt)}</p>
-                    </article>
-                  ))}
-                  {!recentItems.jobs.length && !recentItems.applications.length ? (
-                    <p className="module-note lg:col-span-2">No recent jobs or applications found for this account.</p>
-                  ) : null}
                 </div>
               </section>
 
               <section className="panel-card">
-                <div className="mb-4 flex items-center gap-2">
-                  <FiCreditCard className="text-brand-600" />
-                  <h3 className="text-lg font-black text-slate-950">Recent payments</h3>
-                </div>
-                <div className="space-y-3">
-                  {recentItems.payments.slice(0, 8).map((payment) => (
-                    <article key={`${payment.source}-${payment.id}`} className="rounded-2xl border border-slate-200 bg-white p-4">
-                      <strong className="block text-slate-900">{payment.label}</strong>
-                      <p className="mt-1 text-xs text-slate-500">Rs {payment.amount.toLocaleString('en-IN')} - {payment.status}</p>
-                    </article>
-                  ))}
-                  {!recentItems.payments.length ? <p className="module-note">No payment records found.</p> : null}
+                <h3 className="mb-4 text-lg font-black text-slate-950">Recent profile activity</h3>
+                <DataTable columns={activityColumns} rows={recentItems.activity} compact fitOnDesktop />
+              </section>
+            </>
+          ) : (
+            <>
+              <section className="panel-card">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="mb-3 flex items-center gap-2">
+                      <FiShield className="text-brand-600" />
+                      <h3 className="text-lg font-black text-slate-950">{workspace.title}</h3>
+                    </div>
+                    <p className="max-w-3xl text-sm font-semibold leading-6 text-slate-600">{workspace.summary}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {workspace.focus.map((item) => (
+                        <span key={item} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="min-w-0 shrink-0 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-xs font-semibold text-slate-500 lg:max-w-sm">
+                    <p className="font-black uppercase tracking-[0.16em] text-slate-400">Role routes</p>
+                    {liveLinks.dashboard ? (
+                      <p className="mt-2 break-all">Dashboard: {liveLinks.dashboard}</p>
+                    ) : null}
+                    {liveLinks.profile ? (
+                      <p className="mt-1 break-all">Profile: {liveLinks.profile}</p>
+                    ) : null}
+                    <p className="mt-3 text-[11px] leading-5 text-slate-400">
+                      These are target portals. Opening them as the selected user needs shadow-session permission wiring.
+                    </p>
+                  </div>
                 </div>
               </section>
-            </div>
-          )}
 
-          <section className="panel-card">
-            <h3 className="mb-4 text-lg font-black text-slate-950">Recent activity</h3>
-            <DataTable columns={activityColumns} rows={recentItems.activity} compact fitOnDesktop />
-          </section>
+              <DashboardStatsCards cards={cards} />
+
+              <div className="grid gap-4 xl:grid-cols-3">
+                <section className="panel-card xl:col-span-2">
+                  <div className="mb-4 flex items-center gap-2">
+                    <FiBriefcase className="text-brand-600" />
+                    <h3 className="text-lg font-black text-slate-950">Recent jobs and applications</h3>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    {recentItems.jobs.slice(0, 6).map((job) => (
+                      <article key={job.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <strong className="block truncate text-slate-900">{job.title}</strong>
+                        <p className="mt-1 text-xs text-slate-500">{job.status} - {safeDateTime(job.createdAt)}</p>
+                      </article>
+                    ))}
+                    {recentItems.applications.slice(0, 6).map((application) => (
+                      <article key={application.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <strong className="block truncate text-slate-900">{application.title}</strong>
+                        <p className="mt-1 text-xs text-slate-500">{application.status} - {safeDateTime(application.createdAt)}</p>
+                      </article>
+                    ))}
+                    {!recentItems.jobs.length && !recentItems.applications.length ? (
+                      <p className="module-note lg:col-span-2">No recent jobs or applications found for this account.</p>
+                    ) : null}
+                  </div>
+                </section>
+
+                <section className="panel-card">
+                  <div className="mb-4 flex items-center gap-2">
+                    <FiCreditCard className="text-brand-600" />
+                    <h3 className="text-lg font-black text-slate-950">Recent payments</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {recentItems.payments.slice(0, 8).map((payment) => (
+                      <article key={`${payment.source}-${payment.id}`} className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <strong className="block text-slate-900">{payment.label}</strong>
+                        <p className="mt-1 text-xs text-slate-500">Rs {payment.amount.toLocaleString('en-IN')} - {payment.status}</p>
+                      </article>
+                    ))}
+                    {!recentItems.payments.length ? <p className="module-note">No payment records found.</p> : null}
+                  </div>
+                </section>
+              </div>
+
+              <section className="panel-card">
+                <div className="mb-4 flex items-center gap-2">
+                  <FiActivity className="text-brand-600" />
+                  <h3 className="text-lg font-black text-slate-950">Recent dashboard activity</h3>
+                </div>
+                <DataTable columns={activityColumns} rows={recentItems.activity} compact fitOnDesktop />
+              </section>
+            </>
+          )}
         </>
       ) : null}
     </div>
