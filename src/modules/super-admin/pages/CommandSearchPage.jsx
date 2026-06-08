@@ -5,11 +5,25 @@ import DataTable from '../../../shared/components/DataTable';
 import AdminHeader from '../components/AdminHeader';
 import DashboardStatsCards from '../components/DashboardStatsCards';
 import StatusBadge from '../components/StatusBadge';
-import { USER_ROLE_LABELS, USER_ROLES } from '../constants/userRoles';
+import { USER_ROLE_LABELS } from '../constants/userRoles';
 import { getCommandSearchResults, updateUserStatus } from '../services/usersApi';
 import { formatDateTime } from '../utils/formatDate';
 
 const STATUS_OPTIONS = ['active', 'blocked', 'banned'];
+const COMMAND_SEARCH_ROLE_OPTIONS = [
+  { value: '', label: 'All records' },
+  { value: 'public_accounts', label: 'All user accounts' },
+  { value: 'hr_accounts', label: 'HR / company accounts' },
+  { value: 'candidate_accounts', label: 'Students / professionals' },
+  { value: 'campus_accounts', label: 'Campus accounts' },
+  { value: 'internal_staff', label: 'All internal staff' },
+  { value: 'super_admin', label: 'Super admins' },
+  { value: 'admin', label: 'Admin staff' },
+  { value: 'support', label: 'Support staff' },
+  { value: 'sales', label: 'Sales staff' },
+  { value: 'dataentry', label: 'Data Entry staff' },
+  { value: 'accounts', label: 'Accounts / finance staff' }
+];
 
 const formatRole = (role = '') => USER_ROLE_LABELS[role] || String(role || '-').replace(/_/g, ' ');
 
@@ -69,13 +83,13 @@ const CommandSearchPage = () => {
 
   const cards = useMemo(() => {
     const blockedCount = results.filter((item) => item.status === 'blocked' || item.status === 'banned').length;
-    const hrCount = results.filter((item) => item.role === 'hr' || item.role === 'company_admin').length;
-    const studentCount = results.filter((item) => item.role === 'student' || item.role === 'retired_employee').length;
+    const accountCount = results.filter((item) => item.contextType !== 'employee_record').length;
+    const employeeCount = results.filter((item) => item.contextType === 'employee_record').length;
 
     return [
-      { label: 'Matched Users', value: String(results.length), helper: 'Search by email, phone, name, or ID', tone: 'info' },
-      { label: 'HR Matches', value: String(hrCount), helper: 'Recruiter or company admin accounts', tone: 'success' },
-      { label: 'Student Matches', value: String(studentCount), helper: 'Student and professional accounts', tone: 'default' },
+      { label: 'Matched Records', value: String(results.length), helper: 'Email, phone, ID, employee code, company, or campus', tone: 'info' },
+      { label: 'User Accounts', value: String(accountCount), helper: 'HR, student, professional, and campus accounts', tone: 'success' },
+      { label: 'Employee Records', value: String(employeeCount), helper: 'Admin, support, sales, data entry, accounts, and finance activity', tone: 'default' },
       { label: 'Restricted Accounts', value: String(blockedCount), helper: 'Blocked or banned accounts in results', tone: blockedCount ? 'danger' : 'success' }
     ];
   }, [results]);
@@ -130,7 +144,10 @@ const CommandSearchPage = () => {
         <div className="min-w-0 text-xs leading-5 text-slate-600">
           <strong className="block truncate text-slate-800">{row.profile?.headline || row.company || '-'}</strong>
           <span className="block truncate">{row.profile?.location || '-'}</span>
-          <span className="block truncate">{row.profile?.verified ? 'Verified profile' : 'Verification not complete'}</span>
+          <span className="block truncate">{row.recordType || (row.profile?.verified ? 'Verified profile' : 'Verification not complete')}</span>
+          {row.employee?.code && row.employee.code !== '-' ? (
+            <span className="block truncate font-mono text-[11px] text-slate-400">{row.employee.code}</span>
+          ) : null}
         </div>
       )
     },
@@ -161,23 +178,45 @@ const CommandSearchPage = () => {
       render: (_value, row) => {
         const dashboardPath = row.links?.dashboard || getSupportContextPath(row.id, 'dashboard');
         const profilePath = row.links?.profile || getSupportContextPath(row.id, 'profile');
+        const activityPath = row.links?.activityLog || '/portal/super-admin/system-logs';
+        const recordPath = row.links?.record || profilePath;
         const canOpenContext = Boolean(row.id);
+        const isEmployeeRecord = row.contextType === 'employee_record';
 
         return (
           <div className="flex min-w-[240px] flex-wrap items-center gap-2">
+            {isEmployeeRecord ? (
+              <Link
+                className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
+                to={recordPath}
+                aria-disabled={!canOpenContext}
+              >
+                Record
+              </Link>
+            ) : (
+              <>
+                <Link
+                  className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
+                  to={dashboardPath}
+                  aria-disabled={!canOpenContext}
+                >
+                  <FiExternalLink size={13} /> Dashboard
+                </Link>
+                <Link
+                  className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
+                  to={profilePath}
+                  aria-disabled={!canOpenContext}
+                >
+                  Profile
+                </Link>
+              </>
+            )}
             <Link
               className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
-              to={dashboardPath}
+              to={activityPath}
               aria-disabled={!canOpenContext}
             >
-              <FiExternalLink size={13} /> Dashboard
-            </Link>
-            <Link
-              className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
-              to={profilePath}
-              aria-disabled={!canOpenContext}
-            >
-              Profile
+              Activity
             </Link>
             <select
               className="rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700"
@@ -199,7 +238,7 @@ const CommandSearchPage = () => {
     <div className="module-page module-page--admin">
       <AdminHeader
         title="360 Search"
-        subtitle="Find any platform account by email, phone, name, or ID, then jump to the right support context."
+        subtitle="Find accounts by email, phone, ID, company, or campus. For internal staff, inspect their activity record instead of opening a user dashboard."
       />
       {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
@@ -214,16 +253,15 @@ const CommandSearchPage = () => {
                 className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm font-semibold text-slate-800 shadow-sm outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
                 value={filters.search}
                 onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-                placeholder="Search email, phone, name, user ID, company, or campus"
+                placeholder="Search email, phone, user ID, employee code, company, or campus"
               />
             </div>
           </div>
           <label className="filter-bar__field">
-            Role
+            Record type
             <select value={filters.role} onChange={(event) => setFilters((current) => ({ ...current, role: event.target.value }))}>
-              <option value="">All</option>
-              {[...USER_ROLES, 'retired_employee'].map((role) => (
-                <option key={role} value={role}>{formatRole(role)}</option>
+              {COMMAND_SEARCH_ROLE_OPTIONS.map((option) => (
+                <option key={option.value || 'all'} value={option.value}>{option.label}</option>
               ))}
             </select>
           </label>

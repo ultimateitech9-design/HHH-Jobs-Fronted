@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import DataTable from '../../../shared/components/DataTable';
 import AdminHeader from '../components/AdminHeader';
 import DashboardStatsCards from '../components/DashboardStatsCards';
@@ -38,6 +39,8 @@ const renderCompactText = (value, className = '') => (
 );
 
 const SystemLogs = () => {
+  const location = useLocation();
+  const urlSearch = useMemo(() => new URLSearchParams(location.search).get('search')?.trim() || '', [location.search]);
   const [logs, setLogs] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
   const [summary, setSummary] = useState({ totalEvents: 0, criticalEvents: 0, warningEvents: 0, managementActions: 0 });
@@ -46,11 +49,15 @@ const SystemLogs = () => {
   const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
+    setPagination({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
+  }, [urlSearch]);
+
+  useEffect(() => {
     const load = async () => {
       setLoading(true);
 
       const response = await getSystemLogs({
-        filters: {},
+        filters: urlSearch ? { search: urlSearch } : {},
         page: pagination.page,
         limit: PAGE_SIZE
       });
@@ -64,7 +71,7 @@ const SystemLogs = () => {
     };
 
     load();
-  }, [pagination.page]);
+  }, [pagination.page, urlSearch]);
 
   const cards = useMemo(() => [
     { label: 'Management Actions', value: String(summary.managementActions || 0), helper: 'Admin, support, sales, accounts, HR, and other dashboard activity', tone: 'info' },
@@ -158,6 +165,7 @@ const SystemLogs = () => {
     <div className="module-page module-page--admin">
       <AdminHeader title="System Logs" subtitle="Review platform activity and critical events." />
       {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
+      {urlSearch ? <p className="module-note">Filtered by: {urlSearch}</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
       <section className="panel-card min-w-0">

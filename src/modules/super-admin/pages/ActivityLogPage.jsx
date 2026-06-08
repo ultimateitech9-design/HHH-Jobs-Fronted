@@ -60,6 +60,7 @@ const ActivityLogPage = () => {
   const location = useLocation();
   const roleGroup = getRoleGroupFromPath(location.pathname);
   const pageConfig = PAGE_CONFIG[roleGroup] || PAGE_CONFIG.student;
+  const urlSearch = useMemo(() => new URLSearchParams(location.search).get('search')?.trim() || '', [location.search]);
 
   const [logs, setLogs] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
@@ -70,14 +71,14 @@ const ActivityLogPage = () => {
 
   useEffect(() => {
     setPagination({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
-  }, [roleGroup]);
+  }, [roleGroup, urlSearch]);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       const response = await getActivityLogs({
         roleGroup,
-        filters: {},
+        filters: urlSearch ? { search: urlSearch } : {},
         page: pagination.page,
         limit: PAGE_SIZE
       });
@@ -91,7 +92,7 @@ const ActivityLogPage = () => {
     };
 
     load();
-  }, [pagination.page, roleGroup]);
+  }, [pagination.page, roleGroup, urlSearch]);
 
   const cards = useMemo(() => [
     { label: 'Total Events', value: String(summary.totalEvents || 0), helper: 'Current filtered activity volume', tone: 'info' },
@@ -174,6 +175,7 @@ const ActivityLogPage = () => {
     <div className="module-page module-page--admin">
       <AdminHeader title={pageConfig.title} subtitle={pageConfig.subtitle} />
       {isDemo ? <p className="module-note">Demo data is shown.</p> : null}
+      {urlSearch ? <p className="module-note">Filtered by: {urlSearch}</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
       <section className="panel-card min-w-0">
