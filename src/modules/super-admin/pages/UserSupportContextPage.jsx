@@ -9,13 +9,70 @@ import { getUserSupportContext } from '../services/usersApi';
 import { formatDateTime } from '../utils/formatDate';
 
 const safeValue = (value) => {
-  if (Array.isArray(value)) return value.filter(Boolean).join(', ');
   if (value === null || value === undefined || value === '') return '-';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'number' || typeof value === 'string') return String(value);
+  if (Array.isArray(value)) {
+    const parts = value.map((item) => safeValue(item)).filter((item) => item && item !== '-');
+    return parts.length ? parts.join(', ') : '-';
+  }
+  if (typeof value === 'object') {
+    if (value.message) return safeValue(value.message);
+    if (value.email) return safeValue(value.email);
+    if (value.name) return safeValue(value.name);
+    if (value.title) return safeValue(value.title);
+    if (value.label) return safeValue(value.label);
+    if (value.path || value.method || value.statusCode) {
+      return [value.method, value.path, value.statusCode].filter(Boolean).join(' ') || '-';
+    }
+    try {
+      return JSON.stringify(value);
+    } catch (error) {
+      return '-';
+    }
+  }
   return String(value);
 };
 
 const formatRole = (role = '') => String(role || 'user').replace(/_/g, ' ');
+
+const safeDateTime = (value) => {
+  const formatted = formatDateTime(value);
+  return formatted && formatted !== 'Invalid Date' ? formatted : '-';
+};
+
+const safeKey = (prefix, row, index) => safeValue(row?.id) !== '-' ? `${prefix}-${safeValue(row.id)}` : `${prefix}-${index}`;
+
+const normalizeRecentItems = (recent = {}) => ({
+  jobs: Array.isArray(recent.jobs) ? recent.jobs.map((job, index) => ({
+    id: safeKey('job', job, index),
+    title: safeValue(job?.title),
+    status: safeValue(job?.status),
+    createdAt: job?.createdAt || job?.created_at || null
+  })) : [],
+  applications: Array.isArray(recent.applications) ? recent.applications.map((application, index) => ({
+    id: safeKey('application', application, index),
+    title: safeValue(application?.title || application?.jobTitle || application?.job_title || 'Application'),
+    status: safeValue(application?.status),
+    createdAt: application?.createdAt || application?.created_at || null
+  })) : [],
+  payments: Array.isArray(recent.payments) ? recent.payments.map((payment, index) => ({
+    id: safeKey('payment', payment, index),
+    source: safeValue(payment?.source),
+    label: safeValue(payment?.label || payment?.plan || payment?.source || 'Payment'),
+    amount: Number(payment?.amount || payment?.total_amount || payment?.paid_amount || payment?.price || 0),
+    status: safeValue(payment?.status || payment?.payment_status),
+    createdAt: payment?.createdAt || payment?.created_at || null
+  })) : [],
+  activity: Array.isArray(recent.activity) ? recent.activity.map((activity, index) => ({
+    id: safeKey('activity', activity, index),
+    createdAt: activity?.createdAt || activity?.created_at || null,
+    module: safeValue(activity?.module),
+    level: safeValue(activity?.level || 'info'),
+    action: safeValue(activity?.action),
+    details: safeValue(activity?.details)
+  })) : []
+});
 
 const UserSupportContextPage = () => {
   const { userId, view = 'dashboard' } = useParams();
@@ -59,14 +116,14 @@ const UserSupportContextPage = () => {
   }, [context]);
 
   const activityColumns = [
-    { key: 'createdAt', label: 'Time', width: 170, render: (value) => formatDateTime(value) || '-' },
-    { key: 'module', label: 'Module', width: 130 },
+    { key: 'createdAt', label: 'Time', width: 170, render: (value) => safeDateTime(value) },
+    { key: 'module', label: 'Module', width: 130, render: (value) => safeValue(value) },
     { key: 'level', label: 'Level', width: 110, render: (value) => <StatusBadge value={value || 'info'} /> },
-    { key: 'action', label: 'Action', width: 180 },
-    { key: 'details', label: 'Details', width: 420 }
+    { key: 'action', label: 'Action', width: 180, render: (value) => safeValue(value) },
+    { key: 'details', label: 'Details', width: 420, render: (value) => safeValue(value) }
   ];
 
-  const recentItems = context?.recent || {};
+  const recentItems = useMemo(() => normalizeRecentItems(context?.recent || {}), [context]);
   const profileFields = context?.profile?.fields || [];
   const currentView = view === 'profile' ? 'profile' : 'dashboard';
 
@@ -95,11 +152,11 @@ const UserSupportContextPage = () => {
                   <FiUser size={24} />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="truncate text-2xl font-black text-slate-950">{context.user?.name || '-'}</h2>
-                  <p className="truncate text-sm font-semibold text-slate-500">{context.user?.email || '-'}</p>
+                  <h2 className="truncate text-2xl font-black text-slate-950">{safeValue(context.user?.name)}</h2>
+                  <p className="truncate text-sm font-semibold text-slate-500">{safeValue(context.user?.email)}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <StatusBadge value={formatRole(context.user?.role)} />
-                    <StatusBadge value={context.user?.status || 'active'} />
+                    <StatusBadge value={safeValue(context.user?.status || 'active')} />
                     <StatusBadge value={context.profile?.verified ? 'verified' : 'unverified'} />
                   </div>
                 </div>
@@ -121,12 +178,12 @@ const UserSupportContextPage = () => {
             <section className="panel-card">
               <div className="mb-4 flex items-center gap-2">
                 <FiFileText className="text-brand-600" />
-                <h3 className="text-lg font-black text-slate-950">{context.profile?.title || 'Profile details'}</h3>
+                <h3 className="text-lg font-black text-slate-950">{safeValue(context.profile?.title || 'Profile details')}</h3>
               </div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {profileFields.map((field) => (
                   <div key={field.label} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{field.label}</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{safeValue(field.label)}</p>
                     <p className="mt-2 break-words text-sm font-bold text-slate-800">{safeValue(field.value)}</p>
                   </div>
                 ))}
@@ -140,19 +197,19 @@ const UserSupportContextPage = () => {
                   <h3 className="text-lg font-black text-slate-950">Recent jobs and applications</h3>
                 </div>
                 <div className="grid gap-3 lg:grid-cols-2">
-                  {(recentItems.jobs || []).slice(0, 6).map((job) => (
+                  {recentItems.jobs.slice(0, 6).map((job) => (
                     <article key={job.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                      <strong className="block truncate text-slate-900">{job.title || '-'}</strong>
-                      <p className="mt-1 text-xs text-slate-500">{job.status || '-'} - {formatDateTime(job.createdAt) || '-'}</p>
+                      <strong className="block truncate text-slate-900">{job.title}</strong>
+                      <p className="mt-1 text-xs text-slate-500">{job.status} - {safeDateTime(job.createdAt)}</p>
                     </article>
                   ))}
-                  {(recentItems.applications || []).slice(0, 6).map((application) => (
+                  {recentItems.applications.slice(0, 6).map((application) => (
                     <article key={application.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                      <strong className="block truncate text-slate-900">{application.title || application.jobTitle || 'Application'}</strong>
-                      <p className="mt-1 text-xs text-slate-500">{application.status || '-'} - {formatDateTime(application.createdAt) || '-'}</p>
+                      <strong className="block truncate text-slate-900">{application.title}</strong>
+                      <p className="mt-1 text-xs text-slate-500">{application.status} - {safeDateTime(application.createdAt)}</p>
                     </article>
                   ))}
-                  {!(recentItems.jobs || []).length && !(recentItems.applications || []).length ? (
+                  {!recentItems.jobs.length && !recentItems.applications.length ? (
                     <p className="module-note lg:col-span-2">No recent jobs or applications found for this account.</p>
                   ) : null}
                 </div>
@@ -164,13 +221,13 @@ const UserSupportContextPage = () => {
                   <h3 className="text-lg font-black text-slate-950">Recent payments</h3>
                 </div>
                 <div className="space-y-3">
-                  {(recentItems.payments || []).slice(0, 8).map((payment) => (
+                  {recentItems.payments.slice(0, 8).map((payment) => (
                     <article key={`${payment.source}-${payment.id}`} className="rounded-2xl border border-slate-200 bg-white p-4">
-                      <strong className="block text-slate-900">{payment.label || payment.plan || payment.source || 'Payment'}</strong>
-                      <p className="mt-1 text-xs text-slate-500">Rs {Number(payment.amount || 0).toLocaleString('en-IN')} - {payment.status || '-'}</p>
+                      <strong className="block text-slate-900">{payment.label}</strong>
+                      <p className="mt-1 text-xs text-slate-500">Rs {payment.amount.toLocaleString('en-IN')} - {payment.status}</p>
                     </article>
                   ))}
-                  {!(recentItems.payments || []).length ? <p className="module-note">No payment records found.</p> : null}
+                  {!recentItems.payments.length ? <p className="module-note">No payment records found.</p> : null}
                 </div>
               </section>
             </div>
@@ -178,7 +235,7 @@ const UserSupportContextPage = () => {
 
           <section className="panel-card">
             <h3 className="mb-4 text-lg font-black text-slate-950">Recent activity</h3>
-            <DataTable columns={activityColumns} rows={recentItems.activity || []} compact fitOnDesktop />
+            <DataTable columns={activityColumns} rows={recentItems.activity} compact fitOnDesktop />
           </section>
         </>
       ) : null}
