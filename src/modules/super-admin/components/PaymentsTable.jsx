@@ -6,7 +6,10 @@ import StatusBadge from './StatusBadge';
 const PaymentsTable = ({ rows = [] }) => {
   const columns = [
     { key: 'id', label: 'Payment ID' },
-    { key: 'company', label: 'Company' },
+    { key: 'company', label: 'User / Company' },
+    { key: 'userEmail', label: 'Email' },
+    { key: 'userRole', label: 'Role' },
+    { key: 'source', label: 'Source' },
     { key: 'item', label: 'Item' },
     { key: 'amount', label: 'Amount', render: (value) => formatCurrency(value) },
     { key: 'method', label: 'Method' },

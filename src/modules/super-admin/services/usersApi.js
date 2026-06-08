@@ -115,6 +115,27 @@ const buildVisibleUsers = (filters = {}) => {
   return filterDeletedUsers(filterUsers(mergedUsers, filters));
 };
 
+const buildCommandSearchFallback = (filters = {}) => (
+  buildVisibleUsers({ search: filters.q || filters.search || '', role: filters.role || '', status: filters.status || '' })
+    .slice(0, 12)
+    .map((user) => ({
+      ...user,
+      phone: user.mobile || '-',
+      profile: {
+        headline: user.company || user.department || 'HHH Jobs user',
+        location: user.location || '-',
+        verified: Boolean(user.verified)
+      },
+      metrics: {
+        jobs: 0,
+        applications: 0,
+        payments: 0,
+        activityEvents: 0
+      },
+      links: {}
+    }))
+);
+
 const fetchUsersPage = async (page) => {
   const params = new URLSearchParams({
     page: String(page),
@@ -176,6 +197,23 @@ export const getUsers = async (filters = {}) => {
       isDemo: true
     };
   }
+};
+
+export const getCommandSearchResults = async (filters = {}) => {
+  const params = new URLSearchParams();
+  const search = String(filters.q || filters.search || '').trim();
+
+  if (search) params.set('q', search);
+  if (filters.role) params.set('role', filters.role);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.limit) params.set('limit', String(filters.limit));
+
+  return safeRequest({
+    path: `${SUPER_ADMIN_BASE}/command-search?${params.toString()}`,
+    emptyData: [],
+    fallbackData: () => buildCommandSearchFallback({ ...filters, q: search }),
+    extract: (payload) => payload?.results || []
+  });
 };
 
 export const updateUserStatus = async (userId, status) =>

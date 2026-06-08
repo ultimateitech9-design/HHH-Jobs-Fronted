@@ -15,6 +15,8 @@ const SubscriptionsManagement = lazy(() => import('../modules/super-admin/pages/
 const ReportsAnalytics = lazy(() => import('../modules/super-admin/pages/ReportsAnalytics'));
 const SupportTickets = lazy(() => import('../modules/super-admin/pages/SupportTickets'));
 const SystemLogs = lazy(() => import('../modules/super-admin/pages/SystemLogs'));
+const ActivityLogPage = lazy(() => import('../modules/super-admin/pages/ActivityLogPage'));
+const CommandSearchPage = lazy(() => import('../modules/super-admin/pages/CommandSearchPage'));
 const RolesPermissions = lazy(() => import('../modules/super-admin/pages/RolesPermissions'));
 const SystemSettings = lazy(() => import('../modules/super-admin/pages/SystemSettings'));
 
@@ -38,6 +40,10 @@ const superAdminRoutes = [
       { path: 'subscriptions', element: <SubscriptionsManagement /> },
       { path: 'reports', element: <ReportsAnalytics /> },
       { path: 'support-tickets', element: <SupportTickets /> },
+      { path: '360-search', element: <CommandSearchPage /> },
+      { path: 'student-activity-log', element: <ActivityLogPage /> },
+      { path: 'hr-activity-log', element: <ActivityLogPage /> },
+      { path: 'campus-activity-log', element: <ActivityLogPage /> },
       { path: 'system-logs', element: <SystemLogs /> },
       { path: 'roles-permissions', element: <RolesPermissions /> },
       { path: 'system-settings', element: <SystemSettings /> }

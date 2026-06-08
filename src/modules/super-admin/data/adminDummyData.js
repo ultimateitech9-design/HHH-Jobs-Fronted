@@ -107,10 +107,15 @@ export const adminDummyData = {
     ]
   },
   rolesPermissions: [
-    { role: 'super_admin', permissions: ['users.manage', 'companies.manage', 'jobs.manage', 'applications.view', 'payments.manage', 'reports.view', 'settings.manage', 'logs.view', 'support.manage'] },
-    { role: 'admin', permissions: ['users.manage', 'jobs.manage', 'applications.view', 'payments.view', 'reports.view', 'logs.view'] },
-    { role: 'support', permissions: ['support.manage', 'reports.view'] },
-    { role: 'hr', permissions: ['jobs.manage', 'applications.view'] }
+    { role: 'super_admin', permissions: ['users.manage', 'command_search.use', 'companies.manage', 'campuses.manage', 'jobs.manage', 'applications.view', 'payments.manage', 'payments.view', 'reports.view', 'reports.health.view', 'settings.manage', 'logs.view', 'student_logs.view', 'hr_logs.view', 'campus_logs.view', 'roles.manage', 'support.manage'] },
+    { role: 'admin', permissions: ['users.manage', 'command_search.use', 'companies.manage', 'campuses.manage', 'jobs.manage', 'applications.view', 'payments.view', 'reports.view', 'reports.health.view', 'logs.view', 'student_logs.view', 'hr_logs.view', 'campus_logs.view', 'support.manage'] },
+    { role: 'support', permissions: ['users.manage', 'command_search.use', 'reports.view', 'logs.view', 'student_logs.view', 'hr_logs.view', 'campus_logs.view', 'support.manage'] },
+    { role: 'accounts', permissions: ['command_search.use', 'payments.manage', 'payments.view', 'reports.view'] },
+    { role: 'sales', permissions: ['companies.manage', 'payments.view', 'reports.view'] },
+    { role: 'dataentry', permissions: ['jobs.manage', 'reports.view'] },
+    { role: 'hr', permissions: ['jobs.manage', 'applications.view'] },
+    { role: 'campus_connect', permissions: ['campuses.manage'] },
+    { role: 'student', permissions: [] }
   ],
   systemSettings: {
     maintenanceMode: false,

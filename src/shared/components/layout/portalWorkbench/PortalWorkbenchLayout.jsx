@@ -59,7 +59,8 @@ const PortalWorkbenchLayout = ({
   headerVariant = 'default',
   headerNavItems = [],
   headerSearchPlaceholder = '',
-  headerBadge
+  headerBadge,
+  hideProfileShortcut = false
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -87,6 +88,7 @@ const PortalWorkbenchLayout = ({
   const showProfileShortcut = ['student', 'retired_employee'].includes(String(user?.role || '').trim().toLowerCase());
 
   const profilePath = getProfilePathByRole(activePortalRole) || getFirstNavPath(navItems);
+  const sidebarProfilePath = hideProfileShortcut ? '' : profilePath;
   const notificationPath = getNotificationPathByRole(activePortalRole);
   const resolvedBrandPath = brandPath || profilePath || getFirstNavPath(navItems);
 
@@ -201,7 +203,7 @@ const PortalWorkbenchLayout = ({
         brandPath={resolvedBrandPath}
         portalLabel={portalLabel}
         navItems={navItems}
-        profilePath={profilePath}
+        profilePath={sidebarProfilePath}
         support={support}
         user={user}
         onLogout={handleLogout}
@@ -243,7 +245,7 @@ const PortalWorkbenchLayout = ({
             hideBrand={hideSidebarBrand}
             portalLabel={portalLabel}
             navItems={navItems}
-            profilePath={profilePath}
+            profilePath={sidebarProfilePath}
             support={support}
             user={user}
             onLogout={handleLogout}

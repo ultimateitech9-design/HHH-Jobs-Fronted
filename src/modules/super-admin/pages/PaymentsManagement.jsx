@@ -13,6 +13,8 @@ const PAGE_SIZE = 10;
 
 const PaymentsManagement = () => {
   const [payments, setPayments] = useState([]);
+  const [paymentSummary, setPaymentSummary] = useState(null);
+  const [paymentSources, setPaymentSources] = useState([]);
   const [filters, setFilters] = useState({ search: '', status: '' });
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -23,8 +25,10 @@ const PaymentsManagement = () => {
 
   useEffect(() => {
     const load = async () => {
-      const response = await getPayments();
-      setPayments(response.data || []);
+      const response = await getPayments({ limit: 200 });
+      setPayments(response.data?.payments || []);
+      setPaymentSummary(response.data?.summary || null);
+      setPaymentSources(response.data?.sources || []);
       setError(response.error || '');
       setIsDemo(Boolean(response.isDemo));
       setLoading(false);
@@ -47,7 +51,7 @@ const PaymentsManagement = () => {
       return statusFiltered;
     }
 
-    return rankedSearch(statusFiltered, deferredSearch, ['id', 'invoiceId', 'company', 'item', 'method', 'status']);
+    return rankedSearch(statusFiltered, deferredSearch, ['id', 'invoiceId', 'company', 'userEmail', 'userRole', 'source', 'item', 'method', 'status']);
   }, [payments, filters.status, deferredSearch]);
 
   const totalPages = Math.max(1, Math.ceil(filteredPayments.length / PAGE_SIZE));
@@ -62,12 +66,21 @@ const PaymentsManagement = () => {
     }
   }, [page, totalPages]);
 
-  const cards = useMemo(() => [
-    { label: 'Collected Revenue', value: formatCurrency(payments.filter((item) => item.status === 'paid').reduce((sum, item) => sum + item.amount, 0)), helper: 'Successful settled items', tone: 'success' },
-    { label: 'Pending Payments', value: String(payments.filter((item) => item.status === 'pending').length), helper: 'Requires follow-up', tone: 'warning' },
-    { label: 'Refunded', value: String(payments.filter((item) => item.status === 'refunded').length), helper: 'Watch refund pressure', tone: 'default' },
-    { label: 'Failed Collections', value: String(payments.filter((item) => item.status === 'failed').length), helper: 'Retry and risk review', tone: 'danger' }
-  ], [payments]);
+  const cards = useMemo(() => {
+    const summary = paymentSummary || {
+      collectedRevenue: payments.filter((item) => item.status === 'paid').reduce((sum, item) => sum + item.amount, 0),
+      pendingPayments: payments.filter((item) => item.status === 'pending').length,
+      refundedPayments: payments.filter((item) => item.status === 'refunded').length,
+      failedPayments: payments.filter((item) => item.status === 'failed').length
+    };
+
+    return [
+      { label: 'Collected Revenue', value: formatCurrency(summary.collectedRevenue || 0), helper: 'Successful settled items across all payment sources', tone: 'success' },
+      { label: 'Pending Payments', value: String(summary.pendingPayments || 0), helper: 'Requires follow-up', tone: 'warning' },
+      { label: 'Refunded', value: String(summary.refundedPayments || 0), helper: 'Watch refund pressure', tone: 'default' },
+      { label: 'Failed Collections', value: String(summary.failedPayments || 0), helper: 'Retry and risk review', tone: 'danger' }
+    ];
+  }, [payments, paymentSummary]);
 
   const handleApprove = async () => {
     if (!targetPayment) return;
@@ -90,6 +103,16 @@ const PaymentsManagement = () => {
           actions={paginatedPayments[0] ? <button type="button" className="btn-secondary" onClick={() => setTargetPayment(paginatedPayments[0])}>Mark first visible payment paid</button> : null}
         />
         {loading ? <p className="module-note">Loading payments...</p> : null}
+        {paymentSources.length > 0 ? (
+          <div className="metric-strip">
+            {paymentSources.map((source) => (
+              <span key={source.source}>
+                <strong>{source.source}</strong>
+                {source.total} entries / {formatCurrency(source.amount || 0)}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <PaymentsTable rows={paginatedPayments} />
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </section>

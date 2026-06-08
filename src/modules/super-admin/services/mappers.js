@@ -121,12 +121,15 @@ export const mapApiApplicationToUi = (application = {}) => ({
 export const mapApiPaymentToUi = (payment = {}) => ({
   id: payment.id,
   company: payment.company || payment.company_name || payment.user_name || payment.customer_name || '-',
+  userEmail: payment.userEmail || payment.user_email || payment.customer_email || payment.email || '-',
+  userRole: payment.userRole || payment.user_role || '-',
+  source: payment.source || '-',
   item: payment.item || payment.plan_name || payment.plan_slug || '-',
-  invoiceId: payment.invoiceId || payment.reference_id || payment.reference || '-',
+  invoiceId: payment.invoiceId || payment.reference_id || payment.reference || payment.source_id || '-',
   amount: Number(payment.amount || payment.total_amount || 0),
   method: payment.method || payment.provider || payment.payment_method || '-',
   status: payment.status || 'pending',
-  createdAt: payment.createdAt || payment.created_at || null
+  createdAt: payment.createdAt || payment.created_at || payment.paid_at || null
 });
 
 export const mapApiSupportTicketToUi = (ticket = {}) => ({
@@ -166,7 +169,9 @@ export const flattenPermissionKeys = (permissions) => {
   };
 
   addIf(permissions.users, 'users.manage');
+  addIf(permissions.commandSearch || permissions.command_search, 'command_search.use');
   addIf(permissions.companies || permissions.company, 'companies.manage');
+  addIf(permissions.campuses || permissions.campus, 'campuses.manage');
   addIf(permissions.jobs || permissions.entries, 'jobs.manage');
   addIf(permissions.applications, 'applications.view');
   addIf(permissions.payments, 'payments.view');
@@ -179,22 +184,40 @@ export const flattenPermissionKeys = (permissions) => {
     'payments.manage'
   );
   addIf(permissions.reports, 'reports.view');
+  addIf(permissions.reports?.health || permissions.healthReports || permissions.websiteReports, 'reports.health.view');
   addIf(permissions.settings, 'settings.manage');
   addIf(permissions.logs, 'logs.view');
+  addIf(permissions.activityLogs || permissions.activity_logs, 'student_logs.view');
+  addIf(permissions.activityLogs || permissions.activity_logs, 'hr_logs.view');
+  addIf(permissions.activityLogs || permissions.activity_logs, 'campus_logs.view');
+  addIf(permissions.studentLogs || permissions.student_logs, 'student_logs.view');
+  addIf(permissions.hrLogs || permissions.hr_logs, 'hr_logs.view');
+  addIf(permissions.campusLogs || permissions.campus_logs, 'campus_logs.view');
+  addIf(permissions.roles || permissions.rolePermissions, 'roles.manage');
   addIf(permissions.support || permissions.tickets, 'support.manage');
 
   return [...keys];
 };
 
 export const expandPermissionKeys = (permissions = []) => {
-  if (permissions.includes('users.manage')) {
-    return { '*': { read: true, write: true, delete: true } };
-  }
+  if (permissions.includes('*')) return { '*': { read: true, write: true, delete: true } };
 
   const next = {};
 
+  if (permissions.includes('users.manage')) {
+    next.users = { read: true, write: true, delete: true };
+  }
+
+  if (permissions.includes('command_search.use')) {
+    next.commandSearch = { read: true };
+  }
+
   if (permissions.includes('companies.manage')) {
     next.companies = { read: true, write: true };
+  }
+
+  if (permissions.includes('campuses.manage')) {
+    next.campuses = { read: true, write: true };
   }
 
   if (permissions.includes('jobs.manage')) {
@@ -213,12 +236,29 @@ export const expandPermissionKeys = (permissions = []) => {
     next.reports = { read: true };
   }
 
+  if (permissions.includes('reports.health.view')) {
+    next.reports = { ...(next.reports || {}), read: true, health: true };
+  }
+
   if (permissions.includes('settings.manage')) {
     next.settings = { read: true, write: true };
   }
 
   if (permissions.includes('logs.view')) {
     next.logs = { read: true };
+  }
+
+  if (permissions.includes('student_logs.view') || permissions.includes('hr_logs.view') || permissions.includes('campus_logs.view')) {
+    next.activityLogs = {
+      read: true,
+      student: permissions.includes('student_logs.view'),
+      hr: permissions.includes('hr_logs.view'),
+      campus: permissions.includes('campus_logs.view')
+    };
+  }
+
+  if (permissions.includes('roles.manage')) {
+    next.roles = { read: true, write: true };
   }
 
   if (permissions.includes('support.manage')) {

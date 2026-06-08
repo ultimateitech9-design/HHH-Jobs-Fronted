@@ -9,6 +9,7 @@ const SuperAdminLayout = () => {
       subtitle="Full platform control for users, companies, jobs, billing, support, reporting, and system policies."
       navItems={superAdminNavItems}
       expandSidebarOnHover
+      hideProfileShortcut
     />
   );
 };

@@ -26,11 +26,19 @@ const buildDashboardFallback = () => ({
 
 const normalizeLogText = (value = '') => String(value || '').trim().toLowerCase();
 
+const ACTIVITY_ROLE_GROUPS = {
+  student: new Set(['student', 'retired_employee', 'professional']),
+  hr: new Set(['hr', 'company_admin']),
+  campus: new Set(['campus_connect'])
+};
+
 const filterFallbackSystemLogs = (logs = [], filters = {}) => logs.filter((item) => {
   const search = normalizeLogText(filters.search);
   const level = normalizeLogText(filters.level);
   const module = normalizeLogText(filters.module);
   const actorRole = normalizeLogText(filters.actorRole);
+  const roleGroup = normalizeLogText(filters.roleGroup);
+  const roleGroupSet = ACTIVITY_ROLE_GROUPS[roleGroup] || null;
 
   const matchesSearch = !search || [
     item.id,
@@ -46,8 +54,9 @@ const filterFallbackSystemLogs = (logs = [], filters = {}) => logs.filter((item)
   const matchesLevel = !level || normalizeLogText(item.level) === level;
   const matchesModule = !module || normalizeLogText(item.module) === module;
   const matchesActorRole = !actorRole || normalizeLogText(item.actorRole) === actorRole;
+  const matchesRoleGroup = !roleGroupSet || roleGroupSet.has(normalizeLogText(item.actorRole));
 
-  return matchesSearch && matchesLevel && matchesModule && matchesActorRole;
+  return matchesSearch && matchesLevel && matchesModule && matchesActorRole && matchesRoleGroup;
 });
 
 const buildSystemLogFallback = ({ filters = {}, page = 1, limit = 10 } = {}) => {
@@ -137,6 +146,42 @@ export const getSystemLogs = async ({ filters = {}, page = 1, limit = 10 } = {})
       pagination: { page: 1, limit, total: 0, totalPages: 1 }
     },
     fallbackData: () => buildSystemLogFallback({ filters, page, limit }),
+    extract: (payload) => ({
+      logs: (payload?.logs || []).map(mapApiSystemLogToUi),
+      summary: payload?.summary || { totalEvents: 0, criticalEvents: 0, warningEvents: 0, managementActions: 0 },
+      actorRoles: Array.isArray(payload?.actorRoles) ? payload.actorRoles : [],
+      modules: Array.isArray(payload?.modules) ? payload.modules : [],
+      pagination: payload?.pagination || { page, limit, total: 0, totalPages: 1 }
+    })
+  });
+
+export const getActivityLogs = async ({ roleGroup = 'student', filters = {}, page = 1, limit = 10 } = {}) =>
+  safeRequest({
+    path: (() => {
+      const params = new URLSearchParams({
+        roleGroup,
+        page: String(page),
+        limit: String(limit)
+      });
+
+      if (filters.search) params.set('search', filters.search);
+      if (filters.level) params.set('level', filters.level);
+      if (filters.module) params.set('module', filters.module);
+
+      return `${SUPER_ADMIN_BASE}/activity-logs?${params.toString()}`;
+    })(),
+    emptyData: {
+      logs: [],
+      summary: { totalEvents: 0, criticalEvents: 0, warningEvents: 0, managementActions: 0 },
+      actorRoles: [],
+      modules: [],
+      pagination: { page: 1, limit, total: 0, totalPages: 1 }
+    },
+    fallbackData: () => buildSystemLogFallback({
+      filters: { ...filters, roleGroup },
+      page,
+      limit
+    }),
     extract: (payload) => ({
       logs: (payload?.logs || []).map(mapApiSystemLogToUi),
       summary: payload?.summary || { totalEvents: 0, criticalEvents: 0, warningEvents: 0, managementActions: 0 },

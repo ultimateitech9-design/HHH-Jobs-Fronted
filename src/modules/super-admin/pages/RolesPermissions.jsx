@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminHeader from '../components/AdminHeader';
 import DashboardStatsCards from '../components/DashboardStatsCards';
-import { PERMISSIONS } from '../constants/permissions';
+import { PERMISSION_GROUPS, PERMISSIONS } from '../constants/permissions';
 import { USER_ROLE_LABELS } from '../constants/userRoles';
 import { getRolesPermissions, saveRolesPermissions } from '../services/settingsApi';
 import { describePermission } from '../utils/permissionHelpers';
+
+const DEFAULT_ROLE_ORDER = ['super_admin', 'admin', 'support', 'accounts', 'sales', 'dataentry', 'hr', 'campus_connect', 'student'];
+
+const buildDefaultRoles = () => DEFAULT_ROLE_ORDER.map((role) => ({
+  role,
+  permissions: role === 'super_admin' ? [...PERMISSIONS] : []
+}));
+
+const getRoleSortIndex = (role) => {
+  const index = DEFAULT_ROLE_ORDER.indexOf(role);
+  return index === -1 ? DEFAULT_ROLE_ORDER.length : index;
+};
 
 const RolesPermissions = () => {
   const [roles, setRoles] = useState([]);
@@ -17,7 +29,8 @@ const RolesPermissions = () => {
   useEffect(() => {
     const load = async () => {
       const response = await getRolesPermissions();
-      const nextRoles = response.data || [];
+      const nextRoles = (response.data && response.data.length > 0 ? response.data : buildDefaultRoles())
+        .sort((left, right) => getRoleSortIndex(left.role) - getRoleSortIndex(right.role));
       setRoles(nextRoles);
       setSelectedRole(nextRoles[0]?.role || '');
       setError(response.error || '');
@@ -71,13 +84,25 @@ const RolesPermissions = () => {
         </div>
         {loading ? <p className="module-note">Loading role configuration...</p> : null}
         {!loading ? (
-          <div className="split-grid">
-            {PERMISSIONS.map((permission) => (
-              <label key={permission} className="panel-card">
-                <strong>{describePermission(permission)}</strong>
-                <span className="module-note">{permission}</span>
-                <input type="checkbox" checked={Boolean(activeRole.permissions?.includes(permission))} onChange={() => togglePermission(permission)} />
-              </label>
+          <div className="permission-groups">
+            {PERMISSION_GROUPS.map((group) => (
+              <div key={group.label} className="permission-group">
+                <div className="permission-group__header">
+                  <strong>{group.label}</strong>
+                  <span>{group.permissions.filter((permission) => activeRole.permissions?.includes(permission)).length}/{group.permissions.length}</span>
+                </div>
+                <div className="permission-group__grid">
+                  {group.permissions.map((permission) => (
+                    <label key={permission} className="permission-option">
+                      <span>
+                        <strong>{describePermission(permission)}</strong>
+                        <small>{permission}</small>
+                      </span>
+                      <input type="checkbox" checked={Boolean(activeRole.permissions?.includes(permission))} onChange={() => togglePermission(permission)} />
+                    </label>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         ) : null}
