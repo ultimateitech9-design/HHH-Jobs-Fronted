@@ -286,6 +286,9 @@ export const deleteUser = async (userId) => {
     markUserDeleted(userId);
     return deletedUser;
   } catch (error) {
+    if (!areDemoFallbacksEnabled()) {
+      throw error;
+    }
     markUserDeleted(userId);
     return adminDummyData.users.find((user) => user.id === userId) || { id: userId };
   }

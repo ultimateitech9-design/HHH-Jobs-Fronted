@@ -1,6 +1,7 @@
 import { adminDummyData } from '../data/adminDummyData';
 import { SUPER_ADMIN_BASE, safeRequest, strictRequest } from './usersApi';
 import { mapApiPaymentToUi } from './mappers';
+import { areDemoFallbacksEnabled } from '../../../utils/api';
 
 export const getPayments = async (filters = {}) =>
   safeRequest({
@@ -60,6 +61,9 @@ export const updatePaymentStatus = async (paymentId, status) => {
       extract: (payload) => payload?.payment || payload
     });
   } catch (error) {
+    if (!areDemoFallbacksEnabled()) {
+      throw error;
+    }
     return { ...(adminDummyData.payments.find((payment) => payment.id === paymentId) || {}), status };
   }
 };

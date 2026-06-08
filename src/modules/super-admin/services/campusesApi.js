@@ -1,6 +1,7 @@
 import { adminDummyData } from '../data/adminDummyData';
 import { SUPER_ADMIN_BASE, strictRequest } from './usersApi';
 import { mapApiCampusToUi } from './mappers';
+import { areDemoFallbacksEnabled } from '../../../utils/api';
 
 const CAMPUSES_BATCH_SIZE = 100;
 
@@ -63,11 +64,12 @@ export const getCampuses = async (filters = {}) => {
     const { campuses, summary } = await fetchAllCampuses();
     if (campuses.length === 0) {
       const demoCampuses = adminDummyData.campuses || [];
+      const allowDemoFallback = areDemoFallbacksEnabled();
       return {
-        data: filterCampuses(demoCampuses, filters),
-        summary: buildDemoSummary(demoCampuses),
+        data: allowDemoFallback ? filterCampuses(demoCampuses, filters) : [],
+        summary: allowDemoFallback ? buildDemoSummary(demoCampuses) : buildDemoSummary([]),
         error: '',
-        isDemo: true
+        isDemo: allowDemoFallback
       };
     }
     return {
@@ -78,11 +80,12 @@ export const getCampuses = async (filters = {}) => {
     };
   } catch (error) {
     const demoCampuses = adminDummyData.campuses || [];
+    const allowDemoFallback = areDemoFallbacksEnabled();
     return {
-      data: filterCampuses(demoCampuses, filters),
-      summary: buildDemoSummary(demoCampuses),
+      data: allowDemoFallback ? filterCampuses(demoCampuses, filters) : [],
+      summary: allowDemoFallback ? buildDemoSummary(demoCampuses) : buildDemoSummary([]),
       error: error.message || 'Request failed.',
-      isDemo: true
+      isDemo: allowDemoFallback
     };
   }
 };

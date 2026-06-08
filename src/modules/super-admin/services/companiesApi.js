@@ -1,6 +1,7 @@
 import { adminDummyData } from '../data/adminDummyData';
 import { SUPER_ADMIN_BASE, strictRequest } from './usersApi';
 import { mapApiCompanyToUi } from './mappers';
+import { areDemoFallbacksEnabled } from '../../../utils/api';
 
 const COMPANIES_BATCH_SIZE = 100;
 
@@ -53,9 +54,9 @@ export const getCompanies = async (filters = {}) => {
     const companies = await fetchAllCompanies();
     if (companies.length === 0) {
       return {
-        data: filterCompanies(adminDummyData.companies, filters),
+        data: areDemoFallbacksEnabled() ? filterCompanies(adminDummyData.companies, filters) : [],
         error: '',
-        isDemo: true
+        isDemo: areDemoFallbacksEnabled()
       };
     }
     return {
@@ -65,9 +66,9 @@ export const getCompanies = async (filters = {}) => {
     };
   } catch (error) {
     return {
-      data: filterCompanies(adminDummyData.companies, filters),
+      data: areDemoFallbacksEnabled() ? filterCompanies(adminDummyData.companies, filters) : [],
       error: error.message || 'Request failed.',
-      isDemo: true
+      isDemo: areDemoFallbacksEnabled()
     };
   }
 };

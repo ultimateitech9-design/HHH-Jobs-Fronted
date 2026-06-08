@@ -1,6 +1,7 @@
 import { adminDummyData } from '../data/adminDummyData';
 import { SUPER_ADMIN_BASE, safeRequest, strictRequest } from './usersApi';
 import { mapApiJobToUi } from './mappers';
+import { areDemoFallbacksEnabled } from '../../../utils/api';
 
 const filterJobs = (jobs, filters = {}) => {
   return jobs.filter((job) => {
@@ -36,6 +37,9 @@ export const updateJobStatus = async (jobId, status) => {
       extract: (payload) => payload?.job || payload
     });
   } catch (error) {
+    if (!areDemoFallbacksEnabled()) {
+      throw error;
+    }
     return { ...(adminDummyData.jobs.find((job) => job.id === jobId) || {}), status };
   }
 };

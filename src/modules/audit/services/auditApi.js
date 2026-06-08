@@ -1,4 +1,4 @@
-import { apiFetch } from '../../../utils/api';
+import { apiFetch, areDemoFallbacksEnabled } from '../../../utils/api';
 
 const parseJson = async (response) => {
   try {
@@ -11,6 +11,16 @@ const parseJson = async (response) => {
 const clone = (value) => {
   if (value === null || value === undefined) return value;
   return JSON.parse(JSON.stringify(value));
+};
+
+const emptyLike = (value) => {
+  if (Array.isArray(value)) return [];
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, emptyLike(item)]));
+  }
+  if (typeof value === 'number') return 0;
+  if (typeof value === 'boolean') return false;
+  return '';
 };
 
 const nowIso = () => new Date().toISOString();
@@ -147,6 +157,9 @@ const safeRequest = async ({ path, fallback, extract = (payload) => payload }) =
     return { data, isDemo: false, error: '' };
   } catch (error) {
     const fallbackData = typeof fallback === 'function' ? fallback() : fallback;
+    if (!areDemoFallbacksEnabled()) {
+      return { data: emptyLike(fallbackData), isDemo: false, error: error.message || 'Request failed.' };
+    }
     return { data: clone(fallbackData), isDemo: true, error: error.message || 'Request failed.' };
   }
 };

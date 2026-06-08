@@ -91,7 +91,8 @@ export const apiUrl = (path = '') => {
 };
 
 export const areDemoFallbacksEnabled = () =>
-  String(env.VITE_ENABLE_DEMO_FALLBACKS || '').trim().toLowerCase() === 'true';
+  String(env.VITE_ENABLE_DEMO_FALLBACKS || '').trim().toLowerCase() === 'true'
+  && String(env.VITE_ALLOW_DEMO_FALLBACKS_DANGEROUS || '').trim().toLowerCase() === 'true';
 
 const looksLikeJwt = (token) => /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/i.test(String(token || '').trim());
 
