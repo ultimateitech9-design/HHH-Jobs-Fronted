@@ -14,7 +14,7 @@ import DashboardStatsCards from '../components/DashboardStatsCards';
 import StatusBadge from '../components/StatusBadge';
 import DataTable from '../../../shared/components/DataTable';
 import { setSupportSubjectUserId } from '../../../utils/api';
-import { getUserSupportContext } from '../services/usersApi';
+import { getCachedSupportContextSeed, getUserSupportContext } from '../services/usersApi';
 import { formatDateTime } from '../utils/formatDate';
 import HrDashboardPage from '../../hr/pages/HrDashboardPage';
 import StudentCompaniesPage from '../../student/pages/StudentCompaniesPage';
@@ -125,6 +125,49 @@ const getSupportSubjectRole = (role = '') => {
 
 const CUSTOMER_DASHBOARD_ROLES = new Set(['hr', 'student', 'retired_employee', 'campus_connect']);
 
+const buildContextFromSeed = (seed = {}) => {
+  if (!seed?.id) return null;
+  const metrics = seed.metrics || {};
+  const profile = seed.profile || {};
+  const role = getSupportSubjectRole(seed.role);
+
+  return {
+    user: {
+      id: seed.id,
+      name: seed.name || '-',
+      email: seed.email || '-',
+      phone: seed.phone || seed.mobile || '-',
+      role: seed.role || role || 'user',
+      status: seed.status || 'active',
+      createdAt: seed.createdAt || seed.created_at || null,
+      updatedAt: null,
+      lastActiveAt: seed.lastActiveAt || seed.last_login_at || null
+    },
+    profile: {
+      title: seed.company || profile.headline || 'Profile details',
+      verified: Boolean(profile.verified),
+      fields: [
+        { label: 'Profile context', value: profile.headline || seed.company || '-' },
+        { label: 'Location', value: profile.location || '-' },
+        { label: 'Record type', value: seed.recordType || '-' }
+      ]
+    },
+    metrics: {
+      jobs: Number(metrics.jobs || 0),
+      applications: Number(metrics.applications || 0),
+      payments: Number(metrics.payments || 0),
+      activityEvents: Number(metrics.activityEvents || 0)
+    },
+    recent: {
+      jobs: [],
+      applications: [],
+      payments: [],
+      activity: []
+    },
+    links: seed.links || {}
+  };
+};
+
 const SupportSubjectSession = ({ userId, enabled, children }) => {
   const [ready, setReady] = useState(false);
 
@@ -167,6 +210,7 @@ const UserSupportContextPage = () => {
   const [context, setContext] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [warning, setWarning] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -174,13 +218,21 @@ const UserSupportContextPage = () => {
     const loadContext = async () => {
       setLoading(true);
       setError('');
+      setWarning('');
       try {
         const data = await getUserSupportContext(userId);
-        if (!cancelled) setContext(data);
+        if (!cancelled) {
+          setContext(data);
+          setWarning('');
+        }
       } catch (requestError) {
         if (!cancelled) {
-          setContext(null);
-          setError(requestError.message || 'Unable to load user context.');
+          const cachedContext = buildContextFromSeed(getCachedSupportContextSeed(userId));
+          setContext(cachedContext);
+          setWarning(cachedContext
+            ? 'Detailed support context API is not available yet. Showing the selected account dashboard with cached search context.'
+            : '');
+          setError(cachedContext ? '' : (requestError.message || 'Unable to load user context.'));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -233,6 +285,7 @@ const UserSupportContextPage = () => {
       />
 
       {loading ? <p className="module-note">Loading account context...</p> : null}
+      {warning ? <p className="module-note">{warning}</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
 
       {context ? (

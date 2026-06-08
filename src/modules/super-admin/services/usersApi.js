@@ -14,6 +14,7 @@ import { mapApiUserToUi } from './mappers';
 
 export const SUPER_ADMIN_BASE = '/super-admin';
 const USERS_BATCH_SIZE = 100;
+const SUPPORT_CONTEXT_CACHE_KEY = 'hhh_super_admin_support_context_seed';
 
 export const clone = (value) => {
   if (value === null || value === undefined) return value;
@@ -209,6 +210,42 @@ export const getUserSupportContext = async (userId) =>
     path: `${SUPER_ADMIN_BASE}/users/${encodeURIComponent(userId)}/support-context`,
     extract: (payload) => payload?.context || null
   });
+
+const readSupportContextCache = () => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.sessionStorage?.getItem(SUPPORT_CONTEXT_CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    return {};
+  }
+};
+
+const writeSupportContextCache = (cache = {}) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage?.setItem(SUPPORT_CONTEXT_CACHE_KEY, JSON.stringify(cache));
+  } catch (error) {
+    // Session storage can be unavailable in private modes; the API remains the source of truth.
+  }
+};
+
+export const cacheSupportContextSeed = (record = {}) => {
+  const id = String(record?.id || '').trim();
+  if (!id) return;
+  const cache = readSupportContextCache();
+  cache[id] = {
+    ...record,
+    cachedAt: new Date().toISOString()
+  };
+  writeSupportContextCache(cache);
+};
+
+export const getCachedSupportContextSeed = (userId) => {
+  const id = String(userId || '').trim();
+  if (!id) return null;
+  return readSupportContextCache()[id] || null;
+};
 
 export const updateUserStatus = async (userId, status) =>
   {

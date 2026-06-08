@@ -6,7 +6,7 @@ import AdminHeader from '../components/AdminHeader';
 import DashboardStatsCards from '../components/DashboardStatsCards';
 import StatusBadge from '../components/StatusBadge';
 import { USER_ROLE_LABELS } from '../constants/userRoles';
-import { getCommandSearchResults, updateUserStatus } from '../services/usersApi';
+import { cacheSupportContextSeed, getCommandSearchResults, updateUserStatus } from '../services/usersApi';
 import { formatDateTime } from '../utils/formatDate';
 
 const STATUS_OPTIONS = [
@@ -189,6 +189,7 @@ const CommandSearchPage = () => {
                 className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
                 to={recordPath}
                 aria-disabled={!canOpenContext}
+                onClick={() => cacheSupportContextSeed(row)}
               >
                 Record
               </Link>
@@ -198,6 +199,7 @@ const CommandSearchPage = () => {
                   className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
                   to={dashboardPath}
                   aria-disabled={!canOpenContext}
+                  onClick={() => cacheSupportContextSeed(row)}
                 >
                   <FiExternalLink size={13} /> Dashboard
                 </Link>
@@ -205,6 +207,7 @@ const CommandSearchPage = () => {
                   className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
                   to={profilePath}
                   aria-disabled={!canOpenContext}
+                  onClick={() => cacheSupportContextSeed(row)}
                 >
                   Profile
                 </Link>
