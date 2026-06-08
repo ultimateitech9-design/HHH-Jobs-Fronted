@@ -127,6 +127,21 @@ export const hasApiAccessToken = () => {
 
 export const hasBackendAuthSession = () => hasApiAccessToken() || Boolean(buildDevUserHeader());
 
+const getSupportSubjectUserId = () => {
+  if (typeof window === 'undefined') return '';
+  return String(window.sessionStorage?.getItem('hhh_support_subject_user_id') || '').trim();
+};
+
+export const setSupportSubjectUserId = (userId = '') => {
+  if (typeof window === 'undefined') return;
+  const normalizedUserId = String(userId || '').trim();
+  if (normalizedUserId) {
+    window.sessionStorage?.setItem('hhh_support_subject_user_id', normalizedUserId);
+    return;
+  }
+  window.sessionStorage?.removeItem('hhh_support_subject_user_id');
+};
+
 export const apiFetch = async (path, options = {}) => {
   const token = getToken();
   const {
@@ -158,6 +173,15 @@ export const apiFetch = async (path, options = {}) => {
     && !headers['x-hhh-auth-token']
   ) {
     headers['X-HHH-Auth-Token'] = token;
+  }
+
+  const supportSubjectUserId = !skipAuth ? getSupportSubjectUserId() : '';
+  if (
+    supportSubjectUserId
+    && !headers['X-HHH-Support-Subject-User-Id']
+    && !headers['x-hhh-support-subject-user-id']
+  ) {
+    headers['X-HHH-Support-Subject-User-Id'] = supportSubjectUserId;
   }
 
   const targetUrl = apiUrl(path);

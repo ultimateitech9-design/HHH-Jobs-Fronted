@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   FiActivity,
@@ -13,8 +13,12 @@ import AdminHeader from '../components/AdminHeader';
 import DashboardStatsCards from '../components/DashboardStatsCards';
 import StatusBadge from '../components/StatusBadge';
 import DataTable from '../../../shared/components/DataTable';
+import { setSupportSubjectUserId } from '../../../utils/api';
 import { getUserSupportContext } from '../services/usersApi';
 import { formatDateTime } from '../utils/formatDate';
+import HrDashboardPage from '../../hr/pages/HrDashboardPage';
+import StudentCompaniesPage from '../../student/pages/StudentCompaniesPage';
+import CampusDashboardPage from '../../campus-connect/pages/CampusDashboardPage';
 
 const safeValue = (value) => {
   if (value === null || value === undefined || value === '') return '-';
@@ -112,6 +116,52 @@ const getWorkspaceCopy = (role = '') => {
   };
 };
 
+const getSupportSubjectRole = (role = '') => {
+  const normalizedRole = String(role || '').trim().toLowerCase();
+  if (normalizedRole === 'company_admin') return 'hr';
+  if (normalizedRole === 'professional') return 'student';
+  return normalizedRole;
+};
+
+const CUSTOMER_DASHBOARD_ROLES = new Set(['hr', 'student', 'retired_employee', 'campus_connect']);
+
+const SupportSubjectSession = ({ userId, enabled, children }) => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setReady(false);
+    if (!enabled || !userId) {
+      setSupportSubjectUserId('');
+      return undefined;
+    }
+    setSupportSubjectUserId(userId);
+    setReady(true);
+    return () => {
+      setSupportSubjectUserId('');
+    };
+  }, [enabled, userId]);
+
+  if (!ready) return <p className="module-note">Preparing selected user dashboard context...</p>;
+  return children;
+};
+
+const LiveRoleDashboard = ({ role }) => {
+  const normalizedRole = getSupportSubjectRole(role);
+
+  if (normalizedRole === 'hr') return <HrDashboardPage />;
+  if (normalizedRole === 'student' || normalizedRole === 'retired_employee') return <StudentCompaniesPage />;
+  if (normalizedRole === 'campus_connect') return <CampusDashboardPage />;
+
+  return (
+    <section className="panel-card">
+      <h3 className="text-lg font-black text-slate-950">Internal employee record</h3>
+      <p className="module-note mt-2">
+        Internal staff accounts do not have a customer dashboard. Use profile and activity records for support review.
+      </p>
+    </section>
+  );
+};
+
 const UserSupportContextPage = () => {
   const { userId, view = 'dashboard' } = useParams();
   const [context, setContext] = useState(null);
@@ -166,6 +216,8 @@ const UserSupportContextPage = () => {
   const currentView = view === 'profile' ? 'profile' : 'dashboard';
   const workspace = useMemo(() => getWorkspaceCopy(context?.user?.role), [context?.user?.role]);
   const liveLinks = context?.links?.live || {};
+  const supportRole = getSupportSubjectRole(context?.user?.role);
+  const canOpenLiveDashboard = CUSTOMER_DASHBOARD_ROLES.has(supportRole);
 
   return (
     <div className="module-page module-page--admin">
@@ -246,6 +298,36 @@ const UserSupportContextPage = () => {
                 <DataTable columns={activityColumns} rows={recentItems.activity} compact fitOnDesktop />
               </section>
             </>
+          ) : canOpenLiveDashboard ? (
+            <SupportSubjectSession userId={context.user?.id} enabled={canOpenLiveDashboard}>
+              <section className="panel-card border-brand-100 bg-brand-50/30">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <FiShield className="text-brand-600" />
+                      <h3 className="text-lg font-black text-slate-950">Live {formatRole(supportRole)} dashboard context</h3>
+                    </div>
+                    <p className="max-w-4xl text-sm font-semibold leading-6 text-slate-600">
+                      This dashboard is loaded with the selected account's real DB context. Your super-admin session stays active and audit logs keep the support actor separate.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {workspace.focus.map((item) => (
+                        <span key={item} className="rounded-full border border-brand-100 bg-white px-3 py-1 text-xs font-bold text-slate-600">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-brand-100 bg-white px-4 py-3 text-xs font-bold text-slate-500">
+                    <p>Subject: {safeValue(context.user?.email)}</p>
+                    <p className="mt-1">Role: {formatRole(supportRole)}</p>
+                  </div>
+                </div>
+              </section>
+              <Suspense fallback={<p className="module-note">Loading live dashboard...</p>}>
+                <LiveRoleDashboard role={supportRole} />
+              </Suspense>
+            </SupportSubjectSession>
           ) : (
             <>
               <section className="panel-card">
