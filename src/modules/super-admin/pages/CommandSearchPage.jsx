@@ -25,12 +25,13 @@ const CommandSearchPage = () => {
   const [isDemo, setIsDemo] = useState(false);
   const [savingUserId, setSavingUserId] = useState('');
   const deferredSearch = useDeferredValue(String(filters.search || '').trim());
+  const hasFilters = Boolean(deferredSearch || filters.role || filters.status);
 
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
-      if (!deferredSearch && !filters.role && !filters.status) {
+      if (!hasFilters) {
         setResults([]);
         setError('');
         setIsDemo(false);
@@ -64,7 +65,7 @@ const CommandSearchPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [deferredSearch, filters.role, filters.status]);
+  }, [deferredSearch, filters.role, filters.status, hasFilters]);
 
   const cards = useMemo(() => {
     const blockedCount = results.filter((item) => item.status === 'blocked' || item.status === 'banned').length;
@@ -160,13 +161,22 @@ const CommandSearchPage = () => {
       render: (_value, row) => {
         const dashboardPath = row.links?.dashboard || getSupportContextPath(row.id, 'dashboard');
         const profilePath = row.links?.profile || getSupportContextPath(row.id, 'profile');
+        const canOpenContext = Boolean(row.id);
 
         return (
           <div className="flex min-w-[240px] flex-wrap items-center gap-2">
-            <Link className="btn-secondary py-1.5 text-xs" to={dashboardPath}>
+            <Link
+              className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
+              to={dashboardPath}
+              aria-disabled={!canOpenContext}
+            >
               <FiExternalLink size={13} /> Dashboard
             </Link>
-            <Link className="btn-secondary py-1.5 text-xs" to={profilePath}>
+            <Link
+              className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
+              to={profilePath}
+              aria-disabled={!canOpenContext}
+            >
               Profile
             </Link>
             <select
@@ -226,11 +236,24 @@ const CommandSearchPage = () => {
               ))}
             </select>
           </label>
+          {hasFilters ? (
+            <button
+              className="btn-secondary self-end py-3 text-xs"
+              type="button"
+              onClick={() => setFilters({ search: '', role: '', status: '' })}
+            >
+              Clear
+            </button>
+          ) : null}
         </div>
 
         {loading ? <p className="module-note">Searching platform records...</p> : null}
         {!loading && !results.length ? (
-          <p className="module-note">Search with at least one filter to inspect a user support context.</p>
+          <p className="module-note">
+            {hasFilters
+              ? 'No live records matched these filters. Try exact email, phone number, user ID, company, or campus name.'
+              : 'Search with at least one filter to inspect a user support context.'}
+          </p>
         ) : null}
         <DataTable columns={columns} rows={results} compact fitOnDesktop />
       </section>
