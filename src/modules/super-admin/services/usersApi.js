@@ -59,9 +59,11 @@ export const strictRequest = async ({ path, options, extract = (payload) => payl
 };
 
 export const safeRequest = async ({ path, options, emptyData, fallbackData, extract = (payload) => payload }) => {
+  const allowDemoFallback = areDemoFallbacksEnabled();
+
   try {
     const data = await strictRequest({ path, options, extract });
-    if (fallbackData !== undefined && isEmptyResponseData(data)) {
+    if (allowDemoFallback && fallbackData !== undefined && isEmptyResponseData(data)) {
       return {
         data: clone(resolveFallbackData(fallbackData)),
         error: '',
@@ -70,7 +72,7 @@ export const safeRequest = async ({ path, options, emptyData, fallbackData, extr
     }
     return { data, error: '', isDemo: false };
   } catch (error) {
-    const resolvedFallback = fallbackData !== undefined
+    const resolvedFallback = allowDemoFallback && fallbackData !== undefined
       ? resolveFallbackData(fallbackData)
       : undefined;
     return {
@@ -114,27 +116,6 @@ const buildVisibleUsers = (filters = {}) => {
 
   return filterDeletedUsers(filterUsers(mergedUsers, filters));
 };
-
-const buildCommandSearchFallback = (filters = {}) => (
-  buildVisibleUsers({ search: filters.q || filters.search || '', role: filters.role || '', status: filters.status || '' })
-    .slice(0, 12)
-    .map((user) => ({
-      ...user,
-      phone: user.mobile || '-',
-      profile: {
-        headline: user.company || user.department || 'HHH Jobs user',
-        location: user.location || '-',
-        verified: Boolean(user.verified)
-      },
-      metrics: {
-        jobs: 0,
-        applications: 0,
-        payments: 0,
-        activityEvents: 0
-      },
-      links: {}
-    }))
-);
 
 const fetchUsersPage = async (page) => {
   const params = new URLSearchParams({
@@ -180,9 +161,9 @@ export const getUsers = async (filters = {}) => {
       : [];
     if (apiUsers.length === 0 && managedUsers.length === 0) {
       return {
-        data: buildVisibleUsers(filters),
+        data: areDemoFallbacksEnabled() ? buildVisibleUsers(filters) : [],
         error: '',
-        isDemo: true
+        isDemo: areDemoFallbacksEnabled()
       };
     }
     return {
@@ -191,6 +172,14 @@ export const getUsers = async (filters = {}) => {
       isDemo: false
     };
   } catch (error) {
+    if (!areDemoFallbacksEnabled()) {
+      return {
+        data: [],
+        error: error.message || 'Request failed.',
+        isDemo: false
+      };
+    }
+
     return {
       data: buildVisibleUsers(filters),
       error: error.message || 'Request failed.',
@@ -211,10 +200,15 @@ export const getCommandSearchResults = async (filters = {}) => {
   return safeRequest({
     path: `${SUPER_ADMIN_BASE}/command-search?${params.toString()}`,
     emptyData: [],
-    fallbackData: () => buildCommandSearchFallback({ ...filters, q: search }),
     extract: (payload) => payload?.results || []
   });
 };
+
+export const getUserSupportContext = async (userId) =>
+  strictRequest({
+    path: `${SUPER_ADMIN_BASE}/users/${encodeURIComponent(userId)}/support-context`,
+    extract: (payload) => payload?.context || null
+  });
 
 export const updateUserStatus = async (userId, status) =>
   {
@@ -225,6 +219,9 @@ export const updateUserStatus = async (userId, status) =>
         extract: (payload) => payload?.user || payload
       });
     } catch (error) {
+      if (!areDemoFallbacksEnabled()) {
+        throw error;
+      }
       return { ...(adminDummyData.users.find((user) => user.id === userId) || {}), status };
     }
   };

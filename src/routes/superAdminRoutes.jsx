@@ -17,6 +17,7 @@ const SupportTickets = lazy(() => import('../modules/super-admin/pages/SupportTi
 const SystemLogs = lazy(() => import('../modules/super-admin/pages/SystemLogs'));
 const ActivityLogPage = lazy(() => import('../modules/super-admin/pages/ActivityLogPage'));
 const CommandSearchPage = lazy(() => import('../modules/super-admin/pages/CommandSearchPage'));
+const UserSupportContextPage = lazy(() => import('../modules/super-admin/pages/UserSupportContextPage'));
 const RolesPermissions = lazy(() => import('../modules/super-admin/pages/RolesPermissions'));
 const SystemSettings = lazy(() => import('../modules/super-admin/pages/SystemSettings'));
 
@@ -41,6 +42,7 @@ const superAdminRoutes = [
       { path: 'reports', element: <ReportsAnalytics /> },
       { path: 'support-tickets', element: <SupportTickets /> },
       { path: '360-search', element: <CommandSearchPage /> },
+      { path: 'users/:userId/:view', element: <UserSupportContextPage /> },
       { path: 'student-activity-log', element: <ActivityLogPage /> },
       { path: 'hr-activity-log', element: <ActivityLogPage /> },
       { path: 'campus-activity-log', element: <ActivityLogPage /> },

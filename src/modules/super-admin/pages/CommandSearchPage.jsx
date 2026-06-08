@@ -11,28 +11,11 @@ import { formatDateTime } from '../utils/formatDate';
 
 const STATUS_OPTIONS = ['active', 'blocked', 'banned'];
 
-const getDashboardPathByRole = (role = '') => {
-  const normalizedRole = String(role || '').trim().toLowerCase();
-  if (normalizedRole === 'hr' || normalizedRole === 'company_admin') return '/portal/hr/dashboard';
-  if (normalizedRole === 'campus_connect') return '/portal/campus-connect/dashboard';
-  if (normalizedRole === 'support') return '/portal/support/dashboard';
-  if (normalizedRole === 'sales') return '/portal/sales/dashboard';
-  if (normalizedRole === 'accounts') return '/portal/accounts/dashboard';
-  if (normalizedRole === 'dataentry' || normalizedRole === 'data_entry') return '/portal/dataentry/dashboard';
-  if (normalizedRole === 'admin') return '/portal/admin/dashboard';
-  if (normalizedRole === 'super_admin') return '/portal/super-admin/dashboard';
-  return '/portal/student/dashboard';
-};
-
-const getProfilePathByRole = (role = '') => {
-  const normalizedRole = String(role || '').trim().toLowerCase();
-  if (normalizedRole === 'hr' || normalizedRole === 'company_admin') return '/portal/hr/profile';
-  if (normalizedRole === 'campus_connect') return '/portal/campus-connect/profile';
-  if (normalizedRole === 'student' || normalizedRole === 'retired_employee') return '/portal/student/profile';
-  return getDashboardPathByRole(role);
-};
-
 const formatRole = (role = '') => USER_ROLE_LABELS[role] || String(role || '-').replace(/_/g, ' ');
+
+const getSupportContextPath = (userId, view) => (
+  `/portal/super-admin/users/${encodeURIComponent(userId)}/${view}`
+);
 
 const CommandSearchPage = () => {
   const [filters, setFilters] = useState({ search: '', role: '', status: '' });
@@ -44,28 +27,43 @@ const CommandSearchPage = () => {
   const deferredSearch = useDeferredValue(String(filters.search || '').trim());
 
   useEffect(() => {
+    let cancelled = false;
+
     const load = async () => {
       if (!deferredSearch && !filters.role && !filters.status) {
         setResults([]);
         setError('');
+        setIsDemo(false);
         return;
       }
 
       setLoading(true);
-      const response = await getCommandSearchResults({
-        q: deferredSearch,
-        role: filters.role,
-        status: filters.status,
-        limit: 30
-      });
+      try {
+        const response = await getCommandSearchResults({
+          q: deferredSearch,
+          role: filters.role,
+          status: filters.status,
+          limit: 30
+        });
 
-      setResults(response.data || []);
-      setError(response.error || '');
-      setIsDemo(Boolean(response.isDemo));
-      setLoading(false);
+        if (cancelled) return;
+        setResults(response.data || []);
+        setError(response.error || '');
+        setIsDemo(Boolean(response.isDemo));
+      } catch (requestError) {
+        if (cancelled) return;
+        setResults([]);
+        setError(requestError.message || 'Search failed.');
+        setIsDemo(false);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
 
     load();
+    return () => {
+      cancelled = true;
+    };
   }, [deferredSearch, filters.role, filters.status]);
 
   const cards = useMemo(() => {
@@ -85,11 +83,17 @@ const CommandSearchPage = () => {
     if (!user?.id || !nextStatus || nextStatus === user.status) return;
 
     setSavingUserId(user.id);
-    const updated = await updateUserStatus(user.id, nextStatus);
-    setResults((current) => current.map((item) => (
-      item.id === user.id ? { ...item, ...updated, status: nextStatus } : item
-    )));
-    setSavingUserId('');
+    try {
+      const updated = await updateUserStatus(user.id, nextStatus);
+      setResults((current) => current.map((item) => (
+        item.id === user.id ? { ...item, ...updated, status: nextStatus } : item
+      )));
+      setError('');
+    } catch (statusError) {
+      setError(statusError.message || 'Unable to update user status.');
+    } finally {
+      setSavingUserId('');
+    }
   };
 
   const columns = [
@@ -154,8 +158,8 @@ const CommandSearchPage = () => {
       width: 280,
       stickyRight: true,
       render: (_value, row) => {
-        const dashboardPath = row.links?.dashboard || getDashboardPathByRole(row.role);
-        const profilePath = row.links?.profile || getProfilePathByRole(row.role);
+        const dashboardPath = row.links?.dashboard || getSupportContextPath(row.id, 'dashboard');
+        const profilePath = row.links?.profile || getSupportContextPath(row.id, 'profile');
 
         return (
           <div className="flex min-w-[240px] flex-wrap items-center gap-2">
