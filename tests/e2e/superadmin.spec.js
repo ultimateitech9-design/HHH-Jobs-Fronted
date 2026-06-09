@@ -250,6 +250,98 @@ test.describe('SuperAdmin Portal E2E', () => {
         })
       });
     });
+
+    await page.route('**/super-admin/users/sa-hr-1/support-context', async (route) => {
+      if (route.request().resourceType() === 'document') return route.continue();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          context: {
+            user: {
+              id: 'sa-hr-1',
+              name: 'PDCE HR',
+              email: 'hr@pdce.com',
+              phone: '+911234567890',
+              role: 'hr',
+              status: 'active',
+              lastActiveAt: '2026-06-08T07:04:00.000Z'
+            },
+            profile: {
+              title: 'PDCE HR',
+              verified: true,
+              fields: [
+                { label: 'Company name', value: 'PDCE' },
+                { label: 'Location', value: 'New Delhi' }
+              ]
+            },
+            metrics: {
+              jobs: 2,
+              applications: 1,
+              payments: 1,
+              activityEvents: 3
+            },
+            recent: {
+              jobs: [],
+              applications: [],
+              payments: [],
+              activity: []
+            },
+            links: {
+              live: {
+                dashboard: '/portal/hr/dashboard',
+                profile: '/portal/hr/profile'
+              }
+            }
+          }
+        })
+      });
+    });
+
+    await page.route('**/hr/dashboard', async (route) => {
+      if (route.request().resourceType() === 'document') return route.continue();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          dashboard: {
+            stats: {
+              openRoles: 2,
+              totalApplicants: 4,
+              scheduledInterviews: 1,
+              hired: 0
+            },
+            jobs: [],
+            applications: [],
+            recentActivity: []
+          }
+        })
+      });
+    });
+
+    await page.route('**/hr/recent-activity', async (route) => {
+      if (route.request().resourceType() === 'document') return route.continue();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ activity: [] })
+      });
+    });
+
+    await page.route('**/pricing/role-subscriptions/current*', async (route) => {
+      if (route.request().resourceType() === 'document') return route.continue();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          subscription: {
+            planName: 'Starter',
+            status: 'active',
+            quotas: { normal: 15, hot: 7, premium: 3 }
+          }
+        })
+      });
+    });
   });
 
   test('superadmin can log in securely and see dashboard', async ({ page }) => {
@@ -282,5 +374,20 @@ test.describe('SuperAdmin Portal E2E', () => {
     await page.goto('/portal/super-admin/payments');
     await expect(page.getByText('Super Test Company').first()).toBeVisible();
     await expect(page.getByText(/500/).first()).toBeVisible();
+  });
+
+  test('superadmin support dashboard keeps selected HR inside support context', async ({ page }) => {
+    await page.goto('/portal/super-admin/users/sa-hr-1/dashboard');
+
+    await expect(page.getByText('PDCE HR').first()).toBeVisible();
+    await expect(page.getByText(/Live hr dashboard context/i).first()).toBeVisible();
+    await expect(page).not.toHaveURL(/management\/login\/super-admin/);
+
+    await page.getByRole('button', { name: 'Job Postings' }).click();
+
+    await expect(page).toHaveURL(/portal\/super-admin\/users\/sa-hr-1\/dashboard/);
+    await expect(page).toHaveURL(/supportSection=jobs/);
+    await expect(page).not.toHaveURL(/management\/login\/super-admin/);
+    await expect(page.getByText(/Job Postings/i).first()).toBeVisible();
   });
 });

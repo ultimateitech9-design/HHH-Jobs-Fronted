@@ -132,6 +132,24 @@ const getSupportSubjectUserId = () => {
   return String(window.sessionStorage?.getItem('hhh_support_subject_user_id') || '').trim();
 };
 
+const getApiPathname = (path = '') => {
+  try {
+    return new URL(String(path || ''), API_BASE_URL || browserOrigin || 'http://localhost').pathname;
+  } catch (error) {
+    return String(path || '').split('?')[0] || '';
+  }
+};
+
+const shouldAttachSupportSubject = (path = '') => {
+  const pathname = getApiPathname(path).replace(/\/+$/, '') || '/';
+
+  if (pathname === '/auth/me' || pathname === '/auth/logout') return false;
+  if (pathname === '/notifications' || pathname.startsWith('/notifications/')) return false;
+  if (pathname.startsWith('/public/')) return false;
+
+  return true;
+};
+
 export const setSupportSubjectUserId = (userId = '') => {
   if (typeof window === 'undefined') return;
   const normalizedUserId = String(userId || '').trim();
@@ -175,7 +193,7 @@ export const apiFetch = async (path, options = {}) => {
     headers['X-HHH-Auth-Token'] = token;
   }
 
-  const supportSubjectUserId = !skipAuth ? getSupportSubjectUserId() : '';
+  const supportSubjectUserId = !skipAuth && shouldAttachSupportSubject(path) ? getSupportSubjectUserId() : '';
   if (
     supportSubjectUserId
     && !headers['X-HHH-Support-Subject-User-Id']
@@ -183,6 +201,10 @@ export const apiFetch = async (path, options = {}) => {
   ) {
     headers['X-HHH-Support-Subject-User-Id'] = supportSubjectUserId;
   }
+  const requestUsesSupportSubject = Boolean(
+    headers['X-HHH-Support-Subject-User-Id']
+    || headers['x-hhh-support-subject-user-id']
+  );
 
   const targetUrl = apiUrl(path);
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -209,7 +231,14 @@ export const apiFetch = async (path, options = {}) => {
   }
   if (timeoutId) globalThis.clearTimeout(timeoutId);
 
-  if (clearAuthOnUnauthorized && !skipAuth && token && getCurrentUser() && response.status === 401) {
+  if (
+    clearAuthOnUnauthorized
+    && !skipAuth
+    && token
+    && getCurrentUser()
+    && response.status === 401
+    && !requestUsesSupportSubject
+  ) {
     clearAuthSession();
   }
 

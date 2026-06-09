@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   FiActivity,
   FiArrowLeft,
@@ -17,6 +17,16 @@ import { setSupportSubjectUserId } from '../../../utils/api';
 import { getCachedSupportContextSeed, getUserSupportContext } from '../services/usersApi';
 import { formatDateTime } from '../utils/formatDate';
 import HrDashboardPage from '../../hr/pages/HrDashboardPage';
+import HrApplicationsPage from '../../hr/pages/HrApplicationsPage';
+import HrCandidatesPage from '../../hr/pages/HrCandidatesPage';
+import HrCampusConnectionsPage from '../../hr/pages/HrCampusConnectionsPage';
+import HrCampusDrivesPage from '../../hr/pages/HrCampusDrivesPage';
+import HrInterestsPage from '../../hr/pages/HrInterestsPage';
+import HrInterviewsPage from '../../hr/pages/HrInterviewsPage';
+import HrJobsPage from '../../hr/pages/HrJobsPage';
+import HrNotificationsPage from '../../hr/pages/HrNotificationsPage';
+import HrProfilePage from '../../hr/pages/HrProfilePage';
+import HrShortlistedPage from '../../hr/pages/HrShortlistedPage';
 import StudentCompaniesPage from '../../student/pages/StudentCompaniesPage';
 import CampusDashboardPage from '../../campus-connect/pages/CampusDashboardPage';
 
@@ -125,6 +135,35 @@ const getSupportSubjectRole = (role = '') => {
 
 const CUSTOMER_DASHBOARD_ROLES = new Set(['hr', 'student', 'retired_employee', 'campus_connect']);
 
+const HR_SUPPORT_SECTIONS = [
+  { key: 'dashboard', label: 'Dashboard', path: '/portal/hr/dashboard', Component: HrDashboardPage },
+  { key: 'profile', label: 'Company Profile', path: '/portal/hr/profile', Component: HrProfilePage },
+  { key: 'jobs', label: 'Job Postings', path: '/portal/hr/jobs', Component: HrJobsPage },
+  { key: 'applications', label: 'Applications', path: '/portal/hr/applications', Component: HrApplicationsPage },
+  { key: 'candidates', label: 'Candidate DB', path: '/portal/hr/candidates', Component: HrCandidatesPage },
+  { key: 'shortlisted', label: 'Shortlisted', path: '/portal/hr/shortlisted', Component: HrShortlistedPage },
+  { key: 'interests', label: 'Sent Interests', path: '/portal/hr/interests', Component: HrInterestsPage },
+  { key: 'interviews', label: 'Interviews', path: '/portal/hr/interviews', Component: HrInterviewsPage },
+  { key: 'campus-connections', label: 'Campus Connections', path: '/portal/hr/campus-connections', Component: HrCampusConnectionsPage },
+  { key: 'campus-drives', label: 'Campus Drives', path: '/portal/hr/campus-drives', Component: HrCampusDrivesPage },
+  { key: 'notifications', label: 'Notifications', path: '/portal/hr/notifications', Component: HrNotificationsPage }
+];
+
+const resolveHrSupportSection = (pathname = '') => {
+  const normalizedPath = String(pathname || '').toLowerCase().replace(/\/+$/, '');
+  if (normalizedPath.includes('/portal/hr/jobs/')) return 'jobs';
+  if (normalizedPath.includes('/portal/hr/candidates/interests')) return 'interests';
+
+  const match = HR_SUPPORT_SECTIONS
+    .filter((section) => section.path !== '/portal/hr/dashboard')
+    .find((section) => normalizedPath === section.path || normalizedPath.startsWith(`${section.path}/`));
+
+  return match?.key || (normalizedPath === '/portal/hr' || normalizedPath === '/portal/hr/dashboard' ? 'dashboard' : '');
+};
+
+const getValidHrSupportSection = (section = '') =>
+  HR_SUPPORT_SECTIONS.some((item) => item.key === section) ? section : 'dashboard';
+
 const buildContextFromSeed = (seed = {}) => {
   if (!seed?.id) return null;
   const metrics = seed.metrics || {};
@@ -188,10 +227,65 @@ const SupportSubjectSession = ({ userId, enabled, children }) => {
   return children;
 };
 
-const LiveRoleDashboard = ({ role }) => {
+const HrSupportWorkspace = ({ section, onSectionChange }) => {
+  const activeSection = getValidHrSupportSection(section);
+  const selectedSection = HR_SUPPORT_SECTIONS.find((item) => item.key === activeSection) || HR_SUPPORT_SECTIONS[0];
+  const SelectedComponent = selectedSection.Component;
+
+  const handleSupportLinkClick = (event) => {
+    const link = event.target?.closest?.('a[href]');
+    if (!link) return;
+
+    const href = link.getAttribute('href') || '';
+    let url;
+    try {
+      url = new URL(href, window.location.origin);
+    } catch (error) {
+      return;
+    }
+
+    if (url.origin !== window.location.origin) return;
+
+    const nextSection = resolveHrSupportSection(url.pathname);
+    if (!nextSection) return;
+
+    event.preventDefault();
+    onSectionChange(nextSection, url.searchParams);
+  };
+
+  return (
+    <div className="space-y-4">
+      <section className="panel-card">
+        <div className="flex flex-wrap gap-2">
+          {HR_SUPPORT_SECTIONS.map((item) => {
+            const active = item.key === activeSection;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={active ? 'btn-primary py-2 text-xs' : 'btn-secondary py-2 text-xs'}
+                onClick={() => onSectionChange(item.key)}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <div onClickCapture={handleSupportLinkClick}>
+        <SelectedComponent />
+      </div>
+    </div>
+  );
+};
+
+const LiveRoleDashboard = ({ role, section, onSectionChange }) => {
   const normalizedRole = getSupportSubjectRole(role);
 
-  if (normalizedRole === 'hr') return <HrDashboardPage />;
+  if (normalizedRole === 'hr') {
+    return <HrSupportWorkspace section={section} onSectionChange={onSectionChange} />;
+  }
   if (normalizedRole === 'student' || normalizedRole === 'retired_employee') return <StudentCompaniesPage />;
   if (normalizedRole === 'campus_connect') return <CampusDashboardPage />;
 
@@ -207,6 +301,7 @@ const LiveRoleDashboard = ({ role }) => {
 
 const UserSupportContextPage = () => {
   const { userId, view = 'dashboard' } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [context, setContext] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -270,6 +365,24 @@ const UserSupportContextPage = () => {
   const liveLinks = context?.links?.live || {};
   const supportRole = getSupportSubjectRole(context?.user?.role);
   const canOpenLiveDashboard = CUSTOMER_DASHBOARD_ROLES.has(supportRole);
+  const supportSection = getValidHrSupportSection(searchParams.get('supportSection') || 'dashboard');
+
+  const handleSupportSectionChange = (section, nextSectionParams = null) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('supportSection', getValidHrSupportSection(section));
+
+    ['tab', 'billingTab', 'view', 'status', 'jobId'].forEach((key) => {
+      if (!nextSectionParams?.has?.(key)) nextParams.delete(key);
+    });
+
+    if (nextSectionParams) {
+      nextSectionParams.forEach((value, key) => {
+        nextParams.set(key, value);
+      });
+    }
+
+    setSearchParams(nextParams);
+  };
 
   return (
     <div className="module-page module-page--admin">
@@ -378,7 +491,11 @@ const UserSupportContextPage = () => {
                 </div>
               </section>
               <Suspense fallback={<p className="module-note">Loading live dashboard...</p>}>
-                <LiveRoleDashboard role={supportRole} />
+                <LiveRoleDashboard
+                  role={supportRole}
+                  section={supportSection}
+                  onSectionChange={handleSupportSectionChange}
+                />
               </Suspense>
             </SupportSubjectSession>
           ) : (
