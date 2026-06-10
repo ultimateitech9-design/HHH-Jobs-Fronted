@@ -26,6 +26,13 @@ const USER_STATUS_OPTIONS = ['active', 'blocked', 'banned'];
 
 const formatRole = (role = '') => USER_ROLE_LABELS[role] || String(role || '-').replace(/_/g, ' ');
 
+const formatCompanyRelation = (relation) => {
+  if (!relation?.companies?.length) return '';
+  const visibleCompanies = relation.companies.slice(0, 3).join(', ');
+  const remainingCount = Math.max(0, relation.companies.length - 3);
+  return `${visibleCompanies}${remainingCount ? ` +${remainingCount} more` : ''}`;
+};
+
 const getSupportContextPath = (userId, view) => (
   `/portal/super-admin/users/${encodeURIComponent(userId)}/${view}`
 );
@@ -142,8 +149,18 @@ const CommandSearchPage = () => {
       render: (_value, row) => (
         <div className="min-w-0 text-xs leading-5 text-slate-600">
           <strong className="block truncate text-slate-800">{row.profile?.headline || row.company || '-'}</strong>
+          {row.companyRelations?.companies?.length ? (
+            <span className="block truncate text-slate-700">
+              HR for: {formatCompanyRelation(row.companyRelations)}
+            </span>
+          ) : null}
           <span className="block truncate">{row.profile?.location || '-'}</span>
           <span className="block truncate">{row.recordType || (row.profile?.verified ? 'Verified profile' : 'Verification not complete')}</span>
+          {row.companyRelations?.jobCount ? (
+            <span className="block truncate text-[11px] font-semibold text-emerald-700">
+              {row.companyRelations.jobCount} posted job{row.companyRelations.jobCount === 1 ? '' : 's'} across linked companies
+            </span>
+          ) : null}
           {row.employee?.code && row.employee.code !== '-' ? (
             <span className="block truncate font-mono text-[11px] text-slate-400">{row.employee.code}</span>
           ) : null}
