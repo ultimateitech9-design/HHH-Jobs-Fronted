@@ -36,7 +36,6 @@ import {
   getRolePlanSubscriptions,
   getRolePricingPlanQuote,
   getRolePricingPlans,
-  saveHrCompany,
   verifyRolePlanAutopay,
   updateHrJob
 } from '../services/hrApi';
@@ -588,6 +587,11 @@ const HrJobsPage = () => {
     [managedCompanies, selectedCompanyKey]
   );
 
+  const selectableHiringCompanies = useMemo(
+    () => managedCompanies.filter((company) => !company.needsProfile),
+    [managedCompanies]
+  );
+
   useEffect(() => {
     let mounted = true;
 
@@ -699,8 +703,11 @@ const HrJobsPage = () => {
 
   const applyCompanyToDraft = (company = {}, options = {}) => {
     if (!company) return;
+    const companyKey = normalizeCompanyKeyForUi(company.companyKey || company.companyName);
+    if (companyKey) setSelectedCompanyKey(companyKey);
     setDraft((current) => ({
       ...current,
+      companyKey: company.companyKey || companyKey || current.companyKey,
       companyName: company.companyName || current.companyName,
       companyLogo: company.logoUrl || current.companyLogo,
       companyWebsite: company.websiteUrl || current.companyWebsite,
@@ -719,14 +726,30 @@ const HrJobsPage = () => {
     if (options.openPost) setActiveTab('post');
   };
 
-  const handleCompanyNameChange = (value) => {
-    const matchedCompany = managedCompanies.find((company) => String(company.companyName || '').toLowerCase() === String(value || '').trim().toLowerCase());
-    setDraft((current) => ({ ...current, companyName: value }));
+  const handleCompanySelectionChange = (value) => {
+    const companyKey = normalizeCompanyKeyForUi(value);
+    const matchedCompany = selectableHiringCompanies.find((company) => normalizeCompanyKeyForUi(company.companyKey || company.companyName) === companyKey);
+    setSelectedCompanyKey(companyKey);
     if (matchedCompany) {
       applyCompanyToDraft(matchedCompany);
-      setSelectedCompanyKey(normalizeCompanyKeyForUi(matchedCompany.companyKey || matchedCompany.companyName));
+      return;
     }
+    setDraft((current) => ({
+      ...current,
+      companyKey: '',
+      companyName: '',
+      companyLogo: '',
+      companyWebsite: '',
+      companyType: '',
+      companySize: '',
+      companyAbout: ''
+    }));
   };
+
+  useEffect(() => {
+    if (activeTab !== 'post' || editingJobId || draft.companyKey || selectableHiringCompanies.length !== 1) return;
+    applyCompanyToDraft(selectableHiringCompanies[0]);
+  }, [activeTab, draft.companyKey, editingJobId, selectableHiringCompanies]);
 
   const refreshCompanies = async () => {
     const response = await getHrCompanies();
@@ -780,6 +803,7 @@ const HrJobsPage = () => {
     setEditingJobId('');
     const nextDraft = { ...getEmptyJobDraft(), planSlug: autoPostingPlan?.slug || selectedPlan?.slug || 'standard' };
     if (selectedCompany) {
+      nextDraft.companyKey = selectedCompany.companyKey || normalizeCompanyKeyForUi(selectedCompany.companyName);
       nextDraft.companyName = selectedCompany.companyName || '';
       nextDraft.companyLogo = selectedCompany.logoUrl || '';
       nextDraft.companyWebsite = selectedCompany.websiteUrl || '';
@@ -799,6 +823,16 @@ const HrJobsPage = () => {
   };
 
   const validateDraft = () => {
+    if (!String(draft.companyKey || '').trim()) {
+      return selectableHiringCompanies.length > 0
+        ? 'Select a hiring company from your Company Profile before posting this job.'
+        : 'Add a hiring company in Company Profile before posting jobs.';
+    }
+    const ownsSelectedCompany = selectableHiringCompanies.some((company) => normalizeCompanyKeyForUi(company.companyKey || company.companyName) === normalizeCompanyKeyForUi(draft.companyKey));
+    if (!ownsSelectedCompany) {
+      return 'Complete this hiring company in Company Profile before posting jobs for it.';
+    }
+
     const requiredFields = ['companyName', 'jobTitle', 'salaryType', 'experienceLevel', 'employmentType', 'sectorName', 'stateName', 'districtName', 'description', 'jobLocation'];
     const missing = requiredFields.filter((key) => !String(draft[key] || '').trim());
 
@@ -863,32 +897,10 @@ const HrJobsPage = () => {
         setMessage(`Job created successfully on ${selectedPlan?.name || 'selected'} plan.`);
       }
 
-      if (String(draft.companyName || '').trim()) {
-        try {
-          await saveHrCompany({
-            companyKey: savedJob?.companyKey || savedJob?.company_key || normalizeCompanyKeyForUi(draft.companyName),
-            companyName: draft.companyName,
-            logoUrl: draft.companyLogo,
-            websiteUrl: draft.companyWebsite,
-            companyType: draft.companyType,
-            companySize: draft.companySize,
-            about: draft.companyAbout,
-            sectorId: draft.sectorId,
-            sectorName: draft.sectorName,
-            stateId: draft.stateId,
-            stateName: draft.stateName,
-            districtId: draft.districtId,
-            districtName: draft.districtName,
-            location: draft.jobLocation
-          });
-        } catch (companySaveError) {
-          notify.error('Company profile not fully saved', String(companySaveError.message || 'Update company profile later from this page.'));
-        }
-        const freshCompanies = await refreshCompanies();
-        const nextCompanyKey = normalizeCompanyKeyForUi(savedJob?.companyKey || savedJob?.company_key || draft.companyName);
-        if (freshCompanies.some((company) => normalizeCompanyKeyForUi(company.companyKey || company.companyName) === nextCompanyKey)) {
-          setSelectedCompanyKey(nextCompanyKey);
-        }
+      const freshCompanies = await refreshCompanies();
+      const nextCompanyKey = normalizeCompanyKeyForUi(savedJob?.companyKey || savedJob?.company_key || draft.companyKey || draft.companyName);
+      if (freshCompanies.some((company) => normalizeCompanyKeyForUi(company.companyKey || company.companyName) === nextCompanyKey)) {
+        setSelectedCompanyKey(nextCompanyKey);
       }
 
       resetForm();
@@ -902,7 +914,14 @@ const HrJobsPage = () => {
   const startEdit = async (job) => {
     setEditingJobId(job.id || job._id);
     const nextDraft = getJobDraftFromJob(job);
+    if (!nextDraft.companyKey) {
+      const matchedCompany = selectableHiringCompanies.find((company) => String(company.companyName || '').toLowerCase() === String(nextDraft.companyName || '').toLowerCase());
+      if (matchedCompany) {
+        nextDraft.companyKey = matchedCompany.companyKey || normalizeCompanyKeyForUi(matchedCompany.companyName);
+      }
+    }
     setDraft(nextDraft);
+    setSelectedCompanyKey(normalizeCompanyKeyForUi(nextDraft.companyKey || nextDraft.companyName));
     if (nextDraft.stateId) {
       const response = await getJobDistricts(nextDraft.stateId);
       setDistricts(response.data || []);
@@ -1149,18 +1168,18 @@ const HrJobsPage = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => applyCompanyToDraft(company, { openPost: true })}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition-colors hover:border-brand-200 hover:text-brand-700"
+                          onClick={() => !company.needsProfile && applyCompanyToDraft(company, { openPost: true })}
+                          disabled={Boolean(company.needsProfile)}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition-colors hover:border-brand-200 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <FiPlus size={13} /> Post job
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => applyCompanyToDraft(company, { openPost: true })}
+                        <Link
+                          to="/portal/hr/profile"
                           className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition-colors hover:border-brand-200 hover:text-brand-700"
                         >
                           <FiImage size={13} /> Edit profile
-                        </button>
+                        </Link>
                       </div>
                     </article>
                   );
@@ -1168,7 +1187,7 @@ const HrJobsPage = () => {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-5 py-6 text-sm font-medium text-neutral-500">
-                No client companies yet. Your first job post will create the company profile automatically.
+                No hiring companies yet. Add your primary company or client companies in Company Profile before posting jobs.
               </div>
             )}
           </section>
@@ -1292,9 +1311,15 @@ const HrJobsPage = () => {
                     <FiBriefcase className="text-brand-600" /> Hiring company
                   </h3>
                   <p className="mt-1 text-xs font-medium text-neutral-500">
-                    For recruiting agencies, enter the client company name. Complete logo and profile details here so this company card also looks clean on the public Companies page.
+                    Select a company from your HR profile. Add or edit client-company logos and details in profile so public company cards stay clean.
                   </p>
                 </div>
+                <Link
+                  to="/portal/hr/profile"
+                  className="shrink-0 rounded-full border border-brand-200 bg-white px-4 py-2 text-xs font-extrabold text-brand-700 shadow-sm transition hover:bg-brand-50"
+                >
+                  Manage companies
+                </Link>
                 {draft.companyLogo ? (
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-white">
                     <img src={draft.companyLogo} alt="" className="h-full w-full object-contain p-1.5" />
@@ -1304,27 +1329,35 @@ const HrJobsPage = () => {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-neutral-700">Company Name</label>
-                  <input
+                  <label className="text-sm font-bold text-neutral-700">Company Name *</label>
+                  <select
                     required
-                    list="hr-managed-company-options"
-                    value={draft.companyName}
-                    onChange={(event) => handleCompanyNameChange(event.target.value)}
+                    value={draft.companyKey || ''}
+                    onChange={(event) => handleCompanySelectionChange(event.target.value)}
+                    disabled={selectableHiringCompanies.length === 0}
                     className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium transition-all focus:ring-2 focus:ring-brand-500"
-                    placeholder="Eg. PDCE HR, Indian Trade Mart, client company"
-                  />
-                  <datalist id="hr-managed-company-options">
-                    {managedCompanies.map((company) => (
-                      <option key={company.companyKey || company.companyName} value={company.companyName} />
+                  >
+                    <option value="">{selectableHiringCompanies.length ? 'Select hiring company' : 'Add a company in HR profile first'}</option>
+                    {selectableHiringCompanies.map((company) => (
+                      <option key={company.companyKey || company.companyName} value={normalizeCompanyKeyForUi(company.companyKey || company.companyName)}>
+                        {company.companyName || 'Client company'}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
+                  {selectableHiringCompanies.length === 0 ? (
+                    <p className="text-xs font-bold text-amber-700">
+                      Add your first hiring company from <Link to="/portal/hr/profile" className="underline">Company Profile</Link>.
+                    </p>
+                  ) : (
+                    <p className="text-xs font-medium text-neutral-400">This controls which company card and profile this job belongs to.</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-neutral-700">Logo Image URL</label>
                   <div className="relative">
                     <FiImage className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={15} />
-                    <input value={draft.companyLogo} onChange={(e) => updateDraftField('companyLogo', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white py-3 pl-10 pr-4 font-medium transition-all focus:ring-2 focus:ring-brand-500" placeholder="https://example.com/logo.png" />
+                    <input readOnly value={draft.companyLogo} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 py-3 pl-10 pr-4 font-medium text-neutral-600" placeholder="Add logo in Company Profile" />
                   </div>
                 </div>
 
@@ -1332,24 +1365,24 @@ const HrJobsPage = () => {
                   <label className="text-sm font-bold text-neutral-700">Website URL</label>
                   <div className="relative">
                     <FiGlobe className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={15} />
-                    <input value={draft.companyWebsite} onChange={(e) => updateDraftField('companyWebsite', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white py-3 pl-10 pr-4 font-medium transition-all focus:ring-2 focus:ring-brand-500" placeholder="https://company.com" />
+                    <input readOnly value={draft.companyWebsite} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 py-3 pl-10 pr-4 font-medium text-neutral-600" placeholder="Add website in Company Profile" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-neutral-700">Company Type</label>
-                    <input value={draft.companyType} onChange={(e) => updateDraftField('companyType', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium transition-all focus:ring-2 focus:ring-brand-500" placeholder="Private Limited" />
+                    <input readOnly value={draft.companyType} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 font-medium text-neutral-600" placeholder="Add type in Company Profile" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-neutral-700">Employee Size</label>
-                    <input value={draft.companySize} onChange={(e) => updateDraftField('companySize', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium transition-all focus:ring-2 focus:ring-brand-500" placeholder="51-200" />
+                    <input readOnly value={draft.companySize} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 font-medium text-neutral-600" placeholder="Add size in Company Profile" />
                   </div>
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
                   <label className="text-sm font-bold text-neutral-700">About Company</label>
-                  <textarea value={draft.companyAbout} onChange={(e) => updateDraftField('companyAbout', e.target.value)} rows={3} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium transition-all focus:ring-2 focus:ring-brand-500" placeholder="Short company summary for public company profile and job pages." />
+                  <textarea readOnly value={draft.companyAbout} rows={3} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 font-medium text-neutral-600" placeholder="Add company summary in Company Profile." />
                 </div>
               </div>
             </div>
