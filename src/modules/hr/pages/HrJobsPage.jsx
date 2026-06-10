@@ -10,7 +10,10 @@ import {
   FiTrash2,
   FiUsers,
   FiEye,
-  FiMapPin
+  FiMapPin,
+  FiImage,
+  FiGlobe,
+  FiChevronRight
 } from 'react-icons/fi';
 import {
   checkoutRolePlan,
@@ -21,6 +24,7 @@ import {
   formatDateTime,
   getCurrentRolePlanSubscription,
   getEmptyJobDraft,
+  getHrCompanies,
   getHrJobs,
   getJobDistricts,
   getJobDraftFromJob,
@@ -32,6 +36,7 @@ import {
   getRolePlanSubscriptions,
   getRolePricingPlanQuote,
   getRolePricingPlans,
+  saveHrCompany,
   verifyRolePlanAutopay,
   updateHrJob
 } from '../services/hrApi';
@@ -67,6 +72,13 @@ const isFreePlan = (plan = {}) => {
 
 const isDisabledPostingPlan = (plan = {}) => String(plan.slug || '').toLowerCase() === 'free';
 const buildHrApplicantsPath = (job = {}) => `${buildJobSeoPath('/portal/hr/jobs', job)}/applicants`;
+const normalizeCompanyKeyForUi = (value = '') =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 
 const isPendingAutopayRoleSubscription = (subscription = null) =>
   Boolean(subscription?.role_plan_slug)
@@ -165,6 +177,8 @@ const HrJobsPage = () => {
   const [billingSubTab, setBillingSubTab] = useState('subscription'); // 'subscription', 'history'
 
   const [jobs, setJobs] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompanyKey, setSelectedCompanyKey] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -521,21 +535,76 @@ const HrJobsPage = () => {
     window.setTimeout(() => invalidatePlanAccessCache('hr'), 500);
   };
 
+  const companyJobsByKey = useMemo(() => {
+    const grouped = new Map();
+    jobs.forEach((job) => {
+      const key = normalizeCompanyKeyForUi(job.companyKey || job.company_key || job.companyName || job.company_name);
+      if (!key) return;
+      grouped.set(key, [...(grouped.get(key) || []), job]);
+    });
+    return grouped;
+  }, [jobs]);
+
+  const managedCompanies = useMemo(() => {
+    const byKey = new Map();
+
+    companies.forEach((company) => {
+      const key = normalizeCompanyKeyForUi(company.companyKey || company.companyName);
+      if (!key) return;
+      const relatedJobs = companyJobsByKey.get(key) || [];
+      byKey.set(key, {
+        ...company,
+        companyKey: company.companyKey || key,
+        jobsCount: company.jobsCount || relatedJobs.length,
+        openJobsCount: company.openJobsCount || relatedJobs.filter((job) => String(job.status || 'open').toLowerCase() === 'open').length
+      });
+    });
+
+    jobs.forEach((job) => {
+      const key = normalizeCompanyKeyForUi(job.companyKey || job.company_key || job.companyName || job.company_name);
+      if (!key || byKey.has(key)) return;
+      const relatedJobs = companyJobsByKey.get(key) || [];
+      byKey.set(key, {
+        companyKey: key,
+        companyName: job.companyName || job.company_name || 'Client company',
+        logoUrl: job.companyLogo || job.company_logo || '',
+        location: job.jobLocation || job.job_location || '',
+        sectorName: job.sectorName || job.sector_name || job.category || '',
+        jobsCount: relatedJobs.length,
+        openJobsCount: relatedJobs.filter((item) => String(item.status || 'open').toLowerCase() === 'open').length,
+        needsProfile: true
+      });
+    });
+
+    return [...byKey.values()].sort((a, b) => {
+      const jobDelta = Number(b.jobsCount || 0) - Number(a.jobsCount || 0);
+      if (jobDelta !== 0) return jobDelta;
+      return String(a.companyName || '').localeCompare(String(b.companyName || ''));
+    });
+  }, [companies, companyJobsByKey, jobs]);
+
+  const selectedCompany = useMemo(
+    () => managedCompanies.find((company) => normalizeCompanyKeyForUi(company.companyKey || company.companyName) === selectedCompanyKey) || null,
+    [managedCompanies, selectedCompanyKey]
+  );
+
   useEffect(() => {
     let mounted = true;
 
     const loadAll = async () => {
-      const [jobsRes, sectorsRes, statesRes] = await Promise.all([
+      const [jobsRes, companiesRes, sectorsRes, statesRes] = await Promise.all([
         getHrJobs(),
+        getHrCompanies(),
         getJobSectors(),
         getJobStates()
       ]);
       if (!mounted) return;
 
       setJobs(jobsRes.data || []);
+      setCompanies(companiesRes.data || []);
       setSectors(sectorsRes.data || []);
       setStates(statesRes.data || []);
-      setError(jobsRes.error || '');
+      setError([jobsRes.error, companiesRes.error].filter(Boolean).join(' | '));
       setLoading(false);
 
       await loadPricingState();
@@ -617,12 +686,53 @@ const HrJobsPage = () => {
   }, [autoPostingPlan, editingJobId, postablePlans, postingUsageByPlan]);
 
   const filteredJobs = useMemo(() => {
-    if (statusFilter === 'all') return jobs;
-    return jobs.filter((job) => String(job.status || '').toLowerCase() === statusFilter);
-  }, [jobs, statusFilter]);
+    const companyScopedJobs = selectedCompanyKey
+      ? jobs.filter((job) => normalizeCompanyKeyForUi(job.companyKey || job.company_key || job.companyName || job.company_name) === selectedCompanyKey)
+      : jobs;
+    if (statusFilter === 'all') return companyScopedJobs;
+    return companyScopedJobs.filter((job) => String(job.status || '').toLowerCase() === statusFilter);
+  }, [jobs, selectedCompanyKey, statusFilter]);
 
   const updateDraftField = (key, value) => {
     setDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const applyCompanyToDraft = (company = {}, options = {}) => {
+    if (!company) return;
+    setDraft((current) => ({
+      ...current,
+      companyName: company.companyName || current.companyName,
+      companyLogo: company.logoUrl || current.companyLogo,
+      companyWebsite: company.websiteUrl || current.companyWebsite,
+      companyType: company.companyType || current.companyType,
+      companySize: company.companySize || current.companySize,
+      companyAbout: company.about || current.companyAbout,
+      sectorId: company.sectorId || current.sectorId,
+      sectorName: company.sectorName || current.sectorName,
+      category: company.sectorName || current.category,
+      stateId: company.stateId || current.stateId,
+      stateName: company.stateName || current.stateName,
+      districtId: company.districtId || current.districtId,
+      districtName: company.districtName || current.districtName,
+      jobLocation: current.jobLocation || company.location || [company.districtName, company.stateName].filter(Boolean).join(', ')
+    }));
+    if (options.openPost) setActiveTab('post');
+  };
+
+  const handleCompanyNameChange = (value) => {
+    const matchedCompany = managedCompanies.find((company) => String(company.companyName || '').toLowerCase() === String(value || '').trim().toLowerCase());
+    setDraft((current) => ({ ...current, companyName: value }));
+    if (matchedCompany) {
+      applyCompanyToDraft(matchedCompany);
+      setSelectedCompanyKey(normalizeCompanyKeyForUi(matchedCompany.companyKey || matchedCompany.companyName));
+    }
+  };
+
+  const refreshCompanies = async () => {
+    const response = await getHrCompanies();
+    setCompanies(response.data || []);
+    if (response.error) setError(response.error);
+    return response.data || [];
   };
 
   const handleSectorChange = (sectorId) => {
@@ -668,12 +778,28 @@ const HrJobsPage = () => {
 
   const resetForm = () => {
     setEditingJobId('');
-    setDraft({ ...getEmptyJobDraft(), planSlug: autoPostingPlan?.slug || selectedPlan?.slug || 'standard' });
+    const nextDraft = { ...getEmptyJobDraft(), planSlug: autoPostingPlan?.slug || selectedPlan?.slug || 'standard' };
+    if (selectedCompany) {
+      nextDraft.companyName = selectedCompany.companyName || '';
+      nextDraft.companyLogo = selectedCompany.logoUrl || '';
+      nextDraft.companyWebsite = selectedCompany.websiteUrl || '';
+      nextDraft.companyType = selectedCompany.companyType || '';
+      nextDraft.companySize = selectedCompany.companySize || '';
+      nextDraft.companyAbout = selectedCompany.about || '';
+      nextDraft.sectorId = selectedCompany.sectorId || '';
+      nextDraft.sectorName = selectedCompany.sectorName || '';
+      nextDraft.stateId = selectedCompany.stateId || '';
+      nextDraft.stateName = selectedCompany.stateName || '';
+      nextDraft.districtId = selectedCompany.districtId || '';
+      nextDraft.districtName = selectedCompany.districtName || '';
+      nextDraft.jobLocation = selectedCompany.location || '';
+    }
+    setDraft(nextDraft);
     setActiveTab('jobs');
   };
 
   const validateDraft = () => {
-    const requiredFields = ['jobTitle', 'salaryType', 'experienceLevel', 'employmentType', 'sectorName', 'stateName', 'districtName', 'description', 'jobLocation'];
+    const requiredFields = ['companyName', 'jobTitle', 'salaryType', 'experienceLevel', 'employmentType', 'sectorName', 'stateName', 'districtName', 'description', 'jobLocation'];
     const missing = requiredFields.filter((key) => !String(draft[key] || '').trim());
 
     if (missing.length > 0) {
@@ -724,14 +850,45 @@ const HrJobsPage = () => {
     setSaving(true);
 
     try {
+      let savedJob = null;
       if (editingJobId) {
         const updated = await updateHrJob(editingJobId, draft);
+        savedJob = updated;
         setJobs((current) => current.map((job) => ((job.id || job._id) === editingJobId ? { ...job, ...updated } : job)));
         setMessage('Job updated successfully.');
       } else {
         const created = await createHrJob(draft);
+        savedJob = created;
         setJobs((current) => [created, ...current]);
         setMessage(`Job created successfully on ${selectedPlan?.name || 'selected'} plan.`);
+      }
+
+      if (String(draft.companyName || '').trim()) {
+        try {
+          await saveHrCompany({
+            companyKey: savedJob?.companyKey || savedJob?.company_key || normalizeCompanyKeyForUi(draft.companyName),
+            companyName: draft.companyName,
+            logoUrl: draft.companyLogo,
+            websiteUrl: draft.companyWebsite,
+            companyType: draft.companyType,
+            companySize: draft.companySize,
+            about: draft.companyAbout,
+            sectorId: draft.sectorId,
+            sectorName: draft.sectorName,
+            stateId: draft.stateId,
+            stateName: draft.stateName,
+            districtId: draft.districtId,
+            districtName: draft.districtName,
+            location: draft.jobLocation
+          });
+        } catch (companySaveError) {
+          notify.error('Company profile not fully saved', String(companySaveError.message || 'Update company profile later from this page.'));
+        }
+        const freshCompanies = await refreshCompanies();
+        const nextCompanyKey = normalizeCompanyKeyForUi(savedJob?.companyKey || savedJob?.company_key || draft.companyName);
+        if (freshCompanies.some((company) => normalizeCompanyKeyForUi(company.companyKey || company.companyName) === nextCompanyKey)) {
+          setSelectedCompanyKey(nextCompanyKey);
+        }
       }
 
       resetForm();
@@ -934,6 +1091,88 @@ const HrJobsPage = () => {
       {/* JOBS TAB */}
       {activeTab === 'jobs' && (
         <div className="space-y-6 animate-fade-in">
+          <section className="rounded-[1.5rem] border border-neutral-100 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-extrabold text-primary">Managed companies</h2>
+                <p className="text-sm font-medium text-neutral-500">Post and review jobs company-wise. Add details once so public company cards stay complete.</p>
+              </div>
+              {selectedCompanyKey ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCompanyKey('')}
+                  className="rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-xs font-bold text-neutral-600 transition-colors hover:bg-white"
+                >
+                  Show all companies
+                </button>
+              ) : null}
+            </div>
+
+            {managedCompanies.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {managedCompanies.map((company) => {
+                  const companyKey = normalizeCompanyKeyForUi(company.companyKey || company.companyName);
+                  const isSelectedCompany = selectedCompanyKey === companyKey;
+                  return (
+                    <article
+                      key={companyKey || company.companyName}
+                      className={`rounded-2xl border p-4 transition-all ${isSelectedCompany ? 'border-brand-300 bg-brand-50/60 shadow-sm' : 'border-neutral-100 bg-neutral-50/60 hover:border-brand-200 hover:bg-white'}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-white text-sm font-black text-brand-700">
+                          {company.logoUrl ? (
+                            <img src={company.logoUrl} alt="" className="h-full w-full object-contain p-1.5" />
+                          ) : (
+                            String(company.companyName || 'C').slice(0, 2).toUpperCase()
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate text-base font-extrabold text-primary">{company.companyName || 'Client company'}</h3>
+                          <p className="mt-0.5 truncate text-xs font-medium text-neutral-500">{company.location || [company.districtName, company.stateName].filter(Boolean).join(', ') || 'Location not set'}</p>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-neutral-600">{company.jobsCount || 0} jobs</span>
+                            <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-emerald-700">{company.openJobsCount || 0} open</span>
+                            {company.needsProfile ? (
+                              <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-amber-700">Profile needed</span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCompanyKey(isSelectedCompany ? '' : companyKey)}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-slate-800"
+                        >
+                          View jobs <FiChevronRight size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyCompanyToDraft(company, { openPost: true })}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition-colors hover:border-brand-200 hover:text-brand-700"
+                        >
+                          <FiPlus size={13} /> Post job
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyCompanyToDraft(company, { openPost: true })}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition-colors hover:border-brand-200 hover:text-brand-700"
+                        >
+                          <FiImage size={13} /> Edit profile
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-5 py-6 text-sm font-medium text-neutral-500">
+                No client companies yet. Your first job post will create the company profile automatically.
+              </div>
+            )}
+          </section>
+
           <div className="admin-ops-panel-header rounded-[1.5rem] border border-neutral-100 bg-white shadow-sm">
             <div className="flex items-center gap-3">
               <span className="font-bold text-primary">Filter By Status:</span>
@@ -951,7 +1190,7 @@ const HrJobsPage = () => {
               </div>
             </div>
             <div className="text-sm font-bold text-neutral-500">
-              {loading ? 'Loading Jobs' : `${filteredJobs.length} Jobs Found`}
+              {loading ? 'Loading Jobs' : `${filteredJobs.length} Jobs Found${selectedCompany ? ` for ${selectedCompany.companyName}` : ''}`}
             </div>
           </div>
 
@@ -1046,6 +1285,74 @@ const HrJobsPage = () => {
           </div>
 
           <form onSubmit={handleSubmitJob} className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+            <div className="md:col-span-2 rounded-2xl border border-brand-100 bg-brand-50/40 p-4">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="flex items-center gap-2 text-base font-extrabold text-primary">
+                    <FiBriefcase className="text-brand-600" /> Hiring company
+                  </h3>
+                  <p className="mt-1 text-xs font-medium text-neutral-500">
+                    For recruiting agencies, enter the client company name. Complete logo and profile details here so this company card also looks clean on the public Companies page.
+                  </p>
+                </div>
+                {draft.companyLogo ? (
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+                    <img src={draft.companyLogo} alt="" className="h-full w-full object-contain p-1.5" />
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">Company Name</label>
+                  <input
+                    required
+                    list="hr-managed-company-options"
+                    value={draft.companyName}
+                    onChange={(event) => handleCompanyNameChange(event.target.value)}
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium transition-all focus:ring-2 focus:ring-brand-500"
+                    placeholder="Eg. PDCE HR, Indian Trade Mart, client company"
+                  />
+                  <datalist id="hr-managed-company-options">
+                    {managedCompanies.map((company) => (
+                      <option key={company.companyKey || company.companyName} value={company.companyName} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">Logo Image URL</label>
+                  <div className="relative">
+                    <FiImage className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={15} />
+                    <input value={draft.companyLogo} onChange={(e) => updateDraftField('companyLogo', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white py-3 pl-10 pr-4 font-medium transition-all focus:ring-2 focus:ring-brand-500" placeholder="https://example.com/logo.png" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">Website URL</label>
+                  <div className="relative">
+                    <FiGlobe className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={15} />
+                    <input value={draft.companyWebsite} onChange={(e) => updateDraftField('companyWebsite', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white py-3 pl-10 pr-4 font-medium transition-all focus:ring-2 focus:ring-brand-500" placeholder="https://company.com" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-neutral-700">Company Type</label>
+                    <input value={draft.companyType} onChange={(e) => updateDraftField('companyType', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium transition-all focus:ring-2 focus:ring-brand-500" placeholder="Private Limited" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-neutral-700">Employee Size</label>
+                    <input value={draft.companySize} onChange={(e) => updateDraftField('companySize', e.target.value)} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium transition-all focus:ring-2 focus:ring-brand-500" placeholder="51-200" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="text-sm font-bold text-neutral-700">About Company</label>
+                  <textarea value={draft.companyAbout} onChange={(e) => updateDraftField('companyAbout', e.target.value)} rows={3} className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium transition-all focus:ring-2 focus:ring-brand-500" placeholder="Short company summary for public company profile and job pages." />
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:col-span-2">
               <div className="space-y-1.5">

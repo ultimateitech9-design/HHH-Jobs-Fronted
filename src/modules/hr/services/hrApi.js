@@ -78,6 +78,10 @@ const defaultJobDraft = {
   planSlug: 'standard',
   targetAudience: 'all',
   companyName: '',
+  companyWebsite: '',
+  companyType: '',
+  companySize: '',
+  companyAbout: '',
   minPrice: '',
   maxPrice: '',
   salaryType: 'LPA',
@@ -110,6 +114,10 @@ const formatJobDraftForApi = (draft = {}) => ({
   audience: draft.targetAudience || 'all',
   jobTitle: draft.jobTitle,
   companyName: draft.companyName,
+  companyWebsite: draft.companyWebsite,
+  companyType: draft.companyType,
+  companySize: draft.companySize,
+  companyAbout: draft.companyAbout,
   minPrice: draft.minPrice ? Number(draft.minPrice) : null,
   maxPrice: draft.maxPrice ? Number(draft.maxPrice) : null,
   salaryType: draft.salaryType,
@@ -137,6 +145,10 @@ const hydrateJobDraftFromJob = (job = {}) => ({
   planSlug: job.planSlug || 'free',
   targetAudience: job.targetAudience || job.audience || 'all',
   companyName: job.companyName || '',
+  companyWebsite: job.companyWebsite || job.websiteUrl || '',
+  companyType: job.companyType || '',
+  companySize: job.companySize || '',
+  companyAbout: job.companyAbout || '',
   minPrice: job.minPrice || '',
   maxPrice: job.maxPrice || '',
   salaryType: job.salaryType || 'LPA',
@@ -174,6 +186,31 @@ const normalizeHrProfile = (profile = {}) => ({
   about: profile.about || '',
   logoUrl: profile.logo_url || profile.logoUrl || '',
   hrEmployerId: profile.hrEmployerId || profile.hr_employer_id || profile.employeeCode || profile.employee_code || ''
+});
+
+const normalizeHrCompany = (company = {}) => ({
+  id: company.id || '',
+  companyKey: company.companyKey || company.company_key || '',
+  companySlug: company.companySlug || company.company_slug || '',
+  companyName: company.companyName || company.company_name || '',
+  logoUrl: company.logoUrl || company.logo_url || '',
+  websiteUrl: company.websiteUrl || company.website_url || '',
+  location: company.location || '',
+  stateId: company.stateId || company.state_id || '',
+  districtId: company.districtId || company.district_id || '',
+  stateName: company.stateName || company.state_name || '',
+  districtName: company.districtName || company.district_name || '',
+  sectorId: company.sectorId || company.sector_id || '',
+  sectorName: company.sectorName || company.sector_name || company.industryType || company.industry_type || '',
+  industryType: company.industryType || company.industry_type || company.sectorName || company.sector_name || '',
+  companyType: company.companyType || company.company_type || '',
+  companySize: company.companySize || company.company_size || '',
+  about: company.about || '',
+  isVerified: Boolean(company.isVerified ?? company.is_verified),
+  isActive: company.isActive ?? company.is_active ?? true,
+  jobsCount: Number(company.jobsCount ?? company.jobs_count ?? 0),
+  openJobsCount: Number(company.openJobsCount ?? company.open_jobs_count ?? 0),
+  needsProfile: Boolean(company.needsProfile ?? company.needs_profile)
 });
 
 export const getHrProfile = async () => {
@@ -230,9 +267,54 @@ export const uploadHrProfileLogo = async (file) => {
   };
 };
 
-export const getHrJobs = async () =>
+export const getHrCompanies = async () => {
+  const result = await safeRequest({
+    path: '/hr/companies',
+    emptyData: [],
+    extract: (payload) => payload?.companies || []
+  });
+
+  return { ...result, data: (result.data || []).map(normalizeHrCompany) };
+};
+
+export const saveHrCompany = async (company = {}) => {
+  const companyKey = company.companyKey || company.companyName || 'new-company';
+  const payload = {
+    companyName: company.companyName,
+    logoUrl: company.logoUrl,
+    websiteUrl: company.websiteUrl,
+    location: company.location,
+    stateId: company.stateId,
+    districtId: company.districtId,
+    stateName: company.stateName,
+    districtName: company.districtName,
+    sectorId: company.sectorId,
+    sectorName: company.sectorName,
+    industryType: company.industryType,
+    companyType: company.companyType,
+    companySize: company.companySize,
+    about: company.about
+  };
+
+  const saved = await strictRequest({
+    path: `/hr/companies/${encodeURIComponent(companyKey)}`,
+    options: { method: 'PUT', body: JSON.stringify(payload) },
+    extract: (payloadResult) => payloadResult?.company || {}
+  });
+
+  return normalizeHrCompany(saved);
+};
+
+export const getHrCompanyJobs = async (companyKey = '') =>
   safeRequest({
-    path: '/hr/jobs',
+    path: `/hr/companies/${encodeURIComponent(companyKey)}/jobs`,
+    emptyData: [],
+    extract: (payload) => payload?.jobs || []
+  });
+
+export const getHrJobs = async (filters = {}) =>
+  safeRequest({
+    path: `/hr/jobs${buildQueryString(filters) ? `?${buildQueryString(filters)}` : ''}`,
     emptyData: [],
     extract: (payload) => payload?.jobs || []
   });
