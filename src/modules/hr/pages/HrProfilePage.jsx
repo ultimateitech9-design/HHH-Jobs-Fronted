@@ -13,9 +13,21 @@ import {
   FiSave,
   FiHash,
   FiShield,
-  FiUpload
+  FiUpload,
+  FiPlus,
+  FiEdit2,
+  FiX
 } from 'react-icons/fi';
-import { getHrProfile, getJobDistricts, getJobSectors, getJobStates, updateHrProfile, uploadHrProfileLogo } from '../services/hrApi';
+import {
+  getHrCompanies,
+  getHrProfile,
+  getJobDistricts,
+  getJobSectors,
+  getJobStates,
+  saveHrCompany,
+  updateHrProfile,
+  uploadHrProfileLogo
+} from '../services/hrApi';
 import { getCurrentUser, getToken, setAuthSession } from '../../../utils/auth';
 import { generateHrEmployerId } from '../../../utils/hrIdentity';
 
@@ -37,6 +49,24 @@ const EMPTY_HR_PROFILE_FORM = {
   logoUrl: '',
   hrEmployerId: '',
   employeeCode: ''
+};
+
+const EMPTY_HIRING_COMPANY_FORM = {
+  companyKey: '',
+  companyName: '',
+  logoUrl: '',
+  websiteUrl: '',
+  location: '',
+  stateId: '',
+  stateName: '',
+  districtId: '',
+  districtName: '',
+  sectorId: '',
+  sectorName: '',
+  industryType: '',
+  companyType: '',
+  companySize: '',
+  about: ''
 };
 
 const hasText = (value) => String(value ?? '').trim().length > 0;
@@ -143,6 +173,11 @@ const HrProfilePage = () => {
   const currentUser = getCurrentUser();
   const logoInputRef = useRef(null);
   const [form, setForm] = useState(EMPTY_HR_PROFILE_FORM);
+  const [hiringCompanyForm, setHiringCompanyForm] = useState(EMPTY_HIRING_COMPANY_FORM);
+  const [managedCompanies, setManagedCompanies] = useState([]);
+  const [companyDistricts, setCompanyDistricts] = useState([]);
+  const [companySaving, setCompanySaving] = useState(false);
+  const [showCompanyForm, setShowCompanyForm] = useState(false);
   const [sectors, setSectors] = useState([]);
   const [states, setStates] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -158,8 +193,9 @@ const HrProfilePage = () => {
     let mounted = true;
 
     const loadProfile = async () => {
-      const [response, sectorsResponse, statesResponse] = await Promise.all([
+      const [response, companiesResponse, sectorsResponse, statesResponse] = await Promise.all([
         getHrProfile(),
+        getHrCompanies(),
         getJobSectors(),
         getJobStates()
       ]);
@@ -181,6 +217,7 @@ const HrProfilePage = () => {
         if (mounted) setDistricts(districtsResponse.data || []);
       }
       setIsDemo(Boolean(response.isDemo));
+      setManagedCompanies(companiesResponse.data || []);
       setError(response.error && !response.isDemo ? response.error : '');
       setLoading(false);
     };
@@ -194,6 +231,10 @@ const HrProfilePage = () => {
 
   const updateField = (key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateHiringCompanyField = (key, value) => {
+    setHiringCompanyForm((current) => ({ ...current, [key]: value }));
   };
 
   const handleSectorChange = (sectorId) => {
@@ -221,6 +262,110 @@ const HrProfilePage = () => {
     }
     const response = await getJobDistricts(stateId);
     setDistricts(response.data || []);
+  };
+
+  const handleHiringCompanySectorChange = (sectorId) => {
+    const sector = sectors.find((item) => item.id === sectorId);
+    setHiringCompanyForm((current) => ({
+      ...current,
+      sectorId,
+      sectorName: sector?.name || '',
+      industryType: sector?.name || current.industryType
+    }));
+  };
+
+  const handleHiringCompanyStateChange = async (stateId) => {
+    const state = states.find((item) => item.id === stateId);
+    setHiringCompanyForm((current) => ({
+      ...current,
+      stateId,
+      stateName: state?.name || '',
+      districtId: '',
+      districtName: ''
+    }));
+    if (!stateId) {
+      setCompanyDistricts([]);
+      return;
+    }
+    const response = await getJobDistricts(stateId);
+    setCompanyDistricts(response.data || []);
+  };
+
+  const handleHiringCompanyDistrictChange = (districtId) => {
+    const district = companyDistricts.find((item) => item.id === districtId);
+    setHiringCompanyForm((current) => {
+      const districtName = district?.name || '';
+      return {
+        ...current,
+        districtId,
+        districtName,
+        location: current.location || [districtName, current.stateName].filter(Boolean).join(', ')
+      };
+    });
+  };
+
+  const beginAddHiringCompany = () => {
+    setHiringCompanyForm({
+      ...EMPTY_HIRING_COMPANY_FORM,
+      sectorId: form.sectorId,
+      sectorName: form.sectorName,
+      industryType: form.industryType || form.sectorName,
+      stateId: form.stateId,
+      stateName: form.stateName,
+      districtId: form.districtId,
+      districtName: form.districtName
+    });
+    setCompanyDistricts(districts);
+    setShowCompanyForm(true);
+    setError('');
+    setSuccess('');
+  };
+
+  const beginEditHiringCompany = async (company) => {
+    setHiringCompanyForm({ ...EMPTY_HIRING_COMPANY_FORM, ...company });
+    setShowCompanyForm(true);
+    setError('');
+    setSuccess('');
+    if (company?.stateId) {
+      const response = await getJobDistricts(company.stateId);
+      setCompanyDistricts(response.data || []);
+    } else {
+      setCompanyDistricts([]);
+    }
+  };
+
+  const cancelHiringCompanyEdit = () => {
+    setHiringCompanyForm(EMPTY_HIRING_COMPANY_FORM);
+    setCompanyDistricts([]);
+    setShowCompanyForm(false);
+  };
+
+  const handleSaveHiringCompany = async (event) => {
+    event.preventDefault();
+    setCompanySaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      if (!hiringCompanyForm.companyName.trim()) {
+        throw new Error('Hiring company name is required.');
+      }
+      if (!hiringCompanyForm.sectorName || !hiringCompanyForm.location || !hiringCompanyForm.stateName || !hiringCompanyForm.districtName) {
+        throw new Error('Hiring company sector, location, state, and city/district are required.');
+      }
+      const saved = await saveHrCompany(hiringCompanyForm);
+      const companiesResponse = await getHrCompanies();
+      setManagedCompanies(companiesResponse.data?.length ? companiesResponse.data : [saved]);
+      setHiringCompanyForm(EMPTY_HIRING_COMPANY_FORM);
+      setCompanyDistricts([]);
+      setShowCompanyForm(false);
+      setSuccess('Hiring company saved. It is now available while posting jobs.');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (saveError) {
+      setError(saveError.message || 'Failed to save hiring company.');
+    } finally {
+      setCompanySaving(false);
+    }
   };
 
   const handleDistrictChange = (districtId) => {
@@ -573,6 +718,233 @@ const HrProfilePage = () => {
             </button>
           </div>
         </form>
+      )}
+
+      {!loading && (
+        <section className="rounded-[2rem] border border-neutral-100 bg-white p-6 shadow-sm md:p-8">
+          <div className="mb-6 flex flex-col gap-4 border-b border-neutral-100 pb-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="flex items-center gap-2 text-xl font-black text-primary">
+                <FiBriefcase className="text-brand-600" /> Hiring companies
+              </h2>
+              <p className="mt-1 text-sm font-medium text-neutral-500">
+                Add your own company and client companies here. Job posting will only use companies saved in this list.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={beginAddHiringCompany}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-primary/90"
+            >
+              <FiPlus /> Add hiring company
+            </button>
+          </div>
+
+          {managedCompanies.length > 0 ? (
+            <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {managedCompanies.map((company) => (
+                <article key={company.companyKey || company.id || company.companyName} className="rounded-2xl border border-neutral-100 bg-neutral-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+                      {company.logoUrl ? (
+                        <img src={company.logoUrl} alt={company.companyName} className="h-full w-full object-contain p-1" />
+                      ) : (
+                        <FiBriefcase className="text-neutral-300" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-base font-black text-primary">{company.companyName}</h3>
+                      <p className="truncate text-sm font-semibold text-neutral-500">{company.location || 'Location not set'}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {company.sectorName && <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-neutral-600">{company.sectorName}</span>}
+                        <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">{company.openJobsCount || 0} open jobs</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => beginEditHiringCompany(company)}
+                      className="rounded-xl border border-neutral-200 bg-white p-2 text-neutral-600 hover:border-brand-200 hover:text-brand-700"
+                      title="Edit hiring company"
+                    >
+                      <FiEdit2 />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="mb-6 rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-6 text-sm font-semibold text-neutral-500">
+              No hiring companies added yet. Add your primary company first, then add client companies if you post jobs for multiple organizations.
+            </div>
+          )}
+
+          {showCompanyForm && (
+            <form onSubmit={handleSaveHiringCompany} className="rounded-2xl border border-brand-100 bg-brand-50/30 p-5">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-black text-primary">
+                    {hiringCompanyForm.companyKey ? 'Edit hiring company' : 'Add hiring company'}
+                  </h3>
+                  <p className="text-sm font-medium text-neutral-500">Complete these details so public company cards and job posts look clean.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={cancelHiringCompanyEdit}
+                  className="rounded-xl border border-neutral-200 bg-white p-2 text-neutral-600 hover:text-red-600"
+                  title="Cancel"
+                >
+                  <FiX />
+                </button>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">Company Name *</label>
+                  <input
+                    required
+                    value={hiringCompanyForm.companyName}
+                    onChange={(e) => updateHiringCompanyField('companyName', e.target.value)}
+                    placeholder="e.g. PDCE Group, Indian Trade Mart"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">Logo Image URL</label>
+                  <input
+                    value={hiringCompanyForm.logoUrl}
+                    onChange={(e) => updateHiringCompanyField('logoUrl', e.target.value)}
+                    placeholder="https://example.com/logo.png"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">Website URL</label>
+                  <input
+                    value={hiringCompanyForm.websiteUrl}
+                    onChange={(e) => updateHiringCompanyField('websiteUrl', e.target.value)}
+                    placeholder="https://company.com"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">Sector *</label>
+                  <select
+                    value={hiringCompanyForm.sectorId}
+                    onChange={(e) => handleHiringCompanySectorChange(e.target.value)}
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="">Select Sector</option>
+                    {sectors.map((sector) => (
+                      <option key={sector.id || sector.name} value={sector.id}>{sector.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">Company Type</label>
+                  <select
+                    value={hiringCompanyForm.companyType}
+                    onChange={(e) => updateHiringCompanyField('companyType', e.target.value)}
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="">Select Type</option>
+                    <option value="Startup">Startup</option>
+                    <option value="Private Limited">Private Limited</option>
+                    <option value="MNC">MNC</option>
+                    <option value="Agency">Agency</option>
+                    <option value="Government">Government</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">Employee Size</label>
+                  <select
+                    value={hiringCompanyForm.companySize}
+                    onChange={(e) => updateHiringCompanyField('companySize', e.target.value)}
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="">Select Size</option>
+                    <option value="1-10">1-10 Employees</option>
+                    <option value="11-50">11-50 Employees</option>
+                    <option value="51-200">51-200 Employees</option>
+                    <option value="201-500">201-500 Employees</option>
+                    <option value="500+">500+ Employees</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">State *</label>
+                  <select
+                    value={hiringCompanyForm.stateId}
+                    onChange={(e) => handleHiringCompanyStateChange(e.target.value)}
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="">Select State</option>
+                    {states.map((state) => (
+                      <option key={state.id || state.name} value={state.id}>{state.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">City / District *</label>
+                  {companyDistricts.length > 0 ? (
+                    <select
+                      value={hiringCompanyForm.districtId}
+                      onChange={(e) => handleHiringCompanyDistrictChange(e.target.value)}
+                      className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
+                    >
+                      <option value="">Select District</option>
+                      {companyDistricts.map((district) => (
+                        <option key={district.id || district.name} value={district.id}>{district.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      value={hiringCompanyForm.districtName}
+                      onChange={(e) => updateHiringCompanyField('districtName', e.target.value)}
+                      placeholder="Enter city or district"
+                      className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
+                    />
+                  )}
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="text-sm font-bold text-neutral-700">Company Location *</label>
+                  <input
+                    value={hiringCompanyForm.location}
+                    onChange={(e) => updateHiringCompanyField('location', e.target.value)}
+                    placeholder="Office area, city, or full address"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="text-sm font-bold text-neutral-700">About Company</label>
+                  <textarea
+                    rows={4}
+                    value={hiringCompanyForm.about}
+                    onChange={(e) => updateHiringCompanyField('about', e.target.value)}
+                    placeholder="Short summary for public company profile and job pages."
+                    className="w-full resize-none rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={cancelHiringCompanyEdit}
+                  className="rounded-xl border border-neutral-200 bg-white px-5 py-3 text-sm font-black text-neutral-700 hover:bg-neutral-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={companySaving}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-brand-500 disabled:opacity-60"
+                >
+                  {companySaving ? <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <FiSave />}
+                  Save hiring company
+                </button>
+              </div>
+            </form>
+          )}
+        </section>
       )}
     </div>
   );
