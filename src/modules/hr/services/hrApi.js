@@ -210,6 +210,7 @@ const normalizeHrCompany = (company = {}) => ({
   companyType: company.companyType || company.company_type || '',
   companySize: company.companySize || company.company_size || '',
   about: company.about || '',
+  source: company.source || '',
   isVerified: Boolean(company.isVerified ?? company.is_verified),
   isActive: company.isActive ?? company.is_active ?? true,
   jobsCount: Number(company.jobsCount ?? company.jobs_count ?? 0),
@@ -307,6 +308,16 @@ export const saveHrCompany = async (company = {}) => {
   });
 
   return normalizeHrCompany(saved);
+};
+
+export const deleteHrCompany = async (companyKey = '') => {
+  const deleted = await strictRequest({
+    path: `/hr/companies/${encodeURIComponent(companyKey)}`,
+    options: { method: 'DELETE' },
+    extract: (payload) => payload?.company || payload || {}
+  });
+
+  return normalizeHrCompany(deleted);
 };
 
 export const getHrCompanyJobs = async (companyKey = '') =>

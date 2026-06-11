@@ -588,7 +588,7 @@ const HrJobsPage = () => {
   );
 
   const selectableHiringCompanies = useMemo(
-    () => managedCompanies.filter((company) => !company.needsProfile),
+    () => managedCompanies.filter((company) => company.isActive !== false && normalizeCompanyKeyForUi(company.companyKey || company.companyName)),
     [managedCompanies]
   );
 
@@ -1152,7 +1152,7 @@ const HrJobsPage = () => {
                             <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-neutral-600">{company.jobsCount || 0} jobs</span>
                             <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-emerald-700">{company.openJobsCount || 0} open</span>
                             {company.needsProfile ? (
-                              <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-amber-700">Profile needed</span>
+                              <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-amber-700">Profile incomplete</span>
                             ) : null}
                           </div>
                         </div>
@@ -1168,9 +1168,8 @@ const HrJobsPage = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => !company.needsProfile && applyCompanyToDraft(company, { openPost: true })}
-                          disabled={Boolean(company.needsProfile)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition-colors hover:border-brand-200 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          onClick={() => applyCompanyToDraft(company, { openPost: true })}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition-colors hover:border-brand-200 hover:text-brand-700"
                         >
                           <FiPlus size={13} /> Post job
                         </button>
@@ -1344,7 +1343,11 @@ const HrJobsPage = () => {
                       </option>
                     ))}
                   </select>
-                  {selectableHiringCompanies.length === 0 ? (
+                  {selectedCompany?.needsProfile ? (
+                    <p className="text-xs font-bold text-amber-700">
+                      You can post with this company now. Complete logo, sector, and location later from <Link to="/portal/hr/profile" className="underline">Company Profile</Link> for a better public card.
+                    </p>
+                  ) : selectableHiringCompanies.length === 0 ? (
                     <p className="text-xs font-bold text-amber-700">
                       Add your first hiring company from <Link to="/portal/hr/profile" className="underline">Company Profile</Link>.
                     </p>

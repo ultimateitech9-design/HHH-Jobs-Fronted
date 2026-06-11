@@ -16,9 +16,11 @@ import {
   FiUpload,
   FiPlus,
   FiEdit2,
+  FiTrash2,
   FiX
 } from 'react-icons/fi';
 import {
+  deleteHrCompany,
   getHrCompanies,
   getHrProfile,
   getJobDistricts,
@@ -177,6 +179,7 @@ const HrProfilePage = () => {
   const [managedCompanies, setManagedCompanies] = useState([]);
   const [companyDistricts, setCompanyDistricts] = useState([]);
   const [companySaving, setCompanySaving] = useState(false);
+  const [companyDeletingKey, setCompanyDeletingKey] = useState('');
   const [showCompanyForm, setShowCompanyForm] = useState(false);
   const [sectors, setSectors] = useState([]);
   const [states, setStates] = useState([]);
@@ -365,6 +368,42 @@ const HrProfilePage = () => {
       setError(saveError.message || 'Failed to save hiring company.');
     } finally {
       setCompanySaving(false);
+    }
+  };
+
+  const handleDeleteHiringCompany = async (company) => {
+    const companyKey = company?.companyKey || company?.companyName || '';
+    if (!companyKey) return;
+
+    const isPrimaryCompany = String(company?.source || '').toLowerCase() === 'hr_profile';
+    if (isPrimaryCompany) {
+      setError('Primary profile company cannot be deleted. Edit Company Profile details instead.');
+      return;
+    }
+
+    if (!window.confirm(`Remove ${company.companyName || 'this company'} from your hiring companies? Existing job posts will stay saved.`)) {
+      return;
+    }
+
+    setCompanyDeletingKey(companyKey);
+    setError('');
+    setSuccess('');
+
+    try {
+      await deleteHrCompany(companyKey);
+      const companiesResponse = await getHrCompanies();
+      setManagedCompanies(companiesResponse.data || []);
+
+      if (String(hiringCompanyForm.companyKey || '') === String(companyKey)) {
+        cancelHiringCompanyEdit();
+      }
+
+      setSuccess('Hiring company removed. Existing jobs remain saved.');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (deleteError) {
+      setError(deleteError.message || 'Failed to remove hiring company.');
+    } finally {
+      setCompanyDeletingKey('');
     }
   };
 
@@ -742,35 +781,59 @@ const HrProfilePage = () => {
 
           {managedCompanies.length > 0 ? (
             <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {managedCompanies.map((company) => (
-                <article key={company.companyKey || company.id || company.companyName} className="rounded-2xl border border-neutral-100 bg-neutral-50 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-                      {company.logoUrl ? (
-                        <img src={company.logoUrl} alt={company.companyName} className="h-full w-full object-contain p-1" />
-                      ) : (
-                        <FiBriefcase className="text-neutral-300" />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-base font-black text-primary">{company.companyName}</h3>
-                      <p className="truncate text-sm font-semibold text-neutral-500">{company.location || 'Location not set'}</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {company.sectorName && <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-neutral-600">{company.sectorName}</span>}
-                        <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">{company.openJobsCount || 0} open jobs</span>
+              {managedCompanies.map((company) => {
+                const companyKey = company.companyKey || company.id || company.companyName;
+                const isPrimaryCompany = String(company.source || '').toLowerCase() === 'hr_profile';
+                const isDeletingCompany = String(companyDeletingKey) === String(companyKey);
+
+                return (
+                  <article key={companyKey} className="rounded-2xl border border-neutral-100 bg-neutral-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+                        {company.logoUrl ? (
+                          <img src={company.logoUrl} alt={company.companyName} className="h-full w-full object-contain p-1" />
+                        ) : (
+                          <FiBriefcase className="text-neutral-300" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate text-base font-black text-primary">{company.companyName}</h3>
+                        <p className="truncate text-sm font-semibold text-neutral-500">{company.location || 'Location not set'}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {company.sectorName && <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-neutral-600">{company.sectorName}</span>}
+                          <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">{company.openJobsCount || 0} open jobs</span>
+                          {isPrimaryCompany && <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Primary profile</span>}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => beginEditHiringCompany(company)}
+                          className="rounded-xl border border-neutral-200 bg-white p-2 text-neutral-600 hover:border-brand-200 hover:text-brand-700"
+                          title="Edit hiring company"
+                        >
+                          <FiEdit2 />
+                        </button>
+                        {!isPrimaryCompany ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteHiringCompany(company)}
+                            disabled={isDeletingCompany}
+                            className="rounded-xl border border-red-100 bg-white p-2 text-red-600 hover:border-red-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            title="Delete hiring company"
+                          >
+                            {isDeletingCompany ? (
+                              <span className="block h-4 w-4 animate-spin rounded-full border-2 border-red-200 border-t-red-600" />
+                            ) : (
+                              <FiTrash2 />
+                            )}
+                          </button>
+                        ) : null}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => beginEditHiringCompany(company)}
-                      className="rounded-xl border border-neutral-200 bg-white p-2 text-neutral-600 hover:border-brand-200 hover:text-brand-700"
-                      title="Edit hiring company"
-                    >
-                      <FiEdit2 />
-                    </button>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           ) : (
             <div className="mb-6 rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-6 text-sm font-semibold text-neutral-500">
