@@ -54,9 +54,15 @@ const emptyCouponDraft = {
   discount_value: '',
   max_uses: '',
   valid_until: '',
-  audience_roles: 'hr',
-  plan_slugs: ''
+  audience_role: 'hr',
+  plan_slug: ''
 };
+
+const COUPON_AUDIENCE_OPTIONS = [
+  { value: 'hr', label: 'HR / Recruiter' },
+  { value: 'student', label: 'Student / Professional' },
+  { value: 'campus_connect', label: 'Campus Connect' }
+];
 
 const normalizeCouponCode = (value = '') => String(value || '')
   .trim()
@@ -65,6 +71,14 @@ const normalizeCouponCode = (value = '') => String(value || '')
   .slice(0, 40);
 
 const generateHrFreeTrialCouponCode = () => normalizeCouponCode(`HRFREE${Date.now().toString(36)}`);
+
+const normalizeAudienceRoleForCoupon = (value = '') => {
+  const role = String(value || '').trim().toLowerCase();
+  if (role === 'candidate' || role === 'professional' || role === 'retired_employee') return 'student';
+  if (role === 'campus' || role === 'college') return 'campus_connect';
+  if (role === 'company_admin' || role === 'recruiter') return 'hr';
+  return role;
+};
 
 const hasRealCouponCode = (coupon = {}) => {
   const code = normalizeCouponCode(coupon.code || '');
@@ -435,8 +449,8 @@ const AdminPaymentsPage = () => {
         discount_value: discountValue,
         max_uses: maxUses,
         valid_until: couponDraft.valid_until || null,
-        audience_roles: couponDraft.audience_roles.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean),
-        plan_slugs: couponDraft.plan_slugs.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean)
+        audience_roles: couponDraft.audience_role ? [normalizeAudienceRoleForCoupon(couponDraft.audience_role)] : [],
+        plan_slugs: couponDraft.plan_slug ? [String(couponDraft.plan_slug).trim().toLowerCase()] : []
       });
 
       setCoupons((current) => [created, ...current].filter(hasRealCouponCode));
@@ -450,6 +464,17 @@ const AdminPaymentsPage = () => {
       setSavingCoupon(false);
     }
   };
+
+  const couponPlanOptions = useMemo(() => {
+    const selectedRole = normalizeAudienceRoleForCoupon(couponDraft.audience_role);
+    return rolePlans
+      .filter((plan) => !selectedRole || normalizeAudienceRoleForCoupon(plan.audienceRole || plan.audience_role) === selectedRole)
+      .sort((a, b) => {
+        const roleCompare = String(a.audienceRole || '').localeCompare(String(b.audienceRole || ''));
+        if (roleCompare) return roleCompare;
+        return Number(a.sortOrder || a.sort_order || 0) - Number(b.sortOrder || b.sort_order || 0);
+      });
+  }, [couponDraft.audience_role, rolePlans]);
 
   return (
     <div className="space-y-8 pb-10 relative">
@@ -554,7 +579,7 @@ const AdminPaymentsPage = () => {
 
         <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm p-6">
           <h2 className="text-xl font-bold text-primary">Coupon Control</h2>
-          <p className="text-sm text-neutral-500 mt-1 mb-5">Create 100% HR coupons for free-trial onboarding or role-based coupons that sales can share during follow-up.</p>
+          <p className="text-sm text-neutral-500 mt-1 mb-5">Create HR, student/professional, or campus coupons and lock each code to selected plan(s) when needed.</p>
           <form onSubmit={handleCreateCoupon} className="space-y-3">
             <input required maxLength={40} value={couponDraft.code} onChange={(e) => setCouponDraft((current) => ({ ...current, code: normalizeCouponCode(e.target.value) }))} placeholder="Coupon code" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold uppercase" />
             <div className="grid grid-cols-2 gap-3">
@@ -568,8 +593,39 @@ const AdminPaymentsPage = () => {
               <input value={couponDraft.max_uses} onChange={(e) => setCouponDraft((current) => ({ ...current, max_uses: e.target.value }))} placeholder="Max uses" className="rounded-xl border border-neutral-200 px-3 py-2 font-semibold" />
               <input type="datetime-local" value={couponDraft.valid_until} onChange={(e) => setCouponDraft((current) => ({ ...current, valid_until: e.target.value }))} className="rounded-xl border border-neutral-200 px-3 py-2 font-semibold" />
             </div>
-            <input value={couponDraft.audience_roles} onChange={(e) => setCouponDraft((current) => ({ ...current, audience_roles: e.target.value }))} placeholder="Roles: hr,campus_connect,student" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold" />
-            <input value={couponDraft.plan_slugs} onChange={(e) => setCouponDraft((current) => ({ ...current, plan_slugs: e.target.value }))} placeholder="Plan slugs: hr_growth,student_plus" className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="space-y-1">
+                <span className="block text-xs font-bold uppercase tracking-wide text-neutral-500">User Role</span>
+                <select
+                  value={couponDraft.audience_role}
+                  onChange={(e) => setCouponDraft((current) => ({
+                    ...current,
+                    audience_role: e.target.value,
+                    plan_slug: ''
+                  }))}
+                  className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold"
+                >
+                  {COUPON_AUDIENCE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1">
+                <span className="block text-xs font-bold uppercase tracking-wide text-neutral-500">Plan</span>
+                <select
+                  value={couponDraft.plan_slug}
+                  onChange={(e) => setCouponDraft((current) => ({ ...current, plan_slug: e.target.value }))}
+                  className="w-full rounded-xl border border-neutral-200 px-3 py-2 font-semibold"
+                >
+                  <option value="">All plans for role</option>
+                  {couponPlanOptions.map((plan) => (
+                    <option key={plan.slug} value={plan.slug}>
+                      {plan.name || plan.slug}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <button
               type="button"
               onClick={() => setCouponDraft((current) => ({
@@ -577,8 +633,8 @@ const AdminPaymentsPage = () => {
                 code: normalizeCouponCode(current.code) || generateHrFreeTrialCouponCode(),
                 discount_type: 'percent',
                 discount_value: '100',
-                audience_roles: 'hr',
-                plan_slugs: ''
+                audience_role: 'hr',
+                plan_slug: ''
               }))}
               className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100"
             >
