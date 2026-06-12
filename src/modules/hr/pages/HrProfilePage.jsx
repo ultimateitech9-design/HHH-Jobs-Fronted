@@ -74,6 +74,10 @@ const EMPTY_HIRING_COMPANY_FORM = {
 const hasText = (value) => String(value ?? '').trim().length > 0;
 const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
 const isReadableHrId = (value) => /^HHHJ-[A-Z0-9]+-[0-9]{3}-[0-9]{4}$/i.test(String(value || '').trim());
+const normalizeLookupText = (value = '') => String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+const normalizeCompanyKey = (value = '') => String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const findOptionById = (options = [], id = '') => options.find((option) => String(option.id) === String(id));
+const findOptionByName = (options = [], name = '') => options.find((option) => normalizeLookupText(option.name) === normalizeLookupText(name));
 
 const resolveHrEmployerId = ({ user = {}, profile = {} } = {}) => {
   const directValue = user.hrEmployerId || user.employeeCode || profile.hrEmployerId || profile.employeeCode;
@@ -208,17 +212,41 @@ const HrProfilePage = () => {
         response.data,
         buildProfileFallbackFromUser(currentUser)
       );
-      setForm(nextProfile);
+      const stateOptions = statesResponse.data || [];
+      let hydratedProfile = nextProfile;
+      let hydratedDistricts = [];
+      const matchedState = findOptionById(stateOptions, nextProfile.stateId) || findOptionByName(stateOptions, nextProfile.stateName);
+      if (matchedState) {
+        hydratedProfile = {
+          ...hydratedProfile,
+          stateId: matchedState.id || '',
+          stateName: matchedState.name || ''
+        };
+        const districtsResponse = await getJobDistricts(matchedState.id);
+        hydratedDistricts = districtsResponse.data || [];
+        const matchedDistrict = findOptionById(hydratedDistricts, nextProfile.districtId) || findOptionByName(hydratedDistricts, nextProfile.districtName);
+        if (matchedDistrict) {
+          hydratedProfile = {
+            ...hydratedProfile,
+            districtId: matchedDistrict.id || '',
+            districtName: matchedDistrict.name || ''
+          };
+        }
+      } else if (nextProfile.stateId) {
+        const districtsResponse = await getJobDistricts(nextProfile.stateId);
+        hydratedDistricts = districtsResponse.data || [];
+      }
+
+      if (!mounted) return;
+
+      setForm(hydratedProfile);
       const token = getToken();
       if (token && currentUser) {
-        setAuthSession(token, mergeUserWithProfile(currentUser, nextProfile));
+        setAuthSession(token, mergeUserWithProfile(currentUser, hydratedProfile));
       }
       setSectors(sectorsResponse.data || []);
-      setStates(statesResponse.data || []);
-      if (nextProfile.stateId) {
-        const districtsResponse = await getJobDistricts(nextProfile.stateId);
-        if (mounted) setDistricts(districtsResponse.data || []);
-      }
+      setStates(stateOptions);
+      setDistricts(hydratedDistricts);
       setIsDemo(Boolean(response.isDemo));
       setManagedCompanies(companiesResponse.data || []);
       setError(response.error && !response.isDemo ? response.error : '');
@@ -241,7 +269,7 @@ const HrProfilePage = () => {
   };
 
   const handleSectorChange = (sectorId) => {
-    const sector = sectors.find((item) => item.id === sectorId);
+    const sector = findOptionById(sectors, sectorId);
     setForm((current) => ({
       ...current,
       sectorId,
@@ -251,7 +279,7 @@ const HrProfilePage = () => {
   };
 
   const handleStateChange = async (stateId) => {
-    const state = states.find((item) => item.id === stateId);
+    const state = findOptionById(states, stateId);
     setForm((current) => ({
       ...current,
       stateId,
@@ -268,7 +296,7 @@ const HrProfilePage = () => {
   };
 
   const handleHiringCompanySectorChange = (sectorId) => {
-    const sector = sectors.find((item) => item.id === sectorId);
+    const sector = findOptionById(sectors, sectorId);
     setHiringCompanyForm((current) => ({
       ...current,
       sectorId,
@@ -278,7 +306,7 @@ const HrProfilePage = () => {
   };
 
   const handleHiringCompanyStateChange = async (stateId) => {
-    const state = states.find((item) => item.id === stateId);
+    const state = findOptionById(states, stateId);
     setHiringCompanyForm((current) => ({
       ...current,
       stateId,
@@ -295,7 +323,7 @@ const HrProfilePage = () => {
   };
 
   const handleHiringCompanyDistrictChange = (districtId) => {
-    const district = companyDistricts.find((item) => item.id === districtId);
+    const district = findOptionById(companyDistricts, districtId);
     setHiringCompanyForm((current) => {
       const districtName = district?.name || '';
       return {
@@ -307,8 +335,39 @@ const HrProfilePage = () => {
     });
   };
 
-  const beginAddHiringCompany = () => {
-    setHiringCompanyForm({
+  const hydrateHiringCompanyLocation = async (company) => {
+    const matchedState = findOptionById(states, company.stateId) || findOptionByName(states, company.stateName);
+    const stateId = matchedState?.id || company.stateId || '';
+    const stateName = matchedState?.name || company.stateName || '';
+    let nextDistricts = [];
+
+    if (stateId) {
+      try {
+        const response = await getJobDistricts(stateId);
+        nextDistricts = response.data || [];
+      } catch (districtError) {
+        nextDistricts = [];
+      }
+    }
+
+    const matchedDistrict =
+      findOptionById(nextDistricts, company.districtId) ||
+      findOptionByName(nextDistricts, company.districtName);
+
+    return {
+      company: {
+        ...company,
+        stateId,
+        stateName,
+        districtId: matchedDistrict?.id || company.districtId || '',
+        districtName: matchedDistrict?.name || company.districtName || ''
+      },
+      districts: nextDistricts
+    };
+  };
+
+  const beginAddHiringCompany = async () => {
+    const hydrated = await hydrateHiringCompanyLocation({
       ...EMPTY_HIRING_COMPANY_FORM,
       sectorId: form.sectorId,
       sectorName: form.sectorName,
@@ -318,23 +377,20 @@ const HrProfilePage = () => {
       districtId: form.districtId,
       districtName: form.districtName
     });
-    setCompanyDistricts(districts);
+    setHiringCompanyForm(hydrated.company);
+    setCompanyDistricts(hydrated.districts);
     setShowCompanyForm(true);
     setError('');
     setSuccess('');
   };
 
   const beginEditHiringCompany = async (company) => {
-    setHiringCompanyForm({ ...EMPTY_HIRING_COMPANY_FORM, ...company });
+    const hydrated = await hydrateHiringCompanyLocation({ ...EMPTY_HIRING_COMPANY_FORM, ...company });
+    setHiringCompanyForm(hydrated.company);
+    setCompanyDistricts(hydrated.districts);
     setShowCompanyForm(true);
     setError('');
     setSuccess('');
-    if (company?.stateId) {
-      const response = await getJobDistricts(company.stateId);
-      setCompanyDistricts(response.data || []);
-    } else {
-      setCompanyDistricts([]);
-    }
   };
 
   const cancelHiringCompanyEdit = () => {
@@ -372,7 +428,7 @@ const HrProfilePage = () => {
   };
 
   const handleDeleteHiringCompany = async (company) => {
-    const companyKey = company?.companyKey || company?.companyName || '';
+    const companyKey = normalizeCompanyKey(company?.companyKey || company?.companyName || '');
     if (!companyKey) return;
 
     const isPrimaryCompany = String(company?.source || '').toLowerCase() === 'hr_profile';
@@ -394,7 +450,7 @@ const HrProfilePage = () => {
       const companiesResponse = await getHrCompanies();
       setManagedCompanies(companiesResponse.data || []);
 
-      if (String(hiringCompanyForm.companyKey || '') === String(companyKey)) {
+      if (normalizeCompanyKey(hiringCompanyForm.companyKey || hiringCompanyForm.companyName) === companyKey) {
         cancelHiringCompanyEdit();
       }
 
@@ -408,7 +464,7 @@ const HrProfilePage = () => {
   };
 
   const handleDistrictChange = (districtId) => {
-    const district = districts.find((item) => item.id === districtId);
+    const district = findOptionById(districts, districtId);
     setForm((current) => {
       const districtName = district?.name || '';
       const location = current.location || [districtName, current.stateName].filter(Boolean).join(', ');
@@ -935,7 +991,7 @@ const HrProfilePage = () => {
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-neutral-700">State *</label>
                   <select
-                    value={hiringCompanyForm.stateId}
+                    value={hiringCompanyForm.stateId || ''}
                     onChange={(e) => handleHiringCompanyStateChange(e.target.value)}
                     className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
                   >
@@ -949,7 +1005,7 @@ const HrProfilePage = () => {
                   <label className="text-sm font-bold text-neutral-700">City / District *</label>
                   {companyDistricts.length > 0 ? (
                     <select
-                      value={hiringCompanyForm.districtId}
+                      value={hiringCompanyForm.districtId || ''}
                       onChange={(e) => handleHiringCompanyDistrictChange(e.target.value)}
                       className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
                     >

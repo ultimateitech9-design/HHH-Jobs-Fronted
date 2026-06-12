@@ -177,6 +177,7 @@ export default function HrCandidatesPage() {
   const [access, setAccess] = useState({ hasPaidAccess: false, requiresUpgrade: true, activePlanName: 'Free' });
   const [summary, setSummary] = useState({ total: 0, blurred: 0, connected: 0, availableNow: 0, verified: 0 });
   const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0, totalPages: 1, count: 0 });
+  const [searchMeta, setSearchMeta] = useState({ engine: 'database' });
   const [candidates, setCandidates] = useState([]);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -207,6 +208,7 @@ export default function HrCandidatesPage() {
     setAccess(payload.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanName: 'Free' });
     setSummary(payload.summary || { total: 0, blurred: 0, connected: 0, availableNow: 0, verified: 0 });
     setPagination(nextPagination);
+    setSearchMeta(payload.search || { engine: 'database' });
     setPageSize(Number(nextPagination.limit || requestedLimit));
     setCandidates(payload.candidates || []);
     setError(response.error || '');
@@ -245,7 +247,7 @@ export default function HrCandidatesPage() {
   }, [filters, pageSize, pagination.page, runSearch]);
 
   const activeFilterCount = useMemo(
-    () => Object.entries(filters).filter(([key, value]) => (key === 'availableOnly' ? value : String(value).trim())).length,
+    () => Object.entries(filters).filter(([, value]) => (typeof value === 'boolean' ? value : String(value).trim())).length,
     [filters]
   );
 
@@ -540,7 +542,13 @@ export default function HrCandidatesPage() {
             ) : null}
           </div>
 
-          <div className="space-y-2.5">
+          <form
+            className="space-y-2.5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              runSearch(filters, 1, pageSize);
+            }}
+          >
             <Field label="Keyword" value={filters.search} onChange={(value) => updateFilter('search', value)} placeholder="React developer, final year..." />
             <Field label="Skills" value={filters.skills} onChange={(value) => updateFilter('skills', value)} placeholder="React, JavaScript, REST APIs" />
             <Field label="Location" value={filters.location} onChange={(value) => updateFilter('location', value)} placeholder="Mumbai, Remote" />
@@ -572,14 +580,13 @@ export default function HrCandidatesPage() {
             </label>
 
             <button
-              type="button"
-              onClick={() => runSearch(filters, 1, pageSize)}
+              type="submit"
               className={`${primaryButtonClass} w-full`}
             >
               {loading ? <FiRefreshCw size={14} className="animate-spin" /> : <FiSearch size={14} />}
               Search candidates
             </button>
-          </div>
+          </form>
         </aside>
 
         <div className="space-y-3.5">
@@ -647,6 +654,9 @@ export default function HrCandidatesPage() {
                 </span>
                 <span>
                   Page <strong className="text-navy">{pagination.page}</strong> of <strong className="text-navy">{pagination.totalPages}</strong>
+                </span>
+                <span>
+                  Engine <strong className="text-navy">{searchMeta.engine === 'opensearch' ? 'OpenSearch' : 'Database'}</strong>
                 </span>
                 <label className="inline-flex items-center gap-2 font-semibold text-slate-500">
                   Rows

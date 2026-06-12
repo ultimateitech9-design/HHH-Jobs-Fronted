@@ -27,16 +27,17 @@ import useAuthStore from '../../../core/auth/authStore';
 import { getToken, setAuthSession } from '../../../utils/auth';
 import {
   getEimagerHandoffUrl,
+  getStudentLocationOptions,
   getStudentProfile,
-  importStudentResume,
   updateStudentAvatar,
   updateStudentProfile,
+  importStudentResume,
   uploadStudentResume
 } from '../services/studentApi';
+import { INDIAN_STATES } from '../../../shared/constants/indianStates';
 import {
   applyImportedResumeToProfile,
   readFileAsDataUrl,
-  readResumeImportPayload,
   STUDENT_RESUME_ACCEPT,
   summarizeImportedProfileDraft,
   validateStudentResumeFile
@@ -138,6 +139,13 @@ const MONTH_OPTIONS = [
 ];
 const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 1979 }, (_, index) => String(CURRENT_YEAR - index));
 const COURSE_TYPE_OPTIONS = ['Full time', 'Part time', 'Correspondence/Distance learning'];
+const OTHER_LOCATION_VALUE = '__other__';
+const EMPTY_LOCATION_OPTIONS = {
+  states: [],
+  districts: [],
+  cities: [],
+  pincodes: []
+};
 const WORK_LOCATION_SUGGESTIONS = [
   'Delhi / NCR',
   'Gurgaon/Gurugram',
@@ -189,6 +197,13 @@ const EMPTY_FORM = {
   location: '',
   currentPincode: '',
   permanentPincode: '',
+  stateId: '',
+  stateName: '',
+  districtId: '',
+  districtName: '',
+  cityId: '',
+  cityName: '',
+  pincode: '',
   technicalSkills: [],
   softSkills: [],
   toolsTechnologies: [],
@@ -285,6 +300,71 @@ const normalizeSkillList = (items = []) => {
     });
 };
 
+const normalizeLocationKey = (value = '') => String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+const normalizeLocationOption = (item = {}) => ({
+  id: String(item.id || '').trim(),
+  name: String(item.name || '').trim(),
+  stateId: String(item.stateId || item.state_id || '').trim(),
+  districtId: String(item.districtId || item.district_id || '').trim(),
+  pincode: String(item.pincode || '').trim()
+});
+
+const mergeLocationOptions = (primary = [], fallback = []) => {
+  const seen = new Set();
+  const seenNames = new Set();
+
+  return [...(Array.isArray(primary) ? primary : []), ...(Array.isArray(fallback) ? fallback : [])]
+    .map(normalizeLocationOption)
+    .filter((item) => item.name)
+    .filter((item) => {
+      const key = item.id ? `id:${item.id}` : `name:${normalizeLocationKey(item.name)}`;
+      const nameKey = normalizeLocationKey(item.name);
+      if (seen.has(key) || seenNames.has(nameKey)) return false;
+      seen.add(key);
+      seenNames.add(nameKey);
+      return true;
+    });
+};
+
+const getDraftOptionValue = (options = [], id = '', name = '') => {
+  const cleanId = String(id || '').trim();
+  const cleanName = String(name || '').trim();
+  if (cleanId && options.some((option) => option.id === cleanId)) return cleanId;
+  if (!cleanName) return '';
+
+  const matched = options.find((option) => normalizeLocationKey(option.name) === normalizeLocationKey(cleanName));
+  if (matched) return matched.id || `name:${matched.name}`;
+  return OTHER_LOCATION_VALUE;
+};
+
+const getStateOptionValue = (options = [], id = '', name = '') => {
+  const cleanId = String(id || '').trim();
+  const cleanName = String(name || '').trim();
+  if (cleanId && options.some((option) => option.id === cleanId)) return cleanId;
+  if (!cleanName) return '';
+
+  const matched = options.find((option) => normalizeLocationKey(option.name) === normalizeLocationKey(cleanName));
+  return matched ? (matched.id || `name:${matched.name}`) : `name:${cleanName}`;
+};
+
+const findLocationOption = (options = [], value = '') => {
+  const rawValue = String(value || '').trim();
+  if (!rawValue) return null;
+  if (rawValue.startsWith('name:')) {
+    const name = rawValue.slice(5);
+    return options.find((option) => normalizeLocationKey(option.name) === normalizeLocationKey(name)) || { id: '', name };
+  }
+  return options.find((option) => option.id === rawValue) || null;
+};
+
+const buildLocationLabel = ({ cityName = '', districtName = '', stateName = '' } = {}) => {
+  const parts = [cityName, districtName, stateName]
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+  return [...new Set(parts)].join(', ');
+};
+
 const buildSuggestedHeadline = (form = EMPTY_FORM) => {
   const role = String(form.targetRole || form.headline || 'Full Stack Engineer').trim();
   const skills = normalizeSkillList([
@@ -321,10 +401,10 @@ const getResumeFileName = (form = EMPTY_FORM) => {
   if (form.resumeUrl) {
     try {
       const url = new URL(form.resumeUrl);
-      const fileName = decodeURIComponent(url.pathname.split('/').pop() || '');
+      const fileName = decodeURIComponent(url.pathname.split('/').pop() || '').replace(/^\d{10,}-/, '');
       if (fileName) return fileName;
     } catch (error) {
-      const fallback = decodeURIComponent(String(form.resumeUrl).split('/').pop() || '');
+      const fallback = decodeURIComponent(String(form.resumeUrl).split('/').pop() || '').replace(/^\d{10,}-/, '');
       if (fallback) return fallback;
     }
   }
@@ -449,7 +529,13 @@ const toPersonalEditorDraft = (source = {}) => {
     workPermit: 'India',
     currentAddress: source.currentAddress || '',
     hometown: source.location || '',
-    pincode: source.currentPincode || source.permanentPincode || '',
+    stateId: source.stateId || '',
+    stateName: source.stateName || '',
+    districtId: source.districtId || '',
+    districtName: source.districtName || '',
+    cityId: source.cityId || '',
+    cityName: source.cityName || '',
+    pincode: source.pincode || source.currentPincode || source.permanentPincode || '',
     languages: toLanguageRows(source.languagesKnown).length > 0
       ? toLanguageRows(source.languagesKnown)
       : [{ ...DEFAULT_LANGUAGE_ROW, language: 'Hindi' }, { ...DEFAULT_LANGUAGE_ROW, language: 'English' }]
@@ -482,6 +568,13 @@ const toProfileEditorDraft = (source = {}) => ({
   mobile: source.mobile || '',
   email: source.email || '',
   location: source.location || '',
+  stateId: source.stateId || '',
+  stateName: source.stateName || '',
+  districtId: source.districtId || '',
+  districtName: source.districtName || '',
+  cityId: source.cityId || '',
+  cityName: source.cityName || '',
+  pincode: source.pincode || source.currentPincode || source.permanentPincode || '',
   availabilityToJoin: source.availabilityToJoin || '',
   gender: source.gender || '',
   dateOfBirth: source.dateOfBirth || ''
@@ -502,6 +595,9 @@ const StudentProfilePage = () => {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false);
   const [resumeImporting, setResumeImporting] = useState(false);
+  const [resumeImportPrompt, setResumeImportPrompt] = useState(null);
+  const [locationOptions, setLocationOptions] = useState(EMPTY_LOCATION_OPTIONS);
+  const [locationOptionsLoading, setLocationOptionsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [profileEditorOpen, setProfileEditorOpen] = useState(false);
   const [profileEditorDraft, setProfileEditorDraft] = useState(() => toProfileEditorDraft(EMPTY_FORM));
@@ -627,6 +723,187 @@ const StudentProfilePage = () => {
   }, [loading, location.search]);
 
   const updateField = (name, value) => setForm((current) => ({ ...current, [name]: value }));
+
+  const fallbackStateOptions = useMemo(
+    () => INDIAN_STATES.map((name) => ({ id: '', name, stateId: '', districtId: '', pincode: '' })),
+    []
+  );
+  const activeLocationDraft = personalEditorOpen ? personalDraft : (profileEditorOpen ? profileEditorDraft : form);
+  const activeLocationStateId = activeLocationDraft.stateId || '';
+  const activeLocationDistrictId = activeLocationDraft.districtId || '';
+  const stateOptions = useMemo(
+    () => mergeLocationOptions(locationOptions.states, fallbackStateOptions),
+    [fallbackStateOptions, locationOptions.states]
+  );
+  const districtOptions = useMemo(
+    () => mergeLocationOptions(locationOptions.districts, []),
+    [locationOptions.districts]
+  );
+  const cityOptions = useMemo(
+    () => mergeLocationOptions(locationOptions.cities, []),
+    [locationOptions.cities]
+  );
+
+  useEffect(() => {
+    if (!personalEditorOpen && !profileEditorOpen) return undefined;
+
+    let mounted = true;
+    setLocationOptionsLoading(true);
+
+    getStudentLocationOptions({
+      stateId: activeLocationStateId,
+      districtId: activeLocationDistrictId
+    }).then((response) => {
+      if (!mounted) return;
+      const nextOptions = response.data || EMPTY_LOCATION_OPTIONS;
+      setLocationOptions((current) => ({
+        states: mergeLocationOptions(nextOptions.states, current.states),
+        districts: mergeLocationOptions(nextOptions.districts, []),
+        cities: mergeLocationOptions(nextOptions.cities, []),
+        pincodes: Array.isArray(nextOptions.pincodes) ? nextOptions.pincodes : []
+      }));
+    }).finally(() => {
+      if (mounted) setLocationOptionsLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeLocationDistrictId, activeLocationStateId, personalEditorOpen, profileEditorOpen]);
+
+  const renderLocationFields = ({ draft, setDraftPatch, prefix }) => {
+    const selectedDistrictValue = getDraftOptionValue(districtOptions, draft.districtId, draft.districtName);
+    const selectedCityValue = getDraftOptionValue(cityOptions, draft.cityId, draft.cityName);
+    const pincodeOptions = Array.isArray(locationOptions.pincodes) ? locationOptions.pincodes : [];
+
+    return (
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label className={modalLabelClassName} htmlFor={`${prefix}-state`}>State</label>
+          <select
+            id={`${prefix}-state`}
+            value={getStateOptionValue(stateOptions, draft.stateId, draft.stateName)}
+            onChange={(event) => {
+              const selected = findLocationOption(stateOptions, event.target.value);
+              setDraftPatch({
+                stateId: selected?.id || '',
+                stateName: selected?.name || '',
+                districtId: '',
+                districtName: '',
+                cityId: '',
+                cityName: '',
+                pincode: ''
+              });
+            }}
+            className={modalSelectClassName}
+          >
+            <option value="">{locationOptionsLoading && stateOptions.length === 0 ? 'Loading states' : 'Select state'}</option>
+            {stateOptions.map((option) => (
+              <option key={option.id || option.name} value={option.id || `name:${option.name}`}>
+                {option.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={modalLabelClassName} htmlFor={`${prefix}-district`}>District</label>
+          <select
+            id={`${prefix}-district`}
+            value={selectedDistrictValue}
+            onChange={(event) => {
+              if (event.target.value === OTHER_LOCATION_VALUE) {
+                setDraftPatch({ districtId: '', districtName: '', cityId: '', cityName: '', pincode: '' });
+                return;
+              }
+
+              const selected = findLocationOption(districtOptions, event.target.value);
+              setDraftPatch({
+                districtId: selected?.id || '',
+                districtName: selected?.name || '',
+                cityId: '',
+                cityName: '',
+                pincode: ''
+              });
+            }}
+            className={modalSelectClassName}
+          >
+            <option value="">{locationOptionsLoading && draft.stateId ? 'Loading districts' : 'Select district'}</option>
+            {districtOptions.map((option) => (
+              <option key={option.id || option.name} value={option.id || `name:${option.name}`}>
+                {option.name}
+              </option>
+            ))}
+            <option value={OTHER_LOCATION_VALUE}>Other</option>
+          </select>
+          {selectedDistrictValue === OTHER_LOCATION_VALUE ? (
+            <input
+              value={draft.districtName}
+              onChange={(event) => setDraftPatch({ districtName: event.target.value, districtId: '', cityId: '', cityName: '' })}
+              className={`${modalInputClassName} mt-3`}
+              placeholder="Enter district"
+            />
+          ) : null}
+        </div>
+
+        <div>
+          <label className={modalLabelClassName} htmlFor={`${prefix}-city`}>City</label>
+          <select
+            id={`${prefix}-city`}
+            value={selectedCityValue}
+            onChange={(event) => {
+              if (event.target.value === OTHER_LOCATION_VALUE) {
+                setDraftPatch({ cityId: '', cityName: '' });
+                return;
+              }
+
+              const selected = findLocationOption(cityOptions, event.target.value);
+              setDraftPatch({
+                cityId: selected?.id || '',
+                cityName: selected?.name || '',
+                pincode: selected?.pincode || draft.pincode || ''
+              });
+            }}
+            className={modalSelectClassName}
+          >
+            <option value="">{locationOptionsLoading && draft.districtId ? 'Loading cities' : 'Select city'}</option>
+            {cityOptions.map((option) => (
+              <option key={option.id || option.name} value={option.id || `name:${option.name}`}>
+                {option.name}
+              </option>
+            ))}
+            <option value={OTHER_LOCATION_VALUE}>Other</option>
+          </select>
+          {selectedCityValue === OTHER_LOCATION_VALUE ? (
+            <input
+              value={draft.cityName}
+              onChange={(event) => setDraftPatch({ cityName: event.target.value, cityId: '' })}
+              className={`${modalInputClassName} mt-3`}
+              placeholder="Enter city"
+            />
+          ) : null}
+        </div>
+
+        <div>
+          <label className={modalLabelClassName} htmlFor={`${prefix}-pincode`}>Pincode</label>
+          <input
+            id={`${prefix}-pincode`}
+            list={`${prefix}-pincode-options`}
+            value={draft.pincode}
+            onChange={(event) => setDraftPatch({ pincode: event.target.value.replace(/\D/g, '').slice(0, 6) })}
+            className={modalInputClassName}
+            placeholder="Add pincode"
+            inputMode="numeric"
+          />
+          <datalist id={`${prefix}-pincode-options`}>
+            {pincodeOptions.slice(0, 80).map((item) => (
+              <option key={item.id || item.pincode} value={item.pincode} />
+            ))}
+          </datalist>
+        </div>
+      </div>
+    );
+  };
 
   const openProfileEditor = (focusField = '') => {
     setProfileEditorDraft(toProfileEditorDraft(form));
@@ -822,11 +1099,6 @@ const StudentProfilePage = () => {
   const handleSkillsEditorSave = async () => {
     const cleanSkills = normalizeSkillList([...skillsDraft, ...parseCommaList(skillInput)]);
 
-    if (cleanSkills.length === 0) {
-      setFlash('error', 'Add at least one key skill.');
-      return;
-    }
-
     const nextForm = {
       ...form,
       technicalSkills: cleanSkills
@@ -896,6 +1168,11 @@ const StudentProfilePage = () => {
     const languagesKnown = normalizeSkillList(
       personalDraft.languages.map((item) => item.language)
     );
+    const structuredLocation = buildLocationLabel({
+      cityName: personalDraft.cityName,
+      districtName: personalDraft.districtName,
+      stateName: personalDraft.stateName
+    });
     const nextForm = {
       ...form,
       gender: personalDraft.gender,
@@ -907,7 +1184,14 @@ const StudentProfilePage = () => {
       }),
       caste: personalDraft.category,
       currentAddress: personalDraft.currentAddress,
-      location: personalDraft.hometown,
+      location: structuredLocation || personalDraft.hometown,
+      stateId: personalDraft.stateId,
+      stateName: personalDraft.stateName,
+      districtId: personalDraft.districtId,
+      districtName: personalDraft.districtName,
+      cityId: personalDraft.cityId,
+      cityName: personalDraft.cityName,
+      pincode: personalDraft.pincode,
       currentPincode: personalDraft.pincode,
       permanentPincode: personalDraft.pincode,
       languagesKnown
@@ -957,6 +1241,18 @@ const StudentProfilePage = () => {
       { ...form, educationEntries: ensureEducationEntries(educationEntries) },
       'Education updated.',
       'Failed to update education.',
+      () => setEducationEditorOpen(false)
+    );
+  };
+
+  const handleEducationEditorDelete = () => {
+    if (educationEditorIndex < 0) return;
+
+    const educationEntries = form.educationEntries.filter((_, index) => index !== educationEditorIndex);
+    commitProfileUpdate(
+      { ...form, education: [], educationEntries: ensureEducationEntries(educationEntries) },
+      'Education deleted.',
+      'Failed to delete education.',
       () => setEducationEditorOpen(false)
     );
   };
@@ -1160,54 +1456,6 @@ const StudentProfilePage = () => {
     }
   };
 
-  const handleResumeImport = async ({ resumeText = '', resumeUrl = '', file = null, successMessage }) => {
-    setResumeImporting(true);
-    setMessage({ type: '', text: '' });
-
-    try {
-      const imported = await importStudentResume({ resumeText, resumeUrl });
-      let uploadSummary = { resumeUrl: '', resumeText: '', warnings: [] };
-
-      if (file) {
-        try {
-          uploadSummary = await uploadStudentResume(file);
-        } catch (error) {
-          uploadSummary = {
-            resumeUrl: '',
-            resumeText: '',
-            warnings: [error.message || 'Resume file upload failed.']
-          };
-        }
-      }
-
-      const warnings = [...(imported.warnings || []), ...(uploadSummary.warnings || [])].filter(Boolean);
-      const nextForm = applyImportedResumeToProfile({
-        currentProfile: form,
-        importedDraft: imported.profileDraft || {},
-        uploadSummary,
-        fallbackResumeText: resumeText
-      });
-
-      setForm((current) => ({ ...current, ...nextForm }));
-      const updated = await updateStudentProfile(nextForm);
-      setForm((current) => ({
-        ...current,
-        ...updated,
-        email: updated.email || current.email,
-        educationEntries: ensureEducationEntries(updated.educationEntries || current.educationEntries)
-      }));
-      syncUser(updated);
-
-      const savedSummary = summarizeImportedProfileDraft(updated);
-      const baseMessage = `${successMessage} Saved ${savedSummary} to profile.`;
-      setFlash('success', warnings.length ? `${baseMessage} ${warnings.join(' ')}` : baseMessage);
-    } catch (error) {
-      setFlash('error', error.message || 'Unable to import resume.');
-    } finally {
-      setResumeImporting(false);
-    }
-  };
-
   const handleResumeUpload = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -1216,12 +1464,69 @@ const StudentProfilePage = () => {
     const validationMessage = validateStudentResumeFile(file);
     if (validationMessage) return setFlash('error', validationMessage);
 
-    const payload = await readResumeImportPayload(file);
-    await handleResumeImport({
-      ...payload,
-      file,
-      successMessage: 'Resume imported into profile draft.'
-    });
+    setResumeImporting(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const uploadSummary = await uploadStudentResume(file);
+      const warnings = (uploadSummary.warnings || []).filter(Boolean);
+      setForm((current) => ({
+        ...current,
+        resumeUrl: uploadSummary.resumeUrl || current.resumeUrl || '',
+        resumeText: uploadSummary.resumeText || current.resumeText || ''
+      }));
+      setResumeImportPrompt({
+        resumeUrl: uploadSummary.resumeUrl || '',
+        resumeText: uploadSummary.resumeText || '',
+        fileName: uploadSummary.fileName || file.name || '',
+        warnings
+      });
+
+      const baseMessage = 'Resume uploaded. Choose whether to update profile data from this resume.';
+      setFlash('success', warnings.length ? `${baseMessage} ${warnings.join(' ')}` : baseMessage);
+    } catch (error) {
+      setFlash('error', error.message || 'Unable to upload resume.');
+    } finally {
+      setResumeImporting(false);
+    }
+  };
+
+  const keepResumeOnly = () => {
+    setResumeImportPrompt(null);
+    setFlash('success', 'Resume saved. Profile data was not changed.');
+  };
+
+  const applyResumeImportToProfile = async () => {
+    if (!resumeImportPrompt || saving || resumeImporting) return;
+
+    setResumeImporting(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const imported = await importStudentResume({
+        resumeText: resumeImportPrompt.resumeText || form.resumeText || '',
+        resumeUrl: resumeImportPrompt.resumeUrl || form.resumeUrl || ''
+      });
+      const nextProfile = applyImportedResumeToProfile({
+        currentProfile: form,
+        importedDraft: imported.profileDraft,
+        uploadSummary: resumeImportPrompt,
+        fallbackResumeText: resumeImportPrompt.resumeText
+      });
+      const updated = await updateStudentProfile(nextProfile, { timeoutMs: 20000 });
+      setForm(updated);
+      syncUser(updated);
+      setResumeImportPrompt(null);
+
+      const summary = summarizeImportedProfileDraft(imported.profileDraft);
+      const warnings = (imported.warnings || []).filter(Boolean);
+      const baseMessage = `Profile updated from resume: ${summary}.`;
+      setFlash('success', warnings.length ? `${baseMessage} ${warnings.join(' ')}` : baseMessage);
+    } catch (error) {
+      setFlash('error', error.message || 'Resume saved, but profile data could not be updated from it.');
+    } finally {
+      setResumeImporting(false);
+    }
   };
 
   const handleResumeDownload = () => {
@@ -1239,9 +1544,31 @@ const StudentProfilePage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const clearResumeDraft = () => {
-    setForm((current) => ({ ...current, resumeUrl: '', resumeText: '' }));
-    setFlash('success', 'Resume cleared from the draft. Save profile to keep this change.');
+  const clearResumeDraft = async () => {
+    if (saving || resumeImporting) return;
+
+    setSaving(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const updated = await updateStudentProfile(
+        { resumeUrl: '', resumeText: '' },
+        { prebuiltPayload: true, timeoutMs: 10000 }
+      );
+      setForm((current) => ({
+        ...current,
+        ...updated,
+        resumeUrl: '',
+        resumeText: ''
+      }));
+      setResumeImportPrompt(null);
+      syncUser(updated);
+      setFlash('success', 'Resume deleted from profile.');
+    } catch (error) {
+      setFlash('error', error.message || 'Failed to delete resume.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const profileDialogOpen =
@@ -1254,7 +1581,8 @@ const StudentProfilePage = () => {
     || itSkillEditorOpen
     || projectEditorOpen
     || careerEditorOpen
-    || diversityEditorOpen;
+    || diversityEditorOpen
+    || Boolean(resumeImportPrompt);
 
   useEffect(() => {
     if (!profileDialogOpen || typeof document === 'undefined') return undefined;
@@ -1290,11 +1618,12 @@ const StudentProfilePage = () => {
       setProjectEditorOpen(false);
       setCareerEditorOpen(false);
       setDiversityEditorOpen(false);
+      if (!resumeImporting) setResumeImportPrompt(null);
     };
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [profileDialogOpen, saving]);
+  }, [profileDialogOpen, resumeImporting, saving]);
 
   const completion = completionOf(form);
   const hasResume = Boolean(form.resumeUrl || form.resumeText);
@@ -1336,7 +1665,12 @@ const StudentProfilePage = () => {
   const careerLocations = parseCommaList(careerDraft.preferredWorkLocation);
   const displayCareerLocations = parseCommaList(form.preferredWorkLocation);
   const personalSummary = [form.gender, form.maritalStatus].filter(Boolean).join(', ') || 'Add personal information';
-  const addressSummary = [form.currentAddress, form.location, form.currentPincode || form.permanentPincode]
+  const structuredLocationSummary = buildLocationLabel({
+    cityName: form.cityName,
+    districtName: form.districtName,
+    stateName: form.stateName
+  });
+  const addressSummary = [form.currentAddress, structuredLocationSummary || form.location, form.pincode || form.currentPincode || form.permanentPincode]
     .filter(Boolean)
     .join(', ');
   const verificationParts = [
@@ -1425,6 +1759,70 @@ const StudentProfilePage = () => {
           }`}
         >
           {message.text}
+        </div>
+      ) : null}
+
+      {resumeImportPrompt ? renderProfileModal(
+        <div
+          className={profileModalBackdropClassName}
+          onClick={(event) => {
+            if (event.target === event.currentTarget && !resumeImporting) keepResumeOnly();
+          }}
+        >
+          <div className="w-full max-w-lg rounded-[1.5rem] border border-[#e6ecf5] bg-white p-6 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.42)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-[1.15rem] font-bold text-slate-950">Update profile from resume?</h3>
+                <p className="mt-2 text-[0.92rem] leading-6 text-[#5d6a91]">
+                  Resume saved successfully. Do you want to modify your profile details using this resume?
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={keepResumeOnly}
+                disabled={resumeImporting}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#8a94b7] transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-60"
+                aria-label="Keep profile unchanged"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-[1rem] border border-[#edf0f7] bg-[#f8faff] px-4 py-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#2d5bff] shadow-sm">
+                  <FiFileText size={18} />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[0.95rem] font-bold text-slate-950">
+                    {resumeImportPrompt.fileName || getResumeFileName({ resumeUrl: resumeImportPrompt.resumeUrl, resumeText: resumeImportPrompt.resumeText })}
+                  </p>
+                  <p className="mt-0.5 text-[0.8rem] text-[#8a94b7]">
+                    Yes will update skills, education, experience and profile basics where resume has data.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={keepResumeOnly}
+                disabled={resumeImporting}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-[#d8e0f2] bg-white px-5 text-[0.9rem] font-bold text-[#4b587c] transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                No, keep profile same
+              </button>
+              <button
+                type="button"
+                onClick={applyResumeImportToProfile}
+                disabled={resumeImporting}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-[#7890f6] px-5 text-[0.9rem] font-bold text-white shadow-[0_14px_30px_-18px_rgba(45,91,255,0.85)] transition hover:bg-[#647ff4] disabled:opacity-70"
+              >
+                {resumeImporting ? 'Updating...' : 'Yes, update profile'}
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
 
@@ -1823,7 +2221,7 @@ const StudentProfilePage = () => {
               <button
                 type="button"
                 onClick={handleSkillsEditorSave}
-                disabled={saving || (skillsDraft.length === 0 && !String(skillInput || '').trim())}
+                disabled={saving}
                 className="inline-flex min-w-[92px] items-center justify-center rounded-full bg-[#2d5bff] px-6 py-3 text-[0.95rem] font-bold text-white shadow-[0_14px_24px_-18px_rgba(45,91,255,0.7)] transition hover:bg-[#2449d8] disabled:opacity-60"
               >
                 {saving ? 'Saving...' : 'Save'}
@@ -1963,26 +2361,11 @@ const StudentProfilePage = () => {
                     placeholder="House, area, city"
                   />
                 </div>
-                <div>
-                  <label className={modalLabelClassName} htmlFor="personal-hometown">Hometown</label>
-                  <input
-                    id="personal-hometown"
-                    value={personalDraft.hometown}
-                    onChange={(event) => updatePersonalDraftField('hometown', event.target.value)}
-                    className={modalInputClassName}
-                    placeholder="Add hometown"
-                  />
-                </div>
-                <div>
-                  <label className={modalLabelClassName} htmlFor="personal-pincode">Pincode</label>
-                  <input
-                    id="personal-pincode"
-                    value={personalDraft.pincode}
-                    onChange={(event) => updatePersonalDraftField('pincode', event.target.value)}
-                    className={modalInputClassName}
-                    placeholder="Add pincode"
-                  />
-                </div>
+                {renderLocationFields({
+                  draft: personalDraft,
+                  prefix: 'personal-location',
+                  setDraftPatch: (patch) => setPersonalDraft((current) => ({ ...current, ...patch }))
+                })}
               </div>
 
               <div>
@@ -2130,11 +2513,23 @@ const StudentProfilePage = () => {
               </div>
             </div>
 
-            <div className="mt-8 flex items-center justify-end gap-5">
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
+              {educationEditorIndex >= 0 ? (
+                <button
+                  type="button"
+                  onClick={handleEducationEditorDelete}
+                  disabled={saving}
+                  className="text-[0.9rem] font-bold text-rose-600 transition hover:text-rose-700 disabled:opacity-60"
+                >
+                  Delete
+                </button>
+              ) : <span />}
+              <div className="ml-auto flex items-center gap-5">
               <button type="button" onClick={closeEducationEditor} disabled={saving} className="text-[0.9rem] font-bold text-[#2d5bff] disabled:opacity-60">Cancel</button>
               <button type="button" onClick={handleEducationEditorSave} disabled={saving} className="inline-flex min-w-[82px] items-center justify-center rounded-full bg-[#2d5bff] px-6 py-3 text-[0.9rem] font-bold text-white hover:bg-[#2449d8] disabled:opacity-60">
                 {saving ? 'Saving...' : 'Save'}
               </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2561,7 +2956,7 @@ const StudentProfilePage = () => {
               <div className="mt-2 grid gap-x-5 gap-y-2 text-[0.8rem] text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
                 <button
                   type="button"
-                  onClick={() => openProfileEditor('location')}
+                  onClick={openPersonalEditor}
                   className={`${profileMetaItemClassName} transition hover:text-brand-700`}
                 >
                   <FiMapPin size={15} className="text-brand-600" />
@@ -2715,7 +3110,8 @@ const StudentProfilePage = () => {
                   <button
                     type="button"
                     onClick={clearResumeDraft}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#2d5bff] shadow-sm transition hover:bg-slate-100"
+                    disabled={saving || resumeImporting}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#2d5bff] shadow-sm transition hover:bg-slate-100 disabled:opacity-60"
                     aria-label="Clear resume draft"
                   >
                     <FiTrash2 size={17} />

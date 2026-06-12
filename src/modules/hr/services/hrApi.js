@@ -766,12 +766,14 @@ export const searchHrCandidatesV2 = async (filters = {}) => {
       access: { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
       summary: { total: 0, blurred: 0, connected: 0, availableNow: 0, verified: 0 },
       pagination: { page: 1, limit: 6, total: 0, totalPages: 1, count: 0 },
+      search: { engine: 'database' },
       candidates: []
     },
     extract: (payload) => ({
       access: payload?.access || { hasPaidAccess: false, requiresUpgrade: true, activePlanSlug: 'free', activePlanName: 'Free' },
       summary: payload?.summary || { total: 0, blurred: 0, connected: 0, availableNow: 0, verified: 0 },
       pagination: payload?.pagination || { page: 1, limit: 6, total: 0, totalPages: 1, count: 0 },
+      search: payload?.search || { engine: 'database' },
       candidates: payload?.candidates || []
     })
   });

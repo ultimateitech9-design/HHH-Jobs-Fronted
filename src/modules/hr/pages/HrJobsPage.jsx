@@ -549,29 +549,13 @@ const HrJobsPage = () => {
 
     companies.forEach((company) => {
       const key = normalizeCompanyKeyForUi(company.companyKey || company.companyName);
-      if (!key) return;
+      if (!key || company.isActive === false) return;
       const relatedJobs = companyJobsByKey.get(key) || [];
       byKey.set(key, {
         ...company,
-        companyKey: company.companyKey || key,
+        companyKey: key,
         jobsCount: company.jobsCount || relatedJobs.length,
         openJobsCount: company.openJobsCount || relatedJobs.filter((job) => String(job.status || 'open').toLowerCase() === 'open').length
-      });
-    });
-
-    jobs.forEach((job) => {
-      const key = normalizeCompanyKeyForUi(job.companyKey || job.company_key || job.companyName || job.company_name);
-      if (!key || byKey.has(key)) return;
-      const relatedJobs = companyJobsByKey.get(key) || [];
-      byKey.set(key, {
-        companyKey: key,
-        companyName: job.companyName || job.company_name || 'Client company',
-        logoUrl: job.companyLogo || job.company_logo || '',
-        location: job.jobLocation || job.job_location || '',
-        sectorName: job.sectorName || job.sector_name || job.category || '',
-        jobsCount: relatedJobs.length,
-        openJobsCount: relatedJobs.filter((item) => String(item.status || 'open').toLowerCase() === 'open').length,
-        needsProfile: true
       });
     });
 
@@ -580,7 +564,7 @@ const HrJobsPage = () => {
       if (jobDelta !== 0) return jobDelta;
       return String(a.companyName || '').localeCompare(String(b.companyName || ''));
     });
-  }, [companies, companyJobsByKey, jobs]);
+  }, [companies, companyJobsByKey]);
 
   const selectedCompany = useMemo(
     () => managedCompanies.find((company) => normalizeCompanyKeyForUi(company.companyKey || company.companyName) === selectedCompanyKey) || null,
@@ -591,6 +575,39 @@ const HrJobsPage = () => {
     () => managedCompanies.filter((company) => company.isActive !== false && normalizeCompanyKeyForUi(company.companyKey || company.companyName)),
     [managedCompanies]
   );
+
+  const activeCompanyKeys = useMemo(
+    () => new Set(
+      selectableHiringCompanies
+        .map((company) => normalizeCompanyKeyForUi(company.companyKey || company.companyName))
+        .filter(Boolean)
+    ),
+    [selectableHiringCompanies]
+  );
+
+  useEffect(() => {
+    if (!selectedCompanyKey) return;
+    const stillAvailable = selectableHiringCompanies.some((company) =>
+      normalizeCompanyKeyForUi(company.companyKey || company.companyName) === selectedCompanyKey
+    );
+    if (stillAvailable) return;
+
+    setSelectedCompanyKey('');
+    setDraft((current) => {
+      const draftKey = normalizeCompanyKeyForUi(current.companyKey || current.companyName);
+      if (draftKey !== selectedCompanyKey) return current;
+      return {
+        ...current,
+        companyKey: '',
+        companyName: '',
+        companyLogo: '',
+        companyWebsite: '',
+        companyType: '',
+        companySize: '',
+        companyAbout: ''
+      };
+    });
+  }, [selectableHiringCompanies, selectedCompanyKey]);
 
   useEffect(() => {
     let mounted = true;
@@ -690,12 +707,19 @@ const HrJobsPage = () => {
   }, [autoPostingPlan, editingJobId, postablePlans, postingUsageByPlan]);
 
   const filteredJobs = useMemo(() => {
+    const visibleJobs = activeCompanyKeys.size > 0
+      ? jobs.filter((job) => {
+        const jobCompanyKey = normalizeCompanyKeyForUi(job.companyKey || job.company_key || job.companyName || job.company_name);
+        return !jobCompanyKey || activeCompanyKeys.has(jobCompanyKey);
+      })
+      : [];
+
     const companyScopedJobs = selectedCompanyKey
-      ? jobs.filter((job) => normalizeCompanyKeyForUi(job.companyKey || job.company_key || job.companyName || job.company_name) === selectedCompanyKey)
-      : jobs;
+      ? visibleJobs.filter((job) => normalizeCompanyKeyForUi(job.companyKey || job.company_key || job.companyName || job.company_name) === selectedCompanyKey)
+      : visibleJobs;
     if (statusFilter === 'all') return companyScopedJobs;
     return companyScopedJobs.filter((job) => String(job.status || '').toLowerCase() === statusFilter);
-  }, [jobs, selectedCompanyKey, statusFilter]);
+  }, [activeCompanyKeys, jobs, selectedCompanyKey, statusFilter]);
 
   const updateDraftField = (key, value) => {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -707,13 +731,13 @@ const HrJobsPage = () => {
     if (companyKey) setSelectedCompanyKey(companyKey);
     setDraft((current) => ({
       ...current,
-      companyKey: company.companyKey || companyKey || current.companyKey,
+      companyKey: companyKey || current.companyKey,
       companyName: company.companyName || current.companyName,
-      companyLogo: company.logoUrl || current.companyLogo,
-      companyWebsite: company.websiteUrl || current.companyWebsite,
-      companyType: company.companyType || current.companyType,
-      companySize: company.companySize || current.companySize,
-      companyAbout: company.about || current.companyAbout,
+      companyLogo: company.logoUrl || '',
+      companyWebsite: company.websiteUrl || '',
+      companyType: company.companyType || '',
+      companySize: company.companySize || '',
+      companyAbout: company.about || '',
       sectorId: company.sectorId || current.sectorId,
       sectorName: company.sectorName || current.sectorName,
       category: company.sectorName || current.category,
@@ -803,7 +827,7 @@ const HrJobsPage = () => {
     setEditingJobId('');
     const nextDraft = { ...getEmptyJobDraft(), planSlug: autoPostingPlan?.slug || selectedPlan?.slug || 'standard' };
     if (selectedCompany) {
-      nextDraft.companyKey = selectedCompany.companyKey || normalizeCompanyKeyForUi(selectedCompany.companyName);
+      nextDraft.companyKey = normalizeCompanyKeyForUi(selectedCompany.companyKey || selectedCompany.companyName);
       nextDraft.companyName = selectedCompany.companyName || '';
       nextDraft.companyLogo = selectedCompany.logoUrl || '';
       nextDraft.companyWebsite = selectedCompany.websiteUrl || '';
@@ -917,7 +941,7 @@ const HrJobsPage = () => {
     if (!nextDraft.companyKey) {
       const matchedCompany = selectableHiringCompanies.find((company) => String(company.companyName || '').toLowerCase() === String(nextDraft.companyName || '').toLowerCase());
       if (matchedCompany) {
-        nextDraft.companyKey = matchedCompany.companyKey || normalizeCompanyKeyForUi(matchedCompany.companyName);
+        nextDraft.companyKey = normalizeCompanyKeyForUi(matchedCompany.companyKey || matchedCompany.companyName);
       }
     }
     setDraft(nextDraft);
@@ -1331,7 +1355,7 @@ const HrJobsPage = () => {
                   <label className="text-sm font-bold text-neutral-700">Company Name *</label>
                   <select
                     required
-                    value={draft.companyKey || ''}
+                    value={normalizeCompanyKeyForUi(draft.companyKey || draft.companyName)}
                     onChange={(event) => handleCompanySelectionChange(event.target.value)}
                     disabled={selectableHiringCompanies.length === 0}
                     className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium transition-all focus:ring-2 focus:ring-brand-500"

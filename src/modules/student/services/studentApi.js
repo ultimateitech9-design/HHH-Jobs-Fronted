@@ -266,6 +266,13 @@ export const mapProfileToForm = (profile = {}) => {
     location: profile.location || '',
     currentPincode: profile.current_pincode || profile.currentPincode || '',
     permanentPincode: profile.permanent_pincode || profile.permanentPincode || '',
+    stateId: profile.state_id || profile.stateId || '',
+    stateName: profile.state_name || profile.stateName || profile.state || '',
+    districtId: profile.district_id || profile.districtId || '',
+    districtName: profile.district_name || profile.districtName || profile.district || '',
+    cityId: profile.city_id || profile.cityId || '',
+    cityName: profile.city_name || profile.cityName || profile.city || '',
+    pincode: profile.pincode || profile.pinCode || profile.pin_code || profile.current_pincode || profile.currentPincode || '',
     skills: Array.isArray(profile.skills) ? profile.skills : [],
     technicalSkills: Array.isArray(profile.technical_skills) ? profile.technical_skills : (Array.isArray(profile.technicalSkills) ? profile.technicalSkills : []),
     softSkills: Array.isArray(profile.soft_skills) ? profile.soft_skills : (Array.isArray(profile.softSkills) ? profile.softSkills : []),
@@ -374,6 +381,12 @@ const buildProfilePayload = (form = {}) => {
   };
 
   const educationFromEntries = toEducationPayload(form.educationEntries || []);
+  const structuredLocation = [
+    form.cityName,
+    form.districtName,
+    form.stateName
+  ].map((item) => toCleanString(item)).filter(Boolean);
+  const locationFromParts = [...new Set(structuredLocation)].join(', ');
 
   return {
     name: form.name,
@@ -390,9 +403,16 @@ const buildProfilePayload = (form = {}) => {
     maritalStatus: form.maritalStatus,
     currentAddress: form.currentAddress,
     preferredWorkLocation: form.preferredWorkLocation,
-    location: form.location,
+    location: form.location || locationFromParts,
     currentPincode: form.currentPincode,
     permanentPincode: form.permanentPincode,
+    stateId: form.stateId,
+    stateName: form.stateName,
+    districtId: form.districtId,
+    districtName: form.districtName,
+    cityId: form.cityId,
+    cityName: form.cityName,
+    pincode: form.pincode || form.currentPincode,
     skills: [
       ...toTextArray(form.technicalSkills),
       ...toTextArray(form.softSkills),
@@ -446,6 +466,42 @@ export const getStudentProfile = async () => {
     ...result,
     data: mapProfileToForm(result.data)
   };
+};
+
+const normalizeLocationOptions = (payload = {}) => {
+  const source = payload?.locationOptions || payload || {};
+  const normalizeOption = (item = {}) => ({
+    id: String(item.id || item.value || '').trim(),
+    name: String(item.name || item.label || '').trim(),
+    stateId: String(item.stateId || item.state_id || '').trim(),
+    districtId: String(item.districtId || item.district_id || '').trim(),
+    pincode: String(item.pincode || item.pinCode || item.pin_code || '').trim()
+  });
+  const normalizePincode = (item = {}) => ({
+    id: String(item.id || item.value || item.pincode || '').trim(),
+    pincode: String(item.pincode || item.name || item.label || '').trim(),
+    stateId: String(item.stateId || item.state_id || '').trim(),
+    districtId: String(item.districtId || item.district_id || '').trim()
+  });
+
+  return {
+    states: (Array.isArray(source.states) ? source.states : []).map(normalizeOption).filter((item) => item.name),
+    districts: (Array.isArray(source.districts) ? source.districts : []).map(normalizeOption).filter((item) => item.name),
+    cities: (Array.isArray(source.cities) ? source.cities : []).map(normalizeOption).filter((item) => item.name),
+    pincodes: (Array.isArray(source.pincodes) ? source.pincodes : []).map(normalizePincode).filter((item) => item.pincode)
+  };
+};
+
+export const getStudentLocationOptions = async ({ stateId = '', districtId = '' } = {}) => {
+  const params = new URLSearchParams();
+  if (stateId) params.set('stateId', stateId);
+  if (districtId) params.set('districtId', districtId);
+
+  return safeRequest({
+    path: `/student/location-options${params.toString() ? `?${params.toString()}` : ''}`,
+    emptyData: { states: [], districts: [], cities: [], pincodes: [] },
+    extract: normalizeLocationOptions
+  });
 };
 
 export const getStudentDashboardOverview = async () => {
@@ -560,6 +616,7 @@ export const updateStudentProfile = async (formState, options = {}) => {
     path: '/student/profile',
     options: {
       method: 'PUT',
+      timeoutMs: options?.timeoutMs || 15000,
       body: JSON.stringify(payload)
     },
     extract: (responsePayload) => responsePayload?.profile || payload
@@ -609,11 +666,13 @@ export const uploadStudentResume = async (file) => {
     path: '/student/upload/resume',
     options: {
       method: 'POST',
+      timeoutMs: 45000,
       body: formData
     },
     extract: (payload) => ({
       resumeUrl: payload?.resumeUrl || '',
       resumeText: payload?.resumeText || '',
+      fileName: payload?.fileName || '',
       warnings: payload?.warnings || []
     })
   });
