@@ -28,7 +28,21 @@ import HrNotificationsPage from '../../hr/pages/HrNotificationsPage';
 import HrProfilePage from '../../hr/pages/HrProfilePage';
 import HrShortlistedPage from '../../hr/pages/HrShortlistedPage';
 import StudentCompaniesPage from '../../student/pages/StudentCompaniesPage';
+import StudentApplicationsPage from '../../student/pages/StudentApplicationsPage';
+import StudentAtsPage from '../../student/pages/StudentAtsPage';
+import StudentCampusConnectPage from '../../student/pages/StudentCampusConnectPage';
+import StudentInterviewsPage from '../../student/pages/StudentInterviewsPage';
+import StudentJobsPage from '../../student/pages/StudentJobsPage';
+import StudentProfilePage from '../../student/pages/StudentProfilePage';
+import StudentSavedJobsPage from '../../student/pages/StudentSavedJobsPage';
 import CampusDashboardPage from '../../campus-connect/pages/CampusDashboardPage';
+import CampusBillingPage from '../../campus-connect/pages/CampusBillingPage';
+import CampusConnectionsPage from '../../campus-connect/pages/CampusConnectionsPage';
+import CampusDrivesPage from '../../campus-connect/pages/CampusDrivesPage';
+import CampusNotificationsPage from '../../campus-connect/pages/CampusNotificationsPage';
+import CampusProfilePage from '../../campus-connect/pages/CampusProfilePage';
+import CampusReportsPage from '../../campus-connect/pages/CampusReportsPage';
+import CampusStudentsPage from '../../campus-connect/pages/CampusStudentsPage';
 
 const safeValue = (value) => {
   if (value === null || value === undefined || value === '') return '-';
@@ -149,20 +163,56 @@ const HR_SUPPORT_SECTIONS = [
   { key: 'notifications', label: 'Notifications', path: '/portal/hr/notifications', Component: HrNotificationsPage }
 ];
 
-const resolveHrSupportSection = (pathname = '') => {
-  const normalizedPath = String(pathname || '').toLowerCase().replace(/\/+$/, '');
-  if (normalizedPath.includes('/portal/hr/jobs/')) return 'jobs';
-  if (normalizedPath.includes('/portal/hr/candidates/interests')) return 'interests';
+const STUDENT_SUPPORT_SECTIONS = [
+  { key: 'dashboard', label: 'Dashboard', path: '/portal/student/companies', Component: StudentCompaniesPage },
+  { key: 'profile', label: 'Profile', path: '/portal/student/profile', Component: StudentProfilePage },
+  { key: 'jobs', label: 'Jobs', path: '/portal/student/jobs', Component: StudentJobsPage },
+  { key: 'applications', label: 'Applications', path: '/portal/student/applications', Component: StudentApplicationsPage },
+  { key: 'saved-jobs', label: 'Saved Jobs', path: '/portal/student/saved-jobs', Component: StudentSavedJobsPage },
+  { key: 'interviews', label: 'Interviews', path: '/portal/student/interviews', Component: StudentInterviewsPage },
+  { key: 'campus-connect', label: 'Campus Connect', path: '/portal/student/campus-connect', Component: StudentCampusConnectPage },
+  { key: 'ats', label: 'ATS', path: '/portal/student/ats', Component: StudentAtsPage }
+];
 
-  const match = HR_SUPPORT_SECTIONS
-    .filter((section) => section.path !== '/portal/hr/dashboard')
-    .find((section) => normalizedPath === section.path || normalizedPath.startsWith(`${section.path}/`));
+const CAMPUS_SUPPORT_SECTIONS = [
+  { key: 'dashboard', label: 'Dashboard', path: '/portal/campus-connect/dashboard', Component: CampusDashboardPage },
+  { key: 'profile', label: 'Profile', path: '/portal/campus-connect/profile', Component: CampusProfilePage },
+  { key: 'students', label: 'Students', path: '/portal/campus-connect/students', Component: CampusStudentsPage },
+  { key: 'drives', label: 'Drives', path: '/portal/campus-connect/drives', Component: CampusDrivesPage },
+  { key: 'connections', label: 'Connections', path: '/portal/campus-connect/connections', Component: CampusConnectionsPage },
+  { key: 'reports', label: 'Reports', path: '/portal/campus-connect/reports', Component: CampusReportsPage },
+  { key: 'billing', label: 'Billing', path: '/portal/campus-connect/billing', Component: CampusBillingPage },
+  { key: 'notifications', label: 'Notifications', path: '/portal/campus-connect/notifications', Component: CampusNotificationsPage }
+];
 
-  return match?.key || (normalizedPath === '/portal/hr' || normalizedPath === '/portal/hr/dashboard' ? 'dashboard' : '');
+const getRoleSupportSections = (role = '') => {
+  const normalizedRole = getSupportSubjectRole(role);
+  if (normalizedRole === 'hr') return HR_SUPPORT_SECTIONS;
+  if (normalizedRole === 'student' || normalizedRole === 'retired_employee') return STUDENT_SUPPORT_SECTIONS;
+  if (normalizedRole === 'campus_connect') return CAMPUS_SUPPORT_SECTIONS;
+  return [];
 };
 
-const getValidHrSupportSection = (section = '') =>
-  HR_SUPPORT_SECTIONS.some((item) => item.key === section) ? section : 'dashboard';
+const resolveSupportSection = (pathname = '', sections = []) => {
+  const normalizedPath = String(pathname || '').toLowerCase().replace(/\/+$/, '');
+  if (['/portal/hr', '/portal/hr/dashboard'].includes(normalizedPath)) return 'dashboard';
+  if (['/portal/student', '/portal/student/home', '/portal/student/dashboard', '/portal/student/companies'].includes(normalizedPath)) return 'dashboard';
+  if (['/portal/campus-connect', '/portal/campus-connect/dashboard'].includes(normalizedPath)) return 'dashboard';
+  if (normalizedPath.includes('/portal/hr/jobs/')) return 'jobs';
+  if (normalizedPath.includes('/portal/hr/candidates/interests')) return 'interests';
+  if (normalizedPath.includes('/portal/student/jobs/')) return 'jobs';
+  if (normalizedPath.includes('/portal/student/ats/result')) return 'ats';
+  if (normalizedPath.includes('/portal/campus-connect/drives/')) return 'drives';
+
+  const match = sections
+    .filter((section) => section.key !== 'dashboard')
+    .find((section) => normalizedPath === section.path || normalizedPath.startsWith(`${section.path}/`));
+
+  return match?.key || (sections.some((section) => normalizedPath === section.path) ? 'dashboard' : '');
+};
+
+const getValidSupportSection = (sections = [], section = '') =>
+  sections.some((item) => item.key === section) ? section : 'dashboard';
 
 const buildContextFromSeed = (seed = {}) => {
   if (!seed?.id) return null;
@@ -227,9 +277,10 @@ const SupportSubjectSession = ({ userId, enabled, children }) => {
   return children;
 };
 
-const HrSupportWorkspace = ({ section, onSectionChange }) => {
-  const activeSection = getValidHrSupportSection(section);
-  const selectedSection = HR_SUPPORT_SECTIONS.find((item) => item.key === activeSection) || HR_SUPPORT_SECTIONS[0];
+const RoleSupportWorkspace = ({ role, section, onSectionChange }) => {
+  const sections = getRoleSupportSections(role);
+  const activeSection = getValidSupportSection(sections, section);
+  const selectedSection = sections.find((item) => item.key === activeSection) || sections[0];
   const SelectedComponent = selectedSection.Component;
 
   const handleSupportLinkClick = (event) => {
@@ -246,7 +297,7 @@ const HrSupportWorkspace = ({ section, onSectionChange }) => {
 
     if (url.origin !== window.location.origin) return;
 
-    const nextSection = resolveHrSupportSection(url.pathname);
+    const nextSection = resolveSupportSection(url.pathname, sections);
     if (!nextSection) return;
 
     event.preventDefault();
@@ -257,7 +308,7 @@ const HrSupportWorkspace = ({ section, onSectionChange }) => {
     <div className="space-y-4">
       <section className="panel-card">
         <div className="flex flex-wrap gap-2">
-          {HR_SUPPORT_SECTIONS.map((item) => {
+          {sections.map((item) => {
             const active = item.key === activeSection;
             return (
               <button
@@ -283,11 +334,9 @@ const HrSupportWorkspace = ({ section, onSectionChange }) => {
 const LiveRoleDashboard = ({ role, section, onSectionChange }) => {
   const normalizedRole = getSupportSubjectRole(role);
 
-  if (normalizedRole === 'hr') {
-    return <HrSupportWorkspace section={section} onSectionChange={onSectionChange} />;
+  if (CUSTOMER_DASHBOARD_ROLES.has(normalizedRole)) {
+    return <RoleSupportWorkspace role={normalizedRole} section={section} onSectionChange={onSectionChange} />;
   }
-  if (normalizedRole === 'student' || normalizedRole === 'retired_employee') return <StudentCompaniesPage />;
-  if (normalizedRole === 'campus_connect') return <CampusDashboardPage />;
 
   return (
     <section className="panel-card">
@@ -299,7 +348,7 @@ const LiveRoleDashboard = ({ role, section, onSectionChange }) => {
   );
 };
 
-const UserSupportContextPage = () => {
+const UserSupportContextPage = ({ portalBasePath = '/portal/super-admin', actorLabel = 'super-admin' }) => {
   const { userId, view = 'dashboard' } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [context, setContext] = useState(null);
@@ -365,11 +414,15 @@ const UserSupportContextPage = () => {
   const liveLinks = context?.links?.live || {};
   const supportRole = getSupportSubjectRole(context?.user?.role);
   const canOpenLiveDashboard = CUSTOMER_DASHBOARD_ROLES.has(supportRole);
-  const supportSection = getValidHrSupportSection(searchParams.get('supportSection') || 'dashboard');
+  const roleSections = getRoleSupportSections(supportRole);
+  const supportSection = getValidSupportSection(
+    roleSections,
+    searchParams.get('supportSection') || (currentView === 'profile' ? 'profile' : 'dashboard')
+  );
 
   const handleSupportSectionChange = (section, nextSectionParams = null) => {
     const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('supportSection', getValidHrSupportSection(section));
+    nextParams.set('supportSection', getValidSupportSection(roleSections, section));
 
     ['tab', 'billingTab', 'view', 'status', 'jobId'].forEach((key) => {
       if (!nextSectionParams?.has?.(key)) nextParams.delete(key);
@@ -387,14 +440,14 @@ const UserSupportContextPage = () => {
   return (
     <div className="module-page module-page--admin">
       <div className="mb-4">
-        <Link className="btn-secondary w-fit py-2 text-xs" to="/portal/super-admin/360-search">
+        <Link className="btn-secondary w-fit py-2 text-xs" to={`${portalBasePath}/360-search`}>
           <FiArrowLeft size={14} /> Back to 360 Search
         </Link>
       </div>
 
       <AdminHeader
-        title={currentView === 'profile' ? 'Support Profile Context' : 'Support Dashboard Context'}
-        subtitle="Read-only real DB context for platform support. This does not switch your login session."
+        title={currentView === 'profile' ? 'Account Profile Access' : 'Account Dashboard Access'}
+        subtitle="Open the selected account with real DB context while keeping the support actor session active."
       />
 
       {loading ? <p className="module-note">Loading account context...</p> : null}
@@ -420,17 +473,17 @@ const UserSupportContextPage = () => {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Link className="btn-secondary py-2 text-xs" to={`/portal/super-admin/users/${encodeURIComponent(userId)}/dashboard`}>
+                <Link className="btn-secondary py-2 text-xs" to={`${portalBasePath}/users/${encodeURIComponent(userId)}/dashboard`}>
                   Dashboard
                 </Link>
-                <Link className="btn-secondary py-2 text-xs" to={`/portal/super-admin/users/${encodeURIComponent(userId)}/profile`}>
+                <Link className="btn-secondary py-2 text-xs" to={`${portalBasePath}/users/${encodeURIComponent(userId)}/profile?supportSection=profile`}>
                   Profile
                 </Link>
               </div>
             </div>
           </section>
 
-          {currentView === 'profile' ? (
+          {currentView === 'profile' && !canOpenLiveDashboard ? (
             <>
               <section className="panel-card">
                 <div className="mb-4 flex items-center gap-2">
@@ -474,7 +527,7 @@ const UserSupportContextPage = () => {
                       <h3 className="text-lg font-black text-slate-950">Live {formatRole(supportRole)} dashboard context</h3>
                     </div>
                     <p className="max-w-4xl text-sm font-semibold leading-6 text-slate-600">
-                      This dashboard is loaded with the selected account's real DB context. Your super-admin session stays active and audit logs keep the support actor separate.
+                      This workspace is loaded with real DB context for the selected account. Your {actorLabel} session stays active and support requests target this account.
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {workspace.focus.map((item) => (

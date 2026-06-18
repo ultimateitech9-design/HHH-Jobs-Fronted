@@ -5,6 +5,7 @@ import {
   FiDatabase,
   FiFileText,
   FiFlag,
+  FiSearch,
   FiUsers
 } from 'react-icons/fi';
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
@@ -12,6 +13,7 @@ import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLay
 const adminNavItems = [
   { to: '/portal/admin/dashboard', label: 'Dashboard', icon: FiBarChart2 },
   { to: '/portal/admin/users', label: 'Users', icon: FiUsers },
+  { to: '/portal/admin/360-search', label: '360 Search', icon: FiSearch },
   { to: '/portal/admin/jobs', label: 'Jobs', icon: FiBriefcase },
   { to: '/portal/admin/reports', label: 'Reports', icon: FiFlag },
   { to: '/portal/admin/applications', label: 'Applications', icon: FiFileText },

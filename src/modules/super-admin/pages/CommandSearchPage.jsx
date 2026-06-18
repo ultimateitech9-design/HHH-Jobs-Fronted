@@ -33,11 +33,20 @@ const formatCompanyRelation = (relation) => {
   return `${visibleCompanies}${remainingCount ? ` +${remainingCount} more` : ''}`;
 };
 
-const getSupportContextPath = (userId, view) => (
-  `/portal/super-admin/users/${encodeURIComponent(userId)}/${view}`
+const getSupportContextPath = (portalBasePath, userId, view) => (
+  `${portalBasePath}/users/${encodeURIComponent(userId)}/${view}`
 );
 
-const CommandSearchPage = () => {
+const getActivityPath = ({ portalBasePath, row }) => {
+  if (portalBasePath === '/portal/admin') {
+    const userId = encodeURIComponent(row.id || '');
+    return `/portal/admin/audit${userId ? `?userId=${userId}` : ''}`;
+  }
+
+  return row.links?.activityLog || '/portal/super-admin/system-logs';
+};
+
+const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
   const [filters, setFilters] = useState({ search: '', role: '', status: '' });
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -194,12 +203,12 @@ const CommandSearchPage = () => {
       width: 280,
       stickyRight: true,
       render: (_value, row) => {
-        const dashboardPath = row.links?.dashboard || getSupportContextPath(row.id, 'dashboard');
-        const profilePath = row.links?.profile || getSupportContextPath(row.id, 'profile');
-        const activityPath = row.links?.activityLog || '/portal/super-admin/system-logs';
-        const recordPath = row.links?.record || profilePath;
-        const canOpenContext = Boolean(row.id);
         const isEmployeeRecord = row.contextType === 'employee_record';
+        const dashboardPath = getSupportContextPath(portalBasePath, row.id, 'dashboard');
+        const profilePath = getSupportContextPath(portalBasePath, row.id, 'profile');
+        const activityPath = getActivityPath({ portalBasePath, row });
+        const recordPath = isEmployeeRecord ? activityPath : profilePath;
+        const canOpenContext = Boolean(row.id);
 
         return (
           <div className="flex min-w-[240px] flex-wrap items-center gap-2">

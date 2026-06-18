@@ -15,6 +15,8 @@ const AdminPaymentsPage = lazy(() => import('../modules/admin/pages/AdminPayment
 const AdminAuditLogsPage = lazy(() => import('../modules/admin/pages/AdminAuditLogsPage'));
 const AdminSettingsPage = lazy(() => import('../modules/admin/pages/AdminSettingsPage'));
 const ExternalJobsMonitorPage = lazy(() => import('../modules/platform/pages/ExternalJobsMonitorPage'));
+const CommandSearchPage = lazy(() => import('../modules/super-admin/pages/CommandSearchPage'));
+const UserSupportContextPage = lazy(() => import('../modules/super-admin/pages/UserSupportContextPage'));
 
 const adminRoutes = [
   {
@@ -36,7 +38,12 @@ const adminRoutes = [
       { path: 'audit', element: <AdminAuditLogsPage /> },
       { path: 'settings', element: <AdminSettingsPage /> },
       { path: 'control', element: <AdminControlPage /> },
-      { path: 'external-jobs', element: <ExternalJobsMonitorPage /> }
+      { path: 'external-jobs', element: <ExternalJobsMonitorPage /> },
+      { path: '360-search', element: <CommandSearchPage portalBasePath="/portal/admin" /> },
+      {
+        path: 'users/:userId/:view',
+        element: <UserSupportContextPage portalBasePath="/portal/admin" actorLabel="admin" />
+      }
     ]
   },
   { path: 'admin', element: <Navigate to="/portal/admin/dashboard" replace /> }
