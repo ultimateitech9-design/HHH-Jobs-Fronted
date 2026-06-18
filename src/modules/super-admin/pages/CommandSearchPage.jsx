@@ -59,6 +59,8 @@ const CommandSearchPage = () => {
       }
 
       setLoading(true);
+      setResults([]);
+      setError('');
       try {
         const response = await getCommandSearchResults({
           q: deferredSearch,
