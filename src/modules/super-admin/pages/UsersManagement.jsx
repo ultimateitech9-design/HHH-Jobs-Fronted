@@ -633,8 +633,9 @@ const CreateUserModal = ({ open, onClose, existingEmails, onCreate }) => {
 };
 
 const UsersManagement = () => {
-  const { users, setUsers, filteredUsers, filters, setFilters, loading, error, isDemo } = useUsers();
   const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const { users, setUsers, filteredUsers, filters, setFilters, loading, error, isDemo, totalUsers, totalPages } = useUsers({ page, pageSize });
   const [pendingStatusAction, setPendingStatusAction] = useState(null);
   const [formMessage, setFormMessage] = useState('');
   const [actionError, setActionError] = useState('');
@@ -642,20 +643,21 @@ const UsersManagement = () => {
   const [deletingAdmin, setDeletingAdmin] = useState(null);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState(filters);
-  const pageSize = 10;
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
-  const paginatedUsers = useMemo(
-    () => filteredUsers.slice((page - 1) * pageSize, page * pageSize),
-    [filteredUsers, page]
-  );
+  const paginatedUsers = filteredUsers;
 
   const cards = useMemo(() => [
-    { label: 'Total Users', value: String(users.length), helper: `${users.filter((item) => item.status === 'active').length} active`, tone: 'info' },
-    { label: 'Pending Verification', value: String(users.filter((item) => item.status === 'pending').length), helper: 'Approval review', tone: 'warning' },
-    { label: 'Blocked', value: String(users.filter((item) => item.status === 'blocked').length), helper: 'Restricted', tone: 'danger' },
-    { label: 'Banned', value: String(users.filter((item) => item.status === 'banned').length), helper: 'Access removed', tone: 'danger' },
-    { label: 'Verified Accounts', value: String(users.filter((item) => item.verified).length), helper: 'Checks complete', tone: 'success' }
-  ], [users]);
+    { label: 'Total Users', value: String(totalUsers || users.length), helper: `${users.length} loaded on this page`, tone: 'info' },
+    { label: 'Active on Page', value: String(users.filter((item) => item.status === 'active').length), helper: 'Loaded rows', tone: 'success' },
+    { label: 'Pending on Page', value: String(users.filter((item) => item.status === 'pending').length), helper: 'Approval review', tone: 'warning' },
+    { label: 'Blocked on Page', value: String(users.filter((item) => item.status === 'blocked').length), helper: 'Restricted', tone: 'danger' },
+    { label: 'Banned on Page', value: String(users.filter((item) => item.status === 'banned').length), helper: 'Access removed', tone: 'danger' }
+  ], [totalUsers, users]);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const handleCreateAdmin = async (payload) => {
     setFormMessage('');

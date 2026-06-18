@@ -119,10 +119,22 @@ const buildVisibleUsers = (filters = {}) => {
   return filterDeletedUsers(filterUsers(mergedUsers, filters));
 };
 
-const buildUsersQuery = (page, filters = {}) => {
+const toPositiveInteger = (value, fallback) => {
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const paginateLocalRows = (rows = [], page = 1, limit = USERS_BATCH_SIZE) => {
+  const safePage = Math.max(1, toPositiveInteger(page, 1));
+  const safeLimit = Math.max(1, toPositiveInteger(limit, USERS_BATCH_SIZE));
+  const start = (safePage - 1) * safeLimit;
+  return rows.slice(start, start + safeLimit);
+};
+
+const buildUsersQuery = (page, filters = {}, limit = USERS_BATCH_SIZE) => {
   const params = new URLSearchParams({
     page: String(page),
-    limit: String(USERS_BATCH_SIZE)
+    limit: String(limit)
   });
 
   if (filters.search) params.set('search', String(filters.search).trim());
@@ -132,55 +144,68 @@ const buildUsersQuery = (page, filters = {}) => {
   return params.toString();
 };
 
-const fetchUsersPage = async (page, filters = {}) => {
+const fetchUsersPage = async (page, filters = {}, limit = USERS_BATCH_SIZE) => {
   return strictRequest({
-    path: `${SUPER_ADMIN_BASE}/users?${buildUsersQuery(page, filters)}`
+    path: `${SUPER_ADMIN_BASE}/users?${buildUsersQuery(page, filters, limit)}`
   });
 };
 
-const fetchAllApiUsers = async (filters = {}) => {
-  const firstPayload = await fetchUsersPage(1, filters);
-  const firstBatch = Array.isArray(firstPayload?.users)
-    ? firstPayload.users.map(mapApiUserToUi)
-    : [];
-  return firstBatch;
-};
-
 export const getUsers = async (filters = {}) => {
-  const cacheKey = `super-admin:users:${buildUsersQuery(1, filters)}`;
+  const requestedPage = Math.max(1, toPositiveInteger(filters.page, 1));
+  const requestedLimit = Math.min(100, Math.max(1, toPositiveInteger(filters.limit, USERS_BATCH_SIZE)));
+  const cacheKey = `super-admin:users:${buildUsersQuery(requestedPage, filters, requestedLimit)}`;
   return staleWhileRevalidate({
     key: cacheKey,
     maxAgeMs: 20_000,
     staleMs: 180_000,
     loader: async () => {
       try {
-        const apiUsers = await fetchAllApiUsers(filters);
-        const managedUsers = areDemoFallbacksEnabled()
-          ? getManagedAccounts().map(mapManagedAccountToUser)
+        const payload = await fetchUsersPage(requestedPage, filters, requestedLimit);
+        const apiUsers = Array.isArray(payload?.users)
+          ? payload.users.map(mapApiUserToUi)
           : [];
-        if (apiUsers.length === 0 && managedUsers.length === 0) {
+        const apiTotal = Number(payload?.total ?? apiUsers.length);
+        const responsePage = Number(payload?.page || requestedPage) || requestedPage;
+        const responseLimit = Number(payload?.limit || requestedLimit) || requestedLimit;
+        const managedUsers = areDemoFallbacksEnabled()
+          ? filterUsers(getManagedAccounts().map(mapManagedAccountToUser), filters)
+          : [];
+        if (apiUsers.length === 0 && apiTotal === 0 && managedUsers.length === 0) {
           return {
-            data: areDemoFallbacksEnabled() ? buildVisibleUsers(filters) : [],
+            data: areDemoFallbacksEnabled() ? paginateLocalRows(buildVisibleUsers(filters), requestedPage, requestedLimit) : [],
+            total: areDemoFallbacksEnabled() ? buildVisibleUsers(filters).length : 0,
+            page: requestedPage,
+            limit: requestedLimit,
             error: '',
             isDemo: areDemoFallbacksEnabled()
           };
         }
         return {
-          data: filterDeletedUsers(filterUsers([...apiUsers, ...managedUsers], filters)),
+          data: filterDeletedUsers([...apiUsers, ...managedUsers]),
+          total: apiTotal + managedUsers.length,
+          page: responsePage,
+          limit: responseLimit,
           error: '',
           isDemo: false
         };
       } catch (error) {
+        const visibleUsers = areDemoFallbacksEnabled() ? buildVisibleUsers(filters) : [];
         if (!areDemoFallbacksEnabled()) {
           return {
             data: [],
+            total: 0,
+            page: requestedPage,
+            limit: requestedLimit,
             error: error.message || 'Request failed.',
             isDemo: false
           };
         }
 
         return {
-          data: buildVisibleUsers(filters),
+          data: paginateLocalRows(visibleUsers, requestedPage, requestedLimit),
+          total: visibleUsers.length,
+          page: requestedPage,
+          limit: requestedLimit,
           error: error.message || 'Request failed.',
           isDemo: true
         };
