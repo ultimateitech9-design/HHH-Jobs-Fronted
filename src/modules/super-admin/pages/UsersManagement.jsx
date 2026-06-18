@@ -16,15 +16,94 @@ import StateScopePicker from '../../../shared/components/StateScopePicker';
 const INITIAL_ADMIN_FORM = {
   name: '',
   email: '',
-  company: 'HHH Jobs',
   password: '',
   role: 'admin',
+  mobile: '',
+  company: 'HHH Jobs',
   assignedStates: ['Andhra Pradesh'],
-  salesCode: ''
+  salesCode: '',
+  department: 'Administration',
+  designation: 'Administrator',
+  adminTier: 'standard',
+  accessScope: '',
+  canManageUsers: 'true',
+  clearanceLevel: 'global',
+  governanceScope: 'platform',
+  emergencyContact: '',
+  queueName: '',
+  shiftName: '',
+  escalationLevel: 'L1',
+  voiceEnabled: 'false',
+  territory: '',
+  pipelineFocus: '',
+  quota: '',
+  commissionRate: '',
+  financeRole: '',
+  costCenter: '',
+  approvalLimit: '',
+  settlementResponsibility: '',
+  reviewerLevel: 'L1',
+  targetVolume: '',
+  qualityScore: '',
+  companyName: '',
+  workEmail: '',
+  companyWebsite: '',
+  industryType: '',
+  companySize: '',
+  companyType: '',
+  foundedYear: '',
+  location: '',
+  stateName: '',
+  districtName: '',
+  contactEmail: '',
+  contactPhone: '',
+  city: '',
+  affiliation: '',
+  establishedYear: '',
+  website: '',
+  placementOfficerName: '',
+  dateOfBirth: '',
+  notes: '',
+  about: ''
 };
 
+const getInitialAdminForm = () => ({
+  ...INITIAL_ADMIN_FORM,
+  assignedStates: [...INITIAL_ADMIN_FORM.assignedStates]
+});
+
+const ROLE_FORM_DEFAULTS = {
+  admin: { department: 'Administration', designation: 'Administrator', adminTier: 'standard', company: 'HHH Jobs' },
+  super_admin: { department: 'Leadership', designation: 'Super Admin', company: 'HHH Jobs' },
+  support: { department: 'Support', designation: 'Support Agent', queueName: 'general', company: 'HHH Jobs' },
+  sales: { department: 'Sales', designation: 'Sales Executive', company: 'HHH Jobs' },
+  dataentry: { department: 'Data Entry', designation: 'Data Entry Operator', queueName: 'default', company: 'HHH Jobs' },
+  accounts: { department: 'Accounts', designation: 'Accounts Executive', company: 'HHH Jobs' },
+  hr: { company: '' },
+  campus_connect: { company: '' },
+  student: { company: '' }
+};
+
+const PRIMARY_NAME_COPY = {
+  hr: { label: 'HR Contact Name', placeholder: 'Enter HR contact name' },
+  campus_connect: { label: 'College / University Name', placeholder: 'Enter institution name' },
+  student: { label: 'Student Name', placeholder: 'Enter student name' },
+  admin: { label: 'Admin Name', placeholder: 'Enter admin name' },
+  super_admin: { label: 'Super Admin Name', placeholder: 'Enter super admin name' }
+};
+
+const STATE_SCOPED_ROLES = new Set(['admin', 'support', 'sales', 'dataentry', 'accounts']);
+const INTERNAL_OPERATIONS_ROLES = new Set(['support', 'sales', 'dataentry', 'accounts']);
+
+const getPrimaryNameCopy = (role) => (
+  PRIMARY_NAME_COPY[role] || { label: 'Full Name', placeholder: 'Enter full name' }
+);
+
+const cleanText = (value) => String(value || '').trim();
+const cleanUpperText = (value) => cleanText(value).toUpperCase();
+
 const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
-  const [adminForm, setAdminForm] = useState(INITIAL_ADMIN_FORM);
+  const [adminForm, setAdminForm] = useState(getInitialAdminForm);
   const [formError, setFormError] = useState('');
   const [savingAdmin, setSavingAdmin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -35,15 +114,353 @@ const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
     ? (passwordPolicyError || 'Strong password ready to use.')
     : PASSWORD_POLICY_HELPER;
 
+  const updateAdminForm = (updates) => {
+    setAdminForm((current) => ({ ...current, ...updates }));
+    if (formError) setFormError('');
+  };
+
+  const updateField = (field, value) => {
+    updateAdminForm({ [field]: value });
+  };
+
+  const handleRoleChange = (role) => {
+    const defaults = ROLE_FORM_DEFAULTS[role] || {};
+    updateAdminForm({
+      role,
+      ...defaults
+    });
+  };
+
+  const addTextField = (payload, key, value) => {
+    const text = cleanText(value);
+    if (text) payload[key] = text;
+  };
+
+  const buildCreatePayload = ({ name, email, password, role, assignedStates, salesCode }) => {
+    const payload = {
+      name,
+      email,
+      password,
+      role,
+      assignedStates
+    };
+
+    addTextField(payload, 'mobile', adminForm.mobile);
+    addTextField(payload, 'notes', adminForm.notes);
+
+    if (salesCode) {
+      payload.salesCode = salesCode;
+    }
+
+    if (role === 'hr') {
+      const companyName = cleanText(adminForm.companyName);
+      payload.company = companyName || 'Employer';
+      payload.companyName = companyName;
+      payload.department = companyName || 'HR';
+      payload.workEmail = cleanText(adminForm.workEmail) || email;
+      addTextField(payload, 'companyWebsite', adminForm.companyWebsite);
+      addTextField(payload, 'industryType', adminForm.industryType);
+      addTextField(payload, 'sectorName', adminForm.industryType);
+      addTextField(payload, 'companySize', adminForm.companySize);
+      addTextField(payload, 'companyType', adminForm.companyType);
+      addTextField(payload, 'foundedYear', adminForm.foundedYear);
+      addTextField(payload, 'location', adminForm.location);
+      addTextField(payload, 'stateName', adminForm.stateName);
+      addTextField(payload, 'districtName', adminForm.districtName);
+      addTextField(payload, 'about', adminForm.about);
+      return payload;
+    }
+
+    if (role === 'campus_connect') {
+      payload.company = name;
+      payload.collegeName = name;
+      addTextField(payload, 'placementOfficerName', adminForm.placementOfficerName);
+      payload.contactEmail = cleanText(adminForm.contactEmail) || email;
+      addTextField(payload, 'contactPhone', adminForm.contactPhone || adminForm.mobile);
+      addTextField(payload, 'city', adminForm.city);
+      addTextField(payload, 'districtName', adminForm.city);
+      addTextField(payload, 'state', adminForm.stateName);
+      addTextField(payload, 'stateName', adminForm.stateName);
+      addTextField(payload, 'affiliation', adminForm.affiliation);
+      addTextField(payload, 'establishedYear', adminForm.establishedYear);
+      addTextField(payload, 'website', adminForm.website);
+      addTextField(payload, 'about', adminForm.about);
+      return payload;
+    }
+
+    if (role === 'student') {
+      payload.company = 'Student';
+      addTextField(payload, 'dateOfBirth', adminForm.dateOfBirth);
+      addTextField(payload, 'stateName', adminForm.stateName);
+      addTextField(payload, 'districtName', adminForm.districtName);
+      return payload;
+    }
+
+    const department = cleanText(adminForm.department) || cleanText(adminForm.company) || 'HHH Jobs';
+    payload.company = department;
+    payload.department = department;
+    addTextField(payload, 'designation', adminForm.designation);
+
+    if (role === 'admin') {
+      addTextField(payload, 'adminTier', adminForm.adminTier);
+      payload.accessScope = cleanText(adminForm.accessScope) || assignedStates.join(', ');
+      payload.canManageUsers = adminForm.canManageUsers === 'true';
+      return payload;
+    }
+
+    if (role === 'super_admin') {
+      addTextField(payload, 'clearanceLevel', adminForm.clearanceLevel);
+      addTextField(payload, 'governanceScope', adminForm.governanceScope);
+      addTextField(payload, 'emergencyContact', adminForm.emergencyContact);
+      return payload;
+    }
+
+    if (role === 'support') {
+      addTextField(payload, 'queueName', adminForm.queueName);
+      addTextField(payload, 'shiftName', adminForm.shiftName);
+      addTextField(payload, 'escalationLevel', adminForm.escalationLevel);
+      payload.voiceEnabled = adminForm.voiceEnabled === 'true';
+      return payload;
+    }
+
+    if (role === 'sales') {
+      addTextField(payload, 'territory', adminForm.territory);
+      addTextField(payload, 'pipelineFocus', adminForm.pipelineFocus);
+      addTextField(payload, 'quota', adminForm.quota);
+      addTextField(payload, 'commissionRate', adminForm.commissionRate);
+      return payload;
+    }
+
+    if (role === 'accounts') {
+      addTextField(payload, 'financeRole', adminForm.financeRole);
+      addTextField(payload, 'costCenter', adminForm.costCenter);
+      addTextField(payload, 'approvalLimit', adminForm.approvalLimit);
+      addTextField(payload, 'settlementResponsibility', adminForm.settlementResponsibility);
+      return payload;
+    }
+
+    if (role === 'dataentry') {
+      addTextField(payload, 'queueName', adminForm.queueName);
+      addTextField(payload, 'reviewerLevel', adminForm.reviewerLevel);
+      addTextField(payload, 'targetVolume', adminForm.targetVolume);
+      addTextField(payload, 'qualityScore', adminForm.qualityScore);
+    }
+
+    return payload;
+  };
+
+  const renderTextField = ({ field, label, type = 'text', placeholder = '', className = '', ...inputProps }) => (
+    <label className={className}>
+      {label}
+      <input
+        type={type}
+        value={adminForm[field]}
+        onChange={(event) => updateField(field, event.target.value)}
+        placeholder={placeholder}
+        {...inputProps}
+      />
+    </label>
+  );
+
+  const renderSelectField = ({ field, label, options, className = '' }) => (
+    <label className={className}>
+      {label}
+      <select value={adminForm[field]} onChange={(event) => updateField(field, event.target.value)}>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>{option.label}</option>
+        ))}
+      </select>
+    </label>
+  );
+
+  const renderTextareaField = ({ field, label, placeholder = '', className = '' }) => (
+    <label className={className}>
+      {label}
+      <textarea
+        value={adminForm[field]}
+        onChange={(event) => updateField(field, event.target.value)}
+        placeholder={placeholder}
+        rows={3}
+      />
+    </label>
+  );
+
+  const renderSectionTitle = (title) => (
+    <div className="full-row border-t border-slate-100 pt-3">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">{title}</p>
+    </div>
+  );
+
+  const renderStateScope = (helper) => (
+    <label className="full-row">
+      State Scope
+      <StateScopePicker
+        value={adminForm.assignedStates}
+        onChange={(assignedStates) => updateField('assignedStates', assignedStates)}
+        helper={helper}
+      />
+    </label>
+  );
+
+  const renderHrFields = () => (
+    <>
+      {renderSectionTitle('HR Details')}
+      {renderTextField({ field: 'companyName', label: 'Company Name', placeholder: 'Enter company name' })}
+      {renderTextField({ field: 'workEmail', label: 'Work Email', type: 'email', placeholder: 'hr@company.com' })}
+      {renderTextField({ field: 'mobile', label: 'Mobile Number', placeholder: '+91 9876543210' })}
+      {renderTextField({ field: 'companyWebsite', label: 'Company Website', placeholder: 'https://company.com' })}
+      {renderTextField({ field: 'industryType', label: 'Industry / Sector', placeholder: 'IT Services, Manufacturing, etc.' })}
+      {renderTextField({ field: 'companySize', label: 'Company Size', placeholder: '51-200 employees' })}
+      {renderTextField({ field: 'companyType', label: 'Company Type', placeholder: 'Private, MNC, Startup' })}
+      {renderTextField({ field: 'location', label: 'Office Location', placeholder: 'City, State' })}
+      {renderTextField({ field: 'stateName', label: 'State', placeholder: 'Maharashtra' })}
+      {renderTextField({ field: 'districtName', label: 'District / City', placeholder: 'Mumbai' })}
+      {renderTextareaField({ field: 'about', label: 'Company Notes', placeholder: 'Short hiring or company context', className: 'full-row' })}
+    </>
+  );
+
+  const renderCampusFields = () => (
+    <>
+      {renderSectionTitle('Campus Details')}
+      {renderTextField({ field: 'placementOfficerName', label: 'Placement Officer Name', placeholder: 'Enter placement officer name' })}
+      {renderTextField({ field: 'contactEmail', label: 'Placement Email', type: 'email', placeholder: 'placement@college.edu' })}
+      {renderTextField({ field: 'mobile', label: 'Login Mobile', placeholder: '+91 9876543210' })}
+      {renderTextField({ field: 'contactPhone', label: 'Placement Phone', placeholder: '+91 9876543210' })}
+      {renderTextField({ field: 'city', label: 'City / District', placeholder: 'Noida' })}
+      {renderTextField({ field: 'stateName', label: 'State', placeholder: 'Uttar Pradesh' })}
+      {renderTextField({ field: 'affiliation', label: 'Affiliation / University', placeholder: 'AKTU' })}
+      {renderTextField({ field: 'establishedYear', label: 'Established Year', type: 'number', placeholder: '2005', min: '1800', max: String(new Date().getFullYear()) })}
+      {renderTextField({ field: 'website', label: 'Website', placeholder: 'https://college.edu' })}
+      {renderTextareaField({ field: 'about', label: 'Campus Notes', placeholder: 'Short campus or placement context', className: 'full-row' })}
+    </>
+  );
+
+  const renderStudentFields = () => (
+    <>
+      {renderSectionTitle('Student Details')}
+      {renderTextField({ field: 'mobile', label: 'Mobile Number', placeholder: '+91 9876543210' })}
+      {renderTextField({ field: 'dateOfBirth', label: 'Date of Birth', type: 'date' })}
+      {renderTextField({ field: 'stateName', label: 'State', placeholder: 'Delhi' })}
+      {renderTextField({ field: 'districtName', label: 'District / City', placeholder: 'New Delhi' })}
+    </>
+  );
+
+  const renderAdminFields = () => (
+    <>
+      {renderSectionTitle(adminForm.role === 'super_admin' ? 'Super Admin Details' : 'Admin Details')}
+      {renderTextField({ field: 'department', label: 'Department / Team', placeholder: 'Administration' })}
+      {renderTextField({ field: 'designation', label: 'Designation', placeholder: 'Administrator' })}
+      {adminForm.role === 'super_admin' ? (
+        <>
+          {renderTextField({ field: 'clearanceLevel', label: 'Clearance Level', placeholder: 'global' })}
+          {renderTextField({ field: 'governanceScope', label: 'Governance Scope', placeholder: 'platform' })}
+          {renderTextField({ field: 'emergencyContact', label: 'Emergency Contact', placeholder: '+91 9876543210' })}
+        </>
+      ) : (
+        <>
+          {renderSelectField({
+            field: 'adminTier',
+            label: 'Admin Tier',
+            options: [
+              { value: 'standard', label: 'Standard' },
+              { value: 'state', label: 'State Admin' },
+              { value: 'regional', label: 'Regional Admin' }
+            ]
+          })}
+          {renderTextField({ field: 'accessScope', label: 'Access Scope', placeholder: 'Selected states' })}
+          {renderSelectField({
+            field: 'canManageUsers',
+            label: 'User Management Access',
+            options: [
+              { value: 'true', label: 'Allowed' },
+              { value: 'false', label: 'Restricted' }
+            ]
+          })}
+          {renderStateScope('Admin gets selected states; employees inherit selected state work.')}
+        </>
+      )}
+      {renderTextareaField({ field: 'notes', label: 'Internal Notes', placeholder: 'Optional admin notes', className: 'full-row' })}
+    </>
+  );
+
+  const renderOperationsFields = () => (
+    <>
+      {renderSectionTitle(`${USER_ROLE_LABELS[adminForm.role] || 'Operations'} Details`)}
+      {renderTextField({ field: 'department', label: 'Department / Team', placeholder: USER_ROLE_LABELS[adminForm.role] || 'Operations' })}
+      {renderTextField({ field: 'designation', label: 'Designation', placeholder: USER_ROLE_LABELS[adminForm.role] || 'Operator' })}
+      {adminForm.role === 'support' ? (
+        <>
+          {renderTextField({ field: 'queueName', label: 'Queue Name', placeholder: 'general' })}
+          {renderTextField({ field: 'shiftName', label: 'Shift Name', placeholder: 'Morning' })}
+          {renderSelectField({
+            field: 'escalationLevel',
+            label: 'Escalation Level',
+            options: [
+              { value: 'L1', label: 'L1' },
+              { value: 'L2', label: 'L2' },
+              { value: 'L3', label: 'L3' }
+            ]
+          })}
+          {renderSelectField({
+            field: 'voiceEnabled',
+            label: 'Voice Support',
+            options: [
+              { value: 'false', label: 'No' },
+              { value: 'true', label: 'Yes' }
+            ]
+          })}
+        </>
+      ) : null}
+      {adminForm.role === 'sales' ? (
+        <>
+          {renderTextField({ field: 'territory', label: 'Territory', placeholder: 'North India' })}
+          {renderTextField({ field: 'pipelineFocus', label: 'Pipeline Focus', placeholder: 'HR, Campus, Student' })}
+          {renderTextField({ field: 'quota', label: 'Quota', type: 'number', placeholder: '100000' })}
+          {renderTextField({ field: 'commissionRate', label: 'Commission Rate (%)', type: 'number', placeholder: '5', step: '0.01' })}
+          {renderTextField({ field: 'salesCode', label: 'Sales Code', placeholder: 'Auto generated if blank' })}
+        </>
+      ) : null}
+      {adminForm.role === 'accounts' ? (
+        <>
+          {renderTextField({ field: 'financeRole', label: 'Finance Role', placeholder: 'Billing reviewer' })}
+          {renderTextField({ field: 'costCenter', label: 'Cost Center', placeholder: 'FIN-001' })}
+          {renderTextField({ field: 'approvalLimit', label: 'Approval Limit', type: 'number', placeholder: '50000' })}
+          {renderTextField({ field: 'settlementResponsibility', label: 'Settlement Responsibility', placeholder: 'Invoices, payouts' })}
+        </>
+      ) : null}
+      {adminForm.role === 'dataentry' ? (
+        <>
+          {renderTextField({ field: 'queueName', label: 'Queue Name', placeholder: 'default' })}
+          {renderTextField({ field: 'reviewerLevel', label: 'Reviewer Level', placeholder: 'L1' })}
+          {renderTextField({ field: 'targetVolume', label: 'Target Volume', type: 'number', placeholder: '100' })}
+          {renderTextField({ field: 'qualityScore', label: 'Quality Score', type: 'number', placeholder: '95', step: '0.01' })}
+        </>
+      ) : null}
+      {renderStateScope(`${USER_ROLE_LABELS[adminForm.role] || 'User'} gets selected state work.`)}
+      {renderTextareaField({ field: 'notes', label: 'Internal Notes', placeholder: 'Optional role notes', className: 'full-row' })}
+    </>
+  );
+
+  const renderRoleFields = () => {
+    if (adminForm.role === 'hr') return renderHrFields();
+    if (adminForm.role === 'campus_connect') return renderCampusFields();
+    if (adminForm.role === 'student') return renderStudentFields();
+    if (adminForm.role === 'admin' || adminForm.role === 'super_admin') return renderAdminFields();
+    if (INTERNAL_OPERATIONS_ROLES.has(adminForm.role)) return renderOperationsFields();
+    if (STATE_SCOPED_ROLES.has(adminForm.role)) {
+      return renderStateScope(`${USER_ROLE_LABELS[adminForm.role] || 'User'} gets selected state work.`);
+    }
+    return null;
+  };
+
   const handleCreateAdmin = async (event) => {
     event.preventDefault();
     const name = adminForm.name.trim();
     const email = adminForm.email.trim().toLowerCase();
-    const company = adminForm.company.trim() || 'HHH Jobs';
     const password = String(adminForm.password || '');
     const role = adminForm.role || 'admin';
     const assignedStates = Array.isArray(adminForm.assignedStates) ? adminForm.assignedStates : [];
-    const salesCode = String(adminForm.salesCode || '').trim().toUpperCase();
+    const salesCode = cleanUpperText(adminForm.salesCode);
 
     if (!name || !email || !password) {
       setFormError('Name, email, and password are required to create a user ID.');
@@ -66,12 +483,22 @@ const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
       return;
     }
 
+    if (role === 'hr' && !cleanText(adminForm.companyName)) {
+      setFormError('Company name is required for HR ID.');
+      return;
+    }
+
+    if (role === 'campus_connect' && !cleanText(adminForm.placementOfficerName)) {
+      setFormError('Placement officer name is required for Campus ID.');
+      return;
+    }
+
     setSavingAdmin(true);
     setFormError('');
 
     try {
-      await onCreate({ name, email, company, password, role, assignedStates, salesCode });
-      setAdminForm(INITIAL_ADMIN_FORM);
+      await onCreate(buildCreatePayload({ name, email, password, role, assignedStates, salesCode }));
+      setAdminForm(getInitialAdminForm());
       setFormError('');
       onSuccess?.();
     } catch (createError) {
@@ -81,15 +508,17 @@ const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
     }
   };
 
+  const primaryNameCopy = getPrimaryNameCopy(adminForm.role);
+
   return (
     <form className="form-grid" onSubmit={handleCreateAdmin}>
       <label>
-        Full Name
+        {primaryNameCopy.label}
         <input
           type="text"
           value={adminForm.name}
-          onChange={(event) => setAdminForm((current) => ({ ...current, name: event.target.value }))}
-          placeholder="Enter full name"
+          onChange={(event) => updateField('name', event.target.value)}
+          placeholder={primaryNameCopy.placeholder}
         />
       </label>
       <label>
@@ -97,7 +526,7 @@ const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
         <input
           type="email"
           value={adminForm.email}
-          onChange={(event) => setAdminForm((current) => ({ ...current, email: event.target.value }))}
+          onChange={(event) => updateField('email', event.target.value)}
           placeholder="user@hhh-jobs.com"
         />
       </label>
@@ -107,10 +536,7 @@ const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
           <input
             type={showPassword ? 'text' : 'password'}
             value={adminForm.password}
-            onChange={(event) => {
-              setAdminForm((current) => ({ ...current, password: event.target.value }));
-              if (formError) setFormError('');
-            }}
+            onChange={(event) => updateField('password', event.target.value)}
             placeholder="Create a strong password"
             autoComplete="new-password"
             minLength={8}
@@ -130,41 +556,14 @@ const CreateUserForm = ({ existingEmails, onCreate, onCancel, onSuccess }) => {
         <span className={`text-xs font-semibold ${passwordPolicyError ? 'text-rose-600' : 'text-slate-500'}`}>{passwordPolicyMessage}</span>
       </label>
       <label>
-        Company / Team
-        <input
-          type="text"
-          value={adminForm.company}
-          onChange={(event) => setAdminForm((current) => ({ ...current, company: event.target.value }))}
-          placeholder="HHH Jobs"
-        />
-      </label>
-      <label>
         Assigned Role
-        <select value={adminForm.role} onChange={(event) => setAdminForm((current) => ({ ...current, role: event.target.value }))}>
+        <select value={adminForm.role} onChange={(event) => handleRoleChange(event.target.value)}>
           {ASSIGNABLE_DASHBOARD_ROLE_OPTIONS.map((role) => (
             <option key={role.value} value={role.value}>{role.label}</option>
           ))}
         </select>
       </label>
-      <label>
-        State Scope
-        <StateScopePicker
-          value={adminForm.assignedStates}
-          onChange={(assignedStates) => setAdminForm((current) => ({ ...current, assignedStates }))}
-          helper="Admin can get multiple states; employees inherit selected state work."
-        />
-      </label>
-      {adminForm.role === 'sales' ? (
-        <label>
-          Sales Code
-          <input
-            type="text"
-            value={adminForm.salesCode}
-            onChange={(event) => setAdminForm((current) => ({ ...current, salesCode: event.target.value.toUpperCase() }))}
-            placeholder="Auto generated if blank"
-          />
-        </label>
-      ) : null}
+      {renderRoleFields()}
       {formError ? <p className="form-error">{formError}</p> : null}
       <div className="student-job-actions">
         {onCancel ? (
@@ -258,12 +657,16 @@ const UsersManagement = () => {
     { label: 'Verified Accounts', value: String(users.filter((item) => item.verified).length), helper: 'Checks complete', tone: 'success' }
   ], [users]);
 
-  const handleCreateAdmin = async ({ name, email, company, password, role, assignedStates, salesCode }) => {
+  const handleCreateAdmin = async (payload) => {
     setFormMessage('');
 
-    const createdUser = await createAdminUser({ name, email, company, password, role, assignedStates, salesCode });
-    setUsers((current) => [{ ...createdUser, role, assignedStates: createdUser.assignedStates || assignedStates, salesCode: createdUser.salesCode || salesCode }, ...current]);
-    setFormMessage(`${USER_ROLE_LABELS[role] || 'User'} ID ${(createdUser.displayId || createdUser.id)} created for ${name}. This email and password can now open the assigned dashboard.`);
+    const createdUser = await createAdminUser(payload);
+    const role = payload.role || createdUser.role || 'admin';
+    const company = payload.company || payload.companyName || payload.department || createdUser.company || 'HHH Jobs';
+    const assignedStates = createdUser.assignedStates || payload.assignedStates || [];
+    const salesCode = createdUser.salesCode || payload.salesCode || '';
+    setUsers((current) => [{ ...createdUser, role, company, assignedStates, salesCode }, ...current]);
+    setFormMessage(`${USER_ROLE_LABELS[role] || 'User'} ID ${(createdUser.displayId || createdUser.id)} created for ${payload.name}. This email and password can now open the assigned dashboard.`);
     setPage(1);
   };
 
