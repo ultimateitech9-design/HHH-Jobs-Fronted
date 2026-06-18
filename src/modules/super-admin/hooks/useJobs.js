@@ -12,7 +12,11 @@ const useJobs = () => {
 
   useEffect(() => {
     const load = async () => {
-      const response = await getJobs();
+      setLoading(true);
+      const response = await getJobs({
+        ...filters,
+        search: deferredSearch
+      });
       setJobs(response.data || []);
       setError(response.error || '');
       setIsDemo(Boolean(response.isDemo));
@@ -20,7 +24,7 @@ const useJobs = () => {
     };
 
     load();
-  }, []);
+  }, [deferredSearch, filters.status]);
 
   const filteredJobs = useMemo(() => {
     const statusFiltered = jobs.filter((job) => {

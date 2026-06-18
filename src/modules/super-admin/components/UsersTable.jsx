@@ -24,7 +24,14 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
       label: 'Company / Team',
       width: 148,
       cellClassName: 'text-[12.5px] leading-5 text-slate-600',
-      render: (value) => <span className="inline-flex min-w-0">{value || '-'}</span>
+      render: (value, row) => (
+        <span className="inline-flex min-w-0 flex-col gap-0.5">
+          <span>{value || '-'}</span>
+          {row.role === 'sales' && row.salesCode ? (
+            <span className="font-mono text-[10.5px] font-semibold uppercase text-brand-600">{row.salesCode}</span>
+          ) : null}
+        </span>
+      )
     },
     {
       key: 'assignedStates',
@@ -36,13 +43,6 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
         if (!states.length) return <span className="text-slate-400">All states</span>;
         return <span className="line-clamp-2">{states.join(', ')}</span>;
       }
-    },
-    {
-      key: 'salesCode',
-      label: 'Sales Code',
-      width: 112,
-      cellClassName: 'font-mono text-[11px] font-semibold text-slate-600',
-      render: (value) => value || '-'
     },
     { key: 'status', label: 'Status', width: 94, cellClassName: 'text-[12px]', render: (value) => <StatusBadge value={value} /> },
     { key: 'lastActiveAt', label: 'Last Active', width: 98, cellClassName: 'text-[12px] text-slate-500', render: (value) => formatDate(value) },

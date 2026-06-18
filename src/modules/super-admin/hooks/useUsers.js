@@ -12,7 +12,11 @@ const useUsers = () => {
 
   useEffect(() => {
     const load = async () => {
-      const response = await getUsers();
+      setLoading(true);
+      const response = await getUsers({
+        ...filters,
+        search: deferredSearch
+      });
       setUsers(response.data || []);
       setError(response.error || '');
       setIsDemo(Boolean(response.isDemo));
@@ -20,9 +24,14 @@ const useUsers = () => {
     };
 
     load();
+  }, [deferredSearch, filters.role, filters.status]);
 
+  useEffect(() => {
     const refreshUsers = async () => {
-      const response = await getUsers();
+      const response = await getUsers({
+        ...filters,
+        search: deferredSearch
+      });
       setUsers(response.data || []);
       setError(response.error || '');
       setIsDemo(Boolean(response.isDemo));
@@ -36,7 +45,7 @@ const useUsers = () => {
       window.removeEventListener('managed-users-changed', refreshUsers);
       window.removeEventListener('storage', refreshUsers);
     };
-  }, []);
+  }, [deferredSearch, filters]);
 
   const filteredUsers = useMemo(() => {
     const roleFiltered = users.filter((user) => {

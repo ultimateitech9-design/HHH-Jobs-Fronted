@@ -1,5 +1,6 @@
 import { apiFetch } from '../../../utils/api';
 import { extractSeoPathSegment, extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
+import { staleWhileRevalidate } from '../../../shared/services/staleWhileRevalidate';
 
 const clone = (value) => {
   if (value === null || value === undefined) return value;
@@ -717,15 +718,21 @@ export const getStudentJobs = async (filters = {}) => {
     }
   });
 
-  return safeRequest({
-    path: `/jobs?${params.toString()}`,
-    emptyData: {
-      jobs: [],
-      pagination: { page, limit, total: 0, totalPages: 1 }
-    },
-    extract: (payload) => ({
-      jobs: payload?.jobs || [],
-      pagination: payload?.pagination || { page, limit, total: 0, totalPages: 1 }
+  const queryString = params.toString();
+  return staleWhileRevalidate({
+    key: `student:jobs:${queryString}`,
+    maxAgeMs: 20_000,
+    staleMs: 180_000,
+    loader: () => safeRequest({
+      path: `/jobs?${queryString}`,
+      emptyData: {
+        jobs: [],
+        pagination: { page, limit, total: 0, totalPages: 1 }
+      },
+      extract: (payload) => ({
+        jobs: payload?.jobs || [],
+        pagination: payload?.pagination || { page, limit, total: 0, totalPages: 1 }
+      })
     })
   });
 };

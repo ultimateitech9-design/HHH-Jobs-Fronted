@@ -2,6 +2,7 @@ import { adminDummyData } from '../data/adminDummyData';
 import { SUPER_ADMIN_BASE, safeRequest, strictRequest } from './usersApi';
 import { mapApiJobToUi } from './mappers';
 import { areDemoFallbacksEnabled } from '../../../utils/api';
+import { clearSWRCache, staleWhileRevalidate } from '../../../shared/services/staleWhileRevalidate';
 
 const filterJobs = (jobs, filters = {}) => {
   return jobs.filter((job) => {
@@ -22,20 +23,27 @@ const buildQueryString = (filters = {}) => {
 };
 
 export const getJobs = async (filters = {}) =>
-  safeRequest({
-    path: `${SUPER_ADMIN_BASE}/jobs?${buildQueryString(filters)}`,
-    emptyData: [],
-    fallbackData: () => filterJobs(adminDummyData.jobs, filters),
-    extract: (payload) => (payload?.jobs || []).map(mapApiJobToUi)
+  staleWhileRevalidate({
+    key: `super-admin:jobs:${buildQueryString(filters)}`,
+    maxAgeMs: 20_000,
+    staleMs: 180_000,
+    loader: () => safeRequest({
+      path: `${SUPER_ADMIN_BASE}/jobs?${buildQueryString(filters)}`,
+      emptyData: [],
+      fallbackData: () => filterJobs(adminDummyData.jobs, filters),
+      extract: (payload) => (payload?.jobs || []).map(mapApiJobToUi)
+    })
   });
 
 export const updateJobStatus = async (jobId, status) => {
   try {
-    return await strictRequest({
+    const updatedJob = await strictRequest({
       path: `${SUPER_ADMIN_BASE}/jobs/${jobId}/status`,
       options: { method: 'PATCH', body: JSON.stringify({ status }) },
       extract: (payload) => payload?.job || payload
     });
+    clearSWRCache('super-admin:jobs:');
+    return updatedJob;
   } catch (error) {
     if (!areDemoFallbacksEnabled()) {
       throw error;

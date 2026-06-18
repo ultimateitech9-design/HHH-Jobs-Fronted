@@ -1,4 +1,5 @@
 import { apiFetch, areDemoFallbacksEnabled } from '../../../utils/api';
+import { clearSWRCache, staleWhileRevalidate } from '../../../shared/services/staleWhileRevalidate';
 import {
   createManagedAccount,
   deleteManagedAccount,
@@ -118,76 +119,77 @@ const buildVisibleUsers = (filters = {}) => {
   return filterDeletedUsers(filterUsers(mergedUsers, filters));
 };
 
-const fetchUsersPage = async (page) => {
+const buildUsersQuery = (page, filters = {}) => {
   const params = new URLSearchParams({
     page: String(page),
     limit: String(USERS_BATCH_SIZE)
   });
 
+  if (filters.search) params.set('search', String(filters.search).trim());
+  if (filters.role) params.set('role', String(filters.role).trim());
+  if (filters.status) params.set('status', String(filters.status).trim());
+
+  return params.toString();
+};
+
+const fetchUsersPage = async (page, filters = {}) => {
   return strictRequest({
-    path: `${SUPER_ADMIN_BASE}/users?${params.toString()}`
+    path: `${SUPER_ADMIN_BASE}/users?${buildUsersQuery(page, filters)}`
   });
 };
 
-const fetchAllApiUsers = async () => {
-  const firstPayload = await fetchUsersPage(1);
+const fetchAllApiUsers = async (filters = {}) => {
+  const firstPayload = await fetchUsersPage(1, filters);
   const firstBatch = Array.isArray(firstPayload?.users)
     ? firstPayload.users.map(mapApiUserToUi)
     : [];
-  const total = Number(firstPayload?.total || firstBatch.length || 0);
-
-  if (!firstBatch.length || total <= firstBatch.length) {
-    return firstBatch;
-  }
-
-  const totalPages = Math.ceil(total / USERS_BATCH_SIZE);
-  const remainingPages = Array.from({ length: Math.max(0, totalPages - 1) }, (_, index) => index + 2);
-  const remainingResults = await Promise.allSettled(remainingPages.map((page) => fetchUsersPage(page)));
-
-  const users = [...firstBatch];
-  remainingResults.forEach((result) => {
-    if (result.status !== 'fulfilled') return;
-    const batch = Array.isArray(result.value?.users) ? result.value.users.map(mapApiUserToUi) : [];
-    users.push(...batch);
-  });
-
-  return users;
+  return firstBatch;
 };
 
 export const getUsers = async (filters = {}) => {
-  try {
-    const apiUsers = await fetchAllApiUsers();
-    const managedUsers = areDemoFallbacksEnabled()
-      ? getManagedAccounts().map(mapManagedAccountToUser)
-      : [];
-    if (apiUsers.length === 0 && managedUsers.length === 0) {
-      return {
-        data: areDemoFallbacksEnabled() ? buildVisibleUsers(filters) : [],
-        error: '',
-        isDemo: areDemoFallbacksEnabled()
-      };
-    }
-    return {
-      data: filterDeletedUsers(filterUsers([...apiUsers, ...managedUsers], filters)),
-      error: '',
-      isDemo: false
-    };
-  } catch (error) {
-    if (!areDemoFallbacksEnabled()) {
-      return {
-        data: [],
-        error: error.message || 'Request failed.',
-        isDemo: false
-      };
-    }
+  const cacheKey = `super-admin:users:${buildUsersQuery(1, filters)}`;
+  return staleWhileRevalidate({
+    key: cacheKey,
+    maxAgeMs: 20_000,
+    staleMs: 180_000,
+    loader: async () => {
+      try {
+        const apiUsers = await fetchAllApiUsers(filters);
+        const managedUsers = areDemoFallbacksEnabled()
+          ? getManagedAccounts().map(mapManagedAccountToUser)
+          : [];
+        if (apiUsers.length === 0 && managedUsers.length === 0) {
+          return {
+            data: areDemoFallbacksEnabled() ? buildVisibleUsers(filters) : [],
+            error: '',
+            isDemo: areDemoFallbacksEnabled()
+          };
+        }
+        return {
+          data: filterDeletedUsers(filterUsers([...apiUsers, ...managedUsers], filters)),
+          error: '',
+          isDemo: false
+        };
+      } catch (error) {
+        if (!areDemoFallbacksEnabled()) {
+          return {
+            data: [],
+            error: error.message || 'Request failed.',
+            isDemo: false
+          };
+        }
 
-    return {
-      data: buildVisibleUsers(filters),
-      error: error.message || 'Request failed.',
-      isDemo: true
-    };
-  }
+        return {
+          data: buildVisibleUsers(filters),
+          error: error.message || 'Request failed.',
+          isDemo: true
+        };
+      }
+    }
+  });
 };
+
+const clearUsersCache = () => clearSWRCache('super-admin:users:');
 
 export const getCommandSearchResults = async (filters = {}) => {
   const params = new URLSearchParams();
@@ -202,6 +204,21 @@ export const getCommandSearchResults = async (filters = {}) => {
     path: `${SUPER_ADMIN_BASE}/command-search?${params.toString()}`,
     emptyData: [],
     extract: (payload) => payload?.results || []
+  });
+};
+
+export const getUserAutocompleteSuggestions = async (filters = {}) => {
+  const params = new URLSearchParams();
+  const search = String(filters.q || filters.search || '').trim();
+
+  params.set('entity', filters.entity || 'users');
+  if (search) params.set('q', search);
+  if (filters.limit) params.set('limit', String(filters.limit));
+
+  return safeRequest({
+    path: `${SUPER_ADMIN_BASE}/search/autocomplete?${params.toString()}`,
+    emptyData: [],
+    extract: (payload) => payload?.suggestions || []
   });
 };
 
@@ -250,11 +267,13 @@ export const getCachedSupportContextSeed = (userId) => {
 export const updateUserStatus = async (userId, status) =>
   {
     try {
-      return await strictRequest({
+      const updatedUser = await strictRequest({
         path: `${SUPER_ADMIN_BASE}/users/${userId}/status`,
         options: { method: 'PATCH', body: JSON.stringify({ status }) },
         extract: (payload) => payload?.user || payload
       });
+      clearUsersCache();
+      return updatedUser;
     } catch (error) {
       if (!areDemoFallbacksEnabled()) {
         throw error;
@@ -281,6 +300,7 @@ export const createAdminUser = async (payload) => {
       options: { method: 'POST', body: JSON.stringify(payload) },
       extract: (response) => mapApiUserToUi(response?.user || response)
     });
+    clearUsersCache();
     return createdUser;
   } catch (error) {
     if (!areDemoFallbacksEnabled()) {
@@ -292,6 +312,7 @@ export const createAdminUser = async (payload) => {
     }
 
     const nextId = `USR-${1000 + adminDummyData.users.length + 1}`;
+    clearUsersCache();
     return {
       id: nextId,
       displayId: getManagementDisplayId(nextId, managedPayload.role),
@@ -311,6 +332,7 @@ export const createAdminUser = async (payload) => {
 
 export const deleteUser = async (userId) => {
   if (isManagedAccountId(userId)) {
+    clearUsersCache();
     return deleteManagedAccount(userId);
   }
 
@@ -321,12 +343,14 @@ export const deleteUser = async (userId) => {
       extract: (response) => response?.deletedUser || { id: userId }
     });
     markUserDeleted(userId);
+    clearUsersCache();
     return deletedUser;
   } catch (error) {
     if (!areDemoFallbacksEnabled()) {
       throw error;
     }
     markUserDeleted(userId);
+    clearUsersCache();
     return adminDummyData.users.find((user) => user.id === userId) || { id: userId };
   }
 };
