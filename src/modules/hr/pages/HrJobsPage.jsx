@@ -26,7 +26,7 @@ import {
   getEmptyJobDraft,
   getHrCompanies,
   getHrJobs,
-  getJobDistricts,
+  getGeoLocationOptions,
   getJobDraftFromJob,
   getJobSectors,
   getJobStates,
@@ -201,6 +201,8 @@ const HrJobsPage = () => {
   const [sectors, setSectors] = useState([]);
   const [states, setStates] = useState([]);
   const [districts, setDistricts] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [pincodes, setPincodes] = useState([]);
 
   const normalizedPlans = useMemo(
     () => plans.map((plan) => ({
@@ -725,6 +727,18 @@ const HrJobsPage = () => {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
+  const buildDraftLocationLabel = ({
+    cityName = '',
+    districtName = '',
+    stateName = '',
+    pincode = ''
+  } = {}) => {
+    const parts = [cityName, districtName, stateName, pincode]
+      .map((item) => String(item || '').trim())
+      .filter(Boolean);
+    return [...new Set(parts)].join(', ');
+  };
+
   const applyCompanyToDraft = (company = {}, options = {}) => {
     if (!company) return;
     const companyKey = normalizeCompanyKeyForUi(company.companyKey || company.companyName);
@@ -745,7 +759,15 @@ const HrJobsPage = () => {
       stateName: company.stateName || current.stateName,
       districtId: company.districtId || current.districtId,
       districtName: company.districtName || current.districtName,
-      jobLocation: current.jobLocation || company.location || [company.districtName, company.stateName].filter(Boolean).join(', ')
+      cityId: company.cityId || current.cityId,
+      cityName: company.cityName || current.cityName,
+      pincode: company.pincode || current.pincode,
+      jobLocation: current.jobLocation || company.location || buildDraftLocationLabel({
+        cityName: company.cityName,
+        districtName: company.districtName,
+        stateName: company.stateName,
+        pincode: company.pincode
+      })
     }));
     if (options.openPost) setActiveTab('post');
   };
@@ -799,28 +821,73 @@ const HrJobsPage = () => {
       stateId,
       stateName: state?.name || '',
       districtId: '',
-      districtName: ''
+      districtName: '',
+      cityId: '',
+      cityName: '',
+      pincode: '',
+      jobLocation: current.jobLocation || buildDraftLocationLabel({ stateName: state?.name || '' })
     }));
+    setCities([]);
+    setPincodes([]);
     if (!stateId) {
       setDistricts([]);
       return;
     }
-    const response = await getJobDistricts(stateId);
-    setDistricts(response.data || []);
+    const response = await getGeoLocationOptions({ stateId });
+    setDistricts(response.data?.districts || []);
   };
 
-  const handleDistrictChange = (districtId) => {
+  const handleDistrictChange = async (districtId) => {
     const district = districts.find((item) => item.id === districtId);
     setDraft((current) => {
-      const districtName = district?.name || '';
-      const jobLocation = current.jobLocation || [districtName, current.stateName].filter(Boolean).join(', ');
+      const districtName = district?.name || (districtId === '__other__' ? '' : current.districtName);
+      const jobLocation = current.jobLocation || buildDraftLocationLabel({ districtName, stateName: current.stateName });
       return {
         ...current,
         districtId,
         districtName,
+        cityId: '',
+        cityName: '',
+        pincode: '',
         jobLocation
       };
     });
+    setCities([]);
+    setPincodes([]);
+    if (!districtId || districtId === '__other__') return;
+
+    const response = await getGeoLocationOptions({ stateId: draft.stateId, districtId });
+    setCities(response.data?.cities || []);
+    setPincodes(response.data?.pincodes || []);
+  };
+
+  const handleCityChange = async (cityId) => {
+    const city = cities.find((item) => item.id === cityId);
+    setDraft((current) => {
+      const cityName = city?.name || (cityId === '__other__' ? '' : current.cityName);
+      const nextPincode = city?.pincode || '';
+      const jobLocation = current.jobLocation || buildDraftLocationLabel({
+        cityName,
+        districtName: current.districtName,
+        stateName: current.stateName,
+        pincode: nextPincode
+      });
+      return {
+        ...current,
+        cityId,
+        cityName,
+        pincode: nextPincode || current.pincode,
+        jobLocation
+      };
+    });
+    if (!cityId || cityId === '__other__') return;
+
+    const response = await getGeoLocationOptions({
+      stateId: draft.stateId,
+      districtId: draft.districtId,
+      cityId
+    });
+    setPincodes(response.data?.pincodes || []);
   };
 
   const resetForm = () => {
@@ -840,9 +907,15 @@ const HrJobsPage = () => {
       nextDraft.stateName = selectedCompany.stateName || '';
       nextDraft.districtId = selectedCompany.districtId || '';
       nextDraft.districtName = selectedCompany.districtName || '';
+      nextDraft.cityId = selectedCompany.cityId || '';
+      nextDraft.cityName = selectedCompany.cityName || '';
+      nextDraft.pincode = selectedCompany.pincode || '';
       nextDraft.jobLocation = selectedCompany.location || '';
     }
     setDraft(nextDraft);
+    setDistricts([]);
+    setCities([]);
+    setPincodes([]);
     setActiveTab('jobs');
   };
 
@@ -857,7 +930,7 @@ const HrJobsPage = () => {
       return 'Complete this hiring company in Company Profile before posting jobs for it.';
     }
 
-    const requiredFields = ['companyName', 'jobTitle', 'salaryType', 'experienceLevel', 'employmentType', 'sectorName', 'stateName', 'districtName', 'description', 'jobLocation'];
+    const requiredFields = ['companyName', 'jobTitle', 'salaryType', 'experienceLevel', 'employmentType', 'sectorName', 'stateName', 'description', 'jobLocation'];
     const missing = requiredFields.filter((key) => !String(draft[key] || '').trim());
 
     if (missing.length > 0) {
@@ -947,8 +1020,24 @@ const HrJobsPage = () => {
     setDraft(nextDraft);
     setSelectedCompanyKey(normalizeCompanyKeyForUi(nextDraft.companyKey || nextDraft.companyName));
     if (nextDraft.stateId) {
-      const response = await getJobDistricts(nextDraft.stateId);
-      setDistricts(response.data || []);
+      const response = await getGeoLocationOptions({ stateId: nextDraft.stateId });
+      setDistricts(response.data?.districts || []);
+      if (nextDraft.districtId) {
+        const districtResponse = await getGeoLocationOptions({
+          stateId: nextDraft.stateId,
+          districtId: nextDraft.districtId
+        });
+        setCities(districtResponse.data?.cities || []);
+        setPincodes(districtResponse.data?.pincodes || []);
+      }
+      if (nextDraft.cityId) {
+        const cityResponse = await getGeoLocationOptions({
+          stateId: nextDraft.stateId,
+          districtId: nextDraft.districtId,
+          cityId: nextDraft.cityId
+        });
+        setPincodes(cityResponse.data?.pincodes || []);
+      }
     }
     setActiveTab('post');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1484,17 +1573,97 @@ const HrJobsPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-neutral-700">City / District</label>
+                <label className="text-sm font-bold text-neutral-700">District</label>
                 {districts.length > 0 ? (
                   <select value={draft.districtId} onChange={(e) => handleDistrictChange(e.target.value)} disabled={!draft.stateId} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium disabled:opacity-60">
                     <option value="">Select District</option>
                     {districts.map((district) => (
                       <option key={district.id || district.name} value={district.id}>{district.name}</option>
                     ))}
+                    <option value="__other__">Other</option>
                   </select>
                 ) : (
-                  <input value={draft.districtName} onChange={(e) => updateDraftField('districtName', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Enter city or district" />
+                  <input value={draft.districtName} onChange={(e) => {
+                    const districtName = e.target.value;
+                    setDraft((current) => ({
+                      ...current,
+                      districtName,
+                      jobLocation: current.jobLocation || buildDraftLocationLabel({ districtName, stateName: current.stateName })
+                    }));
+                  }} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Enter district" />
                 )}
+                {draft.districtId === '__other__' && (
+                  <input value={draft.districtName} onChange={(e) => {
+                    const districtName = e.target.value;
+                    setDraft((current) => ({
+                      ...current,
+                      districtName,
+                      jobLocation: current.jobLocation || buildDraftLocationLabel({ districtName, stateName: current.stateName })
+                    }));
+                  }} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Enter district" />
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-neutral-700">City</label>
+                {cities.length > 0 ? (
+                  <select value={draft.cityId} onChange={(e) => handleCityChange(e.target.value)} disabled={!draft.stateId} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium disabled:opacity-60">
+                    <option value="">Select City</option>
+                    {cities.map((city) => (
+                      <option key={city.id || city.name} value={city.id}>{city.name}</option>
+                    ))}
+                    <option value="__other__">Other</option>
+                  </select>
+                ) : (
+                  <input value={draft.cityName} onChange={(e) => {
+                    const cityName = e.target.value;
+                    setDraft((current) => ({
+                      ...current,
+                      cityName,
+                      jobLocation: current.jobLocation || buildDraftLocationLabel({
+                        cityName,
+                        districtName: current.districtName,
+                        stateName: current.stateName
+                      })
+                    }));
+                  }} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Enter city" />
+                )}
+                {draft.cityId === '__other__' && (
+                  <input value={draft.cityName} onChange={(e) => {
+                    const cityName = e.target.value;
+                    setDraft((current) => ({
+                      ...current,
+                      cityName,
+                      jobLocation: current.jobLocation || buildDraftLocationLabel({
+                        cityName,
+                        districtName: current.districtName,
+                        stateName: current.stateName
+                      })
+                    }));
+                  }} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Enter city" />
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-neutral-700">Pincode</label>
+                <input value={draft.pincode} list="hr-job-pincode-options" onChange={(e) => {
+                  const pincode = e.target.value;
+                  setDraft((current) => ({
+                    ...current,
+                    pincode,
+                    jobLocation: current.jobLocation || buildDraftLocationLabel({
+                      cityName: current.cityName,
+                      districtName: current.districtName,
+                      stateName: current.stateName,
+                      pincode
+                    })
+                  }));
+                }} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. 201301" inputMode="numeric" />
+                <datalist id="hr-job-pincode-options">
+                  {pincodes.map((item) => (
+                    <option key={item.id || item.pincode} value={item.pincode} />
+                  ))}
+                </datalist>
               </div>
             </div>
 
@@ -1502,11 +1671,6 @@ const HrJobsPage = () => {
               <label className="text-sm font-bold text-neutral-700">Primary Location</label>
               <input required value={draft.jobLocation} onChange={(e) => updateDraftField('jobLocation', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. Bangalore" />
               <p className="text-xs font-medium text-neutral-400">Enter any city, state, remote, or work location.</p>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-neutral-700">Pincode</label>
-              <input value={draft.pincode} onChange={(e) => updateDraftField('pincode', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. 201301" inputMode="numeric" />
             </div>
 
             <div className="space-y-1.5">

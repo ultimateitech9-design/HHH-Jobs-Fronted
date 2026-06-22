@@ -49,6 +49,9 @@ const normalizeMasterOption = (item = {}) => ({
   name: item.name || '',
   code: item.code || '',
   stateId: item.state_id || item.stateId || '',
+  districtId: item.district_id || item.districtId || '',
+  cityId: item.city_id || item.cityId || '',
+  pincode: item.pincode || '',
   isActive: item.is_active ?? item.isActive ?? true
 });
 
@@ -71,6 +74,22 @@ export const getJobDistricts = async (stateId = '') =>
     path: `/jobs/meta/districts${buildQueryString({ stateId }) ? `?${buildQueryString({ stateId })}` : ''}`,
     emptyData: [],
     extract: (payload) => (payload?.districts || []).map(normalizeMasterOption)
+  });
+
+export const getGeoLocationOptions = async ({ stateId = '', districtId = '', cityId = '' } = {}) =>
+  safeRequest({
+    path: `/geo/options${buildQueryString({ stateId, districtId, cityId }) ? `?${buildQueryString({ stateId, districtId, cityId })}` : ''}`,
+    emptyData: { states: [], districts: [], cities: [], pincodes: [], canUseOther: true },
+    extract: (payload) => {
+      const options = payload?.locationOptions || {};
+      return {
+        states: (options.states || []).map(normalizeMasterOption),
+        districts: (options.districts || []).map(normalizeMasterOption),
+        cities: (options.cities || []).map(normalizeMasterOption),
+        pincodes: (options.pincodes || []).map(normalizeMasterOption),
+        canUseOther: options.canUseOther !== false
+      };
+    }
   });
 
 const defaultJobDraft = {
@@ -99,6 +118,8 @@ const defaultJobDraft = {
   stateName: '',
   districtId: '',
   districtName: '',
+  cityId: '',
+  cityName: '',
   pincode: '',
   description: ''
 };
@@ -138,7 +159,8 @@ const formatJobDraftForApi = (draft = {}) => ({
   stateName: draft.stateName,
   districtId: draft.districtId,
   districtName: draft.districtName,
-  cityName: draft.districtName,
+  cityId: draft.cityId,
+  cityName: draft.cityName,
   pincode: draft.pincode,
   description: draft.description
 });
@@ -169,6 +191,8 @@ const hydrateJobDraftFromJob = (job = {}) => ({
   stateName: job.stateName || job.state_name || '',
   districtId: job.districtId || job.district_id || '',
   districtName: job.districtName || job.district_name || '',
+  cityId: job.cityId || job.city_id || '',
+  cityName: job.cityName || job.city_name || '',
   pincode: job.pincode || '',
   description: job.description || ''
 });
@@ -187,6 +211,9 @@ const normalizeHrProfile = (profile = {}) => ({
   stateName: profile.state_name || profile.stateName || '',
   districtId: profile.district_id || profile.districtId || '',
   districtName: profile.district_name || profile.districtName || '',
+  cityId: profile.city_id || profile.cityId || '',
+  cityName: profile.city_name || profile.cityName || profile.city || '',
+  pincode: profile.pincode || '',
   about: profile.about || '',
   logoUrl: profile.logo_url || profile.logoUrl || '',
   hrEmployerId: profile.hrEmployerId || profile.hr_employer_id || profile.employeeCode || profile.employee_code || ''
@@ -202,8 +229,11 @@ const normalizeHrCompany = (company = {}) => ({
   location: company.location || '',
   stateId: company.stateId || company.state_id || '',
   districtId: company.districtId || company.district_id || '',
+  cityId: company.cityId || company.city_id || '',
   stateName: company.stateName || company.state_name || '',
   districtName: company.districtName || company.district_name || '',
+  cityName: company.cityName || company.city_name || company.city || '',
+  pincode: company.pincode || '',
   sectorId: company.sectorId || company.sector_id || '',
   sectorName: company.sectorName || company.sector_name || company.industryType || company.industry_type || '',
   industryType: company.industryType || company.industry_type || company.sectorName || company.sector_name || '',
@@ -243,6 +273,9 @@ export const updateHrProfile = async (formState) => {
     stateName: formState.stateName,
     districtId: formState.districtId,
     districtName: formState.districtName,
+    cityId: formState.cityId,
+    cityName: formState.cityName,
+    pincode: formState.pincode,
     about: formState.about,
     logoUrl: formState.logoUrl
   };
@@ -291,8 +324,11 @@ export const saveHrCompany = async (company = {}) => {
     location: company.location,
     stateId: company.stateId,
     districtId: company.districtId,
+    cityId: company.cityId,
     stateName: company.stateName,
     districtName: company.districtName,
+    cityName: company.cityName,
+    pincode: company.pincode,
     sectorId: company.sectorId,
     sectorName: company.sectorName,
     industryType: company.industryType,
