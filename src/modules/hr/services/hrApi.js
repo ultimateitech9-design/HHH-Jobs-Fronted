@@ -520,6 +520,21 @@ export const updateHrJob = async (jobId, jobDraft) => {
   });
 };
 
+export const generateHrJobDescription = async (descriptionPayload = {}) =>
+  strictRequest({
+    path: '/ai/hr/job-description',
+    options: {
+      method: 'POST',
+      body: JSON.stringify(descriptionPayload)
+    },
+    extract: (responsePayload) => ({
+      description: responsePayload?.description || '',
+      wordCount: Number(responsePayload?.wordCount || 0),
+      minWords: Number(responsePayload?.minWords || 500),
+      maxWords: Number(responsePayload?.maxWords || 1500)
+    })
+  });
+
 export const deleteHrJob = async (jobId) =>
   strictRequest({
     path: `/hr/jobs/${extractUuidFromSlug(jobId)}`,

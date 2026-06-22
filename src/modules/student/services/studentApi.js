@@ -1003,6 +1003,41 @@ export const deleteStudentAlert = async (alertId) =>
     extract: (payload) => payload?.removed || 0
   });
 
+const normalizeWhatsAppPreference = (preference = {}, configured = false) => ({
+  id: preference?.id || '',
+  phoneNumber: preference?.phoneNumber || preference?.phone_number || '',
+  isEnabled: Boolean(preference?.isEnabled ?? preference?.is_enabled),
+  configured: Boolean(configured),
+  updatedAt: preference?.updatedAt || preference?.updated_at || ''
+});
+
+export const getWhatsAppPreference = async () =>
+  safeRequest({
+    path: '/features/whatsapp/preference',
+    emptyData: normalizeWhatsAppPreference({}, false),
+    extract: (payload) => normalizeWhatsAppPreference(payload?.preference || {}, payload?.configured)
+  });
+
+export const saveWhatsAppPreference = async ({ phoneNumber = '', isEnabled = true }) =>
+  strictRequest({
+    path: '/features/whatsapp/preference',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ phoneNumber, isEnabled })
+    },
+    extract: (payload) => normalizeWhatsAppPreference(payload?.preference || {}, payload?.configured)
+  });
+
+export const sendWhatsAppTestAlert = async (phoneNumber = '') =>
+  strictRequest({
+    path: '/features/whatsapp/test',
+    options: {
+      method: 'POST',
+      body: JSON.stringify({ phoneNumber })
+    },
+    extract: (payload) => payload?.result || payload
+  });
+
 export const getStudentAutoApplyState = async () =>
   safeRequest({
     path: '/student/auto-apply',

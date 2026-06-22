@@ -13,7 +13,8 @@ import {
   FiMapPin,
   FiImage,
   FiGlobe,
-  FiChevronRight
+  FiChevronRight,
+  FiZap
 } from 'react-icons/fi';
 import {
   checkoutRolePlan,
@@ -30,6 +31,7 @@ import {
   getJobDraftFromJob,
   getJobSectors,
   getJobStates,
+  generateHrJobDescription,
   getPricingPlans,
   reopenHrJob,
   getRolePlanPurchases,
@@ -139,7 +141,9 @@ const isCurrentRoleSubscriptionPlan = (subscription = null, plan = null) => {
   return String(subscription.role_plan_slug || '').toLowerCase() === String(plan.slug || '').toLowerCase();
 };
 
-const JOB_POSTING_DESCRIPTION_LIMIT = 250;
+const JOB_DESCRIPTION_MIN_WORDS = 500;
+const JOB_DESCRIPTION_MAX_WORDS = 1500;
+const TARGET_AI_DESCRIPTION_WORDS = 850;
 const TRACKED_JOB_PLAN_SLUGS = ['premium', 'hot_vacancy', 'standard'];
 const AUTO_JOB_PLAN_SLUGS = ['standard', 'hot_vacancy', 'premium'];
 const JOB_PLAN_PRIORITY = Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug, index) => [slug, index]));
@@ -149,6 +153,18 @@ const getJobPlanSlug = (job = {}) =>
 
 const getJobCreatedAt = (job = {}) =>
   job.createdAt || job.created_at || job.postingDate || job.posting_date || '';
+
+const countWords = (value = '') => String(value || '').trim().split(/\s+/).filter(Boolean).length;
+
+const SALARY_TYPE_OPTIONS = [
+  { value: 'LPA', label: 'Package (LPA)', minLabel: 'Min Package (LPA)', maxLabel: 'Max Package (LPA)', minPlaceholder: 'Eg. 5', maxPlaceholder: 'Eg. 8' },
+  { value: 'Monthly', label: 'Monthly Salary', minLabel: 'Min Monthly Salary', maxLabel: 'Max Monthly Salary', minPlaceholder: 'Eg. 25000', maxPlaceholder: 'Eg. 45000' },
+  { value: 'Annual', label: 'Annual Salary', minLabel: 'Min Annual Salary', maxLabel: 'Max Annual Salary', minPlaceholder: 'Eg. 500000', maxPlaceholder: 'Eg. 800000' },
+  { value: 'Stipend', label: 'Stipend', minLabel: 'Min Stipend', maxLabel: 'Max Stipend', minPlaceholder: 'Eg. 8000', maxPlaceholder: 'Eg. 15000' }
+];
+
+const getSalaryTypeMeta = (salaryType = '') =>
+  SALARY_TYPE_OPTIONS.find((item) => item.value === salaryType) || SALARY_TYPE_OPTIONS[0];
 
 const sortByJobPlanPriority = (a = {}, b = {}) => {
   const aRank = JOB_PLAN_PRIORITY[String(a.slug || '').toLowerCase()] ?? 99;
@@ -186,6 +202,8 @@ const HrJobsPage = () => {
   const [draft, setDraft] = useState(getEmptyJobDraft());
   const [editingJobId, setEditingJobId] = useState('');
   const [saving, setSaving] = useState(false);
+  const [descriptionPrompt, setDescriptionPrompt] = useState('');
+  const [generatingDescription, setGeneratingDescription] = useState(false);
 
   const [plans, setPlans] = useState([]);
   const [rolePlans, setRolePlans] = useState([]);
@@ -722,9 +740,44 @@ const HrJobsPage = () => {
     if (statusFilter === 'all') return companyScopedJobs;
     return companyScopedJobs.filter((job) => String(job.status || '').toLowerCase() === statusFilter);
   }, [activeCompanyKeys, jobs, selectedCompanyKey, statusFilter]);
+  const descriptionWordCount = useMemo(() => countWords(draft.description), [draft.description]);
+  const salaryTypeMeta = useMemo(() => getSalaryTypeMeta(draft.salaryType), [draft.salaryType]);
 
   const updateDraftField = (key, value) => {
     setDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleGenerateJobDescription = async () => {
+    setError('');
+    setMessage('');
+    if (!String(draft.jobTitle || '').trim()) {
+      setError('Enter the job title before generating a job description.');
+      return;
+    }
+
+    setGeneratingDescription(true);
+    try {
+      const response = await generateHrJobDescription({
+        jobTitle: draft.jobTitle,
+        companyName: draft.companyName,
+        experienceLevel: draft.experienceLevel,
+        employmentType: draft.employmentType,
+        sectorName: draft.sectorName,
+        jobLocation: draft.jobLocation,
+        salaryType: draft.salaryType,
+        minPrice: draft.minPrice,
+        maxPrice: draft.maxPrice,
+        skills: String(draft.skillsInput || '').split(',').map((item) => item.trim()).filter(Boolean),
+        prompt: descriptionPrompt,
+        targetWordCount: TARGET_AI_DESCRIPTION_WORDS
+      });
+      updateDraftField('description', response.description || '');
+      setMessage(`AI job description generated (${response.wordCount || countWords(response.description)} words). Review once before publishing.`);
+    } catch (descriptionError) {
+      setError(String(descriptionError.message || 'Unable to generate job description.'));
+    } finally {
+      setGeneratingDescription(false);
+    }
   };
 
   const buildDraftLocationLabel = ({
@@ -946,12 +999,12 @@ const HrJobsPage = () => {
       return 'At least one job location is required.';
     }
 
-    const descriptionLimit = Math.min(
-      JOB_POSTING_DESCRIPTION_LIMIT,
-      Number(selectedPlan?.maxDescriptionChars || JOB_POSTING_DESCRIPTION_LIMIT) || JOB_POSTING_DESCRIPTION_LIMIT
-    );
-    if (String(draft.description || '').length > descriptionLimit) {
-      return `Description cannot exceed ${descriptionLimit} characters.`;
+    const descriptionWordCount = countWords(draft.description);
+    if (descriptionWordCount < JOB_DESCRIPTION_MIN_WORDS) {
+      return `Description must be at least ${JOB_DESCRIPTION_MIN_WORDS} words.`;
+    }
+    if (descriptionWordCount > JOB_DESCRIPTION_MAX_WORDS) {
+      return `Description cannot exceed ${JOB_DESCRIPTION_MAX_WORDS} words.`;
     }
 
     if (selectedPlan) {
@@ -1674,13 +1727,22 @@ const HrJobsPage = () => {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-neutral-700">Min Salary (Annual)</label>
-              <input type="number" value={draft.minPrice} onChange={(e) => updateDraftField('minPrice', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. 500000" />
+              <label className="text-sm font-bold text-neutral-700">Salary Mode</label>
+              <select required value={draft.salaryType} onChange={(e) => updateDraftField('salaryType', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium">
+                {SALARY_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-neutral-700">Max Salary (Annual)</label>
-              <input type="number" required value={draft.maxPrice} onChange={(e) => updateDraftField('maxPrice', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Eg. 800000" />
+              <label className="text-sm font-bold text-neutral-700">{salaryTypeMeta.minLabel}</label>
+              <input type="number" value={draft.minPrice} onChange={(e) => updateDraftField('minPrice', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder={salaryTypeMeta.minPlaceholder} />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-neutral-700">{salaryTypeMeta.maxLabel}</label>
+              <input type="number" required value={draft.maxPrice} onChange={(e) => updateDraftField('maxPrice', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder={salaryTypeMeta.maxPlaceholder} />
             </div>
 
             <div className="space-y-1.5 md:col-span-2">
@@ -1690,8 +1752,30 @@ const HrJobsPage = () => {
 
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-bold text-neutral-700">Full Job Description</label>
-              <textarea required rows={6} maxLength={JOB_POSTING_DESCRIPTION_LIMIT} value={draft.description} onChange={(e) => updateDraftField('description', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Detailed job description and responsibilities..."></textarea>
-              <p className="text-xs font-medium text-neutral-400">{String(draft.description || '').length}/{JOB_POSTING_DESCRIPTION_LIMIT} characters</p>
+              <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-3">
+                <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+                  <textarea
+                    rows={2}
+                    value={descriptionPrompt}
+                    onChange={(e) => setDescriptionPrompt(e.target.value)}
+                    className="w-full rounded-xl border border-brand-100 bg-white px-4 py-3 text-sm font-medium text-neutral-700 outline-none transition-all focus:ring-2 focus:ring-brand-500"
+                    placeholder="Tell AI the role, responsibilities, must-have tools, work mode, and hiring context..."
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGenerateJobDescription}
+                    disabled={generatingDescription}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-500 disabled:opacity-70"
+                  >
+                    <FiZap size={16} />
+                    {generatingDescription ? 'Writing...' : 'Write with AI'}
+                  </button>
+                </div>
+              </div>
+              <textarea required rows={14} value={draft.description} onChange={(e) => updateDraftField('description', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Detailed job description and responsibilities..."></textarea>
+              <p className={`text-xs font-bold ${descriptionWordCount < JOB_DESCRIPTION_MIN_WORDS || descriptionWordCount > JOB_DESCRIPTION_MAX_WORDS ? 'text-amber-600' : 'text-emerald-600'}`}>
+                {descriptionWordCount}/{JOB_DESCRIPTION_MAX_WORDS} words | minimum {JOB_DESCRIPTION_MIN_WORDS}
+              </p>
             </div>
 
             <div className="md:col-span-2 pt-6 border-t border-neutral-100 flex gap-4 justify-end">

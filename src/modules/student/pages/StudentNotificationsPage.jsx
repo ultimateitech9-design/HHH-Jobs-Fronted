@@ -9,6 +9,9 @@ import {
   FiCheckCircle,
   FiClock,
   FiFileText,
+  FiSave,
+  FiSend,
+  FiSmartphone,
   FiTrash2,
   FiTrendingUp,
   FiUser
@@ -24,7 +27,16 @@ import {
   StudentNotice,
   StudentSurfaceCard
 } from '../components/StudentExperience';
-import { formatDateTime, getStudentProfile } from '../services/studentApi';
+import {
+  createStudentAlert,
+  deleteStudentAlert,
+  formatDateTime,
+  getStudentAlerts,
+  getStudentProfile,
+  getWhatsAppPreference,
+  saveWhatsAppPreference,
+  sendWhatsAppTestAlert
+} from '../services/studentApi';
 import { getCurrentUser } from '../../../utils/auth';
 
 const NOTIFICATION_FILTERS = [
@@ -39,6 +51,14 @@ const QUICK_LINKS = [
   { label: 'My Applications', icon: FiFileText, to: '/portal/student/applications' },
   { label: 'Interviews', icon: FiCalendar, to: '/portal/student/interviews' }
 ];
+
+const initialAlertDraft = {
+  keywords: '',
+  location: '',
+  experienceLevel: '',
+  employmentType: '',
+  isActive: true
+};
 
 const compactPrimaryButtonClassName =
   'inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-brand-500 via-brand-500 to-warning-400 px-2.5 py-1.5 text-[11px] font-black text-white shadow-[0_8px_18px_rgba(229,155,23,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70';
@@ -168,6 +188,16 @@ const StudentNotificationsPage = () => {
   const [profileAvatarUrl, setProfileAvatarUrl] = useState(
     () => currentUser?.avatarUrl || currentUser?.avatar_url || ''
   );
+  const [whatsappPreference, setWhatsappPreference] = useState({
+    phoneNumber: '',
+    isEnabled: false,
+    configured: false
+  });
+  const [whatsappSaving, setWhatsappSaving] = useState(false);
+  const [whatsappTesting, setWhatsappTesting] = useState(false);
+  const [jobAlerts, setJobAlerts] = useState([]);
+  const [alertDraft, setAlertDraft] = useState(initialAlertDraft);
+  const [alertSaving, setAlertSaving] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -182,6 +212,31 @@ const StudentNotificationsPage = () => {
     };
 
     loadStudentAvatar();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadAlertPreferences = async () => {
+      const [whatsappResponse, alertsResponse] = await Promise.all([
+        getWhatsAppPreference(),
+        getStudentAlerts()
+      ]);
+
+      if (!active) return;
+      if (!whatsappResponse.error) {
+        setWhatsappPreference(whatsappResponse.data || {});
+      }
+      if (!alertsResponse.error) {
+        setJobAlerts(alertsResponse.data || []);
+      }
+    };
+
+    loadAlertPreferences();
 
     return () => {
       active = false;
@@ -282,12 +337,100 @@ const StudentNotificationsPage = () => {
     }
   };
 
+  const updateAlertDraft = (key, value) => {
+    setAlertDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleSaveWhatsAppPreference = async () => {
+    setMessage('');
+    setPageError('');
+    const phoneNumber = String(whatsappPreference.phoneNumber || '').replace(/[^0-9]/g, '');
+    if (whatsappPreference.isEnabled && phoneNumber.length < 10) {
+      setPageError('Enter a valid WhatsApp number before enabling alerts.');
+      return;
+    }
+
+    setWhatsappSaving(true);
+    try {
+      const saved = await saveWhatsAppPreference({
+        phoneNumber,
+        isEnabled: whatsappPreference.isEnabled
+      });
+      setWhatsappPreference(saved);
+      setMessage(saved.isEnabled ? 'WhatsApp job alerts enabled.' : 'WhatsApp job alerts paused.');
+    } catch (error) {
+      setPageError(error.message || 'Unable to save WhatsApp preference.');
+    } finally {
+      setWhatsappSaving(false);
+    }
+  };
+
+  const handleSendWhatsAppTest = async () => {
+    setMessage('');
+    setPageError('');
+    setWhatsappTesting(true);
+    try {
+      const result = await sendWhatsAppTestAlert(whatsappPreference.phoneNumber);
+      setMessage(result?.sent === false ? (result.reason || 'Test message could not be sent.') : 'Test WhatsApp message queued.');
+    } catch (error) {
+      setPageError(error.message || 'Unable to send WhatsApp test.');
+    } finally {
+      setWhatsappTesting(false);
+    }
+  };
+
+  const handleCreateAlert = async () => {
+    setMessage('');
+    setPageError('');
+    const keywords = String(alertDraft.keywords || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const location = String(alertDraft.location || '').trim();
+    if (keywords.length === 0 && !location) {
+      setPageError('Add at least one role/skill keyword or a location for the alert.');
+      return;
+    }
+
+    setAlertSaving(true);
+    try {
+      const alert = await createStudentAlert({
+        keywords,
+        location,
+        experienceLevel: alertDraft.experienceLevel || null,
+        employmentType: alertDraft.employmentType || null,
+        isActive: alertDraft.isActive
+      });
+      setJobAlerts((current) => [alert, ...current]);
+      setAlertDraft(initialAlertDraft);
+      setMessage('Job alert created. Matching jobs will reach your inbox, email, and WhatsApp when enabled.');
+    } catch (error) {
+      setPageError(error.message || 'Unable to create job alert.');
+    } finally {
+      setAlertSaving(false);
+    }
+  };
+
+  const handleDeleteAlert = async (alertId) => {
+    setMessage('');
+    setPageError('');
+    const previousAlerts = [...jobAlerts];
+    setJobAlerts((current) => current.filter((alert) => alert.id !== alertId));
+    try {
+      await deleteStudentAlert(alertId);
+      setMessage('Job alert removed.');
+    } catch (error) {
+      setJobAlerts(previousAlerts);
+      setPageError(error.message || 'Unable to delete job alert.');
+    }
+  };
+
   return (
     <div className="space-y-6 pb-8">
       {activeError ? <StudentNotice type="error" text={activeError} /> : null}
       {message && !activeError ? <StudentNotice type="success" text={message} /> : null}
 
-      <section className="grid gap-6 xl:grid-cols-[220px_minmax(0,1fr)]">
+      <section className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="space-y-5">
           <div className="rounded-[2rem] border border-slate-200 bg-white px-5 py-6 text-center shadow-[0_18px_45px_-38px_rgba(15,23,42,0.45)]">
             <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[conic-gradient(#2d5bff_0_72%,#e2e8f0_72%_100%)]">
@@ -352,6 +495,140 @@ const StudentNotificationsPage = () => {
               <span>Prioritize recruiter and interview updates first</span>
               <FiBell />
             </div>
+          </div>
+
+          <div className="rounded-[1.6rem] border border-emerald-200 bg-white p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-navy">WhatsApp alerts</h2>
+                <p className="text-xs font-semibold text-slate-400">
+                  {whatsappPreference.isEnabled ? 'Enabled for job matches' : 'Paused'}
+                </p>
+              </div>
+              <span className={`flex h-9 w-9 items-center justify-center rounded-xl border ${whatsappPreference.isEnabled ? 'border-emerald-200 bg-emerald-50 text-emerald-600' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                <FiSmartphone />
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <input
+                value={whatsappPreference.phoneNumber || ''}
+                onChange={(event) => setWhatsappPreference((current) => ({ ...current, phoneNumber: event.target.value }))}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
+                placeholder="WhatsApp number"
+                inputMode="tel"
+              />
+              <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700">
+                <span>Send matching jobs</span>
+                <input
+                  type="checkbox"
+                  checked={Boolean(whatsappPreference.isEnabled)}
+                  onChange={(event) => setWhatsappPreference((current) => ({ ...current, isEnabled: event.target.checked }))}
+                  className="h-4 w-4 accent-emerald-600"
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveWhatsAppPreference}
+                  disabled={whatsappSaving}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                >
+                  <FiSave size={13} />
+                  {whatsappSaving ? 'Saving' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendWhatsAppTest}
+                  disabled={whatsappTesting || !whatsappPreference.configured}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"
+                >
+                  <FiSend size={13} />
+                  {whatsappTesting ? 'Sending' : 'Test'}
+                </button>
+              </div>
+              {!whatsappPreference.configured ? (
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold leading-4 text-amber-800">
+                  Server WhatsApp provider is not configured yet.
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-[1.6rem] border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-navy">Job alert filters</h2>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-bold text-slate-500">
+                {jobAlerts.length}
+              </span>
+            </div>
+            <div className="mt-4 space-y-2.5">
+              <input
+                value={alertDraft.keywords}
+                onChange={(event) => updateAlertDraft('keywords', event.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 outline-none transition focus:border-brand-300 focus:bg-white"
+                placeholder="Skills or role"
+              />
+              <input
+                value={alertDraft.location}
+                onChange={(event) => updateAlertDraft('location', event.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 outline-none transition focus:border-brand-300 focus:bg-white"
+                placeholder="City, state, pincode"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  value={alertDraft.experienceLevel}
+                  onChange={(event) => updateAlertDraft('experienceLevel', event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-brand-300 focus:bg-white"
+                  placeholder="Experience"
+                />
+                <select
+                  value={alertDraft.employmentType}
+                  onChange={(event) => updateAlertDraft('employmentType', event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-brand-300 focus:bg-white"
+                >
+                  <option value="">Any type</option>
+                  <option value="Full-Time">Full-time</option>
+                  <option value="Part-Time">Part-time</option>
+                  <option value="Internship">Internship</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Remote">Remote</option>
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={handleCreateAlert}
+                disabled={alertSaving}
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#2d5bff] px-3 py-2 text-xs font-black text-white transition hover:bg-blue-700 disabled:opacity-60"
+              >
+                <FiBell size={13} />
+                {alertSaving ? 'Creating' : 'Create alert'}
+              </button>
+            </div>
+            {jobAlerts.length > 0 ? (
+              <div className="mt-4 space-y-2">
+                {jobAlerts.slice(0, 3).map((alert) => (
+                  <div key={alert.id} className="flex items-start justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-black text-slate-700">
+                        {(Array.isArray(alert.keywords) ? alert.keywords.join(', ') : alert.keywords) || 'Location alert'}
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-400">
+                        {alert.location || alert.employment_type || 'Any location'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAlert(alert.id)}
+                      className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-white hover:text-rose-600"
+                      title="Delete alert"
+                    >
+                      <FiTrash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         </aside>
 

@@ -367,6 +367,8 @@ const HrAtsPage = () => {
             <div>
               <p className="module-note">Keyword Score: {result.keywordScore}</p>
               <p className="module-note">Similarity Score: {result.similarityScore}</p>
+              <p className="module-note">Project Evidence: {result.projectEvidenceScore}</p>
+              <p className="module-note">Domain Fit: {result.domainFitScore}</p>
               <p className="module-note">Format Score: {result.formatScore}</p>
             </div>
             <div>

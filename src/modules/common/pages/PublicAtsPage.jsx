@@ -203,6 +203,8 @@ const PublicAtsPage = () => {
           </article>
           <ScoreCard label="Keyword" value={result.keywordScore} />
           <ScoreCard label="Similarity" value={result.similarityScore} />
+          <ScoreCard label="Project" value={result.projectEvidenceScore} />
+          <ScoreCard label="Domain" value={result.domainFitScore} />
           <ScoreCard label="Format" value={result.formatScore} />
         </section>
       ) : null}

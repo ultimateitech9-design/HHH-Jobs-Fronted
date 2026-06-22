@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiActivity,
   FiBarChart2,
+  FiBriefcase,
   FiCheck,
   FiCheckCircle,
   FiChevronDown,
@@ -98,25 +99,31 @@ const scoreCards = [
   { key: 'similarityScore', label: 'Role evidence', icon: FiTrendingUp },
   { key: 'titleScore', label: 'Title alignment', icon: FiTarget },
   { key: 'seniorityScore', label: 'Seniority fit', icon: FiActivity },
+  { key: 'projectEvidenceScore', label: 'Project evidence', icon: FiBriefcase },
+  { key: 'domainFitScore', label: 'Domain fit', icon: FiTarget },
   { key: 'formatScore', label: 'Format', icon: FiCheckCircle },
   { key: 'impactScore', label: 'Impact', icon: FiBarChart2 }
 ];
 
 const SCORING_MODEL = [
-  { label: 'Core skills', weight: '22%', key: 'mustHaveScore' },
-  { label: 'Keywords', weight: '18%', key: 'keywordScore' },
-  { label: 'Role evidence', weight: '18%', key: 'similarityScore' },
+  { label: 'Core skills', weight: '20%', key: 'mustHaveScore' },
+  { label: 'Keywords', weight: '14%', key: 'keywordScore' },
+  { label: 'Role evidence', weight: '16%', key: 'similarityScore' },
   { label: 'Seniority', weight: '10%', key: 'seniorityScore' },
-  { label: 'Title', weight: '8%', key: 'titleScore' },
-  { label: 'Benchmark', weight: '8%', key: 'benchmarkScore' },
-  { label: 'Format', weight: '8%', key: 'formatScore' },
-  { label: 'Impact', weight: '8%', key: 'impactScore' }
+  { label: 'Project evidence', weight: '10%', key: 'projectEvidenceScore' },
+  { label: 'Title', weight: '7%', key: 'titleScore' },
+  { label: 'Benchmark', weight: '7%', key: 'benchmarkScore' },
+  { label: 'Domain fit', weight: '6%', key: 'domainFitScore' },
+  { label: 'Format', weight: '5%', key: 'formatScore' },
+  { label: 'Impact', weight: '5%', key: 'impactScore' }
 ];
 
 const BUSINESS_FLAG_LABELS = {
   insufficient_core_skills: 'Core skill coverage is still below the target role requirements.',
   role_alignment_low: 'Resume title and positioning are weaker than the underlying project evidence.',
   evidence_quality_low: 'Impact evidence is light, so recruiter confidence may drop.',
+  project_evidence_low: 'Project/use-case evidence is too thin for the listed skills.',
+  domain_alignment_low: 'Domain context does not yet match the target role clearly.',
   seniority_gap: 'Experience depth looks below the role expectation.',
   possible_overqualification: 'Resume may look overqualified for this role.',
   low_analysis_confidence: 'ATS confidence is limited because the target or resume evidence is thin.'
@@ -134,6 +141,8 @@ const normalizeResult = (result = {}) => ({
   titleScore: Number(result.titleScore || 0),
   seniorityScore: Number(result.seniorityScore || 0),
   benchmarkScore: Number(result.benchmarkScore || 0),
+  projectEvidenceScore: Number(result.projectEvidenceScore || 0),
+  domainFitScore: Number(result.domainFitScore || 0),
   formatScore: Number(result.formatScore || 0),
   impactScore: Number(result.impactScore || 0),
   confidenceScore: Number(result.confidenceScore || 0),
@@ -146,6 +155,10 @@ const normalizeResult = (result = {}) => ({
   warnings: Array.isArray(result.warnings) ? result.warnings : [],
   suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
   sectionCoverage: Array.isArray(result.sectionCoverage) ? result.sectionCoverage : [],
+  projectEvidenceLines: Array.isArray(result.projectEvidenceLines) ? result.projectEvidenceLines : [],
+  projectMatchedKeywords: Array.isArray(result.projectMatchedKeywords) ? result.projectMatchedKeywords : [],
+  matchedDomains: Array.isArray(result.matchedDomains) ? result.matchedDomains : [],
+  missingDomains: Array.isArray(result.missingDomains) ? result.missingDomains : [],
   riskFlags: Array.isArray(result.riskFlags) ? result.riskFlags : [],
   businessLogicFlags: Array.isArray(result.businessLogicFlags) ? result.businessLogicFlags : [],
   priorityActions: Array.isArray(result.priorityActions) ? result.priorityActions : [],
@@ -978,6 +991,18 @@ const StudentAtsPage = () => {
                       <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Role benchmark</p>
                       <div className="mt-2">
                         <ChipList items={result.benchmarkKeywords} tone="sky" emptyText="No role benchmark keywords were needed." />
+                      </div>
+                    </div>
+                    <div className="rounded-[0.95rem] border border-slate-100 bg-slate-50 p-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Project proof</p>
+                      <div className="mt-2">
+                        <ChipList items={result.projectMatchedKeywords} tone="emerald" emptyText="No project-linked keywords detected." />
+                      </div>
+                    </div>
+                    <div className="rounded-[0.95rem] border border-slate-100 bg-slate-50 p-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Domain fit</p>
+                      <div className="mt-2">
+                        <ChipList items={result.matchedDomains.length ? result.matchedDomains : result.missingDomains} tone={result.matchedDomains.length ? 'emerald' : 'amber'} emptyText="No domain-specific requirement detected." />
                       </div>
                     </div>
                   </div>
