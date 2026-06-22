@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import SectionHeader from '../../../shared/components/SectionHeader';
 import StatCard from '../../../shared/components/StatCard';
-import { fetchHrCampusDriveApplications, fetchHrCampusDrives, getHrAnalytics } from '../services/hrApi';
+import {
+  fetchHrCampusDriveApplications,
+  fetchHrCampusDrives,
+  getHrAnalytics,
+  getHrCandidateFitRanking,
+  getHrJobs
+} from '../services/hrApi';
 
 const emptyPipeline = {
   applied: 0,
@@ -48,16 +54,19 @@ const mergePipelines = (...pipelines) =>
   }, { ...emptyPipeline });
 
 const HrAnalyticsPage = () => {
-  const [state, setState] = useState({ loading: true, error: '', isDemo: false, analytics: null, campusPipeline: { ...emptyPipeline }, campusDrives: 0 });
+  const [state, setState] = useState({ loading: true, error: '', isDemo: false, analytics: null, campusPipeline: { ...emptyPipeline }, campusDrives: 0, jobs: [] });
   const [reportFilter, setReportFilter] = useState('all');
+  const [selectedJobId, setSelectedJobId] = useState('');
+  const [rankingState, setRankingState] = useState({ loading: false, error: '', ranking: null });
 
   useEffect(() => {
     let mounted = true;
 
     const load = async () => {
-      const [response, campusDrivesResponse] = await Promise.all([
+      const [response, campusDrivesResponse, jobsResponse] = await Promise.all([
         getHrAnalytics(),
-        fetchHrCampusDrives()
+        fetchHrCampusDrives(),
+        getHrJobs()
       ]);
       if (!mounted) return;
 
@@ -77,8 +86,10 @@ const HrAnalyticsPage = () => {
         isDemo: response.isDemo,
         analytics: response.data,
         campusPipeline,
-        campusDrives: campusDrives.length
+        campusDrives: campusDrives.length,
+        jobs: jobsResponse.data || []
       });
+      setSelectedJobId((current) => current || jobsResponse.data?.[0]?.id || '');
     };
 
     load();
@@ -87,6 +98,28 @@ const HrAnalyticsPage = () => {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!selectedJobId) {
+      setRankingState({ loading: false, error: '', ranking: null });
+      return () => { mounted = false; };
+    }
+
+    setRankingState((current) => ({ ...current, loading: true, error: '' }));
+    getHrCandidateFitRanking({ jobId: selectedJobId }).then((response) => {
+      if (!mounted) return;
+      setRankingState({
+        loading: false,
+        error: response.error || '',
+        ranking: response.data
+      });
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [selectedJobId]);
 
   const cards = useMemo(() => {
     const analytics = state.analytics || {
@@ -163,6 +196,77 @@ const HrAnalyticsPage = () => {
           <StatCard key={card.label} {...card} />
         ))}
       </div>
+
+      <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">AI Ranking</p>
+            <h2 className="mt-1 text-lg font-extrabold leading-tight text-navy">Candidate fit and predictive hiring score</h2>
+            <p className="mt-1 text-sm text-slate-500">Transparent score using ATS fit, profile readiness, stage movement, verification, and recency.</p>
+          </div>
+          <select
+            value={selectedJobId}
+            onChange={(event) => setSelectedJobId(event.target.value)}
+            className="h-10 min-w-[240px] rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+          >
+            {(state.jobs || []).length === 0 ? <option value="">No jobs found</option> : null}
+            {(state.jobs || []).map((job) => (
+              <option key={job.id || job._id} value={job.id || job._id}>
+                {job.jobTitle || job.title || 'Untitled job'}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {rankingState.loading ? <p className="module-note">Ranking candidates...</p> : null}
+        {rankingState.error ? <p className="form-error">{rankingState.error}</p> : null}
+        {rankingState.ranking ? (
+          <div className="grid gap-4 lg:grid-cols-[0.7fr_1.3fr]">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              {[
+                ['Candidates', rankingState.ranking.summary?.totalCandidates || 0],
+                ['Avg predictive score', `${rankingState.ranking.summary?.averagePredictiveScore || 0}%`],
+                ['Strong interview', rankingState.ranking.summary?.strongInterview || 0],
+                ['Manual review', rankingState.ranking.summary?.manualReview || 0]
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
+                  <p className="mt-1 text-2xl font-black text-navy">{value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                  <tr>
+                    <th className="py-2 pr-3">Rank</th>
+                    <th className="py-2 pr-3">Candidate</th>
+                    <th className="py-2 pr-3">Predictive</th>
+                    <th className="py-2 pr-3">ATS</th>
+                    <th className="py-2 pr-3">Band</th>
+                    <th className="py-2">Next Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(rankingState.ranking.rankedCandidates || []).slice(0, 8).map((candidate) => (
+                    <tr key={candidate.applicationId}>
+                      <td className="py-3 pr-3 font-black text-slate-500">#{candidate.rank}</td>
+                      <td className="py-3 pr-3">
+                        <p className="font-bold text-navy">{candidate.candidateName}</p>
+                        <p className="text-xs text-slate-400">{candidate.candidateEmail}</p>
+                      </td>
+                      <td className="py-3 pr-3 font-black text-emerald-700">{candidate.predictiveHiringScore}%</td>
+                      <td className="py-3 pr-3 font-bold text-slate-700">{candidate.atsScore}%</td>
+                      <td className="py-3 pr-3 text-xs font-bold text-slate-600">{candidate.hiringBand}</td>
+                      <td className="py-3 text-xs leading-5 text-slate-500">{candidate.nextBestAction}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null}
+      </section>
 
       <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">

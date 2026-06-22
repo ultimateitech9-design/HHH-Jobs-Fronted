@@ -3,6 +3,7 @@ import {
   FiActivity,
   FiBarChart2,
   FiCheckCircle,
+  FiCpu,
   FiFileText,
   FiTarget,
   FiTrendingUp
@@ -13,7 +14,7 @@ import {
   StudentPageShell,
   StudentSurfaceCard
 } from '../components/StudentExperience';
-import { getStudentAnalytics } from '../services/studentApi';
+import { getStudentAnalytics, getStudentCareerCopilot } from '../services/studentApi';
 
 const stageLabelMap = {
   applied: 'Applied',
@@ -36,20 +37,26 @@ const stageToneMap = {
 };
 
 const StudentAnalyticsPage = () => {
-  const [state, setState] = useState({ loading: true, error: '', isDemo: false, analytics: null });
+  const [state, setState] = useState({ loading: true, error: '', isDemo: false, analytics: null, copilot: null });
+  const [copilotQuestion, setCopilotQuestion] = useState('');
+  const [copilotAnswer, setCopilotAnswer] = useState({ loading: false, error: '', text: '' });
 
   useEffect(() => {
     let mounted = true;
 
     const loadAnalytics = async () => {
-      const response = await getStudentAnalytics();
+      const [response, copilotResponse] = await Promise.all([
+        getStudentAnalytics(),
+        getStudentCareerCopilot({ ai: false })
+      ]);
       if (!mounted) return;
 
       setState({
         loading: false,
         error: response.error && !response.isDemo ? response.error : '',
         isDemo: response.isDemo,
-        analytics: response.data
+        analytics: response.data,
+        copilot: copilotResponse.data
       });
     };
 
@@ -59,6 +66,20 @@ const StudentAnalyticsPage = () => {
       mounted = false;
     };
   }, []);
+
+  const askCopilot = async (event) => {
+    event.preventDefault();
+    const question = copilotQuestion.trim();
+    if (!question) return;
+
+    setCopilotAnswer({ loading: true, error: '', text: '' });
+    const response = await getStudentCareerCopilot({ question, ai: true });
+    setCopilotAnswer({
+      loading: false,
+      error: response.error || '',
+      text: response.data?.answer || ''
+    });
+  };
 
   const pipeline = state.analytics?.pipeline || {
     applied: 0,
@@ -139,7 +160,75 @@ const StudentAnalyticsPage = () => {
           ))}
         </div>
       ) : state.analytics ? (
-        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="space-y-6">
+          {state.copilot ? (
+            <StudentSurfaceCard
+              eyebrow="Career Copilot"
+              title="Next best moves from your profile, jobs, and ATS signals"
+              subtitle={`${state.copilot.snapshot?.readinessScore || 0}% readiness · ${state.copilot.snapshot?.topMatchPercent || 0}% top job match`}
+            >
+              <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
+                <div className="space-y-3">
+                  {(state.copilot.actionPlan || []).slice(0, 3).map((item) => (
+                    <div key={item.title} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                      <div className="flex items-start gap-3">
+                        <span className={`mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${item.priority === 'high' ? 'bg-rose-100 text-rose-700' : 'bg-sky-100 text-sky-700'}`}>
+                          <FiCpu size={15} />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-bold leading-snug text-slate-900">{item.title}</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">{item.reason}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {(item.steps || []).slice(0, 3).map((step) => (
+                              <span key={step} className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-500 shadow-sm">
+                                {step}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <form onSubmit={askCopilot} className="space-y-3">
+                    <label className="block text-[11px] font-black uppercase tracking-[0.18em] text-slate-400" htmlFor="career-copilot-question">
+                      Ask Career Copilot
+                    </label>
+                    <textarea
+                      id="career-copilot-question"
+                      value={copilotQuestion}
+                      onChange={(event) => setCopilotQuestion(event.target.value)}
+                      rows={3}
+                      className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm leading-6 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+                      placeholder="Example: mere liye next 7 din ka plan banao"
+                    />
+                    <button type="submit" disabled={copilotAnswer.loading} className="inline-flex h-10 items-center justify-center rounded-full bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60">
+                      {copilotAnswer.loading ? 'Thinking...' : 'Ask'}
+                    </button>
+                  </form>
+                  {copilotAnswer.error ? <p className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{copilotAnswer.error}</p> : null}
+                  {copilotAnswer.text ? (
+                    <div className="mt-4 whitespace-pre-line rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+                      {copilotAnswer.text}
+                    </div>
+                  ) : (
+                    <div className="mt-4 space-y-2">
+                      {(state.copilot.skillGaps?.missing || []).slice(0, 5).map((gap) => (
+                        <div key={gap.skill} className="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+                          <span>{gap.skill}</span>
+                          <span>{gap.count} roles</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </StudentSurfaceCard>
+          ) : null}
+
+          <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
           <StudentSurfaceCard
             eyebrow="Pipeline"
             title="Stage-by-stage application spread"
@@ -201,6 +290,7 @@ const StudentAnalyticsPage = () => {
                 </li>
               </ul>
             </StudentSurfaceCard>
+          </div>
           </div>
         </div>
       ) : (

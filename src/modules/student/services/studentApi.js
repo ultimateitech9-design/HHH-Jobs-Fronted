@@ -1124,6 +1124,35 @@ export const getStudentAnalytics = async () =>
     extract: (payload) => payload?.analytics || {}
   });
 
+export const getStudentCareerCopilot = async ({ question = '', ai = true } = {}) => {
+  const params = new URLSearchParams();
+  if (question) params.set('question', question);
+  if (ai === false) params.set('ai', 'false');
+
+  return safeRequest({
+    path: `/ai/student/career-copilot${params.toString() ? `?${params.toString()}` : ''}`,
+    emptyData: {
+      generatedAt: null,
+      aiPowered: false,
+      answer: '',
+      snapshot: {
+        readinessScore: 0,
+        applications: 0,
+        positiveApplicationMovement: 0,
+        recommendations: 0,
+        topMatchPercent: 0,
+        profileImprovements: []
+      },
+      actionPlan: [],
+      skillGaps: { matched: [], missing: [] },
+      topAtsSignals: [],
+      recommendations: [],
+      ragContext: { knowledgeSources: [] }
+    },
+    extract: (payload) => payload?.copilot || {}
+  });
+};
+
 export const getStudentNotifications = async () =>
   safeRequest({
     path: '/notifications',

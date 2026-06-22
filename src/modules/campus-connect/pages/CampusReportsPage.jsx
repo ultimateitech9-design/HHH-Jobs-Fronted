@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import {
   FiAward,
   FiCheckCircle,
+  FiCpu,
   FiDownload,
   FiRefreshCw,
   FiTrendingUp,
   FiUsers
 } from 'react-icons/fi';
-import { exportPlacementReport, getCampusStats } from '../services/campusConnectApi';
+import { exportPlacementReport, getCampusPlacementAnalytics, getCampusStats } from '../services/campusConnectApi';
 import FeatureGate from '../../../shared/components/FeatureGate';
 
 const empty = {
@@ -18,6 +19,7 @@ const empty = {
 
 export default function CampusReportsPage() {
   const [stats, setStats] = useState(empty);
+  const [placementIntel, setPlacementIntel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
@@ -25,10 +27,11 @@ export default function CampusReportsPage() {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    getCampusStats().then(({ data, error: err }) => {
+    Promise.all([getCampusStats(), getCampusPlacementAnalytics()]).then(([statsResponse, intelResponse]) => {
       if (!mounted) return;
-      setStats({ ...empty, ...(data || {}) });
-      setError(err || '');
+      setStats({ ...empty, ...(statsResponse.data || {}) });
+      setPlacementIntel(intelResponse.data || null);
+      setError(statsResponse.error || intelResponse.error || '');
       setLoading(false);
     });
     return () => { mounted = false; };
@@ -112,6 +115,55 @@ export default function CampusReportsPage() {
           </div>
         ))}
       </div>
+
+      {placementIntel ? (
+        <div className="rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.10)]">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">Placement Intelligence</p>
+              <h2 className="mt-1 text-lg font-bold text-navy">Predictive placement health</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-500">Student outcomes, drive supply, branch gaps, and employer outreach actions in one view.</p>
+            </div>
+            <span className="inline-flex h-10 items-center gap-2 rounded-full bg-brand-50 px-4 text-xs font-black text-brand-700">
+              <FiCpu size={15} />
+              {placementIntel.summary?.placementRate || 0}% health
+            </span>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+            <div className="space-y-3">
+              {(placementIntel.insights || []).slice(0, 4).map((insight) => (
+                <div key={insight} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
+                  {insight}
+                </div>
+              ))}
+              <div className="grid gap-3 sm:grid-cols-3">
+                {(placementIntel.nextBestActions || []).slice(0, 3).map((action) => (
+                  <div key={action.title} className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                    <p className="text-sm font-bold text-blue-950">{action.title}</p>
+                    <p className="mt-1 text-xs font-semibold text-blue-700">{action.owner}</p>
+                    <p className="mt-2 text-xs leading-5 text-blue-800">{action.impact}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Demand Signals</p>
+              <div className="mt-3 space-y-2">
+                {(placementIntel.demandSignals || []).length === 0 ? (
+                  <p className="text-sm text-slate-500">Drive demand signals will appear after branch eligibility data is available.</p>
+                ) : placementIntel.demandSignals.slice(0, 6).map((signal) => (
+                  <div key={signal.label} className="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-sm">
+                    <span className="font-bold text-slate-700">{signal.label}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-black text-slate-500">{signal.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Branch-wise full table */}
       <div className="rounded-[1.75rem] border border-slate-100 bg-white p-6 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.10)]">

@@ -3,7 +3,7 @@ import { FiArrowRight, FiCheckCircle, FiClock, FiCreditCard, FiPhoneCall, FiUser
 import { Link } from 'react-router-dom';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
-import { getSalesOverview, getSalesReferralCode } from '../services/salesApi';
+import { getSalesOverview, getSalesReferralCode, getSalesRevenueAutomation } from '../services/salesApi';
 import { formatCompactCurrency } from '../utils/currencyFormat';
 
 const formatNumber = (value) => Number(value || 0).toLocaleString('en-IN');
@@ -30,12 +30,14 @@ const queueToneClass = {
 const SalesOverview = () => {
   const [state, setState] = useState({ loading: true, error: '', overview: null });
   const [referral, setReferral] = useState({ salesCode: '', assignedStates: [], shareText: '' });
+  const [automation, setAutomation] = useState(null);
 
   useEffect(() => {
     const load = async () => {
-      const [overviewRes, referralRes] = await Promise.all([
+      const [overviewRes, referralRes, automationRes] = await Promise.all([
         getSalesOverview(),
-        getSalesReferralCode()
+        getSalesReferralCode(),
+        getSalesRevenueAutomation()
       ]);
       setState({
         loading: false,
@@ -43,6 +45,7 @@ const SalesOverview = () => {
         overview: overviewRes.data
       });
       setReferral(referralRes.data || { salesCode: '', assignedStates: [], shareText: '' });
+      setAutomation(automationRes.data || null);
     };
 
     load();
@@ -130,6 +133,70 @@ const SalesOverview = () => {
           ) : null}
 
           <DashboardMetricCards cards={cards} />
+
+          {automation ? (
+            <DashboardSectionCard
+              eyebrow="Revenue Automation"
+              title="Next best actions for growth"
+              subtitle={`${formatCompactCurrency(automation.summary?.forecastNext30 || 0)} forecast next 30 days · ${formatCompactCurrency(automation.summary?.pendingPaymentValue || 0)} pending recovery`}
+            >
+              <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[
+                    ['Forecast', formatCompactCurrency(automation.summary?.forecastNext30 || 0), 'Next 30 days'],
+                    ['Open leads', formatNumber(automation.summary?.openLeads || 0), `${automation.summary?.conversionRate || 0}% conversion`],
+                    ['Pending value', formatCompactCurrency(automation.summary?.pendingPaymentValue || 0), 'Recovery queue'],
+                    ['Active subs', formatNumber(automation.summary?.activeSubscriptions || 0), 'Renewal base']
+                  ].map(([label, value, helper]) => (
+                    <div key={label} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
+                      <p className="mt-1 text-xl font-black text-navy">{value}</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">{helper}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-3">
+                  {(automation.automationActions || []).slice(0, 3).map((action) => (
+                    <div key={action.title} className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black text-emerald-950">{action.title}</p>
+                          <p className="mt-1 text-xs font-semibold text-emerald-700">{action.impact}</p>
+                        </div>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                          {action.channel}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <div className="rounded-lg border border-slate-100 bg-white p-3">
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Priority Leads</p>
+                  {(automation.priorityLeads || []).slice(0, 5).map((lead) => (
+                    <div key={lead.id} className="flex items-center justify-between gap-3 border-t border-slate-100 py-2 first:border-t-0">
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-bold text-navy">{lead.companyName || lead.contactName || 'Lead'}</span>
+                        <span className="block truncate text-xs font-semibold text-slate-500">{lead.reason}</span>
+                      </span>
+                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700">{lead.priorityScore}%</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-lg border border-slate-100 bg-white p-3">
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Revenue Risks</p>
+                  {(automation.revenueRisks || []).length === 0 ? (
+                    <p className="text-sm text-slate-500">No major revenue risk detected from current signals.</p>
+                  ) : automation.revenueRisks.slice(0, 4).map((risk) => (
+                    <p key={risk} className="border-t border-slate-100 py-2 text-sm leading-5 text-slate-600 first:border-t-0">{risk}</p>
+                  ))}
+                </div>
+              </div>
+            </DashboardSectionCard>
+          ) : null}
 
           <DashboardSectionCard
             eyebrow="Work Queue"

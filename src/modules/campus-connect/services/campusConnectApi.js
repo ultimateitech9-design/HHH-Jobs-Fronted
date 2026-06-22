@@ -199,6 +199,33 @@ export const deleteCampusConnection = (id) =>
 export const getCampusStats = () =>
   safeRequest({ path: '/campus-connect/stats', emptyData: {}, extract: (p) => p.stats || {} });
 
+export const getCampusPlacementAnalytics = () =>
+  safeRequest({
+    path: '/ai/campus/placement-analytics',
+    emptyData: {
+      generatedAt: null,
+      summary: {
+        totalStudents: 0,
+        placedStudents: 0,
+        unplacedStudents: 0,
+        placementRate: 0,
+        avgSalary: 0,
+        highestSalary: 0,
+        totalDrives: 0,
+        completedDrives: 0,
+        upcomingDrives: 0,
+        totalApplications: 0,
+        acceptedConnections: 0
+      },
+      branchStats: [],
+      applicationPipeline: {},
+      demandSignals: [],
+      insights: [],
+      nextBestActions: []
+    },
+    extract: (p) => p.analytics || {}
+  });
+
 // ── Reports ───────────────────────────────────────────────────────────────────
 export const exportPlacementReport = async () => {
   const response = await apiFetch('/campus-connect/reports/export');

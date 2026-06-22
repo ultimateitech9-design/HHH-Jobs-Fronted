@@ -608,6 +608,39 @@ export const getHrAnalytics = async () =>
     extract: (payload) => payload?.analytics || {}
   });
 
+export const getHrCandidateFitRanking = async ({ jobId = '', ai = false } = {}) => {
+  if (!jobId) {
+    return {
+      data: {
+        generatedAt: null,
+        aiPowered: false,
+        aiSummary: '',
+        job: null,
+        summary: { totalCandidates: 0, highConfidence: 0, strongInterview: 0, manualReview: 0, averagePredictiveScore: 0, averageAtsScore: 0 },
+        rankedCandidates: [],
+        model: null
+      },
+      isDemo: false,
+      error: ''
+    };
+  }
+
+  const query = buildQueryString({ ai: ai ? 'true' : '' });
+  return safeRequest({
+    path: `/ai/hr/candidate-fit-ranking/${extractUuidFromSlug(jobId)}${query ? `?${query}` : ''}`,
+    emptyData: {
+      generatedAt: null,
+      aiPowered: false,
+      aiSummary: '',
+      job: null,
+      summary: { totalCandidates: 0, highConfidence: 0, strongInterview: 0, manualReview: 0, averagePredictiveScore: 0, averageAtsScore: 0 },
+      rankedCandidates: [],
+      model: null
+    },
+    extract: (payload) => payload?.ranking || {}
+  });
+};
+
 export const getHrRecentActivity = async () =>
   safeRequest({
     path: '/hr/recent-activity',

@@ -172,6 +172,30 @@ export const getSalesOverview = async () =>
     }
   });
 
+export const getSalesRevenueAutomation = async () =>
+  safeRequest({
+    path: '/ai/sales/revenue-automation',
+    emptyData: {
+      generatedAt: null,
+      summary: {
+        totalLeads: 0,
+        openLeads: 0,
+        convertedLeads: 0,
+        conversionRate: 0,
+        totalRevenue: 0,
+        monthlyRevenue: 0,
+        forecastNext30: 0,
+        pendingPaymentValue: 0,
+        activeSubscriptions: 0
+      },
+      priorityLeads: [],
+      automationActions: [],
+      revenueRisks: [],
+      playbooks: []
+    },
+    extract: (payload) => payload?.automation || {}
+  });
+
 export const getSalesTeam = async () =>
   safeRequest({
     path: `${SALES_BASE}/team`,
