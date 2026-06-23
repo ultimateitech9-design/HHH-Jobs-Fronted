@@ -2,6 +2,8 @@ User-agent: *
 Allow: /
 
 # Keep public marketing and discovery pages crawlable for SEO.
+# AI/GEO discovery map: https://hhh-jobs.com/llms.txt
+# IndexNow verification key: https://hhh-jobs.com/9e643b2a4e3245fcaef18e7a2c5479d1.txt
 
 # Block private portals, admin surfaces, and security-related areas.
 Disallow: /portal/

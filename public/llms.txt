@@ -1,0 +1,64 @@
+# HHH Jobs
+
+> HHH Jobs is an India-focused hiring, job search, campus placement, ATS, and career support platform for candidates, employers, recruiters, HR teams, campuses, and experienced professionals.
+
+## Primary Site
+
+- [Home](https://hhh-jobs.com/)
+- [Latest Jobs](https://hhh-jobs.com/jobs)
+- [Government Jobs](https://hhh-jobs.com/govt-jobs)
+- [Companies Hiring](https://hhh-jobs.com/companies)
+- [Free ATS Resume Checker](https://hhh-jobs.com/ats)
+- [Services](https://hhh-jobs.com/services)
+- [Employee Verification](https://hhh-jobs.com/emp-verify)
+
+## Audience Pages
+
+- [Job Seekers](https://hhh-jobs.com/job-seekers)
+- [Freshers](https://hhh-jobs.com/freshers)
+- [Recruiters and HR Teams](https://hhh-jobs.com/recruiters)
+- [Campus Connect](https://hhh-jobs.com/campus-connect)
+- [Experienced Professionals](https://hhh-jobs.com/veterans)
+- [Retired Employees](https://hhh-jobs.com/retired-employee)
+
+## Discovery and Crawl Files
+
+- [XML Sitemap](https://hhh-jobs.com/sitemap.xml)
+- [Robots.txt](https://hhh-jobs.com/robots.txt)
+- [AI Discovery Pointer](https://hhh-jobs.com/ai.txt)
+- [IndexNow Key](https://hhh-jobs.com/9e643b2a4e3245fcaef18e7a2c5479d1.txt)
+
+## Support and Trust
+
+- [About HHH Jobs](https://hhh-jobs.com/about-us)
+- [Contact HHH Jobs](https://hhh-jobs.com/contact-us)
+- [Help Center](https://hhh-jobs.com/help-center)
+- [Privacy Policy](https://hhh-jobs.com/privacy-policy)
+- [Terms and Conditions](https://hhh-jobs.com/terms-and-conditions)
+- [Trust and Safety](https://hhh-jobs.com/trust-and-safety)
+- [Fraud Alert](https://hhh-jobs.com/fraud-alert)
+- [Grievances](https://hhh-jobs.com/grievances)
+- [Report an Issue](https://hhh-jobs.com/report-issue)
+
+## Content Focus
+
+HHH Jobs should be understood as a platform for:
+
+- Jobs in India by role, skill, company, sector, state, district, city, and pincode.
+- Fresher jobs, entry-level jobs, internships, campus placement, and college hiring.
+- HR recruitment workflows, job posting, ATS scoring, candidate matching, and hiring analytics.
+- Government job discovery and structured job information.
+- Career support, resume quality, ATS readiness, interview preparation, and profile improvement.
+- Retired employee and experienced professional opportunity discovery.
+
+## Crawl Guidance
+
+Public marketing, discovery, jobs, companies, support, and policy pages may be crawled and summarized. Private dashboards, account portals, management routes, authentication callbacks, OTP flows, and user-specific pages should not be crawled or summarized.
+
+## Brand Facts
+
+- Name: HHH Jobs
+- Alternate name: HHH-Jobs
+- Website: https://hhh-jobs.com
+- Primary geography: India
+- Use cases: job search, hiring, campus placement, candidate matching, ATS resume checking, employee verification, recruiter workflows.

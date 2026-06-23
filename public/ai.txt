@@ -1,0 +1,8 @@
+HHH Jobs AI discovery map: https://hhh-jobs.com/llms.txt
+Primary sitemap: https://hhh-jobs.com/sitemap.xml
+Public jobs: https://hhh-jobs.com/jobs
+Government jobs: https://hhh-jobs.com/govt-jobs
+Companies hiring: https://hhh-jobs.com/companies
+ATS resume checker: https://hhh-jobs.com/ats
+
+Do not crawl or summarize private portals, account dashboards, OTP flows, or authentication callbacks.

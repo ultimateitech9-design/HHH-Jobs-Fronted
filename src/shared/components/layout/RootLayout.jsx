@@ -10,6 +10,7 @@ import {
   writeMaintenanceModeSnapshot
 } from '../../utils/maintenanceMode';
 import PublicNavbar from './publicShell/PublicNavbar';
+import PublicSeo from '../seo/PublicSeo';
 
 const AiChatbot = lazy(() => import('../../../components/AiChatbot'));
 const NotificationRuntime = lazy(() => import('../../../core/notifications/NotificationRuntime'));
@@ -155,6 +156,8 @@ const RootLayout = () => {
       className="min-h-screen overflow-x-clip font-sans text-slate-900"
       style={isPortalWorkbench ? undefined : publicShellStyle}
     >
+      <PublicSeo isPortalWorkbench={isPortalWorkbench} />
+
       {shouldMountPublicShell ? (
         <PublicNavbar user={user} dashboardPath={dashboardPath} onLogout={handleLogout} />
       ) : null}
