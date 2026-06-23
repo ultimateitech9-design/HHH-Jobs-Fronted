@@ -84,6 +84,8 @@ export const API_BASE_URL = String(
   shouldIgnoreConfiguredLocalhost ? effectiveFallbackBase : (configuredApiBase || runtimeFallbackBase)
 ).replace(/\/+$/, '');
 export const AUTH_REQUEST_TIMEOUT_MS = 60000;
+const API_GET_CACHE_TTL_MS = 15_000;
+const apiGetCache = new Map();
 
 export const apiUrl = (path = '') => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -150,6 +152,59 @@ const shouldAttachSupportSubject = (path = '') => {
   return true;
 };
 
+const getHeaderValue = (headers = {}, key = '') => {
+  const normalizedKey = String(key || '').toLowerCase();
+  const foundKey = Object.keys(headers).find((item) => item.toLowerCase() === normalizedKey);
+  return foundKey ? headers[foundKey] : '';
+};
+
+const getApiCacheKey = ({ targetUrl, method, headers }) => {
+  if (method !== 'GET') return '';
+  return [
+    targetUrl,
+    getHeaderValue(headers, 'Authorization'),
+    getHeaderValue(headers, 'X-HHH-Auth-Token'),
+    getHeaderValue(headers, 'X-HHH-Dev-User'),
+    getHeaderValue(headers, 'X-HHH-Support-Subject-User-Id')
+  ].join('|');
+};
+
+const makeCachedResponse = (entry) => new Response(entry.body.slice(0), {
+  status: entry.status,
+  statusText: entry.statusText,
+  headers: entry.headers
+});
+
+const readCachedResponse = (cacheKey) => {
+  if (!cacheKey) return null;
+  const entry = apiGetCache.get(cacheKey);
+  if (!entry) return null;
+  if (Date.now() - entry.createdAt > API_GET_CACHE_TTL_MS) {
+    apiGetCache.delete(cacheKey);
+    return null;
+  }
+  return makeCachedResponse(entry);
+};
+
+const writeCachedResponse = async (cacheKey, response) => {
+  if (!cacheKey || !response?.ok) return;
+  try {
+    apiGetCache.set(cacheKey, {
+      createdAt: Date.now(),
+      status: response.status,
+      statusText: response.statusText,
+      headers: Array.from(response.headers.entries()),
+      body: await response.clone().arrayBuffer()
+    });
+  } catch (error) {
+    apiGetCache.delete(cacheKey);
+  }
+};
+
+export const clearApiGetCache = () => {
+  apiGetCache.clear();
+};
+
 export const setSupportSubjectUserId = (userId = '') => {
   if (typeof window === 'undefined') return;
   const normalizedUserId = String(userId || '').trim();
@@ -169,6 +224,7 @@ export const apiFetch = async (path, options = {}) => {
     clearAuthOnUnauthorized = true,
     ...fetchOptions
   } = options;
+  const method = String(fetchOptions.method || 'GET').toUpperCase();
   const shouldUseApiAuth = !skipAuth && hasUsableApiToken(token);
   const headers = { ...(fetchOptions.headers || {}) };
 
@@ -207,6 +263,11 @@ export const apiFetch = async (path, options = {}) => {
   );
 
   const targetUrl = apiUrl(path);
+  const cacheKey = getApiCacheKey({ targetUrl, method, headers });
+  const cachedResponse = readCachedResponse(cacheKey);
+  if (cachedResponse) return cachedResponse;
+  if (method !== 'GET') clearApiGetCache();
+
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
   const timeoutId = controller && timeoutMs > 0 ? globalThis.setTimeout(() => controller.abort(), timeoutMs) : null;
 
@@ -219,9 +280,11 @@ export const apiFetch = async (path, options = {}) => {
   try {
     response = await fetch(targetUrl, {
       ...fetchOptions,
+      method,
       headers,
       signal: controller?.signal || callerSignal
     });
+    await writeCachedResponse(cacheKey, response);
   } catch (error) {
     if (timeoutId) globalThis.clearTimeout(timeoutId);
     if (error?.name === 'AbortError') {

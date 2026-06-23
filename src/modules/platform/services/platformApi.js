@@ -1,4 +1,5 @@
 import { apiFetch, areDemoFallbacksEnabled } from '../../../utils/api';
+import { formatDateTime as formatSharedDateTime } from '../../../shared/utils/dateTime';
 
 const parseJson = async (response) => {
   try {
@@ -677,8 +678,6 @@ export const savePlatformCustomization = async (tenantId, payload) =>
   );
 
 export const formatDateTime = (value) => {
-  if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleString();
+  const formatted = formatSharedDateTime(value);
+  return formatted === '-' && value ? String(value) : formatted;
 };

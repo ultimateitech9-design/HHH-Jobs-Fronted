@@ -1,4 +1,5 @@
 import { apiFetch } from '../../../utils/api';
+import { formatDateTime as formatSharedDateTime } from '../../../shared/utils/dateTime';
 
 const DATA_ENTRY_BASE = '/dataentry';
 
@@ -210,10 +211,8 @@ export const formatPropertyEntryPayload = (draft = {}) => ({
 });
 
 export const formatDateTime = (value) => {
-  if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleString();
+  const formatted = formatSharedDateTime(value);
+  return formatted === '-' && value ? String(value) : formatted;
 };
 
 const emptyDashboard = {

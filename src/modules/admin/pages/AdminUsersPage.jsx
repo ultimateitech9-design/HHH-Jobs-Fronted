@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { 
   FiUsers, 
   FiSearch, 
@@ -16,6 +16,7 @@ import {
   FiEyeOff
 } from 'react-icons/fi';
 import {
+  formatDateTime,
   getAdminUsers,
   updateAdminHrApproval,
   updateAdminUserStatus
@@ -62,10 +63,13 @@ const ADMIN_MANAGED_ROLE_OPTIONS = [
   { value: 'sales', label: 'Sales' }
 ];
 
-const toApiFilters = (filters) => ({
+const toApiFilters = (filters, page = 1) => ({
   role: filters.role === 'all' ? '' : filters.role,
   status: filters.status === 'all' ? '' : filters.status,
-  search: filters.search
+  search: filters.search,
+  approved: filters.hrClearance === 'verified' ? 'true' : (filters.hrClearance === 'pending' ? 'false' : ''),
+  page,
+  limit: USERS_PAGE_SIZE
 });
 
 const getStatusBadge = (status) => {
@@ -80,6 +84,8 @@ const getStatusBadge = (status) => {
 
 const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [responseLimit, setResponseLimit] = useState(USERS_PAGE_SIZE);
   const [managedAccounts, setManagedAccounts] = useState([]);
   const [filters, setFilters] = useState(initialFilters);
   const [loading, setLoading] = useState(true);
@@ -106,26 +112,30 @@ const AdminUsersPage = () => {
     : '';
   const showAuthKeyValidationMessage = accountFormTouched.password && Boolean(authKeyPolicyError);
   const authKeyValidationMessage = authKeyPolicyError || PASSWORD_POLICY_HELPER;
+  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
 
-  const loadUsers = async (nextFilters = filters) => {
+  const loadUsers = async (nextFilters = filters, nextPage = securityPage) => {
     setLoading(true);
     setError('');
 
-    const response = await getAdminUsers(toApiFilters(nextFilters));
-    setUsers(response.data || []);
+    const response = await getAdminUsers(toApiFilters(nextFilters, nextPage));
+    const payload = response.data || {};
+    setUsers(payload.users || []);
+    setTotalUsers(Number(payload.total || 0));
+    setResponseLimit(Number(payload.limit || USERS_PAGE_SIZE) || USERS_PAGE_SIZE);
     setManagedAccounts(getManagedAccounts());
     setError(response.error || '');
     setLoading(false);
   };
 
   useEffect(() => {
-    loadUsers(initialFilters);
+    loadUsers({ ...filters, search: deferredSearch }, securityPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [filters.role, filters.status, filters.hrClearance, deferredSearch, securityPage]);
 
   useEffect(() => {
     const handleUsersChanged = () => {
-      loadUsers(filters);
+      loadUsers({ ...filters, search: deferredSearch }, securityPage);
     };
 
     window.addEventListener('managed-users-changed', handleUsersChanged);
@@ -137,7 +147,7 @@ const AdminUsersPage = () => {
     };
   // loadUsers is intentionally refreshed when filters change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+  }, [filters, deferredSearch, securityPage]);
 
   const handleCreateManagedAccount = async () => {
     setError('');
@@ -217,7 +227,6 @@ const AdminUsersPage = () => {
   };
 
   const stats = useMemo(() => {
-    const totalUsers = users.length;
     const hrUsers = users.filter((user) => String(user.role || '').toLowerCase() === 'hr');
     const pendingHr = hrUsers.filter((user) => !user.is_hr_approved).length;
     const blocked = users.filter((user) => String(user.status || '').toLowerCase() === 'blocked').length;
@@ -227,7 +236,7 @@ const AdminUsersPage = () => {
       {
         label: 'Total Platform Users',
         value: String(totalUsers),
-        helper: `${hrUsers.length} HR accounts`,
+        helper: `${hrUsers.length} HR accounts on this page`,
         icon: <FiUsers className="text-blue-500" />,
         bg: 'bg-blue-50'
       },
@@ -253,26 +262,16 @@ const AdminUsersPage = () => {
         bg: 'bg-red-50'
       }
     ];
-  }, [users]);
+  }, [users, totalUsers]);
 
-  const filteredSecurityUsers = useMemo(() => {
-    if (filters.hrClearance === 'all') return users;
-    return users.filter((user) => {
-      const isHr = String(user.role || '').toLowerCase() === 'hr';
-      if (!isHr) return false;
-      return filters.hrClearance === 'verified' ? Boolean(user.is_hr_approved) : !user.is_hr_approved;
-    });
-  }, [users, filters.hrClearance]);
+  const filteredSecurityUsers = users;
 
   useEffect(() => {
     setSecurityPage(1);
   }, [filters.role, filters.status, filters.hrClearance, filters.search]);
 
-  const securityTotalPages = Math.max(1, Math.ceil(filteredSecurityUsers.length / USERS_PAGE_SIZE));
-  const paginatedSecurityUsers = useMemo(
-    () => filteredSecurityUsers.slice((securityPage - 1) * USERS_PAGE_SIZE, securityPage * USERS_PAGE_SIZE),
-    [filteredSecurityUsers, securityPage]
-  );
+  const securityTotalPages = Math.max(1, Math.ceil(totalUsers / Math.max(1, responseLimit || USERS_PAGE_SIZE)));
+  const paginatedSecurityUsers = filteredSecurityUsers;
   const managedTotalPages = Math.max(1, Math.ceil(managedAccounts.length / USERS_PAGE_SIZE));
   const paginatedManagedAccounts = useMemo(
     () => managedAccounts.slice((managedPage - 1) * USERS_PAGE_SIZE, managedPage * USERS_PAGE_SIZE),
@@ -640,7 +639,12 @@ const AdminUsersPage = () => {
                   value={filters.search}
                   placeholder="Search by name, email, role, or status"
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                  onKeyDown={(e) => e.key === 'Enter' && loadUsers(filters)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setSecurityPage(1);
+                      loadUsers({ ...filters, search: e.currentTarget.value }, 1);
+                    }
+                  }}
                   list="admin-security-user-suggestions"
                   autoComplete="off"
                   className="w-full rounded-xl border border-neutral-200 bg-white py-2 pl-9 pr-3 text-sm font-medium shadow-sm focus:ring-2 focus:ring-brand-500"
@@ -653,7 +657,10 @@ const AdminUsersPage = () => {
               </div>
 
               <button 
-                onClick={() => loadUsers(filters)}
+                onClick={() => {
+                  setSecurityPage(1);
+                  loadUsers({ ...filters, search: deferredSearch }, 1);
+                }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-500 sm:w-auto"
               >
                 <FiFilter /> Apply
@@ -669,20 +676,23 @@ const AdminUsersPage = () => {
              </div>
           ) : null}
 
-          <table className="w-full min-w-[920px] border-collapse text-left xl:min-w-[980px]">
+          <table className="w-full min-w-[1220px] border-collapse text-left xl:min-w-[1280px]">
             <thead>
               <tr className="bg-neutral-50">
                 <th className="border-b border-neutral-200 p-3 pl-5 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Account Identity</th>
+                <th className="w-[145px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Contact</th>
                 <th className="w-[118px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">System Role</th>
                 <th className="w-[118px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Auth Status</th>
                 <th className="w-[126px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">HR Clearance</th>
+                <th className="w-[160px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Onboarding</th>
+                <th className="w-[160px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Last Active</th>
                 <th className="min-w-[280px] border-b border-neutral-200 p-3 pr-5 text-right text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Security Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 bg-white">
               {filteredSecurityUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="p-10 text-center text-sm font-medium text-neutral-500">
+                  <td colSpan="8" className="p-10 text-center text-sm font-medium text-neutral-500">
                     No users matched the current security filters.
                   </td>
                 </tr>
@@ -697,6 +707,9 @@ const AdminUsersPage = () => {
                       <td className="p-3 pl-5">
                         <div className="text-sm font-bold text-primary">{user.name || 'Unknown'}</div>
                         <div className="font-medium text-neutral-500 text-xs">{user.email || 'No email'}</div>
+                      </td>
+                      <td className="p-3 align-middle text-xs font-semibold text-neutral-600">
+                        {user.contactNumber || user.phone || user.mobile || '-'}
                       </td>
                       <td className="p-3 align-middle">
                         <span className="inline-flex min-w-[70px] items-center justify-center whitespace-nowrap rounded-md bg-neutral-100 px-2.5 py-1 text-center text-[11px] font-bold uppercase tracking-wider text-neutral-700">
@@ -716,6 +729,12 @@ const AdminUsersPage = () => {
                         ) : (
                           <span className="text-neutral-300 text-xs font-bold">—</span>
                         )}
+                      </td>
+                      <td className="p-3 align-middle text-xs font-semibold leading-5 text-neutral-500">
+                        {formatDateTime(user.onboardingDate || user.createdAt || user.created_at)}
+                      </td>
+                      <td className="p-3 align-middle text-xs font-semibold leading-5 text-neutral-500">
+                        {formatDateTime(user.lastActiveAt || user.last_login_at)}
                       </td>
                       <td className="p-3 pr-5 align-middle">
                         <div className="flex flex-nowrap items-center justify-end gap-2 whitespace-nowrap opacity-100 transition-opacity md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto">
@@ -762,7 +781,7 @@ const AdminUsersPage = () => {
         </div>
         <div className="admin-ops-pagination">
           <p className="text-xs font-semibold text-neutral-500">
-            Showing <span className="text-neutral-800">{paginatedSecurityUsers.length}</span> of <span className="text-neutral-800">{filteredSecurityUsers.length}</span> users
+            Showing <span className="text-neutral-800">{paginatedSecurityUsers.length}</span> of <span className="text-neutral-800">{totalUsers}</span> users
           </p>
           <div className="flex items-center gap-2">
             <button

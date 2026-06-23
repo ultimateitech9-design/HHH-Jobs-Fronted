@@ -3,22 +3,11 @@ import { FiArrowRight, FiCheckCircle, FiClock, FiCreditCard, FiPhoneCall, FiUser
 import { Link } from 'react-router-dom';
 import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
+import { formatDateTime } from '../../../shared/utils/dateTime';
 import { getSalesOverview, getSalesReferralCode, getSalesRevenueAutomation } from '../services/salesApi';
 import { formatCompactCurrency } from '../utils/currencyFormat';
 
 const formatNumber = (value) => Number(value || 0).toLocaleString('en-IN');
-
-const formatDateTime = (value) => {
-  if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
 
 const queueToneClass = {
   danger: 'text-red-700 bg-red-50 border-red-100',

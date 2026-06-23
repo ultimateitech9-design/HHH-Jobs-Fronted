@@ -1,5 +1,6 @@
 import { apiFetch, hasApiAccessToken } from '../../../utils/api';
 import { filterDeletedUsers } from '../../../utils/managedUsers';
+import { formatDateTime as formatSharedDateTime } from '../../../shared/utils/dateTime';
 
 const parseJson = async (response) => {
   try {
@@ -51,6 +52,26 @@ const readEntityCollection = async ({ path, key, params = {}, emptyData = [] }) 
     extract: (payload) => payload?.[key] || emptyData
   });
 };
+
+const getContactNumber = (record = {}) => (
+  record.contactNumber
+  || record.contact_number
+  || record.phone
+  || record.mobile
+  || record.contact_phone
+  || ''
+);
+
+const normalizeAdminUser = (user = {}) => ({
+  ...user,
+  phone: getContactNumber(user),
+  mobile: user.mobile || '',
+  contactNumber: getContactNumber(user),
+  contactEmail: user.contactEmail || user.contact_email || user.email || '',
+  onboardingDate: user.onboardingDate || user.onboarding_date || user.createdAt || user.created_at || null,
+  createdAt: user.createdAt || user.created_at || null,
+  lastActiveAt: user.lastActiveAt || user.last_login_at || null
+});
 
 const createEntityItem = async ({ path, key, body }) =>
   strictRequest({
@@ -129,22 +150,32 @@ export const getAdminDashboard = async () =>
 export const getAdminUsers = async (filters = {}) =>
   safeRequest({
     path: `/admin/users${buildQueryString(filters) ? `?${buildQueryString(filters)}` : ''}`,
-    emptyData: [],
-    extract: (payload) => filterDeletedUsers(payload?.users || [])
+    emptyData: {
+      users: [],
+      total: 0,
+      page: Number(filters.page || 1),
+      limit: Number(filters.limit || 25)
+    },
+    extract: (payload) => ({
+      users: filterDeletedUsers(payload?.users || []).map(normalizeAdminUser),
+      total: Number(payload?.total || 0),
+      page: Number(payload?.page || filters.page || 1),
+      limit: Number(payload?.limit || filters.limit || 25)
+    })
   });
 
 export const updateAdminUserStatus = async (userId, status) =>
   strictRequest({
     path: `/admin/users/${userId}/status`,
     options: { method: 'PATCH', body: JSON.stringify({ status }) },
-    extract: (payload) => payload?.user || payload
+    extract: (payload) => normalizeAdminUser(payload?.user || payload)
   });
 
 export const updateAdminHrApproval = async (userId, approved) =>
   strictRequest({
     path: `/admin/hr/${userId}/approve`,
     options: { method: 'PATCH', body: JSON.stringify({ approved }) },
-    extract: (payload) => payload?.user || payload
+    extract: (payload) => normalizeAdminUser(payload?.user || payload)
   });
 
 // Jobs
@@ -529,8 +560,6 @@ export const saveAdminSettings = async (settingsPayload) =>
   });
 
 export const formatDateTime = (value) => {
-  if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleString();
+  const formatted = formatSharedDateTime(value);
+  return formatted === '-' && value ? String(value) : formatted;
 };
