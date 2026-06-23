@@ -225,9 +225,13 @@ const buildContextFromSeed = (seed = {}) => {
       id: seed.id,
       name: seed.name || '-',
       email: seed.email || '-',
-      phone: seed.phone || seed.mobile || '-',
+      phone: seed.contactNumber || seed.contact_number || seed.phone || seed.mobile || '-',
+      mobile: seed.mobile || '',
+      contactNumber: seed.contactNumber || seed.contact_number || seed.phone || seed.mobile || '-',
+      contactEmail: seed.contactEmail || seed.contact_email || seed.email || '-',
       role: seed.role || role || 'user',
       status: seed.status || 'active',
+      onboardingDate: seed.onboardingDate || seed.onboarding_date || seed.createdAt || seed.created_at || null,
       createdAt: seed.createdAt || seed.created_at || null,
       updatedAt: null,
       lastActiveAt: seed.lastActiveAt || seed.last_login_at || null
@@ -479,6 +483,31 @@ const UserSupportContextPage = ({ portalBasePath = '/portal/super-admin', actorL
                 <Link className="btn-secondary py-2 text-xs" to={`${portalBasePath}/users/${encodeURIComponent(userId)}/profile?supportSection=profile`}>
                   Profile
                 </Link>
+              </div>
+            </div>
+          </section>
+
+          <section className="panel-card">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">User ID</p>
+                <p className="mt-2 break-words font-mono text-sm font-bold text-slate-800">{safeValue(context.user?.id)}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Contact number</p>
+                <p className="mt-2 break-words text-sm font-bold text-slate-800">
+                  {safeValue(context.user?.contactNumber || context.user?.phone || context.user?.mobile)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Onboarding date</p>
+                <p className="mt-2 break-words text-sm font-bold text-slate-800">
+                  {safeDateTime(context.user?.onboardingDate || context.user?.createdAt)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Last active</p>
+                <p className="mt-2 break-words text-sm font-bold text-slate-800">{safeDateTime(context.user?.lastActiveAt)}</p>
               </div>
             </div>
           </section>

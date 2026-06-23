@@ -88,7 +88,16 @@ export const safeRequest = async ({ path, options, emptyData, fallbackData, extr
 const filterUsers = (users, filters = {}) => {
   return users.filter((user) => {
     const search = String(filters.search || '').toLowerCase();
-    const matchesSearch = !search || [user.name, user.email, user.company, user.id, user.displayId].some((value) => String(value || '').toLowerCase().includes(search));
+    const matchesSearch = !search || [
+      user.name,
+      user.email,
+      user.company,
+      user.id,
+      user.displayId,
+      user.phone,
+      user.mobile,
+      user.contactNumber
+    ].some((value) => String(value || '').toLowerCase().includes(search));
     const matchesRole = !filters.role || user.role === filters.role;
     const matchesStatus = !filters.status || user.status === filters.status;
     return matchesSearch && matchesRole && matchesStatus;
@@ -100,6 +109,10 @@ const mapManagedAccountToUser = (account) => ({
   displayId: getManagementDisplayId(account.id, account.role),
   name: account.name,
   email: account.email,
+  phone: account.contactNumber || account.contact_number || account.phone || account.mobile || '',
+  mobile: account.mobile || '',
+  contactNumber: account.contactNumber || account.contact_number || account.phone || account.mobile || '',
+  contactEmail: account.contactEmail || account.contact_email || account.email || '',
   role: account.role,
   company: account.department || 'HHH Jobs',
   assignedStates: Array.isArray(account.assignedStates) ? account.assignedStates : [],
@@ -107,6 +120,7 @@ const mapManagedAccountToUser = (account) => ({
   status: account.status || 'active',
   verified: true,
   lastActiveAt: account.last_login_at || null,
+  onboardingDate: account.onboardingDate || account.onboarding_date || account.created_at || new Date().toISOString(),
   createdAt: account.created_at || new Date().toISOString()
 });
 

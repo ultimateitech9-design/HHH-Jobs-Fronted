@@ -1,6 +1,6 @@
 import DataTable from '../../../shared/components/DataTable';
 import { USER_ROLE_LABELS } from '../constants/userRoles';
-import { formatDate } from '../utils/formatDate';
+import { formatDateTime } from '../utils/formatDate';
 import StatusBadge from './StatusBadge';
 
 const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) => {
@@ -18,6 +18,13 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
     },
     { key: 'name', label: 'Name', width: 154, cellClassName: 'text-[13px] font-semibold leading-5 text-slate-900' },
     { key: 'email', label: 'Email', width: 208, cellClassName: 'break-all text-[12.5px] leading-5 text-slate-600' },
+    {
+      key: 'contactNumber',
+      label: 'Contact',
+      width: 132,
+      cellClassName: 'break-all text-[12px] font-semibold leading-5 text-slate-600',
+      render: (value, row) => value || row.phone || row.mobile || '-'
+    },
     { key: 'role', label: 'Role', width: 92, cellClassName: 'text-[12px] font-medium uppercase tracking-[0.04em] text-slate-600', render: (value) => USER_ROLE_LABELS[value] || value },
     {
       key: 'company',
@@ -45,7 +52,14 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
       }
     },
     { key: 'status', label: 'Status', width: 94, cellClassName: 'text-[12px]', render: (value) => <StatusBadge value={value} /> },
-    { key: 'lastActiveAt', label: 'Last Active', width: 98, cellClassName: 'text-[12px] text-slate-500', render: (value) => formatDate(value) },
+    {
+      key: 'onboardingDate',
+      label: 'Onboarding',
+      width: 148,
+      cellClassName: 'text-[12px] leading-5 text-slate-500',
+      render: (value, row) => formatDateTime(value || row.createdAt)
+    },
+    { key: 'lastActiveAt', label: 'Last Active', width: 148, cellClassName: 'text-[12px] leading-5 text-slate-500', render: (value) => formatDateTime(value) },
     {
       key: 'actions',
       label: 'Actions',

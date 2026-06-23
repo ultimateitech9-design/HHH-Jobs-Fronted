@@ -15,6 +15,22 @@ const normalizeUserStatus = (user = {}) => {
   return rawStatus || 'active';
 };
 
+const getContactNumber = (record = {}) => (
+  record.contactNumber
+  || record.contact_number
+  || record.phone
+  || record.mobile
+  || record.contact_phone
+  || ''
+);
+
+const getContactEmail = (record = {}) => (
+  record.contactEmail
+  || record.contact_email
+  || record.email
+  || ''
+);
+
 const mapJobStage = (value) => {
   const status = String(value || '').toLowerCase();
   if (status === 'interviewed') return 'interview';
@@ -27,6 +43,10 @@ export const mapApiUserToUi = (user = {}) => ({
   displayId: user.employeeCode || user.employee_code || getManagementDisplayId(user.id, user.role),
   name: user.name || '-',
   email: user.email || '-',
+  phone: getContactNumber(user),
+  mobile: user.mobile || '',
+  contactNumber: getContactNumber(user),
+  contactEmail: getContactEmail(user),
   role: user.role || 'student',
   company: user.company || user.department || (user.role === 'hr' ? 'Employer' : 'HHH Jobs'),
   assignedStates: Array.isArray(user.assignedStates)
@@ -36,6 +56,7 @@ export const mapApiUserToUi = (user = {}) => ({
   status: normalizeUserStatus(user),
   verified: Boolean(user.verified ?? user.is_email_verified ?? user.is_hr_approved),
   lastActiveAt: user.lastActiveAt || user.last_login_at || null,
+  onboardingDate: user.onboardingDate || user.onboarding_date || user.createdAt || user.created_at || null,
   createdAt: user.createdAt || user.created_at || null
 });
 

@@ -137,7 +137,7 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
         <div className="min-w-0">
           <strong className="block truncate text-slate-900">{row.name || '-'}</strong>
           <span className="block truncate text-xs text-slate-500">{row.email || '-'}</span>
-          <span className="block truncate text-xs text-slate-400">{row.phone || row.mobile || '-'}</span>
+          <span className="block truncate text-xs text-slate-400">{row.contactNumber || row.phone || row.mobile || '-'}</span>
         </div>
       )
     },
@@ -152,6 +152,12 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
       label: 'Status',
       width: 120,
       render: (value) => <StatusBadge value={value || 'active'} />
+    },
+    {
+      key: 'onboardingDate',
+      label: 'Onboarding',
+      width: 170,
+      render: (value, row) => formatDateTime(value || row.createdAt)
     },
     {
       key: 'profile',
