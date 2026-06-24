@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Briefcase, Building2, CheckCircle2, MapPin, Search, TrendingUp, X } from 'lucide-react';
 import { apiFetch } from '../../../utils/api';
 import rankedSearch from '../../../shared/utils/rankedSearch';
+import LocationDirectoryPage from './LocationDirectoryPage';
 
 const DIRECTORY_CONFIG = {
   categories: {
@@ -72,13 +73,7 @@ const sortByDemand = (items = []) => [...items].sort((a, b) => {
   return a.name.localeCompare(b.name);
 });
 
-export default function FacetDirectoryPage() {
-  const location = useLocation();
-  const directoryType = location.pathname.includes('/jobs/cities')
-    ? 'cities'
-    : location.pathname.includes('/jobs/sectors')
-      ? 'sectors'
-      : 'categories';
+function FacetDirectoryContent({ directoryType }) {
   const config = DIRECTORY_CONFIG[directoryType] || DIRECTORY_CONFIG.categories;
   const Icon = config.icon;
   const [facets, setFacets] = useState({ roles: [], cities: [], sectors: [], totals: {} });
@@ -362,4 +357,19 @@ export default function FacetDirectoryPage() {
       </section>
     </main>
   );
+}
+
+export default function FacetDirectoryPage() {
+  const location = useLocation();
+  const directoryType = location.pathname.includes('/jobs/cities')
+    ? 'cities'
+    : location.pathname.includes('/jobs/sectors')
+      ? 'sectors'
+      : 'categories';
+
+  if (directoryType === 'cities') {
+    return <LocationDirectoryPage />;
+  }
+
+  return <FacetDirectoryContent directoryType={directoryType} />;
 }
