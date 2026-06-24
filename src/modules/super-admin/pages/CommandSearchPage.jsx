@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiExternalLink, FiSearch } from 'react-icons/fi';
 import DataTable from '../../../shared/components/DataTable';
@@ -23,6 +23,8 @@ const COMMAND_SEARCH_ROLE_OPTIONS = [
   { value: 'internal_staff', label: 'Internal staff records' }
 ];
 const USER_STATUS_OPTIONS = ['active', 'blocked', 'banned'];
+const COMMAND_SEARCH_MIN_QUERY_LENGTH = 2;
+const COMMAND_SEARCH_DEBOUNCE_MS = 300;
 
 const formatRole = (role = '') => USER_ROLE_LABELS[role] || String(role || '-').replace(/_/g, ' ');
 
@@ -46,6 +48,17 @@ const getActivityPath = ({ portalBasePath, row }) => {
   return row.links?.activityLog || '/portal/super-admin/system-logs';
 };
 
+const useDebouncedValue = (value, delayMs) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setDebouncedValue(value), delayMs);
+    return () => window.clearTimeout(timeoutId);
+  }, [value, delayMs]);
+
+  return debouncedValue;
+};
+
 const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
   const [filters, setFilters] = useState({ search: '', role: '', status: '' });
   const [results, setResults] = useState([]);
@@ -53,29 +66,34 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState(false);
   const [savingUserId, setSavingUserId] = useState('');
-  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
-  const hasFilters = Boolean(deferredSearch || filters.role || filters.status);
+  const normalizedSearch = String(filters.search || '').trim();
+  const debouncedSearch = useDebouncedValue(normalizedSearch, COMMAND_SEARCH_DEBOUNCE_MS);
+  const hasSearchText = debouncedSearch.length >= COMMAND_SEARCH_MIN_QUERY_LENGTH;
+  const hasBlockingShortSearch = Boolean(normalizedSearch) && normalizedSearch.length < COMMAND_SEARCH_MIN_QUERY_LENGTH && !filters.role && !filters.status;
+  const hasFilters = Boolean(hasSearchText || filters.role || filters.status);
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
 
     const load = async () => {
       if (!hasFilters) {
         setResults([]);
         setError('');
         setIsDemo(false);
+        setLoading(false);
         return;
       }
 
       setLoading(true);
-      setResults([]);
       setError('');
       try {
         const response = await getCommandSearchResults({
-          q: deferredSearch,
+          q: hasSearchText ? debouncedSearch : '',
           role: filters.role,
           status: filters.status,
-          limit: 30
+          limit: 30,
+          signal: controller.signal
         });
 
         if (cancelled) return;
@@ -95,8 +113,9 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
     load();
     return () => {
       cancelled = true;
+      controller?.abort();
     };
-  }, [deferredSearch, filters.role, filters.status, hasFilters]);
+  }, [debouncedSearch, filters.role, filters.status, hasFilters, hasSearchText]);
 
   const cards = useMemo(() => {
     const blockedCount = results.filter((item) => item.status === 'blocked' || item.status === 'banned').length;
@@ -323,7 +342,9 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
         {loading ? <p className="module-note">Searching platform records...</p> : null}
         {!loading && !results.length ? (
           <p className="module-note">
-            {hasFilters
+            {hasBlockingShortSearch
+              ? `Type at least ${COMMAND_SEARCH_MIN_QUERY_LENGTH} characters, or choose a record/status filter.`
+              : hasFilters
               ? 'No live records matched these filters. Try exact email, phone number, user ID, company, or campus name.'
               : 'Search with at least one filter to inspect a user support context.'}
           </p>

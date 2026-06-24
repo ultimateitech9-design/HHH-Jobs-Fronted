@@ -20,6 +20,7 @@ import {
   checkoutRolePlan,
   closeHrJob,
   contactSalesForRolePlan,
+  createJobSector,
   createHrJob,
   deleteHrJob,
   formatDateTime,
@@ -46,6 +47,7 @@ import { hrStarterPricing } from '../../../shared/config/pricingCatalog';
 import { invalidatePlanAccessCache } from '../../../shared/hooks/usePlanAccess';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 import { notify } from '../../../shared/utils/toastBus';
+import SearchableSectorSelect from '../../../shared/components/SearchableSectorSelect';
 import {
   formatRoleTrialProgressLabel,
   isPendingRoleSubscriptionSetup,
@@ -857,11 +859,23 @@ const HrJobsPage = () => {
     return response.data || [];
   };
 
-  const handleSectorChange = (sectorId) => {
-    const sector = sectors.find((item) => item.id === sectorId);
+  const rememberSector = (sector) => {
+    if (!sector?.name) return sector;
+    setSectors((current) => {
+      const key = String(sector.name || '').trim().toLowerCase();
+      if (!key || current.some((item) => String(item.name || '').trim().toLowerCase() === key)) return current;
+      return [...current, sector].sort((left, right) => String(left.name || '').localeCompare(String(right.name || '')));
+    });
+    return sector;
+  };
+
+  const handleCreateSector = async (name) => rememberSector(await createJobSector(name));
+
+  const handleSectorChange = ({ sectorId = '', sectorName = '', sector: selectedSector } = {}) => {
+    const sector = selectedSector || sectors.find((item) => item.id === sectorId) || { id: sectorId, name: sectorName };
     setDraft((current) => ({
       ...current,
-      sectorId,
+      sectorId: sectorId || sector?.id || '',
       sectorName: sector?.name || '',
       category: sector?.name || current.category
     }));
@@ -1606,12 +1620,14 @@ const HrJobsPage = () => {
 
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-neutral-700">Sector</label>
-              <select value={draft.sectorId} onChange={(e) => handleSectorChange(e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium">
-                <option value="">Select Sector</option>
-                {sectors.map((sector) => (
-                  <option key={sector.id || sector.name} value={sector.id}>{sector.name}</option>
-                ))}
-              </select>
+              <SearchableSectorSelect
+                sectors={sectors}
+                value={draft.sectorId}
+                valueName={draft.sectorName}
+                placeholder="Select Sector"
+                onChange={handleSectorChange}
+                onCreateSector={handleCreateSector}
+              />
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:col-span-2 md:grid-cols-2">

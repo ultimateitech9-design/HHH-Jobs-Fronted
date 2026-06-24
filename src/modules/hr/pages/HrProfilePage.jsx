@@ -19,7 +19,9 @@ import {
   FiTrash2,
   FiX
 } from 'react-icons/fi';
+import SearchableSectorSelect from '../../../shared/components/SearchableSectorSelect';
 import {
+  createJobSector,
   deleteHrCompany,
   getHrCompanies,
   getHrProfile,
@@ -268,11 +270,23 @@ const HrProfilePage = () => {
     setHiringCompanyForm((current) => ({ ...current, [key]: value }));
   };
 
-  const handleSectorChange = (sectorId) => {
-    const sector = findOptionById(sectors, sectorId);
+  const rememberSector = (sector) => {
+    if (!sector?.name) return sector;
+    setSectors((current) => {
+      const key = String(sector.name || '').trim().toLowerCase();
+      if (!key || current.some((item) => String(item.name || '').trim().toLowerCase() === key)) return current;
+      return [...current, sector].sort((left, right) => String(left.name || '').localeCompare(String(right.name || '')));
+    });
+    return sector;
+  };
+
+  const handleCreateSector = async (name) => rememberSector(await createJobSector(name));
+
+  const handleSectorChange = ({ sectorId = '', sectorName = '', sector: selectedSector } = {}) => {
+    const sector = selectedSector || findOptionById(sectors, sectorId) || { id: sectorId, name: sectorName };
     setForm((current) => ({
       ...current,
-      sectorId,
+      sectorId: sectorId || sector?.id || '',
       sectorName: sector?.name || '',
       industryType: sector?.name || current.industryType
     }));
@@ -295,11 +309,11 @@ const HrProfilePage = () => {
     setDistricts(response.data || []);
   };
 
-  const handleHiringCompanySectorChange = (sectorId) => {
-    const sector = findOptionById(sectors, sectorId);
+  const handleHiringCompanySectorChange = ({ sectorId = '', sectorName = '', sector: selectedSector } = {}) => {
+    const sector = selectedSector || findOptionById(sectors, sectorId) || { id: sectorId, name: sectorName };
     setHiringCompanyForm((current) => ({
       ...current,
-      sectorId,
+      sectorId: sectorId || sector?.id || '',
       sectorName: sector?.name || '',
       industryType: sector?.name || current.industryType
     }));
@@ -667,16 +681,14 @@ const HrProfilePage = () => {
 
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-neutral-700 flex items-center gap-1.5"><FiTarget className="text-neutral-400"/> Sector *</label>
-                    <select
+                    <SearchableSectorSelect
+                      sectors={sectors}
                       value={form.sectorId}
-                      onChange={(e) => handleSectorChange(e.target.value)}
-                      className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 font-medium transition-colors text-primary appearance-none"
-                    >
-                      <option value="">Select Sector</option>
-                      {sectors.map((sector) => (
-                        <option key={sector.id || sector.name} value={sector.id}>{sector.name}</option>
-                      ))}
-                    </select>
+                      valueName={form.sectorName}
+                      placeholder="Select Sector"
+                      onChange={handleSectorChange}
+                      onCreateSector={handleCreateSector}
+                    />
                   </div>
 
                   <div className="space-y-1.5">
@@ -947,16 +959,15 @@ const HrProfilePage = () => {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-neutral-700">Sector *</label>
-                  <select
+                  <SearchableSectorSelect
+                    sectors={sectors}
                     value={hiringCompanyForm.sectorId}
-                    onChange={(e) => handleHiringCompanySectorChange(e.target.value)}
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 font-medium text-primary focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value="">Select Sector</option>
-                    {sectors.map((sector) => (
-                      <option key={sector.id || sector.name} value={sector.id}>{sector.name}</option>
-                    ))}
-                  </select>
+                    valueName={hiringCompanyForm.sectorName}
+                    placeholder="Select Sector"
+                    inputClassName="bg-white"
+                    onChange={handleHiringCompanySectorChange}
+                    onCreateSector={handleCreateSector}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-neutral-700">Company Type</label>

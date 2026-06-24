@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SectionHeader from '../../../shared/components/SectionHeader';
+import SearchableSectorSelect from '../../../shared/components/SearchableSectorSelect';
 import {
+  createJobSector,
   createJobEntry,
   defaultJobEntryDraft,
   formatJobEntryPayload,
@@ -92,9 +94,21 @@ const AddJob = () => {
     }
   };
 
-  const handleSectorChange = (sectorId) => {
-    const sector = sectors.find((item) => item.id === sectorId);
-    setDraft((current) => ({ ...current, sectorId, sectorName: sector?.name || '' }));
+  const rememberSector = (sector) => {
+    if (!sector?.name) return sector;
+    setSectors((current) => {
+      const key = String(sector.name || '').trim().toLowerCase();
+      if (!key || current.some((item) => String(item.name || '').trim().toLowerCase() === key)) return current;
+      return [...current, sector].sort((left, right) => String(left.name || '').localeCompare(String(right.name || '')));
+    });
+    return sector;
+  };
+
+  const handleCreateSector = async (name) => rememberSector(await createJobSector(name));
+
+  const handleSectorChange = ({ sectorId = '', sectorName = '', sector: selectedSector } = {}) => {
+    const sector = selectedSector || sectors.find((item) => item.id === sectorId) || { id: sectorId, name: sectorName };
+    setDraft((current) => ({ ...current, sectorId: sectorId || sector?.id || '', sectorName: sector?.name || '' }));
   };
 
   const handleStateChange = async (stateId) => {
@@ -313,12 +327,14 @@ const AddJob = () => {
             </label>
             <label className="grid gap-0.5">
               <span className={fieldLabelClassName}>Sector</span>
-              <select className={fieldControlClassName} value={draft.sectorId} onChange={(event) => handleSectorChange(event.target.value)}>
-                <option value="">Select sector</option>
-                {sectors.map((sector) => (
-                  <option key={sector.id || sector.name} value={sector.id}>{sector.name}</option>
-                ))}
-              </select>
+              <SearchableSectorSelect
+                sectors={sectors}
+                value={draft.sectorId}
+                valueName={draft.sectorName}
+                placeholder="Select sector"
+                onChange={handleSectorChange}
+                onCreateSector={handleCreateSector}
+              />
             </label>
             <label className="grid gap-0.5">
               <span className={fieldLabelClassName}>State</span>

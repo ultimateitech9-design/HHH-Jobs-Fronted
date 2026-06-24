@@ -241,6 +241,10 @@ export const getCommandSearchResults = async (filters = {}) => {
 
   return safeRequest({
     path: `${SUPER_ADMIN_BASE}/command-search?${params.toString()}`,
+    options: {
+      signal: filters.signal,
+      timeoutMs: 20000
+    },
     emptyData: [],
     extract: (payload) => payload?.results || []
   });

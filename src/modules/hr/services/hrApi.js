@@ -62,6 +62,13 @@ export const getJobSectors = async () =>
     extract: (payload) => (payload?.sectors || []).map(normalizeMasterOption)
   });
 
+export const createJobSector = async (name) =>
+  strictRequest({
+    path: '/jobs/meta/sectors',
+    options: { method: 'POST', body: JSON.stringify({ name }) },
+    extract: (payload) => normalizeMasterOption(payload?.sector || {})
+  });
+
 export const getJobStates = async () =>
   safeRequest({
     path: '/jobs/meta/states',
