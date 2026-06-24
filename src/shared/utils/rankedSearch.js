@@ -42,14 +42,14 @@ export const rankedSearch = (items = [], query = '', keys = [], options = {}) =>
   }));
 
   const tokenMatchedItems = enrichedItems.filter(({ searchText }) => tokens.every((token) => searchText.includes(token)));
-  const candidateItems = (tokenMatchedItems.length > 0 ? tokenMatchedItems : enrichedItems).map(({ item }) => item);
+  const candidateItems = tokenMatchedItems.length > 0 ? tokenMatchedItems : enrichedItems;
 
   return matchSorter(candidateItems, normalizedQuery, {
-    keys: [(item) => buildSearchText(item, keys)],
+    keys: ['searchText'],
     threshold,
     keepDiacritics: false,
     ...options
-  });
+  }).map(({ item }) => item);
 };
 
 export default rankedSearch;
