@@ -29,6 +29,7 @@ const AdminModuleLayout = () => {
       subtitle="Manage users, jobs, reports, approvals, and payments from one workspace."
       navItems={adminNavItems}
       expandSidebarOnHover
+      hideProfileShortcut
     />
   );
 };
