@@ -1,30 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
-import { BriefcaseBusiness, GraduationCap, ShieldCheck } from 'lucide-react';
+import { Mail, Phone, Send } from 'lucide-react';
 import FooterBottomBar from './FooterBottomBar';
 import FooterBrand from './FooterBrand';
 import FooterLinkColumn from './FooterLinkColumn';
 import { footerLinkColumns } from './footerLinkColumns';
+import { footerSocialLinks } from './footerSocialLinks';
+import { HHH_JOBS_MASTER_CONTACT_NUMBERS, HHH_JOBS_SUPPORT_EMAIL } from '../../../../constants/contactInfo';
 
-const footerAudienceLinks = [
-  {
-    label: 'Students',
-    text: 'Jobs, ATS, alerts',
-    to: '/jobs',
-    icon: GraduationCap
-  },
-  {
-    label: 'Employers',
-    text: 'Post jobs, hire faster',
-    to: '/recruiters',
-    icon: BriefcaseBusiness
-  },
-  {
-    label: 'Trust Desk',
-    text: 'Safety, support, reports',
-    to: '/trust-and-safety',
-    icon: ShieldCheck
-  }
-];
+const socialLabels = new Set(['LinkedIn', 'Facebook', 'YouTube', 'Instagram']);
+const publicSocialLinks = footerSocialLinks.filter((item) => socialLabels.has(item.label));
 
 const PublicFooter = () => {
   const location = useLocation();
@@ -34,44 +18,69 @@ const PublicFooter = () => {
   }
 
   return (
-    <footer className="relative overflow-hidden bg-[#0b1b33] text-white">
-      <div className="h-1 bg-gradient-to-r from-gold via-gold-light to-teal-400" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/10" />
-      <div className="pointer-events-none absolute -left-16 top-10 h-64 w-64 rounded-full bg-gold/[0.12] blur-3xl" />
-      <div className="pointer-events-none absolute right-[-6rem] top-20 h-72 w-72 rounded-full bg-teal-400/10 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-1/3 h-48 w-48 rounded-full bg-blue-400/10 blur-3xl" />
+    <footer className="relative overflow-hidden border-t border-white/10 bg-[#080c12] text-white">
+      <div className="h-1 bg-gold" />
 
-      <div className="vw-shell relative py-8 sm:py-10 lg:py-12">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.35fr)] lg:items-stretch">
+      <div className="vw-shell py-12 sm:py-14 lg:py-16">
+        <div className="grid gap-x-10 gap-y-10 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[minmax(18rem,1.3fr)_repeat(5,minmax(0,0.72fr))_minmax(16rem,1fr)]">
           <FooterBrand />
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            {footerAudienceLinks.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  className="group flex min-h-32 flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.055] p-4 shadow-[0_18px_42px_rgba(0,0,0,0.16)] transition duration-200 hover:-translate-y-1 hover:border-gold/35 hover:bg-white/[0.075]"
-                >
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-gold transition group-hover:border-gold/40 group-hover:bg-gold/15">
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  <span>
-                    <span className="block font-heading text-base font-bold text-white">{item.label}</span>
-                    <span className="mt-1 block text-sm leading-5 text-white/58">{item.text}</span>
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {footerLinkColumns.map((column) => (
             <FooterLinkColumn key={column.title} column={column} />
           ))}
+
+          <section>
+            <h4 className="font-heading text-base font-bold text-white">Contact & Alerts</h4>
+            <div className="mt-5 grid gap-4 text-base leading-7 text-slate-400">
+              <a
+                href={`mailto:${HHH_JOBS_SUPPORT_EMAIL}`}
+                className="group flex items-start gap-3 transition hover:text-gold"
+              >
+                <Mail className="mt-1 h-5 w-5 flex-none text-slate-500 transition group-hover:text-gold" aria-hidden="true" />
+                <span className="break-all">{HHH_JOBS_SUPPORT_EMAIL}</span>
+              </a>
+
+              <div className="flex items-start gap-3">
+                <Phone className="mt-1 h-5 w-5 flex-none text-slate-500" aria-hidden="true" />
+                <div className="grid gap-1">
+                  {HHH_JOBS_MASTER_CONTACT_NUMBERS.map((phone) => (
+                    <a key={phone.value} href={phone.href} className="transition hover:text-gold">
+                      {phone.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <Link
+                to="/sign-up"
+                className="mt-2 inline-flex max-w-max items-center gap-2 rounded-xl border border-white/[0.12] px-4 py-3 text-sm font-semibold text-slate-300 transition hover:border-gold/50 hover:text-gold"
+              >
+                Email for latest job updates
+                <Send className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              {publicSocialLinks.map((item) => {
+                const Icon = item.icon;
+                const shouldOpenInNewTab = item.href.startsWith('http') && item.newTab !== false;
+
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.12] bg-white/[0.03] text-white transition hover:-translate-y-0.5 hover:border-gold/50 hover:text-gold"
+                    target={shouldOpenInNewTab ? '_blank' : undefined}
+                    rel={shouldOpenInNewTab ? 'noreferrer' : undefined}
+                    aria-label={item.label}
+                    title={item.label}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                );
+              })}
+            </div>
+          </section>
         </div>
 
         <FooterBottomBar />
