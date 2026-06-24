@@ -9,6 +9,12 @@ import { HHH_JOBS_MASTER_CONTACT_NUMBERS, HHH_JOBS_SUPPORT_EMAIL } from '../../.
 
 const socialLabels = new Set(['LinkedIn', 'Facebook', 'YouTube', 'Instagram']);
 const publicSocialLinks = footerSocialLinks.filter((item) => socialLabels.has(item.label));
+const socialIconStyles = {
+  LinkedIn: 'border-[#0A66C2]/35 bg-[#0A66C2]/10 text-[#0A66C2] hover:border-[#0A66C2]/60 hover:bg-[#0A66C2]/15 hover:text-[#5EA4E8]',
+  Facebook: 'border-[#1877F2]/35 bg-[#1877F2]/10 text-[#1877F2] hover:border-[#1877F2]/60 hover:bg-[#1877F2]/15 hover:text-[#6EA8FE]',
+  YouTube: 'border-[#FF0033]/35 bg-[#FF0033]/10 text-[#FF0033] hover:border-[#FF0033]/60 hover:bg-[#FF0033]/15 hover:text-[#FF6B85]',
+  Instagram: 'border-[#E4405F]/35 bg-[#E4405F]/10 text-[#E4405F] hover:border-[#F77737]/60 hover:bg-[#F77737]/15 hover:text-[#FCAF45]'
+};
 
 const PublicFooter = () => {
   const location = useLocation();
@@ -69,7 +75,10 @@ const PublicFooter = () => {
                   <a
                     key={item.label}
                     href={item.href}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-white/[0.025] text-slate-300 transition hover:-translate-y-0.5 hover:border-gold/40 hover:text-gold"
+                    className={[
+                      'inline-flex h-8 w-8 items-center justify-center rounded-lg border transition hover:-translate-y-0.5',
+                      socialIconStyles[item.label] || 'border-slate-700 bg-white/[0.025] text-slate-300 hover:border-gold/40 hover:text-gold'
+                    ].join(' ')}
                     target={shouldOpenInNewTab ? '_blank' : undefined}
                     rel={shouldOpenInNewTab ? 'noreferrer' : undefined}
                     aria-label={item.label}
