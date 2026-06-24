@@ -4,8 +4,6 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import {
   FiArrowUpRight,
   FiBriefcase,
-  FiChevronLeft,
-  FiChevronRight,
   FiExternalLink,
   FiFilter,
   FiGlobe,
@@ -22,6 +20,7 @@ import { getExternalJobCategories, getExternalJobSources, getExternalJobs } from
 import { getLoginRedirectState } from '../../common/utils/publicAccess';
 import { getStudentJobs } from '../services/studentApi';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
+import GooglePagination from '../../../shared/components/GooglePagination';
 import {
   clearExternalApplyIntent,
   isExternalApplyIntentFresh,
@@ -710,31 +709,12 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
           ) : null}
 
           {jobsState.pagination && jobsState.pagination.totalPages > 1 ? (
-            <div className="mt-10 flex justify-center">
-              <div className="flex w-max items-center gap-4 rounded-full border border-white/70 bg-white/90 px-6 py-4 shadow-[0_20px_45px_rgba(15,23,42,0.08)]">
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-slate-700 transition hover:border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={filters.page <= 1}
-                  onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}
-                >
-                  <FiChevronLeft size={18} />
-                </button>
-
-                <span className="min-w-28 text-center text-sm font-bold text-slate-600">
-                  Page {filters.page} <span className="mx-1 font-normal text-slate-400">/</span> {jobsState.pagination.totalPages}
-                </span>
-
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-slate-700 transition hover:border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={filters.page >= jobsState.pagination.totalPages}
-                  onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}
-                >
-                  <FiChevronRight size={18} />
-                </button>
-              </div>
-            </div>
+            <GooglePagination
+              page={filters.page}
+              totalPages={jobsState.pagination.totalPages}
+              onChange={(page) => setFilters((prev) => ({ ...prev, page }))}
+              className="mt-10"
+            />
           ) : null}
         </>
       )}

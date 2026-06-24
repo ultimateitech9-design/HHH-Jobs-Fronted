@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiSearch } from 'react-icons/fi';
+import GooglePagination from './GooglePagination';
 import rankedSearch from '../utils/rankedSearch';
 
 const DISPLAY_ID_LENGTH = 11;
@@ -231,30 +232,12 @@ const DataTable = ({
 
       {/* Pagination Controls */}
       {pagination && totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between rounded-[1.05rem] border border-slate-200/80 bg-slate-50/70 px-4 py-3">
-          <div className="text-[13px] text-slate-500 font-medium hidden sm:block">
-            Page <span className="font-semibold text-slate-800">{currentPage}</span> of <span className="font-semibold text-slate-800">{totalPages}</span>
-          </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FiChevronLeft size={16} /> Previous
-            </button>
-            <div className="text-[13px] text-slate-500 font-medium sm:hidden">
-              {currentPage} / {totalPages}
-            </div>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next <FiChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <GooglePagination
+          page={currentPage}
+          totalPages={totalPages}
+          onChange={setCurrentPage}
+          className="mt-4"
+        />
       )}
     </div>
   );

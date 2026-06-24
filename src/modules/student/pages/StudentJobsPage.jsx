@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FiBookmark,
-  FiChevronLeft,
-  FiChevronRight,
   FiFilter,
   FiGlobe,
   FiMapPin,
@@ -23,6 +21,7 @@ import { ExternalJobCard, ExternalJobCardSkeleton } from './StudentExternalJobsP
 import { getJobSectors, getStudentJobs } from '../services/studentApi';
 import { getExternalJobSources, getExternalJobs } from '../../platform/services/externalJobsApi';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
+import GooglePagination from '../../../shared/components/GooglePagination';
 
 const FEED_PAGE_LIMIT = 50;
 const DEFAULT_JOBS_PER_PAGE = 15;
@@ -636,33 +635,11 @@ const StudentJobsPage = ({
       </div>
 
       {totalPages > 1 ? (
-        <div className="flex justify-center">
-          <div className="flex flex-wrap items-center justify-center gap-3 rounded-[1.4rem] border border-slate-200 bg-white px-4 py-3 shadow-sm sm:flex-nowrap sm:gap-4 sm:rounded-full sm:px-6 sm:py-4">
-            <button
-              type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-navy transition hover:border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage((page) => page - 1)}
-              aria-label="Previous Page"
-            >
-              <FiChevronLeft size={18} />
-            </button>
-
-            <span className="min-w-24 text-center text-sm font-bold text-slate-600">
-              Page {currentPage} <span className="mx-1 font-normal text-slate-400">/</span> {totalPages}
-            </span>
-
-            <button
-              type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent text-navy transition hover:border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage((page) => page + 1)}
-              aria-label="Next Page"
-            >
-              <FiChevronRight size={18} />
-            </button>
-          </div>
-        </div>
+        <GooglePagination
+          page={currentPage}
+          totalPages={totalPages}
+          onChange={setCurrentPage}
+        />
       ) : null}
     </StudentPageShell>
   );

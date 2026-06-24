@@ -7,7 +7,6 @@ import {
   FiBriefcase,
   FiCalendar,
   FiCheckCircle,
-  FiChevronLeft,
   FiChevronRight,
   FiExternalLink,
   FiFilter,
@@ -33,6 +32,7 @@ import {
 } from '../services/studentApi';
 import { getCurrentUser } from '../../../utils/auth';
 import { buildGovtJobSeoPath } from '../../../shared/utils/seoRoutes';
+import GooglePagination from '../../../shared/components/GooglePagination';
 
 const makeDefaultFilters = () => ({
   search: '',
@@ -744,29 +744,12 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
           </div>
 
           {state.pagination.totalPages > 1 ? (
-            <div className="mt-6 flex justify-center">
-              <div className="flex items-center gap-3 rounded-full border border-white/70 bg-white/90 px-5 py-3 shadow-[0_18px_42px_rgba(15,23,42,0.08)]">
-                <button
-                  type="button"
-                  onClick={() => setPage(Math.max(1, filters.page - 1))}
-                  disabled={filters.page <= 1}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <FiChevronLeft size={17} />
-                </button>
-                <span className="min-w-28 text-center text-sm font-bold text-slate-600">
-                  Page {filters.page} / {state.pagination.totalPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setPage(Math.min(state.pagination.totalPages, filters.page + 1))}
-                  disabled={filters.page >= state.pagination.totalPages}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <FiChevronRight size={17} />
-                </button>
-              </div>
-            </div>
+            <GooglePagination
+              page={filters.page}
+              totalPages={state.pagination.totalPages}
+              onChange={setPage}
+              className="mt-6"
+            />
           ) : null}
         </>
       ) : (
