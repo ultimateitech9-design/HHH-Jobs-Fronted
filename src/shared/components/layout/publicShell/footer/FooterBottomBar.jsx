@@ -1,9 +1,9 @@
 const FooterBottomBar = () => {
   return (
-    <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-8 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
+    <div className="mt-8 flex flex-col gap-3 border-t border-slate-800 pt-5 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
       <p>Copyright 2026 HHH Jobs. All rights reserved.</p>
       <p>
-        Designed and developed by <span className="font-bold text-white">Ultimate iTech Pvt. Ltd.</span>
+        Designed and developed by <span className="font-bold text-slate-200">Ultimate iTech Pvt. Ltd.</span>
       </p>
     </div>
   );

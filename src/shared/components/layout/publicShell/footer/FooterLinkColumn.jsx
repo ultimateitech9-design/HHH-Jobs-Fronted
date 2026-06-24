@@ -4,13 +4,13 @@ import { isExternalHref } from '../../../../utils/externalLinks.js';
 const FooterLinkColumn = ({ column }) => {
   return (
     <section>
-      <h4 className="font-heading text-base font-bold text-white">{column.title}</h4>
+      <h4 className="font-heading text-sm font-bold text-slate-100">{column.title}</h4>
 
-      <ul className="mt-5 grid gap-3.5">
+      <ul className="mt-3.5 grid gap-2.5">
         {column.links.map((link) => {
           const isExternal = isExternalHref(link.to);
           const className =
-            'text-base leading-6 text-slate-400 transition hover:text-gold';
+            'text-sm leading-5 text-slate-400 transition hover:text-gold';
 
           return (
             <li key={link.to}>
