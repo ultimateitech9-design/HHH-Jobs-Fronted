@@ -6,31 +6,31 @@ import rankedSearch from '../../../shared/utils/rankedSearch';
 
 const DIRECTORY_CONFIG = {
   categories: {
-    title: 'Job Categories',
-    eyebrow: 'Explore by role',
-    subtitle: 'Browse active hiring categories and jump into matching jobs instantly.',
-    searchPlaceholder: 'Search job categories...',
+    title: 'Jobs by Category',
+    countLabel: 'categories',
+    eyebrow: 'Role Directory',
+    subtitle: 'Browse hiring roles, compare active demand, and open matching jobs without extra filtering.',
+    searchPlaceholder: 'Search roles, skills, or categories...',
     key: 'roles',
-    icon: Briefcase,
-    highlightLabel: 'Top role demand'
+    icon: Briefcase
   },
   cities: {
-    title: 'Cities',
-    eyebrow: 'Explore by location',
-    subtitle: 'Find nearby opportunities by city with fast alphabetical browsing.',
+    title: 'Jobs by City',
+    countLabel: 'cities',
+    eyebrow: 'Location Directory',
+    subtitle: 'Explore city-wise job pages for nearby, local, and pan India opportunities.',
     searchPlaceholder: 'Search cities...',
     key: 'cities',
-    icon: MapPin,
-    highlightLabel: 'Active cities'
+    icon: MapPin
   },
   sectors: {
-    title: 'Sectors',
-    eyebrow: 'Explore by industry',
-    subtitle: 'Compare industry demand and open the right sector jobs in one click.',
-    searchPlaceholder: 'Search sectors...',
+    title: 'Jobs by Sector',
+    countLabel: 'sectors',
+    eyebrow: 'Industry Directory',
+    subtitle: 'Find sector-wise openings and discover where employers are hiring right now.',
+    searchPlaceholder: 'Search sectors or industries...',
     key: 'sectors',
-    icon: Building2,
-    highlightLabel: 'Hiring sectors'
+    icon: Building2
   }
 };
 
@@ -130,8 +130,7 @@ export default function FacetDirectoryPage() {
 
   const items = useMemo(() => normalizeItems(facets[config.key]), [config.key, facets]);
   const alphabeticalItems = useMemo(() => sortByName(items), [items]);
-  const popularItems = useMemo(() => sortByDemand(items).filter((item) => item.count > 0).slice(0, 10), [items]);
-  const activeItemsCount = useMemo(() => items.filter((item) => item.count > 0).length, [items]);
+  const popularItems = useMemo(() => sortByDemand(items).filter((item) => item.count > 0).slice(0, 8), [items]);
   const totalOpenings = useMemo(() => items.reduce((sum, item) => sum + Number(item.count || 0), 0), [items]);
   const letters = useMemo(() => {
     const availableLetters = new Set(alphabeticalItems.map((item) => getDirectoryLetter(item.name)));
@@ -162,27 +161,26 @@ export default function FacetDirectoryPage() {
     return Array.from(groups.entries()).map(([letter, groupItems]) => ({ letter, items: groupItems }));
   }, [filteredItems]);
   const hasFilters = query.trim() || activeLetter !== 'All';
-  const primaryTotal = items.length ? `${formatCount(items.length)} ${config.title}` : config.title;
-  const statCards = [
-    { label: config.highlightLabel, value: formatCount(activeItemsCount), hint: 'with live openings' },
-    { label: 'Open jobs', value: formatCount(totalOpenings || facets.totals?.openJobs || 0), hint: 'from active listings' },
-    { label: 'Companies', value: formatCount(facets.totals?.companies || 0), hint: 'posting jobs' }
+  const metaItems = [
+    { value: formatCount(items.length), label: config.countLabel },
+    { value: formatCount(totalOpenings || facets.totals?.openJobs || 0), label: 'open jobs' },
+    { value: formatCount(facets.totals?.companies || 0), label: 'companies' }
   ];
 
   return (
-    <main className="min-h-screen bg-[#f6f8fb]">
-      <section className="border-b border-slate-200 bg-white px-[4vw] py-5 md:py-6">
+    <main className="-mt-[calc(var(--public-navbar-height,74px)+2px)] min-h-screen bg-white">
+      <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-[4vw] py-6">
         <div className="mx-auto w-full max-w-[1760px]">
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(32rem,0.95fr)] xl:items-end">
-            <div>
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+            <div className="max-w-4xl">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#3f56ad]/10 text-[#3f56ad]">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#3f56ad] shadow-sm">
                   <Icon className="h-5 w-5" aria-hidden="true" />
-                </div>
+                </span>
                 <div className="min-w-0">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#3f56ad]">{config.eyebrow}</p>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#3f56ad]">{config.eyebrow}</p>
                   <h1 className="mt-1 font-heading text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
-                    {primaryTotal}
+                    {config.title}
                   </h1>
                 </div>
               </div>
@@ -190,16 +188,27 @@ export default function FacetDirectoryPage() {
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 md:text-base">
                 {config.subtitle}
               </p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {metaItems.map((item) => (
+                  <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">
+                    <span className="text-slate-950">{item.value}</span>
+                    {item.label}
+                  </span>
+                ))}
+              </div>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-3">
-              {statCards.map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <p className="text-[0.68rem] font-black uppercase tracking-[0.16em] text-slate-400">{stat.label}</p>
-                  <p className="mt-1 text-xl font-black text-slate-950">{stat.value}</p>
-                  <p className="mt-0.5 text-xs font-semibold text-slate-500">{stat.hint}</p>
-                </div>
-              ))}
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <Link to="/" className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-[#3f56ad]/30 hover:text-[#3f56ad]">
+                Home
+              </Link>
+              <Link
+                to="/jobs"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#263754] px-5 text-sm font-black text-white shadow-[0_12px_26px_rgba(38,55,84,0.18)] transition hover:bg-[#1e2d48]"
+              >
+                All jobs <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
 
@@ -211,7 +220,7 @@ export default function FacetDirectoryPage() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={config.searchPlaceholder}
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-11 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#3f56ad]/40 focus:bg-white focus:ring-4 focus:ring-[#3f56ad]/10"
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-11 text-sm font-semibold text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#3f56ad]/40 focus:ring-4 focus:ring-[#3f56ad]/10"
                 autoComplete="off"
               />
               {query ? (
@@ -226,33 +235,26 @@ export default function FacetDirectoryPage() {
               ) : null}
             </label>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Link to="/" className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-[#3f56ad]/30 hover:text-[#3f56ad]">
-                Home
-              </Link>
-              <Link
-                to="/jobs"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#263754] px-5 text-sm font-black text-white shadow-[0_12px_28px_rgba(38,55,84,0.18)] transition hover:bg-[#1e2d48]"
-              >
-                All jobs <ArrowRight className="h-4 w-4" />
-              </Link>
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-500" aria-live="polite">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+              <span><span className="text-slate-950">{formatCount(filteredItems.length)}</span> shown</span>
             </div>
           </div>
 
           {popularItems.length > 0 ? (
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-emerald-700">
+              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.12em] text-emerald-700">
                 <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
                 Hiring now
               </span>
-              {popularItems.slice(0, 8).map((item) => (
+              {popularItems.map((item) => (
                 <Link
                   key={`popular-${directoryType}-${item.name}`}
                   to={buildFacetPath(directoryType, item.name)}
                   className="inline-flex max-w-full items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-[#3f56ad]/35 hover:text-[#3f56ad]"
                 >
                   <span className="truncate">{item.name}</span>
-                  <span className="rounded-full bg-[#3f56ad]/10 px-1.5 py-0.5 text-[0.65rem] text-[#3f56ad]">{formatCount(item.count)}</span>
+                  <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[0.65rem] text-emerald-700">{formatCount(item.count)}</span>
                 </Link>
               ))}
             </div>
@@ -260,44 +262,39 @@ export default function FacetDirectoryPage() {
         </div>
       </section>
 
-      <section className="sticky top-[calc(var(--public-navbar-height,74px)+1px)] z-20 border-b border-slate-200 bg-[#f6f8fb]/95 px-[4vw] py-3 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[1760px] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex gap-2 overflow-x-auto pb-1 lg:pb-0" aria-label={`${config.title} alphabet filter`}>
+      <section className="sticky top-[var(--public-navbar-height,74px)] z-20 border-b border-slate-200 bg-white/95 px-[4vw] py-2.5 backdrop-blur">
+        <div className="mx-auto w-full max-w-[1760px]">
+          <div className="flex gap-1.5 overflow-x-auto pb-1" aria-label={`${config.title} alphabet filter`}>
             {letters.map((letter) => (
               <button
                 key={letter}
                 type="button"
                 onClick={() => setActiveLetter(letter)}
-                className={`flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-xs font-black transition ${
+                className={`flex h-8 min-w-8 items-center justify-center rounded-full px-2.5 text-xs font-black transition ${
                   activeLetter === letter
-                    ? 'bg-[#3f56ad] text-white shadow-[0_8px_18px_rgba(43,69,154,0.18)]'
-                    : 'border border-slate-200 bg-white text-slate-500 hover:border-[#3f56ad]/30 hover:text-[#3f56ad]'
+                    ? 'bg-[#263754] text-white shadow-[0_8px_18px_rgba(38,55,84,0.16)]'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-[#263754]'
                 }`}
               >
                 {letter}
               </button>
             ))}
           </div>
-
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-500" aria-live="polite">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-            <span><span className="text-slate-950">{formatCount(filteredItems.length)}</span> shown</span>
-          </div>
         </div>
       </section>
 
-      <section className="px-[4vw] py-5 md:py-7">
+      <section className="px-[4vw] py-6 md:py-8">
         <div className="mx-auto w-full max-w-[1760px]">
           {loading ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-              {Array.from({ length: 24 }).map((_, index) => (
-                <div key={index} className="h-11 animate-pulse rounded-xl bg-white shadow-sm" />
+            <div className="grid gap-5">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="h-28 animate-pulse rounded-xl border border-slate-100 bg-slate-50" />
               ))}
             </div>
           ) : null}
 
           {!loading && error ? (
-            <div className="rounded-2xl border border-rose-100 bg-white p-6 text-sm font-semibold text-rose-700">
+            <div className="rounded-2xl border border-rose-100 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
               {error}
             </div>
           ) : null}
@@ -305,8 +302,8 @@ export default function FacetDirectoryPage() {
           {!loading && !error ? (
             <>
               {filteredItems.length === 0 ? (
-                <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-                  <p className="text-lg font-black text-slate-900">No matching {config.title.toLowerCase()} found</p>
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center">
+                  <p className="text-lg font-black text-slate-900">No matching {config.countLabel} found</p>
                   <p className="mt-2 text-sm text-slate-500">Try another search or reset the alphabet filter.</p>
                   {hasFilters ? (
                     <button
@@ -322,24 +319,27 @@ export default function FacetDirectoryPage() {
                   ) : null}
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-8">
                   {groupedItems.map((group) => (
-                    <section key={group.letter} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_32px_rgba(15,23,42,0.045)]">
+                    <section key={group.letter} className="border-t border-slate-200 pt-5">
                       <div className="mb-3 flex items-center justify-between gap-3">
-                        <h2 className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#3f56ad]/10 text-sm font-black text-[#3f56ad]">
-                          {group.letter}
+                        <h2 className="flex items-center gap-2 text-base font-black text-slate-950">
+                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm text-[#3f56ad]">
+                            {group.letter}
+                          </span>
+                          <span>{group.letter} results</span>
                         </h2>
-                        <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                          {formatCount(group.items.length)} results
+                        <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                          {formatCount(group.items.length)}
                         </p>
                       </div>
 
-                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
+                      <div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                         {group.items.map((item) => (
                           <Link
                             key={`${directoryType}-${item.name}`}
                             to={buildFacetPath(directoryType, item.name)}
-                            className="group flex min-h-11 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm font-bold text-slate-700 transition hover:-translate-y-0.5 hover:border-[#3f56ad]/35 hover:bg-white hover:text-[#31468f] hover:shadow-[0_10px_20px_rgba(15,23,42,0.07)]"
+                            className="group flex min-h-11 items-center justify-between gap-3 border-b border-slate-100 py-2.5 text-sm font-bold text-slate-700 transition hover:text-[#31468f]"
                           >
                             <span className="min-w-0 truncate">{item.name}</span>
                             {item.count > 0 ? (
@@ -347,7 +347,7 @@ export default function FacetDirectoryPage() {
                                 {formatCount(item.count)}
                               </span>
                             ) : (
-                              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-[#3f56ad]" aria-hidden="true" />
+                              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-[#3f56ad]" aria-hidden="true" />
                             )}
                           </Link>
                         ))}
