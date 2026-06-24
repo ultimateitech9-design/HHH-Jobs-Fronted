@@ -6,7 +6,7 @@ import { HHH_JOBS_MASTER_CONTACT_NUMBERS, HHH_JOBS_SUPPORT_EMAIL } from '../../.
 export const footerSocialLinks = [
   { label: 'LinkedIn', href: 'https://www.linkedin.com/company/hhh-jobs/', icon: FaLinkedin },
   { label: 'Facebook', href: 'https://www.facebook.com/hhhjobs/', icon: FaFacebook },
-  { label: 'YouTube', href: 'https://www.youtube.com/@HHHJobs', icon: FaYoutube },
+  { label: 'YouTube', href: 'https://www.youtube.com/@hhh-jobs', icon: FaYoutube },
   { label: 'Instagram', href: 'https://www.instagram.com/hhhjobs1/', icon: FaInstagram },
   { label: 'Support', href: '/contact-us', icon: MessageCircle },
   { label: 'Careers', href: '/careers', icon: Briefcase },

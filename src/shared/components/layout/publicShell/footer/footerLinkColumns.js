@@ -35,8 +35,7 @@ export const footerLinkColumns = [
       { label: 'About Us', to: '/about-us' },
       { label: 'Contact Us', to: '/contact-us' },
       { label: 'Careers', to: '/careers' },
-      { label: 'Blog', to: BLOG_BASE_URL },
-      { label: 'Sitemap', to: '/sitemap' }
+      { label: 'Blog', to: BLOG_BASE_URL }
     ]
   },
   {
