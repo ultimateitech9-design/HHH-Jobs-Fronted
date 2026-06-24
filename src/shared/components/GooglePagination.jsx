@@ -26,7 +26,10 @@ const GooglePagination = ({
   className = '',
   maxVisiblePages = 7,
   previousLabel = 'Previous',
-  nextLabel = 'Next'
+  nextLabel = 'Next',
+  scrollOnChange = true,
+  scrollBehavior = 'smooth',
+  scrollTarget = null
 }) => {
   const total = Math.max(1, Number(totalPages) || 1);
   const current = Math.min(total, Math.max(1, Number(page) || 1));
@@ -39,6 +42,21 @@ const GooglePagination = ({
     const target = Math.min(total, Math.max(1, Number(nextPage) || 1));
     if (target !== current && typeof onChange === 'function') {
       onChange(target);
+
+      if (scrollOnChange && typeof window !== 'undefined') {
+        window.requestAnimationFrame(() => {
+          const targetElement = typeof scrollTarget === 'string'
+            ? document.querySelector(scrollTarget)
+            : scrollTarget?.current || scrollTarget;
+
+          if (targetElement?.scrollIntoView) {
+            targetElement.scrollIntoView({ behavior: scrollBehavior, block: 'start' });
+            return;
+          }
+
+          window.scrollTo({ top: 0, behavior: scrollBehavior });
+        });
+      }
     }
   };
 
