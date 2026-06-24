@@ -16,7 +16,6 @@ import {
   FiEyeOff
 } from 'react-icons/fi';
 import {
-  formatDateTime,
   getAdminUsers,
   updateAdminHrApproval,
   updateAdminUserStatus
@@ -25,6 +24,7 @@ import { createAdminUser } from '../../super-admin/services/usersApi';
 import { getDashboardPathByRole } from '../../../utils/auth';
 import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
 import Pagination from '../../../shared/components/Pagination';
+import DateTimeCell from '../../../shared/components/DateTimeCell';
 import {
   deleteManagedAccount,
   findManagedAccountByEmail,
@@ -676,7 +676,7 @@ const AdminUsersPage = () => {
              </div>
           ) : null}
 
-          <table className="w-full min-w-[1220px] border-collapse text-left xl:min-w-[1280px]">
+          <table className="w-full min-w-[1360px] border-collapse text-left xl:min-w-[1420px]">
             <thead>
               <tr className="bg-neutral-50">
                 <th className="border-b border-neutral-200 p-3 pl-5 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Account Identity</th>
@@ -684,8 +684,8 @@ const AdminUsersPage = () => {
                 <th className="w-[118px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">System Role</th>
                 <th className="w-[118px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Auth Status</th>
                 <th className="w-[126px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">HR Clearance</th>
-                <th className="w-[160px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Onboarding</th>
-                <th className="w-[160px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Last Active</th>
+                <th className="w-[150px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Onboarding</th>
+                <th className="w-[150px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Last Active</th>
                 <th className="min-w-[280px] border-b border-neutral-200 p-3 pr-5 text-right text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Security Actions</th>
               </tr>
             </thead>
@@ -730,11 +730,11 @@ const AdminUsersPage = () => {
                           <span className="text-neutral-300 text-xs font-bold">—</span>
                         )}
                       </td>
-                      <td className="p-3 align-middle text-xs font-semibold leading-5 text-neutral-500">
-                        {formatDateTime(user.onboardingDate || user.createdAt || user.created_at)}
+                      <td className="p-3 align-middle">
+                        <DateTimeCell value={user.onboardingDate || user.createdAt || user.created_at} />
                       </td>
-                      <td className="p-3 align-middle text-xs font-semibold leading-5 text-neutral-500">
-                        {formatDateTime(user.lastActiveAt || user.last_login_at)}
+                      <td className="p-3 align-middle">
+                        <DateTimeCell value={user.lastActiveAt || user.last_login_at} emptyLabel="Never logged in" />
                       </td>
                       <td className="p-3 pr-5 align-middle">
                         <div className="flex flex-nowrap items-center justify-end gap-2 whitespace-nowrap opacity-100 transition-opacity md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto">

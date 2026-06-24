@@ -1,6 +1,6 @@
 import DataTable from '../../../shared/components/DataTable';
+import DateTimeCell from '../../../shared/components/DateTimeCell';
 import { USER_ROLE_LABELS } from '../constants/userRoles';
-import { formatDateTime } from '../utils/formatDate';
 import StatusBadge from './StatusBadge';
 
 const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) => {
@@ -55,11 +55,17 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
     {
       key: 'onboardingDate',
       label: 'Onboarding',
-      width: 148,
+      width: 142,
       cellClassName: 'text-[12px] leading-5 text-slate-500',
-      render: (value, row) => formatDateTime(value || row.createdAt)
+      render: (value, row) => <DateTimeCell value={value} fallbackValue={row.createdAt} />
     },
-    { key: 'lastActiveAt', label: 'Last Active', width: 148, cellClassName: 'text-[12px] leading-5 text-slate-500', render: (value) => formatDateTime(value) },
+    {
+      key: 'lastActiveAt',
+      label: 'Last Active',
+      width: 142,
+      cellClassName: 'text-[12px] leading-5 text-slate-500',
+      render: (value) => <DateTimeCell value={value} emptyLabel="Never logged in" />
+    },
     {
       key: 'actions',
       label: 'Actions',

@@ -53,3 +53,32 @@ export const formatDateTime = (value, {
     timeZone
   }).format(date));
 };
+
+export const formatDateTimeParts = (value, {
+  locale = 'en-IN',
+  timeZone = 'Asia/Kolkata',
+  timeZoneLabel = 'IST'
+} = {}) => {
+  const date = parseAppDate(value);
+  if (!date) return null;
+
+  const dateText = new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone
+  }).format(date);
+
+  const timeText = normalizeMeridiem(new Intl.DateTimeFormat(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone
+  }).format(date));
+
+  return {
+    dateText,
+    timeText: timeZoneLabel ? `${timeText} ${timeZoneLabel}` : timeText,
+    iso: date.toISOString()
+  };
+};
