@@ -6,6 +6,7 @@ const normalizeKey = (value = '') => normalizeText(value).toLowerCase();
 
 const getSectorId = (sector = {}) => String(sector.id || sector.value || sector.name || '');
 const getSectorName = (sector = {}) => normalizeText(sector.name || sector.label || sector.value);
+const makeLocalSectorId = (name = '') => `custom:${normalizeKey(name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || Date.now()}`;
 
 const mergeSectors = (sectors = []) => {
   const seen = new Set();
@@ -35,7 +36,8 @@ const SearchableSectorSelect = ({
   onCreateSector
 }) => {
   const rootRef = useRef(null);
-  const normalizedSectors = useMemo(() => mergeSectors(sectors), [sectors]);
+  const [localSectors, setLocalSectors] = useState([]);
+  const normalizedSectors = useMemo(() => mergeSectors([...sectors, ...localSectors]), [sectors, localSectors]);
   const selectedSector = normalizedSectors.find((sector) => getSectorId(sector) === String(value || ''));
   const selectedName = selectedSector?.name || normalizeText(valueName);
   const [open, setOpen] = useState(false);
@@ -78,6 +80,15 @@ const SearchableSectorSelect = ({
     setError('');
   };
 
+  const rememberLocalSector = (sector) => {
+    if (!sector?.name) return;
+    setLocalSectors((current) => {
+      const key = normalizeKey(sector.name);
+      if (!key || current.some((item) => normalizeKey(item.name) === key)) return current;
+      return [...current, sector];
+    });
+  };
+
   const handleCreate = async () => {
     const name = normalizeText(customName || query);
     if (!name) {
@@ -93,11 +104,19 @@ const SearchableSectorSelect = ({
 
     setCreating(true);
     setError('');
+    const optimisticSector = { id: makeLocalSectorId(name), name };
+    rememberLocalSector(optimisticSector);
+    selectSector(optimisticSector);
+
     try {
       const createdSector = await onCreateSector?.(name);
-      selectSector(createdSector || { id: `custom:${name}`, name });
+      if (createdSector?.name) {
+        rememberLocalSector(createdSector);
+        selectSector(createdSector);
+      }
     } catch (createError) {
       setError(createError.message || 'Unable to add sector.');
+      setOpen(true);
     } finally {
       setCreating(false);
     }
