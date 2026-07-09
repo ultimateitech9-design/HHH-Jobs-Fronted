@@ -15,7 +15,6 @@ import {
   X
 } from 'lucide-react';
 import { apiFetch } from '../../../utils/api';
-import rankedSearch from '../../../shared/utils/rankedSearch';
 
 const EMPTY_TREE = {
   states: [],
@@ -65,18 +64,27 @@ const LEVEL_COPY = {
 const normalizeText = (value = '') => String(value || '').trim().replace(/\s+/g, ' ');
 const formatCount = (value = 0) => Number(value || 0).toLocaleString('en-IN');
 
-const normalizeTree = (tree = {}) => ({
-  ...EMPTY_TREE,
-  ...tree,
-  states: Array.isArray(tree.states) ? tree.states : [],
-  districts: Array.isArray(tree.districts) ? tree.districts : [],
-  cities: Array.isArray(tree.cities) ? tree.cities : [],
-  localities: Array.isArray(tree.localities) ? tree.localities : [],
-  districtsByState: tree.districtsByState || {},
-  citiesByDistrict: tree.citiesByDistrict || {},
-  localitiesByCity: tree.localitiesByCity || {},
-  totals: { ...EMPTY_TREE.totals, ...(tree.totals || {}) }
-});
+const makeScopeKey = (level, parentId = '') => `${level}:${parentId || 'root'}`;
+
+const buildDirectoryEndpoint = ({ level = LEVELS.STATES, parentId = '', query = '', limit = 120 } = {}) => {
+  const params = new URLSearchParams();
+  params.set('level', level);
+  params.set('limit', String(limit));
+  if (parentId) params.set('parentId', parentId);
+  if (query) params.set('q', query);
+  return `/jobs/meta/location-directory?${params.toString()}`;
+};
+
+const readLocationDirectory = async (options) => {
+  const response = await apiFetch(buildDirectoryEndpoint(options), { skipAuth: true, timeoutMs: 6000 });
+  const payload = response.ok ? await response.json().catch(() => null) : null;
+  if (!payload?.status) throw new Error('Unable to load mapped locations right now.');
+  const directory = payload.locationDirectory || {};
+  return {
+    items: Array.isArray(directory.items) ? directory.items : [],
+    totals: { ...EMPTY_TREE.totals, ...(directory.totals || {}) }
+  };
+};
 
 const buildLocationJobPath = (item = {}) => {
   const params = new URLSearchParams();
@@ -118,13 +126,6 @@ const getItemSubtitle = (item = {}) => [
   item.stateName,
   item.pincode
 ].filter(Boolean).join(' • ');
-
-const buildSearchItems = (tree) => [
-  ...tree.states,
-  ...tree.districts,
-  ...tree.cities,
-  ...tree.localities
-];
 
 function MetricPill({ icon: Icon, label, value }) {
   return (
@@ -229,9 +230,11 @@ function LocationCard({ item, level, onDrill }) {
 }
 
 export default function LocationDirectoryPage() {
-  const [tree, setTree] = useState(EMPTY_TREE);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [scopeItems, setScopeItems] = useState({});
+  const [scopeLoading, setScopeLoading] = useState({});
+  const [scopeErrors, setScopeErrors] = useState({});
+  const [totals, setTotals] = useState(EMPTY_TREE.totals);
+  const [searchResult, setSearchResult] = useState({ query: '', items: [], loading: false, error: '' });
   const [query, setQuery] = useState('');
   const [selection, setSelection] = useState({
     level: LEVELS.STATES,
@@ -242,55 +245,117 @@ export default function LocationDirectoryPage() {
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = normalizeText(deferredQuery);
 
+  const currentScope = useMemo(() => {
+    if (selection.level === LEVELS.DISTRICTS) {
+      return {
+        level: LEVELS.DISTRICTS,
+        parentId: selection.state?.id || '',
+        key: makeScopeKey(LEVELS.DISTRICTS, selection.state?.id)
+      };
+    }
+    if (selection.level === LEVELS.CITIES) {
+      return {
+        level: LEVELS.CITIES,
+        parentId: selection.district?.id || '',
+        key: makeScopeKey(LEVELS.CITIES, selection.district?.id)
+      };
+    }
+    if (selection.level === LEVELS.LOCALITIES) {
+      return {
+        level: LEVELS.LOCALITIES,
+        parentId: selection.city?.id || '',
+        key: makeScopeKey(LEVELS.LOCALITIES, selection.city?.id)
+      };
+    }
+    return {
+      level: LEVELS.STATES,
+      parentId: '',
+      key: makeScopeKey(LEVELS.STATES)
+    };
+  }, [selection]);
+
   useEffect(() => {
-    let mounted = true;
-    const loadTree = async () => {
-      setLoading(true);
-      setError('');
+    if (normalizedQuery) return undefined;
+    if (Object.prototype.hasOwnProperty.call(scopeItems, currentScope.key)) return undefined;
+    if (currentScope.level !== LEVELS.STATES && !currentScope.parentId) return undefined;
+
+    let cancelled = false;
+    setScopeLoading((current) => ({ ...current, [currentScope.key]: true }));
+    setScopeErrors((current) => ({ ...current, [currentScope.key]: '' }));
+
+    const loadDirectory = async () => {
       try {
-        const response = await apiFetch('/jobs/meta/location-tree', { skipAuth: true, timeoutMs: 12000 });
-        const payload = response.ok ? await response.json().catch(() => null) : null;
-        if (!mounted) return;
-        if (!payload?.status) {
-          setError('Unable to load mapped locations right now.');
-          setLoading(false);
-          return;
+        const directory = await readLocationDirectory({
+          level: currentScope.level,
+          parentId: currentScope.parentId,
+          limit: currentScope.level === LEVELS.STATES ? 80 : 240
+        });
+        if (cancelled) return;
+        setTotals(directory.totals);
+        setScopeItems((current) => ({ ...current, [currentScope.key]: directory.items }));
+      } catch (error) {
+        if (cancelled) return;
+        setScopeErrors((current) => ({
+          ...current,
+          [currentScope.key]: error?.message || 'Unable to load mapped locations right now.'
+        }));
+      } finally {
+        if (!cancelled) {
+          setScopeLoading((current) => ({ ...current, [currentScope.key]: false }));
         }
-        setTree(normalizeTree(payload.locationTree));
-        setLoading(false);
-      } catch {
-        if (!mounted) return;
-        setError('Unable to load mapped locations right now.');
-        setLoading(false);
       }
     };
 
-    loadTree();
+    loadDirectory();
     return () => {
-      mounted = false;
+      cancelled = true;
     };
-  }, []);
+  }, [currentScope, normalizedQuery, scopeItems]);
 
-  const currentItems = useMemo(() => {
-    if (selection.level === LEVELS.DISTRICTS) return tree.districtsByState[selection.state?.id] || [];
-    if (selection.level === LEVELS.CITIES) return tree.citiesByDistrict[selection.district?.id] || [];
-    if (selection.level === LEVELS.LOCALITIES) return tree.localitiesByCity[selection.city?.id] || [];
-    return tree.states;
-  }, [selection, tree]);
+  useEffect(() => {
+    const searchText = normalizedQuery;
+    if (!searchText) {
+      setSearchResult({ query: '', items: [], loading: false, error: '' });
+      return undefined;
+    }
 
-  const searchItems = useMemo(() => {
-    if (!normalizedQuery) return [];
-    return rankedSearch(buildSearchItems(tree), normalizedQuery, [
-      'name',
-      'stateName',
-      'districtName',
-      'cityName',
-      'pincode',
-      (item) => item.type
-    ]).slice(0, 120);
-  }, [normalizedQuery, tree]);
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setSearchResult((current) => ({
+        ...current,
+        query: searchText,
+        loading: true,
+        error: ''
+      }));
+      try {
+        const directory = await readLocationDirectory({ query: searchText, limit: 120 });
+        if (cancelled) return;
+        setTotals(directory.totals);
+        setSearchResult({ query: searchText, items: directory.items, loading: false, error: '' });
+      } catch (error) {
+        if (cancelled) return;
+        setSearchResult({
+          query: searchText,
+          items: [],
+          loading: false,
+          error: error?.message || 'Unable to search mapped locations right now.'
+        });
+      }
+    }, 220);
 
-  const visibleItems = normalizedQuery ? searchItems : currentItems;
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [normalizedQuery]);
+
+  const hasCurrentScope = Object.prototype.hasOwnProperty.call(scopeItems, currentScope.key);
+  const currentItems = scopeItems[currentScope.key] || [];
+  const visibleItems = normalizedQuery ? searchResult.items : currentItems;
+  const loading = normalizedQuery
+    ? searchResult.loading
+    : (!hasCurrentScope || Boolean(scopeLoading[currentScope.key]));
+  const error = normalizedQuery ? searchResult.error : (scopeErrors[currentScope.key] || '');
   const copy = LEVEL_COPY[selection.level] || LEVEL_COPY.states;
 
   const drill = (item) => {
@@ -361,10 +426,10 @@ export default function LocationDirectoryPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <MetricPill icon={Globe2} label="states" value={tree.totals.states} />
-              <MetricPill icon={Layers} label="districts" value={tree.totals.districts} />
-              <MetricPill icon={Map} label="cities" value={tree.totals.cities} />
-              <MetricPill icon={Hash} label="pincodes" value={tree.totals.pincodes} />
+              <MetricPill icon={Globe2} label="states" value={totals.states} />
+              <MetricPill icon={Layers} label="districts" value={totals.districts} />
+              <MetricPill icon={Map} label="cities" value={totals.cities} />
+              <MetricPill icon={Hash} label="pincodes" value={totals.pincodes} />
             </div>
           </div>
 
