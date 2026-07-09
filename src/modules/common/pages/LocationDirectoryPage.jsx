@@ -15,6 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { apiFetch } from '../../../utils/api';
+import { INDIAN_STATES } from '../../../shared/constants/indianStates';
 
 const EMPTY_TREE = {
   states: [],
@@ -24,7 +25,7 @@ const EMPTY_TREE = {
   districtsByState: {},
   citiesByDistrict: {},
   localitiesByCity: {},
-  totals: { states: 0, districts: 0, cities: 0, localities: 0, pincodes: 0, openJobs: 0 }
+  totals: { states: INDIAN_STATES.length, districts: 0, cities: 0, localities: 0, pincodes: 0, openJobs: 0 }
 };
 
 const LEVELS = {
@@ -63,14 +64,33 @@ const LEVEL_COPY = {
 
 const normalizeText = (value = '') => String(value || '').trim().replace(/\s+/g, ' ');
 const formatCount = (value = 0) => Number(value || 0).toLocaleString('en-IN');
+const slugify = (value = '') => normalizeText(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const getDbId = (item = {}) => {
+  const id = String(item?.id || '');
+  return id.startsWith('fallback:') ? '' : id;
+};
 
-const makeScopeKey = (level, parentId = '') => `${level}:${parentId || 'root'}`;
+const FALLBACK_STATE_ITEMS = INDIAN_STATES.map((name) => ({
+  id: `fallback:state:${slugify(name)}`,
+  name,
+  code: slugify(name).toUpperCase(),
+  type: 'state',
+  districtCount: 0,
+  cityCount: 0,
+  localityCount: 0,
+  pincodeCount: 0,
+  jobCount: 0,
+  source: 'fallback'
+}));
 
-const buildDirectoryEndpoint = ({ level = LEVELS.STATES, parentId = '', query = '', limit = 120 } = {}) => {
+const makeScopeKey = (level, parentId = '', parentName = '') => `${level}:${parentId || parentName || 'root'}`;
+
+const buildDirectoryEndpoint = ({ level = LEVELS.STATES, parentId = '', parentName = '', query = '', limit = 120 } = {}) => {
   const params = new URLSearchParams();
   params.set('level', level);
   params.set('limit', String(limit));
   if (parentId) params.set('parentId', parentId);
+  if (parentName) params.set('parentName', parentName);
   if (query) params.set('q', query);
   return `/jobs/meta/location-directory?${params.toString()}`;
 };
@@ -247,24 +267,30 @@ export default function LocationDirectoryPage() {
 
   const currentScope = useMemo(() => {
     if (selection.level === LEVELS.DISTRICTS) {
+      const parentId = getDbId(selection.state);
       return {
         level: LEVELS.DISTRICTS,
-        parentId: selection.state?.id || '',
-        key: makeScopeKey(LEVELS.DISTRICTS, selection.state?.id)
+        parentId,
+        parentName: selection.state?.name || '',
+        key: makeScopeKey(LEVELS.DISTRICTS, parentId, selection.state?.name)
       };
     }
     if (selection.level === LEVELS.CITIES) {
+      const parentId = getDbId(selection.district);
       return {
         level: LEVELS.CITIES,
-        parentId: selection.district?.id || '',
-        key: makeScopeKey(LEVELS.CITIES, selection.district?.id)
+        parentId,
+        parentName: selection.district?.name || '',
+        key: makeScopeKey(LEVELS.CITIES, parentId, selection.district?.name)
       };
     }
     if (selection.level === LEVELS.LOCALITIES) {
+      const parentId = getDbId(selection.city);
       return {
         level: LEVELS.LOCALITIES,
-        parentId: selection.city?.id || '',
-        key: makeScopeKey(LEVELS.LOCALITIES, selection.city?.id)
+        parentId,
+        parentName: selection.city?.name || '',
+        key: makeScopeKey(LEVELS.LOCALITIES, parentId, selection.city?.name)
       };
     }
     return {
@@ -277,7 +303,7 @@ export default function LocationDirectoryPage() {
   useEffect(() => {
     if (normalizedQuery) return undefined;
     if (Object.prototype.hasOwnProperty.call(scopeItems, currentScope.key)) return undefined;
-    if (currentScope.level !== LEVELS.STATES && !currentScope.parentId) return undefined;
+    if (currentScope.level !== LEVELS.STATES && !currentScope.parentId && !currentScope.parentName) return undefined;
 
     let cancelled = false;
     setScopeLoading((current) => ({ ...current, [currentScope.key]: true }));
@@ -288,6 +314,7 @@ export default function LocationDirectoryPage() {
         const directory = await readLocationDirectory({
           level: currentScope.level,
           parentId: currentScope.parentId,
+          parentName: currentScope.parentName,
           limit: currentScope.level === LEVELS.STATES ? 80 : 240
         });
         if (cancelled) return;
@@ -350,11 +377,11 @@ export default function LocationDirectoryPage() {
   }, [normalizedQuery]);
 
   const hasCurrentScope = Object.prototype.hasOwnProperty.call(scopeItems, currentScope.key);
-  const currentItems = scopeItems[currentScope.key] || [];
+  const currentItems = scopeItems[currentScope.key] || (currentScope.level === LEVELS.STATES ? FALLBACK_STATE_ITEMS : []);
   const visibleItems = normalizedQuery ? searchResult.items : currentItems;
   const loading = normalizedQuery
     ? searchResult.loading
-    : (!hasCurrentScope || Boolean(scopeLoading[currentScope.key]));
+    : (currentScope.level === LEVELS.STATES && currentItems.length > 0 ? false : (!hasCurrentScope || Boolean(scopeLoading[currentScope.key])));
   const error = normalizedQuery ? searchResult.error : (scopeErrors[currentScope.key] || '');
   const copy = LEVEL_COPY[selection.level] || LEVEL_COPY.states;
 
