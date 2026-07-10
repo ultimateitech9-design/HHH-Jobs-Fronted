@@ -8,7 +8,7 @@ import FilterBar from '../components/FilterBar';
 import Pagination from '../components/Pagination';
 import UsersTable from '../components/UsersTable';
 import useUsers from '../hooks/useUsers';
-import { ASSIGNABLE_DASHBOARD_ROLE_OPTIONS, USER_ROLES, USER_ROLE_LABELS } from '../constants/userRoles';
+import { ASSIGNABLE_DASHBOARD_ROLE_OPTIONS, USER_ROLE_FILTER_OPTIONS, USER_ROLE_LABELS } from '../constants/userRoles';
 import { createAdminUser, deleteUser, updateUserStatus } from '../services/usersApi';
 import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
 import StateScopePicker from '../../../shared/components/StateScopePicker';
@@ -740,7 +740,7 @@ const UsersManagement = () => {
           filters={draftFilters}
           onChange={(key, value) => setDraftFilters((current) => ({ ...current, [key]: value }))}
           fields={[
-            { key: 'role', label: 'Role', options: USER_ROLES.map((role) => ({ value: role, label: USER_ROLE_LABELS[role] || role })) },
+            { key: 'role', label: 'Role', options: USER_ROLE_FILTER_OPTIONS.map((option) => ({ value: option.value, label: option.label || USER_ROLE_LABELS[option.value] || option.value })) },
             { key: 'status', label: 'Status', options: ['active', 'pending', 'blocked', 'banned'].map((status) => ({ value: status, label: status })) }
           ]}
           actions={(

@@ -16,7 +16,9 @@ const MANAGEMENT_ROLE_TOKENS = Object.freeze({
   campus_connect: 'CC',
   platform: 'PF',
   audit: 'AU',
-  company_admin: 'CA'
+  company_admin: 'CA',
+  finance: 'FI',
+  professional: 'PR'
 });
 
 const notifyManagedUsersChanged = () => {

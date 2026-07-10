@@ -20,15 +20,12 @@ import {
   updateAdminHrApproval,
   updateAdminUserStatus
 } from '../services/adminApi';
-import { createAdminUser } from '../../super-admin/services/usersApi';
+import { createAdminUser, deleteUser } from '../../super-admin/services/usersApi';
 import { getDashboardPathByRole } from '../../../utils/auth';
 import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
 import Pagination from '../../../shared/components/Pagination';
 import DateTimeCell from '../../../shared/components/DateTimeCell';
 import {
-  deleteManagedAccount,
-  findManagedAccountByEmail,
-  getManagedAccounts,
   getManagementDisplayId
 } from '../../../utils/managedUsers';
 
@@ -44,16 +41,24 @@ const initialFilters = {
 
 const ADMIN_USER_ROLE_OPTIONS = [
   { value: 'all', label: 'All Roles' },
-  { value: 'admin', label: 'Management' },
+  { value: 'group:public', label: 'Public Accounts' },
+  { value: 'group:internal', label: 'Internal Staff' },
+  { value: 'group:management', label: 'Management' },
+  { value: 'super_admin', label: 'Super Admin' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'platform', label: 'Platform Ops' },
+  { value: 'audit', label: 'Audit' },
   { value: 'hr', label: 'Company HR' },
+  { value: 'company_admin', label: 'Company Admin' },
   { value: 'student', label: 'Student / Seeker' },
   { value: 'retired_employee', label: 'Retired Employee' },
+  { value: 'professional', label: 'Professional' },
+  { value: 'campus_connect', label: 'Campus Connect' },
   { value: 'support', label: 'Support' },
   { value: 'sales', label: 'Sales' },
   { value: 'accounts', label: 'Accounts' },
-  { value: 'dataentry', label: 'Data Entry' },
-  { value: 'campus_connect', label: 'Campus Connect' },
-  { value: 'company_admin', label: 'Company Admin' }
+  { value: 'finance', label: 'Finance' },
+  { value: 'dataentry', label: 'Data Entry' }
 ];
 
 const ADMIN_MANAGED_ROLE_OPTIONS = [
@@ -64,7 +69,8 @@ const ADMIN_MANAGED_ROLE_OPTIONS = [
 ];
 
 const toApiFilters = (filters, page = 1) => ({
-  role: filters.role === 'all' ? '' : filters.role,
+  role: filters.role === 'all' || String(filters.role || '').startsWith('group:') ? '' : filters.role,
+  roleGroup: String(filters.role || '').startsWith('group:') ? String(filters.role).slice(6) : '',
   status: filters.status === 'all' ? '' : filters.status,
   search: filters.search,
   approved: filters.hrClearance === 'verified' ? 'true' : (filters.hrClearance === 'pending' ? 'false' : ''),
@@ -118,13 +124,16 @@ const AdminUsersPage = () => {
     setLoading(true);
     setError('');
 
-    const response = await getAdminUsers(toApiFilters(nextFilters, nextPage));
+    const [response, internalResponse] = await Promise.all([
+      getAdminUsers(toApiFilters(nextFilters, nextPage)),
+      getAdminUsers({ roleGroup: 'operations', page: 1, limit: 100 })
+    ]);
     const payload = response.data || {};
     setUsers(payload.users || []);
     setTotalUsers(Number(payload.total || 0));
     setResponseLimit(Number(payload.limit || USERS_PAGE_SIZE) || USERS_PAGE_SIZE);
-    setManagedAccounts(getManagedAccounts());
-    setError(response.error || '');
+    setManagedAccounts(internalResponse.data?.users || []);
+    setError(response.error || internalResponse.error || '');
     setLoading(false);
   };
 
@@ -168,7 +177,13 @@ const AdminUsersPage = () => {
       return;
     }
 
-    if (findManagedAccountByEmail(email)) {
+    const knownEmails = new Set(
+      [...users, ...managedAccounts]
+        .map((user) => String(user.email || '').trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    if (knownEmails.has(email)) {
       setError('Email already registered.');
       return;
     }
@@ -190,8 +205,7 @@ const AdminUsersPage = () => {
         company: 'HHH Jobs',
         department: accountForm.department
       });
-      const managedAccount = findManagedAccountByEmail(email) || created;
-      setManagedAccounts(getManagedAccounts());
+      await loadUsers({ ...filters, search: deferredSearch }, 1);
       setAccountForm({
         name: '',
         phone: '',
@@ -201,7 +215,9 @@ const AdminUsersPage = () => {
         department: 'Operations'
       });
       setAccountFormTouched({ email: false, password: false });
-      setMessage(`${managedAccount.name || created.name} account ${getManagementDisplayId(managedAccount.id || created.id, managedAccount.role || created.role)} created for ${managedAccount.role || created.role}. Login will open ${getDashboardPathByRole(managedAccount.role || created.role)}.`);
+      setManagedPage(1);
+      setSecurityPage(1);
+      setMessage(`${created.name || accountForm.name} account ${getManagementDisplayId(created.id, created.role || accountForm.role)} created for ${created.role || accountForm.role}. Login will open ${getDashboardPathByRole(created.role || accountForm.role)}.`);
       setTimeout(() => setMessage(''), 4000);
     } catch (actionError) {
       setError(String(actionError.message || 'Unable to create managed account.'));
@@ -210,16 +226,17 @@ const AdminUsersPage = () => {
     }
   };
 
-  const handleDeleteManagedAccount = (userId) => {
+  const handleDeleteManagedAccount = async (userId) => {
     if (!window.confirm('Are you sure you want to delete this internal account?')) return;
     
     setError('');
     setMessage('');
 
     try {
-      const deleted = deleteManagedAccount(userId);
-      setManagedAccounts(getManagedAccounts());
-      setMessage(`${deleted.name} account deleted. Dashboard access removed.`);
+      const target = managedAccounts.find((account) => account.id === userId);
+      await deleteUser(userId);
+      await loadUsers({ ...filters, search: deferredSearch }, securityPage);
+      setMessage(`${target?.name || 'Internal'} account deleted. Dashboard access removed.`);
       setTimeout(() => setMessage(''), 4000);
     } catch (actionError) {
       setError(String(actionError.message || 'Unable to delete managed account.'));
@@ -698,7 +715,8 @@ const AdminUsersPage = () => {
                 </tr>
               ) : (
                 paginatedSecurityUsers.map((user) => {
-                  const isHr = String(user.role).toLowerCase() === 'hr';
+                  const normalizedRole = String(user.role || '').toLowerCase();
+                  const isHr = normalizedRole === 'hr' || normalizedRole === 'company_admin';
                   const isStatusBusy = busyAction === `status:${user.id}`;
                   const isApprovalBusy = busyAction === `approval:${user.id}`;
                   

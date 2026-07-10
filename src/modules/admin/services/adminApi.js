@@ -1,5 +1,4 @@
 import { apiFetch, hasApiAccessToken } from '../../../utils/api';
-import { filterDeletedUsers } from '../../../utils/managedUsers';
 import { formatDateTime as formatSharedDateTime } from '../../../shared/utils/dateTime';
 
 const parseJson = async (response) => {
@@ -147,9 +146,10 @@ export const getAdminDashboard = async () =>
   });
 
 // Users & HR approvals
-export const getAdminUsers = async (filters = {}) =>
-  safeRequest({
-    path: `/admin/users${buildQueryString(filters) ? `?${buildQueryString(filters)}` : ''}`,
+export const getAdminUsers = async (filters = {}) => {
+  const queryString = buildQueryString({ ...filters, _fresh: Date.now() });
+  return safeRequest({
+    path: `/admin/users${queryString ? `?${queryString}` : ''}`,
     emptyData: {
       users: [],
       total: 0,
@@ -157,12 +157,13 @@ export const getAdminUsers = async (filters = {}) =>
       limit: Number(filters.limit || 25)
     },
     extract: (payload) => ({
-      users: filterDeletedUsers(payload?.users || []).map(normalizeAdminUser),
+      users: (payload?.users || []).map(normalizeAdminUser),
       total: Number(payload?.total || 0),
       page: Number(payload?.page || filters.page || 1),
       limit: Number(payload?.limit || filters.limit || 25)
     })
   });
+};
 
 export const updateAdminUserStatus = async (userId, status) =>
   strictRequest({

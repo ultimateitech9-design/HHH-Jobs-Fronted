@@ -72,7 +72,7 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
       width: 196,
       wrap: false,
       render: (_, row) => (
-        ['super_admin', 'admin', 'hr', 'support', 'student', 'dataentry', 'accounts', 'sales', 'company_admin', 'platform', 'audit', 'campus_connect', 'retired_employee'].includes(row.role) ? (
+        ['super_admin', 'admin', 'hr', 'support', 'student', 'dataentry', 'accounts', 'sales', 'finance', 'company_admin', 'platform', 'audit', 'campus_connect', 'retired_employee', 'professional'].includes(row.role) ? (
           <div className="flex min-w-[176px] flex-nowrap items-center justify-start gap-1">
             {['active', 'banned'].map((status) => {
               const isSelected = row.status === status;

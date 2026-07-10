@@ -1,4 +1,35 @@
-export const USER_ROLES = ['super_admin', 'admin', 'support', 'sales', 'dataentry', 'accounts', 'campus_connect', 'company_admin', 'hr', 'student'];
+export const USER_ROLES = [
+  'super_admin',
+  'admin',
+  'support',
+  'sales',
+  'dataentry',
+  'accounts',
+  'platform',
+  'audit',
+  'finance',
+  'campus_connect',
+  'company_admin',
+  'hr',
+  'student',
+  'retired_employee',
+  'professional'
+];
+
+export const USER_ROLE_GROUP_FILTERS = [
+  { value: 'group:public', label: 'Public Accounts' },
+  { value: 'group:candidates', label: 'Students / Professionals' },
+  { value: 'group:employers', label: 'Employers / HR' },
+  { value: 'group:campuses', label: 'Campus Connect' },
+  { value: 'group:internal', label: 'Internal Staff' },
+  { value: 'group:management', label: 'Management' },
+  { value: 'group:operations', label: 'Operations' }
+];
+
+export const USER_ROLE_FILTER_OPTIONS = [
+  ...USER_ROLE_GROUP_FILTERS,
+  ...USER_ROLES.map((role) => ({ value: role, label: null }))
+];
 
 export const ASSIGNABLE_DASHBOARD_ROLE_OPTIONS = [
   { value: 'admin', label: 'Admin Dashboard' },
@@ -20,7 +51,12 @@ export const USER_ROLE_LABELS = {
   support: 'Support',
   dataentry: 'Data Entry',
   accounts: 'Accounts',
+  platform: 'Platform Ops',
+  audit: 'Audit',
+  finance: 'Finance',
   sales: 'Sales',
   campus_connect: 'Campus Connect',
-  student: 'Student'
+  student: 'Student',
+  retired_employee: 'Retired Employee',
+  professional: 'Professional'
 };

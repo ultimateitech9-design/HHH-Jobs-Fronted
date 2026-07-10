@@ -1,5 +1,5 @@
 import { apiFetch, areDemoFallbacksEnabled } from '../../../utils/api';
-import { clearSWRCache, staleWhileRevalidate } from '../../../shared/services/staleWhileRevalidate';
+import { clearSWRCache } from '../../../shared/services/staleWhileRevalidate';
 import {
   createManagedAccount,
   deleteManagedAccount,
@@ -16,6 +16,15 @@ import { mapApiUserToUi } from './mappers';
 export const SUPER_ADMIN_BASE = '/super-admin';
 const USERS_BATCH_SIZE = 100;
 const SUPPORT_CONTEXT_CACHE_KEY = 'hhh_super_admin_support_context_seed';
+const ROLE_GROUPS = Object.freeze({
+  public: new Set(['hr', 'company_admin', 'student', 'retired_employee', 'professional', 'campus_connect']),
+  candidates: new Set(['student', 'retired_employee', 'professional']),
+  employers: new Set(['hr', 'company_admin']),
+  campuses: new Set(['campus_connect']),
+  internal: new Set(['admin', 'support', 'sales', 'dataentry', 'accounts', 'platform', 'audit', 'finance']),
+  management: new Set(['super_admin', 'admin']),
+  operations: new Set(['support', 'sales', 'dataentry', 'accounts', 'platform', 'audit', 'finance'])
+});
 
 export const clone = (value) => {
   if (value === null || value === undefined) return value;
@@ -88,6 +97,9 @@ export const safeRequest = async ({ path, options, emptyData, fallbackData, extr
 const filterUsers = (users, filters = {}) => {
   return users.filter((user) => {
     const search = String(filters.search || '').toLowerCase();
+    const roleValue = String(filters.role || '').trim().toLowerCase();
+    const roleGroup = String(filters.roleGroup || filters.role_group || (roleValue.startsWith('group:') ? roleValue.slice(6) : '')).trim().toLowerCase();
+    const exactRole = roleValue.startsWith('group:') ? '' : roleValue;
     const matchesSearch = !search || [
       user.name,
       user.email,
@@ -98,7 +110,8 @@ const filterUsers = (users, filters = {}) => {
       user.mobile,
       user.contactNumber
     ].some((value) => String(value || '').toLowerCase().includes(search));
-    const matchesRole = !filters.role || user.role === filters.role;
+    const matchesRoleGroup = !roleGroup || ROLE_GROUPS[roleGroup]?.has(String(user.role || '').toLowerCase());
+    const matchesRole = (!exactRole || user.role === exactRole) && matchesRoleGroup;
     const matchesStatus = !filters.status || user.status === filters.status;
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -152,80 +165,80 @@ const buildUsersQuery = (page, filters = {}, limit = USERS_BATCH_SIZE) => {
   });
 
   if (filters.search) params.set('search', String(filters.search).trim());
-  if (filters.role) params.set('role', String(filters.role).trim());
+  const rawRole = String(filters.role || '').trim();
+  if (rawRole.startsWith('group:')) {
+    params.set('roleGroup', rawRole.slice(6));
+  } else if (rawRole) {
+    params.set('role', rawRole);
+  }
+  if (filters.roleGroup || filters.role_group) params.set('roleGroup', String(filters.roleGroup || filters.role_group).trim());
   if (filters.status) params.set('status', String(filters.status).trim());
 
   return params.toString();
 };
 
 const fetchUsersPage = async (page, filters = {}, limit = USERS_BATCH_SIZE) => {
+  const query = new URLSearchParams(buildUsersQuery(page, filters, limit));
+  query.set('_fresh', String(Date.now()));
   return strictRequest({
-    path: `${SUPER_ADMIN_BASE}/users?${buildUsersQuery(page, filters, limit)}`
+    path: `${SUPER_ADMIN_BASE}/users?${query.toString()}`
   });
 };
 
 export const getUsers = async (filters = {}) => {
   const requestedPage = Math.max(1, toPositiveInteger(filters.page, 1));
   const requestedLimit = Math.min(100, Math.max(1, toPositiveInteger(filters.limit, USERS_BATCH_SIZE)));
-  const cacheKey = `super-admin:users:${buildUsersQuery(requestedPage, filters, requestedLimit)}`;
-  return staleWhileRevalidate({
-    key: cacheKey,
-    maxAgeMs: 20_000,
-    staleMs: 180_000,
-    loader: async () => {
-      try {
-        const payload = await fetchUsersPage(requestedPage, filters, requestedLimit);
-        const apiUsers = Array.isArray(payload?.users)
-          ? payload.users.map(mapApiUserToUi)
-          : [];
-        const apiTotal = Number(payload?.total ?? apiUsers.length);
-        const responsePage = Number(payload?.page || requestedPage) || requestedPage;
-        const responseLimit = Number(payload?.limit || requestedLimit) || requestedLimit;
-        const managedUsers = areDemoFallbacksEnabled()
-          ? filterUsers(getManagedAccounts().map(mapManagedAccountToUser), filters)
-          : [];
-        if (apiUsers.length === 0 && apiTotal === 0 && managedUsers.length === 0) {
-          return {
-            data: areDemoFallbacksEnabled() ? paginateLocalRows(buildVisibleUsers(filters), requestedPage, requestedLimit) : [],
-            total: areDemoFallbacksEnabled() ? buildVisibleUsers(filters).length : 0,
-            page: requestedPage,
-            limit: requestedLimit,
-            error: '',
-            isDemo: areDemoFallbacksEnabled()
-          };
-        }
-        return {
-          data: filterDeletedUsers([...apiUsers, ...managedUsers]),
-          total: apiTotal + managedUsers.length,
-          page: responsePage,
-          limit: responseLimit,
-          error: '',
-          isDemo: false
-        };
-      } catch (error) {
-        const visibleUsers = areDemoFallbacksEnabled() ? buildVisibleUsers(filters) : [];
-        if (!areDemoFallbacksEnabled()) {
-          return {
-            data: [],
-            total: 0,
-            page: requestedPage,
-            limit: requestedLimit,
-            error: error.message || 'Request failed.',
-            isDemo: false
-          };
-        }
-
-        return {
-          data: paginateLocalRows(visibleUsers, requestedPage, requestedLimit),
-          total: visibleUsers.length,
-          page: requestedPage,
-          limit: requestedLimit,
-          error: error.message || 'Request failed.',
-          isDemo: true
-        };
-      }
+  try {
+    const payload = await fetchUsersPage(requestedPage, filters, requestedLimit);
+    const apiUsers = Array.isArray(payload?.users)
+      ? payload.users.map(mapApiUserToUi)
+      : [];
+    const apiTotal = Number(payload?.total ?? apiUsers.length);
+    const responsePage = Number(payload?.page || requestedPage) || requestedPage;
+    const responseLimit = Number(payload?.limit || requestedLimit) || requestedLimit;
+    const managedUsers = areDemoFallbacksEnabled()
+      ? filterUsers(getManagedAccounts().map(mapManagedAccountToUser), filters)
+      : [];
+    if (apiUsers.length === 0 && apiTotal === 0 && managedUsers.length === 0) {
+      return {
+        data: areDemoFallbacksEnabled() ? paginateLocalRows(buildVisibleUsers(filters), requestedPage, requestedLimit) : [],
+        total: areDemoFallbacksEnabled() ? buildVisibleUsers(filters).length : 0,
+        page: requestedPage,
+        limit: requestedLimit,
+        error: '',
+        isDemo: areDemoFallbacksEnabled()
+      };
     }
-  });
+    return {
+      data: [...apiUsers, ...filterDeletedUsers(managedUsers)],
+      total: apiTotal + managedUsers.length,
+      page: responsePage,
+      limit: responseLimit,
+      error: '',
+      isDemo: false
+    };
+  } catch (error) {
+    const visibleUsers = areDemoFallbacksEnabled() ? buildVisibleUsers(filters) : [];
+    if (!areDemoFallbacksEnabled()) {
+      return {
+        data: [],
+        total: 0,
+        page: requestedPage,
+        limit: requestedLimit,
+        error: error.message || 'Request failed.',
+        isDemo: false
+      };
+    }
+
+    return {
+      data: paginateLocalRows(visibleUsers, requestedPage, requestedLimit),
+      total: visibleUsers.length,
+      page: requestedPage,
+      limit: requestedLimit,
+      error: error.message || 'Request failed.',
+      isDemo: true
+    };
+  }
 };
 
 const clearUsersCache = () => clearSWRCache('super-admin:users:');
