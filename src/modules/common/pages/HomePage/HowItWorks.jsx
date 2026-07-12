@@ -13,86 +13,101 @@ import {
 import AnimatedSection from '../../../../shared/components/AnimatedSection';
 
 const seekerSteps = [
-  { icon: UserPlus, title: 'Create Profile', desc: 'Set up your account and make your profile searchable.' },
-  { icon: Search, title: 'Search Jobs', desc: 'Use the cleaner search experience to find the right roles fast.' },
-  { icon: Send, title: 'Apply Easily', desc: 'Track applications, saved roles, and alerts in one place.' },
-  { icon: CheckCircle2, title: 'Get Hired', desc: 'Move from shortlist to interview to offer with more clarity.' }
+  { icon: UserPlus, title: 'Build your profile', desc: 'Bring skills, projects, experience, and location into one searchable identity.' },
+  { icon: Search, title: 'Discover the right work', desc: 'Search private and government opportunities with relevant filters and context.' },
+  { icon: Send, title: 'Apply with clarity', desc: 'Move from role detail to application, saved jobs, and alerts without losing context.' },
+  { icon: CheckCircle2, title: 'Track the outcome', desc: 'Follow shortlist, interview, and offer movement from your candidate workspace.' }
 ];
 
 const recruiterSteps = [
-  { icon: Building2, title: 'Set Up Company', desc: 'Create a recruiter profile and prepare your hiring workspace.' },
-  { icon: Users, title: 'Post Jobs', desc: 'Publish roles and keep them visible inside the recruiter module.' },
-  { icon: Filter, title: 'Review Candidates', desc: 'Shortlist and manage applicants with cleaner dashboards.' },
-  { icon: Handshake, title: 'Hire Talent', desc: 'Track interviews, offers, and final decisions from one flow.' }
+  { icon: Building2, title: 'Set up the employer', desc: 'Create a trusted company presence and prepare the hiring workspace.' },
+  { icon: Users, title: 'Publish the requirement', desc: 'Post structured roles with clear skills, location, salary, and job context.' },
+  { icon: Filter, title: 'Review candidate fit', desc: 'Use profile evidence and workflow signals to focus the shortlist.' },
+  { icon: Handshake, title: 'Move to hire', desc: 'Coordinate interviews, decisions, and offers through one connected process.' }
 ];
 
-function StepGrid({ steps }) {
+function StepGrid({ steps, panelId }) {
   return (
-    <div className="mt-10 grid gap-6 md:grid-cols-4">
+    <motion.div
+      key={panelId}
+      id={panelId}
+      role="tabpanel"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.32, ease: 'easeOut' }}
+      className="mt-9 grid border-y border-slate-200 md:grid-cols-4"
+    >
       {steps.map((step, index) => (
-        <AnimatedSection key={step.title} delay={index * 0.08}>
-          <motion.div whileHover={{ y: -6 }} className="group relative text-center">
-            {index < steps.length - 1 ? (
-              <div className="absolute left-[60%] top-8 hidden h-[2px] w-[80%] bg-gradient-to-r from-brand-200 to-transparent md:block" />
-            ) : null}
-            <motion.div
-              whileHover={{ rotate: [0, -5, 5, 0], scale: 1.08 }}
-              className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl gradient-primary text-white shadow-xl shadow-navy/20"
-            >
-              <step.icon className="h-7 w-7" />
-            </motion.div>
-            <span className="absolute right-4 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-gold text-xs font-bold text-primary shadow-lg md:-left-2 md:right-auto">
-              {index + 1}
+        <article
+          key={step.title}
+          className={`group relative min-h-[220px] p-6 transition-colors hover:bg-slate-50 md:p-7 ${
+            index < steps.length - 1 ? 'border-b border-slate-200 md:border-b-0 md:border-r' : ''
+          }`}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white transition-transform group-hover:-translate-y-1">
+              <step.icon className="h-5 w-5" />
             </span>
-            <h3 className="font-heading text-lg font-semibold text-slate-900">{step.title}</h3>
-            <p className="mt-2 text-sm text-slate-500">{step.desc}</p>
-          </motion.div>
-        </AnimatedSection>
+            <span className="font-mono text-xs font-bold text-amber-600">{String(index + 1).padStart(2, '0')}</span>
+          </div>
+          <h3 className="mt-8 font-heading text-lg font-black text-slate-950">{step.title}</h3>
+          <p className="mt-3 text-sm leading-6 text-slate-500">{step.desc}</p>
+          <span className="absolute inset-x-6 bottom-0 h-px origin-left scale-x-0 bg-amber-500 transition-transform duration-300 group-hover:scale-x-100" />
+        </article>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
 export function HowItWorks() {
   const [activeTab, setActiveTab] = useState('seekers');
+  const isSeekerTab = activeTab === 'seekers';
 
   return (
-    <section className="py-20">
-      <div className="vw-shell">
-        <AnimatedSection className="text-center">
-          <h2 className="font-heading text-3xl font-bold text-navy md:text-4xl">
-            How <span className="gradient-text">It Works</span>
-          </h2>
-        </AnimatedSection>
+    <section className="border-b border-slate-200 bg-white py-14 md:py-20">
+      <div className="vw-shell-wide">
+        <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <AnimatedSection>
+            <p className="text-[11px] font-black uppercase text-brand-700">Connected workflow</p>
+            <h2 className="mt-3 max-w-2xl font-heading text-3xl font-black text-navy md:text-4xl">
+              A clear route through every hiring stage.
+            </h2>
+          </AnimatedSection>
 
-        <AnimatedSection className="mt-8 flex justify-center">
-          <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'seekers'}
-              className={`rounded-full px-6 py-3 text-sm font-bold transition-all ${
-                activeTab === 'seekers' ? 'gradient-primary text-white' : 'text-slate-600 hover:text-navy'
-              }`}
-              onClick={() => setActiveTab('seekers')}
-            >
-              For Job Seekers
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'recruiters'}
-              className={`rounded-full px-6 py-3 text-sm font-bold transition-all ${
-                activeTab === 'recruiters' ? 'gradient-primary text-white' : 'text-slate-600 hover:text-navy'
-              }`}
-              onClick={() => setActiveTab('recruiters')}
-            >
-              For Employers
-            </button>
-          </div>
-        </AnimatedSection>
+          <AnimatedSection>
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="Hiring journey">
+              <button
+                type="button"
+                role="tab"
+                aria-controls="seeker-hiring-journey"
+                aria-selected={isSeekerTab}
+                className={`rounded-md px-5 py-2.5 text-sm font-bold ${
+                  isSeekerTab ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:text-navy'
+                }`}
+                onClick={() => setActiveTab('seekers')}
+              >
+                Job seekers
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-controls="employer-hiring-journey"
+                aria-selected={!isSeekerTab}
+                className={`rounded-md px-5 py-2.5 text-sm font-bold ${
+                  !isSeekerTab ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:text-navy'
+                }`}
+                onClick={() => setActiveTab('recruiters')}
+              >
+                Employers
+              </button>
+            </div>
+          </AnimatedSection>
+        </div>
 
-        {activeTab === 'seekers' ? <StepGrid steps={seekerSteps} /> : <StepGrid steps={recruiterSteps} />}
+        <StepGrid
+          steps={isSeekerTab ? seekerSteps : recruiterSteps}
+          panelId={isSeekerTab ? 'seeker-hiring-journey' : 'employer-hiring-journey'}
+        />
       </div>
     </section>
   );

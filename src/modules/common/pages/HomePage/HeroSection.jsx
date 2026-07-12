@@ -1,217 +1,172 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Briefcase, CheckCircle2, GraduationCap, MapPin, Search, Users } from 'lucide-react';
+import {
+  ArrowRight,
+  Briefcase,
+  CheckCircle2,
+  GraduationCap,
+  MapPin,
+  Search
+} from 'lucide-react';
+
 import heroImage from '../../../../assets/career-compass-hero.jpg';
 import useAuthStore from '../../../../core/auth/authStore';
 import { normalizeRole } from '../../../../utils/auth';
 
-const trustBadges = ['Verified Jobs', 'AI Matching', 'Free to Apply'];
+const trustBadges = ['Verified jobs', 'Relevant matching', 'Free to apply'];
 const quickTags = ['Remote', 'Full-time', 'Internship', 'Part-time', 'Freelance'];
-const heroActionButtonClass =
-  'inline-flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-1';
-
-const canShowDesktopVisual = () =>
-  typeof window !== 'undefined'
-  && typeof window.matchMedia === 'function'
-  && window.matchMedia('(min-width: 1024px)').matches;
 
 const formatLiveCount = (value) => {
-  if (value === null || value === undefined || value === '') return '--';
+  if (value === null || value === undefined || value === '') return null;
   const count = Number(value);
-  if (!Number.isFinite(count)) return '--';
+  if (!Number.isFinite(count)) return null;
   return new Intl.NumberFormat('en-IN').format(Math.max(0, count));
 };
 
-const TRUST_STATS = {
-  openJobs: 50000,
-  companies: 1200,
-  roles: 150
-};
-
-const buildStatItems = () => [
-  { label: 'Active jobs', value: formatLiveCount(TRUST_STATS.openJobs) },
-  { label: 'Companies hiring', value: formatLiveCount(TRUST_STATS.companies) },
-  { label: 'Job categories', value: formatLiveCount(TRUST_STATS.roles) }
+const buildStatItems = (stats = {}) => [
+  { label: 'Open roles', value: formatLiveCount(stats.openJobs) },
+  { label: 'Companies hiring', value: formatLiveCount(stats.companies) },
+  { label: 'Career categories', value: formatLiveCount(stats.roles) }
 ];
 
-export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipClick }) {
+const heroActionClassName =
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold transition hover:-translate-y-0.5';
+
+export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipClick, stats }) {
   const user = useAuthStore((state) => state.user);
-  const [showDesktopVisual, setShowDesktopVisual] = useState(canShowDesktopVisual);
   const isHrUser = normalizeRole(user?.role) === 'hr';
   const hrJobsPath = '/portal/hr/jobs';
   const postJobPath = isHrUser ? hrJobsPath : '/login/hr';
-  const statItems = buildStatItems();
-  const activeJobsLabel = formatLiveCount(TRUST_STATS.openJobs);
-  const companiesLabel = formatLiveCount(TRUST_STATS.companies);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
-
-    const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    const handleChange = () => setShowDesktopVisual(mediaQuery.matches);
-    handleChange();
-    mediaQuery.addEventListener?.('change', handleChange);
-
-    return () => mediaQuery.removeEventListener?.('change', handleChange);
-  }, []);
+  const statItems = buildStatItems(stats);
 
   return (
-    <section className="home-hero relative flex min-h-[60vh] items-center overflow-hidden bg-gradient-to-br from-white via-[#fbf8f2] to-[#eef3fb] pb-6 pt-0">
-      <div className="home-hero__shell vw-shell relative z-10 pb-4 pt-3">
-        <div className="home-hero__grid grid items-center gap-6 lg:grid-cols-2 lg:gap-10">
-          <div className="home-hero__content">
-            <div className="home-hero__badge inline-flex items-center gap-2 rounded-full border border-navy/10 bg-navy/5 px-4 py-1.5 text-sm font-semibold text-navy">
-              <span className="h-2 w-2 rounded-full bg-gold" />
-              {companiesLabel === '--' ? 'Live hiring network' : `${companiesLabel} companies hiring`}
-            </div>
+    <section className="public-cinematic-hero relative isolate min-h-[650px] overflow-hidden border-b border-[#d99b20]/35 bg-[#071524] text-white sm:min-h-[620px] lg:min-h-[640px]">
+      <img
+        src={heroImage}
+        alt="Candidates and hiring teams connecting at work"
+        width="1024"
+        height="1024"
+        decoding="async"
+        loading="eager"
+        className="public-cinematic-image absolute inset-0 h-full w-full object-cover object-center"
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,21,36,0.96)_0%,rgba(7,21,36,0.84)_54%,rgba(7,21,36,0.68)_100%)]" />
 
-            <h1 className="home-hero__title mt-4 font-heading text-3xl font-bold leading-[1.05] text-navy sm:text-4xl lg:text-[3rem]">
-              Find Genuine Jobs.
-              <span className="gradient-text block">Hire the Best Talent.</span>
-            </h1>
+      <div className="home-match-stream" aria-hidden="true">
+        <span className="home-match-stream__line home-match-stream__line--primary" />
+        <span className="home-match-stream__line home-match-stream__line--secondary" />
+        <span className="home-match-stream__packet home-match-stream__packet--profile">PROFILE</span>
+        <span className="home-match-stream__packet home-match-stream__packet--skill">SKILL</span>
+        <span className="home-match-stream__packet home-match-stream__packet--role">ROLE</span>
+        <span className="home-match-stream__packet home-match-stream__packet--match">MATCH</span>
+      </div>
 
-            <p className="home-hero__copy mt-4 max-w-xl text-[15px] leading-7 text-slate-600 lg:text-base">
-              A trusted job portal for students, professionals, retired employees, and recruiters. Discover
-              opportunities, hiring support, and public guidance inside a cleaner, more professional experience.
-            </p>
-
-            <div className="home-hero__trust mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-600">
-              {trustBadges.map((badge) => (
-                <span key={badge} className="inline-flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-gold" />
-                  {badge}
-                </span>
-              ))}
-            </div>
-
-            <form
-              onSubmit={onSearch}
-              className="home-hero__search relative z-20 mt-6 flex flex-col gap-2 rounded-[24px] border border-slate-200 bg-white p-1.5 shadow-strong shadow-navy/5 sm:flex-row"
-            >
-              <div className="flex flex-1 items-center gap-2 px-3">
-                <Search className="h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={filters.keyword}
-                  onChange={(event) => onFiltersChange({ ...filters, keyword: event.target.value })}
-                  placeholder="Job title or keyword"
-                  className="w-full bg-transparent py-2.5 text-sm outline-none"
-                />
-              </div>
-              <div className="flex flex-1 items-center gap-2 border-t border-slate-200 px-3 sm:border-l sm:border-t-0">
-                <MapPin className="h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={filters.location}
-                  onChange={(event) => onFiltersChange({ ...filters, location: event.target.value })}
-                  placeholder="Location"
-                  className="w-full bg-transparent py-2.5 text-sm outline-none"
-                />
-              </div>
-              <button type="submit" className="btn-primary px-6">
-                <Search className="h-4 w-4" />
-                Search Jobs
-              </button>
-            </form>
-
-            <div className="home-hero__quick-tags mt-4 flex flex-wrap justify-center gap-2">
-              {quickTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => onKeywordChipClick(tag)}
-                  className="rounded-full border border-transparent bg-navy/5 px-3 py-1 text-xs font-medium text-navy transition-colors hover:border-gold/20 hover:bg-gold/10 hover:text-gold-dark"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-
-            <div className="home-hero__actions mt-6 flex flex-col gap-3 sm:flex-row sm:flex-nowrap">
-              <Link to="/jobs" className="sm:flex-1">
-                <span className={`${heroActionButtonClass} btn-primary`}>
-                  Explore Opportunities
-                  <ArrowRight className="h-4 w-4" />
-                </span>
-              </Link>
-              <Link
-                to={postJobPath}
-                state={isHrUser
-                  ? undefined
-                  : {
-                      portalLabel: 'Recruiter / HR login',
-                      from: hrJobsPath
-                    }}
-                className="sm:flex-1"
-              >
-                <span className={`${heroActionButtonClass} border border-navy/20 bg-white text-navy shadow-sm hover:bg-navy hover:text-white`}>
-                  <Briefcase className="h-4 w-4" />
-                  Post a Job
-                </span>
-              </Link>
-              <Link to="/campus-connect" className="sm:flex-1">
-                <span className={`${heroActionButtonClass} border border-gold/25 bg-gold/10 text-gold-dark shadow-sm hover:bg-gold hover:text-primary`}>
-                  <GraduationCap className="h-4 w-4" />
-                  Campus Connect
-                </span>
-              </Link>
-            </div>
-
-            <div className="home-hero__stats mt-7 grid gap-4 sm:grid-cols-3">
-              {statItems.map((item) => (
-                <div key={item.label}>
-                  <p className="font-heading text-2xl font-bold text-navy lg:text-[1.75rem]">{item.value}</p>
-                  <p className="mt-1 text-sm text-slate-500">{item.label}</p>
-                </div>
-              ))}
-            </div>
+      <div className="vw-shell-wide relative flex min-h-[650px] flex-col justify-end pb-7 pt-8 sm:min-h-[620px] sm:pb-9 lg:min-h-[640px] lg:pb-10">
+        <div className="max-w-4xl">
+          <div className="inline-flex items-center gap-2 border-l-2 border-brand-400 pl-3 text-[11px] font-black uppercase text-brand-300">
+            HHH Jobs connected hiring network
           </div>
 
-          {showDesktopVisual ? (
-            <div className="relative hidden lg:block lg:max-w-[36rem] lg:justify-self-end">
-              <div className="absolute -inset-1 rounded-[30px] gradient-gold opacity-15 blur-xl" />
-              <img
-                src={heroImage}
-                alt="Professionals collaborating in modern office"
-                width="576"
-                height="520"
-                decoding="async"
-                fetchpriority="high"
-                className="relative z-10 max-h-[520px] w-full rounded-[30px] border border-gold/10 object-cover shadow-strong"
-              />
+          <h1 className="mt-4 max-w-4xl font-heading text-4xl font-black leading-[1.06] tracking-normal text-white sm:text-5xl lg:text-6xl">
+            Jobs in India, connected to real opportunity.
+          </h1>
 
-              <div className="absolute -bottom-4 -left-4 z-20 rounded-3xl border border-slate-200 bg-white p-3 shadow-strong">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl gradient-gold text-primary">
-                    <Briefcase className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">{activeJobsLabel} Jobs</p>
-                    <p className="text-xs text-slate-500">Live in database</p>
-                  </div>
-                </div>
-              </div>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base sm:leading-7">
+            Students, professionals, campuses, recruiters, and companies move from discovery to hiring through one trusted platform.
+          </p>
 
-              <div className="absolute -right-3 -top-3 z-20 rounded-3xl border border-slate-200 bg-white px-4 py-2.5 shadow-strong">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-success-500" />
-                  <p className="text-sm font-bold text-slate-900">Live listings</p>
-                </div>
-              </div>
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-slate-200 sm:text-sm">
+            {trustBadges.map((badge) => (
+              <span key={badge} className="inline-flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-brand-300" />
+                {badge}
+              </span>
+            ))}
+          </div>
+        </div>
 
-              <div className="absolute bottom-12 -right-6 z-20 rounded-3xl border border-slate-200 bg-white p-3 shadow-strong">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full gradient-primary text-white">
-                    <Users className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">{companiesLabel} Companies</p>
-                    <p className="text-[10px] text-slate-500">Hiring now</p>
-                  </div>
-                </div>
-              </div>
+        <form
+          onSubmit={onSearch}
+          className="mt-6 grid max-w-5xl gap-1.5 rounded-md border border-[#f2c75f]/45 bg-[#fffdf9] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.24)] sm:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)_auto]"
+        >
+          <label className="flex min-w-0 items-center gap-2 rounded-md px-3 text-slate-700">
+            <Search className="h-4 w-4 shrink-0 text-slate-400" />
+            <span className="sr-only">Job title or keyword</span>
+            <input
+              type="search"
+              value={filters.keyword}
+              onChange={(event) => onFiltersChange({ ...filters, keyword: event.target.value })}
+              placeholder="Job title, skill, or company"
+              className="h-11 w-full min-w-0 bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
+            />
+          </label>
+          <label className="flex min-w-0 items-center gap-2 border-t border-slate-200 px-3 text-slate-700 sm:border-l sm:border-t-0">
+            <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
+            <span className="sr-only">Location</span>
+            <input
+              type="search"
+              value={filters.location}
+              onChange={(event) => onFiltersChange({ ...filters, location: event.target.value })}
+              placeholder="City, state, or pincode"
+              className="h-11 w-full min-w-0 bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
+            />
+          </label>
+          <button type="submit" className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#14549a] px-6 text-sm font-black text-white transition hover:bg-[#103f75]">
+            <Search className="h-4 w-4" />
+            Search jobs
+          </button>
+        </form>
+
+        <div className="mt-3 hidden flex-wrap gap-2 sm:flex">
+          {quickTags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => onKeywordChipClick(tag)}
+              className="rounded-full border border-white/20 bg-[#071524]/55 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:border-[#f2c75f] hover:text-[#fff1c9]"
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-2.5">
+          <Link to="/jobs" className={`${heroActionClassName} bg-[#d99b20] text-[#151922] hover:bg-[#e8b23c]`}>
+            Explore opportunities
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            to={postJobPath}
+            state={isHrUser ? undefined : { portalLabel: 'Recruiter / HR login', from: hrJobsPath }}
+            className={`${heroActionClassName} border border-white/30 bg-[#071524]/45 text-white hover:border-[#f2c75f]/70 hover:bg-[#071524]/70`}
+          >
+            <Briefcase className="h-4 w-4" />
+            Post a job
+          </Link>
+          <Link
+            to="/campus-connect"
+            className={`${heroActionClassName} border border-white/30 bg-[#071524]/45 text-white hover:border-[#f2c75f]/70 hover:bg-[#071524]/70`}
+          >
+            <GraduationCap className="h-4 w-4" />
+            Campus connect
+          </Link>
+        </div>
+
+        <div className="mt-6 grid grid-cols-3 border-y border-white/15 bg-slate-950/20">
+          {statItems.map((item, index) => (
+            <div
+              key={item.label}
+              className={`flex min-h-[62px] flex-wrap items-center gap-x-2 gap-y-0.5 py-3 ${
+                index > 0 ? 'border-l border-white/15 pl-3 sm:pl-5' : ''
+              }`}
+            >
+              {item.value === null ? (
+                <span className="block h-6 w-12 animate-pulse rounded bg-white/20" aria-hidden="true" />
+              ) : (
+                <p className="text-lg font-black text-white sm:text-2xl">{item.value}</p>
+              )}
+              <p className="max-w-[8rem] text-[9px] font-black uppercase leading-4 text-white/60 sm:text-[10px]">{item.label}</p>
             </div>
-          ) : null}
+          ))}
         </div>
       </div>
     </section>

@@ -207,6 +207,7 @@ const ServicesPage = () => {
     <div className="pb-9 md:pb-12">
       <section className="vw-shell mt-4 md:mt-5">
         <PublicSectionHeader
+          as="h1"
           centered
           eyebrow="Pricing"
           title="One plan catalog across public pricing and dashboards"

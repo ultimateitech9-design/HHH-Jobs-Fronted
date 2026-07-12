@@ -10,6 +10,7 @@ import {
   writeMaintenanceModeSnapshot
 } from '../../utils/maintenanceMode';
 import PublicNavbar from './publicShell/PublicNavbar';
+import PublicCinematicEnhancements from './publicShell/PublicCinematicEnhancements';
 import PublicSeo from '../seo/PublicSeo';
 
 const AiChatbot = lazy(() => import('../../../components/AiChatbot'));
@@ -22,8 +23,7 @@ const portalRoutePattern =
 const campusConnectPublicRoutePattern = /^\/campus-connect(?:\/.*)?$/i;
 
 const publicShellStyle = {
-  background:
-    'radial-gradient(circle at top left, rgba(229,155,23,0.14), transparent 28%), radial-gradient(circle at 82% 0%, rgba(17,33,59,0.08), transparent 24%), linear-gradient(180deg, #fbf8f2 0%, #f5f7fb 100%)'
+  background: '#faf9f6'
 };
 
 const RootLayout = () => {
@@ -153,7 +153,7 @@ const RootLayout = () => {
 
   return (
     <div
-      className="min-h-screen overflow-x-clip font-sans text-slate-900"
+      className={`min-h-screen overflow-x-clip font-sans text-slate-900 ${isPortalWorkbench ? '' : 'public-brand-shell'}`}
       style={isPortalWorkbench ? undefined : publicShellStyle}
     >
       <PublicSeo isPortalWorkbench={isPortalWorkbench} />
@@ -183,8 +183,13 @@ const RootLayout = () => {
               </p>
             </div>
           </section>
-        ) : (
+        ) : isPortalWorkbench ? (
           <Outlet />
+        ) : (
+          <div key={location.pathname} className="public-route-stage min-w-0 flex-1">
+            <PublicCinematicEnhancements />
+            <Outlet />
+          </div>
         )}
       </main>
 

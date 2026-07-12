@@ -1,9 +1,15 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowRight, Briefcase, Sparkles } from 'lucide-react';
+import { ArrowRight, Briefcase, Building2, GraduationCap, UserRoundSearch } from 'lucide-react';
 import AnimatedSection from '../../../../shared/components/AnimatedSection';
 import useAuthStore from '../../../../core/auth/authStore';
 import { normalizeRole } from '../../../../utils/auth';
+
+const routeNodes = [
+  { label: 'Student', icon: GraduationCap },
+  { label: 'Professional', icon: UserRoundSearch },
+  { label: 'Employer', icon: Briefcase },
+  { label: 'Campus', icon: Building2 }
+];
 
 export function CtaBanner() {
   const user = useAuthStore((state) => state.user);
@@ -12,54 +18,51 @@ export function CtaBanner() {
   const hrSignupPath = '/sign-up?role=hr&redirect=%2Fportal%2Fhr%2Fdashboard';
 
   return (
-    <section className="py-10 md:py-12">
-      <div className="vw-shell">
+    <section className="border-b border-slate-200 bg-white py-10 md:py-12">
+      <div className="vw-shell-wide">
         <AnimatedSection>
-          <div className="gradient-primary relative overflow-hidden rounded-[36px] p-8 text-center md:p-10">
-            <motion.div
-              className="absolute left-0 top-0 h-64 w-64 rounded-full bg-gold/10 blur-3xl"
-              animate={{ x: [0, 40, 0], y: [0, 20, 0] }}
-              transition={{ duration: 8, repeat: Infinity }}
-            />
-            <motion.div
-              className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-gold/5 blur-3xl"
-              animate={{ x: [0, -30, 0], y: [0, -30, 0] }}
-              transition={{ duration: 10, repeat: Infinity }}
-            />
-            {[0, 1, 2, 3].map((item) => (
-              <motion.div
-                key={item}
-                className="absolute"
-                style={{ top: `${20 + item * 18}%`, left: `${15 + item * 18}%` }}
-                animate={{ y: [0, -15, 0], opacity: [0.2, 0.5, 0.2], rotate: [0, 180, 360] }}
-                transition={{ duration: 3 + item, repeat: Infinity, delay: item * 0.5 }}
-              >
-                <Sparkles className="h-4 w-4 text-gold/30" />
-              </motion.div>
-            ))}
+          <div className="home-cta-frame relative overflow-hidden rounded-lg border border-slate-700 bg-[#0b1729] p-6 text-white md:p-9">
+            <span className="home-cta-frame__corner home-cta-frame__corner--tl" aria-hidden="true" />
+            <span className="home-cta-frame__corner home-cta-frame__corner--br" aria-hidden="true" />
 
-            <div className="relative z-10">
-              <h2 className="font-heading text-3xl font-bold text-white md:text-4xl">
-                Ready to Transform Your Career?
-              </h2>
-              <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row">
-                <Link to="/jobs">
-                  <motion.span whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.95 }} className="inline-flex items-center gap-2 rounded-full gradient-gold px-6 py-3 font-semibold text-primary shadow-xl">
-                    Find Genuine Jobs <ArrowRight className="h-4 w-4" />
-                  </motion.span>
-                </Link>
-                <Link
-                  to={isHrUser ? hrDashboardPath : hrSignupPath}
-                >
-                  <motion.span
-                    whileHover={{ scale: 1.05, y: -3 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="inline-flex items-center gap-2 rounded-full border border-gold/30 px-6 py-3 font-semibold text-white transition-colors hover:bg-gold/10"
+            <div className="relative z-10 grid gap-9 lg:grid-cols-[minmax(0,1fr)_minmax(24rem,0.8fr)] lg:items-center">
+              <div>
+                <p className="text-[11px] font-black uppercase text-amber-300">Choose your next move</p>
+                <h2 className="mt-3 max-w-2xl font-heading text-3xl font-black text-white md:text-4xl">
+                  Find the right role. Build the right team.
+                </h2>
+                <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">
+                  Enter HHH Jobs from the side of the network that matches what you need today.
+                </p>
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    to="/jobs"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-amber-300"
+                  >
+                    Explore jobs <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    to={isHrUser ? hrDashboardPath : hrSignupPath}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/20 px-5 py-3 text-sm font-black text-white transition hover:border-white/40 hover:bg-white/5"
                   >
                     <Briefcase className="h-4 w-4" />
-                    Hire the Best Candidates
-                  </motion.span>
-                </Link>
+                    {isHrUser ? 'Open HR workspace' : 'Start hiring'}
+                  </Link>
+                </div>
+              </div>
+
+              <div className="home-cta-route grid grid-cols-2 border-l border-t border-white/15" aria-label="HHH Jobs network participants">
+                {routeNodes.map((node, index) => (
+                  <div key={node.label} className="relative flex min-h-[96px] items-center gap-3 border-b border-r border-white/15 p-4">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-amber-200">
+                      <node.icon className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <span className="block font-mono text-[9px] font-bold text-white/35">0{index + 1}</span>
+                      <span className="mt-1 block text-xs font-black text-slate-100">{node.label}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

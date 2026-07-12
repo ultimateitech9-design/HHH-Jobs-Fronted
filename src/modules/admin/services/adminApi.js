@@ -147,9 +147,11 @@ export const getAdminDashboard = async () =>
 
 // Users & HR approvals
 export const getAdminUsers = async (filters = {}) => {
-  const queryString = buildQueryString({ ...filters, _fresh: Date.now() });
+  const { signal, ...queryFilters } = filters;
+  const queryString = buildQueryString(queryFilters);
   return safeRequest({
     path: `/admin/users${queryString ? `?${queryString}` : ''}`,
+    options: { signal },
     emptyData: {
       users: [],
       total: 0,

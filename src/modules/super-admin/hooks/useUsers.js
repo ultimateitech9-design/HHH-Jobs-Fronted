@@ -1,5 +1,6 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getUsers } from '../services/usersApi';
+import useDebouncedValue from '../../../shared/hooks/useDebouncedValue';
 
 const useUsers = ({ page = 1, pageSize = 10 } = {}) => {
   const [users, setUsers] = useState([]);
@@ -9,17 +10,24 @@ const useUsers = ({ page = 1, pageSize = 10 } = {}) => {
   const [isDemo, setIsDemo] = useState(false);
   const [totalUsers, setTotalUsers] = useState(0);
   const [responseLimit, setResponseLimit] = useState(pageSize);
-  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
+  const deferredSearch = useDebouncedValue(String(filters.search || '').trim(), 280);
+  const requestFilters = useMemo(() => ({
+    search: deferredSearch,
+    role: filters.role,
+    status: filters.status
+  }), [deferredSearch, filters.role, filters.status]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const load = async () => {
       setLoading(true);
       const response = await getUsers({
-        ...filters,
-        search: deferredSearch,
+        ...requestFilters,
         page,
-        limit: pageSize
+        limit: pageSize,
+        signal: controller.signal
       });
+      if (controller.signal.aborted) return;
       setUsers(response.data || []);
       setTotalUsers(Number(response.total || response.data?.length || 0));
       setResponseLimit(Number(response.limit || pageSize) || pageSize);
@@ -29,13 +37,13 @@ const useUsers = ({ page = 1, pageSize = 10 } = {}) => {
     };
 
     load();
-  }, [deferredSearch, filters.role, filters.status, page, pageSize]);
+    return () => controller.abort();
+  }, [page, pageSize, requestFilters]);
 
   useEffect(() => {
     const refreshUsers = async () => {
       const response = await getUsers({
-        ...filters,
-        search: deferredSearch,
+        ...requestFilters,
         page,
         limit: pageSize
       });
@@ -54,7 +62,7 @@ const useUsers = ({ page = 1, pageSize = 10 } = {}) => {
       window.removeEventListener('managed-users-changed', refreshUsers);
       window.removeEventListener('storage', refreshUsers);
     };
-  }, [deferredSearch, filters, page, pageSize]);
+  }, [page, pageSize, requestFilters]);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalUsers / Math.max(1, responseLimit || pageSize))),

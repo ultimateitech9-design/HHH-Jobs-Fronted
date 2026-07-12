@@ -85,7 +85,10 @@ export const API_BASE_URL = String(
 ).replace(/\/+$/, '');
 export const AUTH_REQUEST_TIMEOUT_MS = 60000;
 const API_GET_CACHE_TTL_MS = 15_000;
+const API_GET_CACHE_MAX_ENTRIES = 250;
 const apiGetCache = new Map();
+const apiGetPending = new Map();
+let apiGetCacheGeneration = 0;
 
 export const apiUrl = (path = '') => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -183,18 +186,37 @@ const readCachedResponse = (cacheKey) => {
     apiGetCache.delete(cacheKey);
     return null;
   }
+  apiGetCache.delete(cacheKey);
+  apiGetCache.set(cacheKey, entry);
   return makeCachedResponse(entry);
 };
 
-const writeCachedResponse = async (cacheKey, response) => {
+const pruneApiGetCache = () => {
+  const now = Date.now();
+  for (const [key, entry] of apiGetCache.entries()) {
+    if (now - entry.createdAt > API_GET_CACHE_TTL_MS) apiGetCache.delete(key);
+  }
+
+  while (apiGetCache.size >= API_GET_CACHE_MAX_ENTRIES) {
+    const oldestKey = apiGetCache.keys().next().value;
+    if (!oldestKey) break;
+    apiGetCache.delete(oldestKey);
+  }
+};
+
+const writeCachedResponse = async (cacheKey, response, generation) => {
   if (!cacheKey || !response?.ok) return;
   try {
+    const body = await response.clone().arrayBuffer();
+    if (generation !== apiGetCacheGeneration) return;
+    pruneApiGetCache();
+    apiGetCache.delete(cacheKey);
     apiGetCache.set(cacheKey, {
       createdAt: Date.now(),
       status: response.status,
       statusText: response.statusText,
       headers: Array.from(response.headers.entries()),
-      body: await response.clone().arrayBuffer()
+      body
     });
   } catch (error) {
     apiGetCache.delete(cacheKey);
@@ -203,6 +225,8 @@ const writeCachedResponse = async (cacheKey, response) => {
 
 export const clearApiGetCache = () => {
   apiGetCache.clear();
+  apiGetPending.clear();
+  apiGetCacheGeneration += 1;
 };
 
 export const setSupportSubjectUserId = (userId = '') => {
@@ -267,32 +291,66 @@ export const apiFetch = async (path, options = {}) => {
   const cachedResponse = readCachedResponse(cacheKey);
   if (cachedResponse) return cachedResponse;
   if (method !== 'GET') clearApiGetCache();
+  const requestGeneration = apiGetCacheGeneration;
 
-  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timeoutId = controller && timeoutMs > 0 ? globalThis.setTimeout(() => controller.abort(), timeoutMs) : null;
+  const performRequest = async () => {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    let timedOut = false;
+    const abortFromCaller = () => controller?.abort();
+    const timeoutId = controller && timeoutMs > 0
+      ? globalThis.setTimeout(() => {
+          timedOut = true;
+          controller.abort();
+        }, timeoutMs)
+      : null;
 
-  if (callerSignal && controller) {
-    if (callerSignal.aborted) controller.abort();
-    else callerSignal.addEventListener('abort', () => controller.abort(), { once: true });
-  }
+    if (callerSignal && controller) {
+      if (callerSignal.aborted) controller.abort();
+      else callerSignal.addEventListener('abort', abortFromCaller, { once: true });
+    }
+
+    try {
+      const nextResponse = await fetch(targetUrl, {
+        ...fetchOptions,
+        method,
+        headers,
+        signal: controller?.signal || callerSignal
+      });
+      await writeCachedResponse(cacheKey, nextResponse, requestGeneration);
+      return nextResponse;
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        if (!timedOut && callerSignal?.aborted) {
+          const cancelledError = new Error('Request cancelled');
+          cancelledError.name = 'AbortError';
+          throw cancelledError;
+        }
+        throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s (${targetUrl}).`);
+      }
+      throw new Error(`Unable to connect to server (${targetUrl}). Please check backend is running.`);
+    } finally {
+      if (timeoutId) globalThis.clearTimeout(timeoutId);
+      callerSignal?.removeEventListener?.('abort', abortFromCaller);
+    }
+  };
 
   let response;
-  try {
-    response = await fetch(targetUrl, {
-      ...fetchOptions,
-      method,
-      headers,
-      signal: controller?.signal || callerSignal
-    });
-    await writeCachedResponse(cacheKey, response);
-  } catch (error) {
-    if (timeoutId) globalThis.clearTimeout(timeoutId);
-    if (error?.name === 'AbortError') {
-      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s (${targetUrl}).`);
+  const canSharePendingRequest = Boolean(cacheKey && !callerSignal);
+  if (canSharePendingRequest) {
+    let pendingRequest = apiGetPending.get(cacheKey);
+    if (!pendingRequest) {
+      pendingRequest = performRequest();
+      apiGetPending.set(cacheKey, pendingRequest);
     }
-    throw new Error(`Unable to connect to server (${targetUrl}). Please check backend is running.`);
+
+    try {
+      response = (await pendingRequest).clone();
+    } finally {
+      if (apiGetPending.get(cacheKey) === pendingRequest) apiGetPending.delete(cacheKey);
+    }
+  } else {
+    response = await performRequest();
   }
-  if (timeoutId) globalThis.clearTimeout(timeoutId);
 
   if (
     clearAuthOnUnauthorized

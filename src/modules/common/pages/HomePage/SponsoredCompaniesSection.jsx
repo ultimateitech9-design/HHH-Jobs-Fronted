@@ -33,12 +33,12 @@ const CompanyCard = ({ company, isAuthenticated }) => {
   });
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-[22px] border border-[#e6d8c1] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(241,233,219,0.98))] shadow-[0_12px_26px_rgba(99,76,41,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_34px_rgba(99,76,41,0.24)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.65),transparent_32%),radial-gradient(circle_at_85%_15%,rgba(214,172,103,0.18),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(148,163,184,0.1),transparent_24%)] opacity-90 transition-opacity duration-300 group-hover:opacity-100" />
+    <article className="public-cinematic-card group relative flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)] transition duration-300 hover:border-amber-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.12)]">
+      <span className="absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-amber-400 transition-transform duration-300 group-hover:scale-x-100" />
 
-      <div className="relative z-10 flex h-full flex-col rounded-[22px] bg-[linear-gradient(180deg,rgba(255,251,244,0.96),rgba(242,234,221,0.98))] px-3.5 pb-3.5 pt-3">
+      <div className="relative z-10 flex h-full flex-col px-3.5 pb-3.5 pt-3">
         <div className="flex items-start gap-3">
-          <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] border border-[#e8dcc9] bg-white p-2 shadow-[0_8px_18px_rgba(120,94,52,0.12)]">
+          <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
             {company.logoUrl && !logoError ? (
               <img
                 src={company.logoUrl}
@@ -54,36 +54,36 @@ const CompanyCard = ({ company, isAuthenticated }) => {
           </div>
 
           <div className="min-w-0 flex-1">
-            <h3 className="line-clamp-2 font-heading text-[1.08rem] font-black leading-tight text-[#22170e] xl:text-[1rem] 2xl:text-[1.08rem]">
+            <h3 className="line-clamp-2 font-heading text-[1.08rem] font-black leading-tight text-slate-950 xl:text-[1rem] 2xl:text-[1.08rem]">
               {company.name}
             </h3>
 
-            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#7a5d33]">
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
               {company.sponsorRating ? (
                 <>
-                  <span className="inline-flex items-center gap-1 text-[#bb8a22]">
+                  <span className="inline-flex items-center gap-1 text-amber-600">
                     <FiStar size={12} className="fill-current" />
                     {formatRating(company.sponsorRating)}
                   </span>
-                  <span className="text-[#d4c4ad]">|</span>
+                  <span className="text-slate-300">|</span>
                 </>
               ) : null}
-              <span className="line-clamp-1 text-[#6d5640]">
+              <span className="line-clamp-1 text-slate-500">
                 {company.sponsorReviewsLabel || 'Premium sponsor'}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="mt-3 flex items-start gap-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#3d2c19]">
+        <div className="mt-3 flex items-start gap-3 text-[10px] font-bold uppercase text-slate-700">
           <span className="inline-flex items-center gap-1 whitespace-nowrap">
-            <FiStar size={10} className="text-[#c08a1f]" />
+            <FiStar size={10} className="text-amber-600" />
             Sponsor
           </span>
         </div>
 
-        <div className="mt-3 rounded-[18px] border border-[#e7dbc8] bg-white/72 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-          <p className="line-clamp-2 text-[11px] leading-5 text-[#6a5441]">
+        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <p className="line-clamp-2 text-[11px] leading-5 text-slate-500">
             {company.sponsorReviewsLabel || 'Trusted sponsor company on HHH Jobs'}
           </p>
         </div>
@@ -92,7 +92,7 @@ const CompanyCard = ({ company, isAuthenticated }) => {
           <Link
             to={entryIntent.to}
             state={entryIntent.state}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#263754] bg-[linear-gradient(135deg,rgba(44,61,94,0.98),rgba(67,86,122,0.94))] px-4 py-2.5 text-[12px] font-black text-white shadow-[0_10px_22px_rgba(32,45,72,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,45,72,0.28)]"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-900 bg-slate-900 px-4 py-2.5 text-[12px] font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800"
           >
             {isAuthenticated ? 'Open Hiring Lounge' : 'Login to Unlock'}
             <FiArrowRight size={14} />
@@ -104,21 +104,21 @@ const CompanyCard = ({ company, isAuthenticated }) => {
 };
 
 const LoadingCard = () => (
-  <div className="flex h-full flex-col rounded-[22px] border border-[#e6d8c1] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(241,233,219,0.98))] p-3.5 shadow-[0_12px_26px_rgba(99,76,41,0.14)]">
+  <div className="flex h-full flex-col rounded-lg border border-slate-200 bg-white p-3.5 shadow-sm">
     <div className="flex items-center gap-3">
-      <div className="h-[52px] w-[52px] rounded-[16px] bg-[#e9decd]" />
+      <div className="h-[52px] w-[52px] rounded-lg bg-slate-200" />
       <div className="min-w-0 flex-1">
-        <div className="h-5 rounded-full bg-[#dfd1bc]" />
-        <div className="mt-2 h-3.5 w-3/4 rounded-full bg-[#eadfce]" />
+        <div className="h-5 rounded bg-slate-200" />
+        <div className="mt-2 h-3.5 w-3/4 rounded bg-slate-100" />
       </div>
     </div>
     <div className="mt-3 flex justify-between gap-3">
-      <div className="h-4 w-20 rounded-full bg-[#e7dbc8]" />
-      <div className="h-6 w-24 rounded-full bg-[#efe6d8]" />
+      <div className="h-4 w-20 rounded bg-slate-100" />
+      <div className="h-6 w-24 rounded bg-slate-100" />
     </div>
-    <div className="mt-3 h-12 rounded-[18px] bg-white/70" />
+    <div className="mt-3 h-12 rounded-lg bg-slate-100" />
     <div className="mt-auto pt-3">
-      <div className="h-9 rounded-full bg-[#304361]" />
+      <div className="h-9 rounded-lg bg-slate-800" />
     </div>
   </div>
 );
@@ -210,33 +210,21 @@ export function SponsoredCompaniesSection() {
 
     if (mediaQuery?.matches) return undefined;
 
-    let frameId = 0;
-    let lastTimestamp = 0;
-    const pixelsPerSecond = 42;
-
-    const step = (timestamp) => {
-      if (!lastTimestamp) {
-        lastTimestamp = timestamp;
-      }
-
-      const elapsed = timestamp - lastTimestamp;
-      lastTimestamp = timestamp;
-      slider.scrollLeft += (elapsed * pixelsPerSecond) / 1000;
-      frameId = window.requestAnimationFrame(step);
-    };
-
-    frameId = window.requestAnimationFrame(step);
+    const intervalId = window.setInterval(() => {
+      const card = slider.querySelector('[data-sponsored-slide]');
+      if (!card) return;
+      const sliderStyle = window.getComputedStyle(slider);
+      const gap = Number.parseFloat(sliderStyle.columnGap || sliderStyle.gap || '0') || 0;
+      slider.scrollBy({ left: card.getBoundingClientRect().width + gap, behavior: 'smooth' });
+    }, 5200);
 
     return () => {
-      window.cancelAnimationFrame(frameId);
+      window.clearInterval(intervalId);
     };
   }, [isAutoPaused, paginationItems.length, sectionState.loading]);
 
   return (
-    <section className="relative left-1/2 right-1/2 w-screen max-w-none -translate-x-1/2 overflow-hidden py-8 md:py-10">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.12),transparent_22%),radial-gradient(circle_at_82%_14%,rgba(56,189,248,0.1),transparent_18%)]" />
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#f6eee1]/65 via-white/20 to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#edf6ff]/60 via-white/20 to-transparent" />
+    <section className="relative w-full max-w-none overflow-hidden border-y border-slate-200 bg-white py-8 md:py-10">
 
       <div className="relative z-10 w-full px-4 md:px-6 xl:px-8">
         {sectionState.error ? (
@@ -250,7 +238,7 @@ export function SponsoredCompaniesSection() {
             <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/70 bg-white/70 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.28em] text-amber-700 shadow-[0_10px_24px_rgba(245,158,11,0.08)] backdrop-blur-sm">
               Featured Network
             </span>
-            <h2 className="mt-3 font-heading text-[2rem] font-black leading-none tracking-[-0.04em] text-transparent bg-[linear-gradient(135deg,#0f2747_0%,#173a67_48%,#c9851b_100%)] bg-clip-text md:text-[2.5rem]">
+            <h2 className="mt-3 font-heading text-[2rem] font-black leading-none text-navy md:text-[2.5rem]">
               Sponsored Companies
             </h2>
             <div className="mt-3 flex items-center justify-center gap-3">
@@ -270,14 +258,14 @@ export function SponsoredCompaniesSection() {
           >
             <div
               ref={sliderRef}
-              className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {sectionState.loading
                 ? visibleItems.map((_, index) => (
                     <div
                       key={index}
                       data-sponsored-slide
-                      className="min-w-0 shrink-0 basis-[88%] sm:basis-[calc((100%-1rem)/2)] md:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)] xl:basis-[calc((100%-4rem)/5)]"
+                      className="min-w-0 shrink-0 snap-start basis-[88%] sm:basis-[calc((100%-0.75rem)/2)] md:basis-[calc((100%-1.5rem)/3)] lg:basis-[calc((100%-2.25rem)/4)] xl:basis-[calc((100%-3rem)/5)]"
                     >
                       <LoadingCard />
                     </div>
@@ -286,7 +274,7 @@ export function SponsoredCompaniesSection() {
                     <div
                       key={`${company.id}-${index}`}
                       data-sponsored-slide
-                      className="min-w-0 shrink-0 basis-[88%] sm:basis-[calc((100%-1rem)/2)] md:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)] xl:basis-[calc((100%-4rem)/5)]"
+                      className="min-w-0 shrink-0 snap-start basis-[88%] sm:basis-[calc((100%-0.75rem)/2)] md:basis-[calc((100%-1.5rem)/3)] lg:basis-[calc((100%-2.25rem)/4)] xl:basis-[calc((100%-3rem)/5)]"
                     >
                       <CompanyCard
                         company={company}

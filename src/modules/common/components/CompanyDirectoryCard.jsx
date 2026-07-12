@@ -17,10 +17,10 @@ import {
 } from '../services/companyDirectoryApi';
 
 const primaryActionClassName =
-  'inline-flex min-h-9 min-w-0 items-center justify-center gap-1 rounded-full bg-gradient-to-r from-brand-500 via-brand-500 to-warning-400 px-2.5 py-2 text-[11px] font-black text-white shadow-[0_12px_22px_rgba(229,155,23,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_28px_rgba(229,155,23,0.24)]';
+  'inline-flex min-h-9 min-w-0 items-center justify-center gap-1 rounded-md bg-[#14549a] px-2.5 py-2 text-[11px] font-black text-white shadow-[0_9px_20px_rgba(20,84,154,0.18)] transition hover:-translate-y-0.5 hover:bg-[#103f75] hover:shadow-[0_14px_26px_rgba(20,84,154,0.22)]';
 
 const secondaryActionClassName =
-  'inline-flex min-h-9 min-w-0 items-center justify-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-semibold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700';
+  'inline-flex min-h-9 min-w-0 items-center justify-center gap-1 rounded-md border border-[#ded4c2] bg-[#fffdf9] px-2.5 py-2 text-[11px] font-semibold text-slate-700 transition hover:border-[#d99b20] hover:bg-brand-50 hover:text-[#925a05]';
 
 const getInitials = (name = '') =>
   String(name || '')
@@ -133,7 +133,7 @@ const CompanyDirectoryCard = ({
   };
 
   return (
-    <article className="flex h-full min-w-0 flex-col rounded-[1rem] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-3 shadow-[0_10px_20px_rgba(15,23,42,0.05)]">
+    <article className="public-cinematic-card flex h-full min-w-0 flex-col rounded-lg border border-[#e3dacb] bg-[#fffdf9] p-3 shadow-[0_10px_24px_rgba(21,25,34,0.055)] transition hover:border-[#d7c8ae] hover:shadow-[0_16px_30px_rgba(21,25,34,0.09)]">
       <div className="flex items-start justify-between gap-2.5">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           {company.logoUrl && !logoError ? (
@@ -143,10 +143,10 @@ const CompanyDirectoryCard = ({
               loading="lazy"
               referrerPolicy="no-referrer"
               onError={() => setLogoError(true)}
-              className="h-10 w-10 shrink-0 rounded-xl border border-slate-200 bg-white object-contain p-1.5"
+              className="h-10 w-10 shrink-0 rounded-md border border-[#e3dacb] bg-white object-contain p-1.5"
             />
           ) : (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-sm font-black text-brand-700">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-brand-200 bg-brand-50 text-sm font-black text-brand-700">
               {getInitials(company.name)}
             </div>
           )}
@@ -164,7 +164,7 @@ const CompanyDirectoryCard = ({
           </div>
         </div>
 
-        <span className={`inline-flex w-fit shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] ${
+        <span className={`inline-flex w-fit shrink-0 items-center gap-1 rounded-sm px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] ${
           company.premium
             ? 'border border-amber-200 bg-amber-50 text-amber-700'
             : 'border border-slate-200 bg-slate-50 text-slate-600'
@@ -175,7 +175,7 @@ const CompanyDirectoryCard = ({
       </div>
 
       <div className="mt-2.5 grid grid-cols-2 gap-2">
-        <div className="rounded-[0.8rem] border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-sm text-slate-600">
+        <div className="rounded-md border border-[#e8e0d4] bg-[#f8f6f1] px-2.5 py-2 text-sm text-slate-600">
           <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
             <FiBriefcase size={11} />
             Open roles
@@ -183,7 +183,7 @@ const CompanyDirectoryCard = ({
           <p className="mt-1 text-lg font-bold text-navy">{Number(company.totalJobs || 0)}</p>
         </div>
 
-        <div className="rounded-[0.8rem] border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-sm text-slate-600">
+        <div className="rounded-md border border-[#e8e0d4] bg-[#f8f6f1] px-2.5 py-2 text-sm text-slate-600">
           <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
             <FiMapPin size={11} />
             Location

@@ -340,47 +340,55 @@ const HrDashboardPage = () => {
         </div>
       )}
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-[13px] font-medium text-slate-500">
-            {new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'}, {firstName}
-          </p>
-          <h1 className="mt-0.5 text-[22px] font-extrabold tracking-tight text-slate-900 leading-tight">Hiring Overview</h1>
+      <section className="overflow-hidden rounded-lg border border-slate-800 bg-navy text-white shadow-[0_18px_42px_rgba(15,23,42,0.16)]">
+        <div className="h-1 bg-brand-500" />
+        <div className="flex flex-col gap-4 px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase text-brand-300">
+              {new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'}, {firstName}
+            </p>
+            <h1 className="mt-1 text-[23px] font-extrabold leading-tight text-white sm:text-[27px]">Hiring command center</h1>
+            <p className="mt-1.5 max-w-2xl text-[12px] leading-5 text-white/65 sm:text-[13px]">
+              {state.loading
+                ? 'Loading your current hiring movement.'
+                : `${Number(analytics.openJobs || analytics.totalJobs || 0).toLocaleString('en-IN')} active roles, ${Number(totalApplicantCount || 0).toLocaleString('en-IN')} applicants, and ${Number(scheduledInterviewCount || 0).toLocaleString('en-IN')} interviews in motion.`}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/portal/hr/jobs?tab=post" className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-brand-500 px-4 py-2 text-[12px] font-black text-slate-950 transition hover:bg-brand-400 active:scale-[0.98]">
+              <FiPlus size={14} strokeWidth={2.5} /> New job
+            </Link>
+            <Link to="/portal/hr/candidates" className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-white/25 bg-white/[0.08] px-4 py-2 text-[12px] font-bold text-white transition hover:border-white/45 hover:bg-white/[0.12] active:scale-[0.98]">
+              <FiUsers size={14} /> Find candidates
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link to="/portal/hr/jobs?tab=post" className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.98]">
-            <FiPlus size={14} strokeWidth={2.5} /> New Job
-          </Link>
-          <Link to="/portal/hr/candidates" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-[0.98]">
-            <FiUsers size={14} /> Candidates
-          </Link>
+
+        <div className="grid grid-cols-2 border-t border-white/10 lg:grid-cols-4">
+          {[
+            { label: 'Open roles', val: analytics.openJobs || analytics.totalJobs || 0, icon: FiBriefcase, to: jobPostingsRoute },
+            { label: 'Applicants', val: totalApplicantCount, icon: FiUsers, to: applicantHubRoute },
+            { label: 'Interviews', val: scheduledInterviewCount, icon: FiCalendar, to: '/portal/hr/interviews' },
+            { label: 'Hired', val: combinedPipeline.hired || 0, icon: FiTrendingUp, to: `${applicantHubRoute}?status=hired` }
+          ].map((metric) => (
+            <Link
+              key={metric.label}
+              to={metric.to}
+              className="group flex min-h-[78px] items-center gap-3 border-b border-r border-white/10 px-4 py-3 transition hover:bg-white/[0.07] lg:border-b-0 lg:last:border-r-0"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.08] text-brand-300 transition group-hover:border-brand-300/50 group-hover:bg-brand-400/15">
+                <metric.icon size={16} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[22px] font-extrabold leading-none text-white">{state.loading ? '--' : Number(metric.val || 0).toLocaleString('en-IN')}</p>
+                <p className="mt-1 text-[10px] font-bold uppercase text-white/48">{metric.label}</p>
+              </div>
+            </Link>
+          ))}
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[
-          { label: 'Open Roles', val: analytics.openJobs || analytics.totalJobs || 0, icon: FiBriefcase, accent: 'text-blue-600', bg: 'bg-blue-50', to: jobPostingsRoute },
-          { label: 'Total Applicants', val: totalApplicantCount, icon: FiUsers, accent: 'text-emerald-600', bg: 'bg-emerald-50', to: applicantHubRoute },
-          { label: 'Scheduled Interviews', val: scheduledInterviewCount, icon: FiCalendar, accent: 'text-violet-600', bg: 'bg-violet-50', to: '/portal/hr/interviews' },
-          { label: 'Hired', val: combinedPipeline.hired || 0, icon: FiTrendingUp, accent: 'text-amber-600', bg: 'bg-amber-50', to: applicantHubRoute }
-        ].map((metric) => (
-          <Link
-            key={metric.label}
-            to={metric.to}
-            className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3.5 transition hover:border-slate-200 hover:shadow-sm"
-          >
-            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${metric.bg} ${metric.accent} transition group-hover:scale-105`}>
-              <metric.icon size={16} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[22px] font-extrabold leading-none text-slate-900">{state.loading ? '--' : metric.val}</p>
-              <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{metric.label}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      <section className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between px-5 py-3.5">
           <div>
             <h2 className="text-[15px] font-bold text-slate-900">Hiring Pipeline</h2>
@@ -410,7 +418,7 @@ const HrDashboardPage = () => {
         )}
         {state.loading && <div className="mx-5 mb-4 h-2 animate-pulse rounded-full bg-slate-100" />}
 
-        <div className="grid grid-cols-5 border-t border-slate-50">
+        <div className="grid grid-cols-2 border-t border-slate-50 sm:grid-cols-5">
           {state.loading ? [1, 2, 3, 4, 5].map((item) => (
             <div key={item} className="border-r border-slate-50 px-3 py-4 text-center last:border-r-0">
               <div className="mx-auto h-6 w-8 animate-pulse rounded bg-slate-100" />
@@ -420,7 +428,7 @@ const HrDashboardPage = () => {
             <Link
               key={col.key}
               to={col.to}
-              className="group border-r border-slate-50 px-3 py-4 text-center transition last:border-r-0"
+              className="group border-b border-r border-slate-50 px-3 py-4 text-center transition sm:border-b-0 sm:last:border-r-0"
               style={{ backgroundColor: stageTheme[col.key].soft }}
             >
               <p className="text-2xl font-extrabold" style={{ color: stageTheme[col.key].color }}>{col.count}</p>
@@ -431,7 +439,7 @@ const HrDashboardPage = () => {
       </section>
 
       <div className="grid items-start gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-        <section className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-50 px-5 py-3.5">
             <h2 className="text-[15px] font-bold text-slate-900">Activity Feed</h2>
             <Link to={jobPostingsRoute} className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700">
@@ -482,7 +490,7 @@ const HrDashboardPage = () => {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-50 px-5 py-3.5">
             <h2 className="text-[15px] font-bold text-slate-900">Applicant Pipelines</h2>
             <Link to={applicantHubRoute} className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700">
@@ -527,7 +535,7 @@ const HrDashboardPage = () => {
         </section>
       </div>
 
-      <section className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-50 px-5 py-3.5">
           <div className="flex items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 text-violet-600">

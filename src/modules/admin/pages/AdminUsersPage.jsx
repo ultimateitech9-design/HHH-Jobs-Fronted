@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { 
   FiUsers, 
   FiSearch, 
@@ -25,6 +25,7 @@ import { getDashboardPathByRole } from '../../../utils/auth';
 import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
 import Pagination from '../../../shared/components/Pagination';
 import DateTimeCell from '../../../shared/components/DateTimeCell';
+import useDebouncedValue from '../../../shared/hooks/useDebouncedValue';
 import {
   getManagementDisplayId
 } from '../../../utils/managedUsers';
@@ -118,45 +119,59 @@ const AdminUsersPage = () => {
     : '';
   const showAuthKeyValidationMessage = accountFormTouched.password && Boolean(authKeyPolicyError);
   const authKeyValidationMessage = authKeyPolicyError || PASSWORD_POLICY_HELPER;
-  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
+  const deferredSearch = useDebouncedValue(String(filters.search || '').trim(), 280);
 
-  const loadUsers = async (nextFilters = filters, nextPage = securityPage) => {
+  const loadSecurityUsers = useCallback(async (nextFilters, nextPage, signal) => {
     setLoading(true);
     setError('');
 
-    const [response, internalResponse] = await Promise.all([
-      getAdminUsers(toApiFilters(nextFilters, nextPage)),
-      getAdminUsers({ roleGroup: 'operations', page: 1, limit: 100 })
-    ]);
+    const response = await getAdminUsers({
+      ...toApiFilters(nextFilters, nextPage),
+      signal
+    });
+    if (signal?.aborted) return;
     const payload = response.data || {};
     setUsers(payload.users || []);
     setTotalUsers(Number(payload.total || 0));
     setResponseLimit(Number(payload.limit || USERS_PAGE_SIZE) || USERS_PAGE_SIZE);
-    setManagedAccounts(internalResponse.data?.users || []);
-    setError(response.error || internalResponse.error || '');
+    setError(response.error || '');
     setLoading(false);
-  };
+  }, []);
+
+  const loadManagedAccounts = useCallback(async (signal) => {
+    const response = await getAdminUsers({ roleGroup: 'operations', page: 1, limit: 100, signal });
+    if (signal?.aborted) return;
+    setManagedAccounts(response.data?.users || []);
+    if (response.error) setError((current) => current || response.error);
+  }, []);
 
   useEffect(() => {
-    loadUsers({ ...filters, search: deferredSearch }, securityPage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.role, filters.status, filters.hrClearance, deferredSearch, securityPage]);
+    const controller = new AbortController();
+    loadSecurityUsers({
+      role: filters.role,
+      status: filters.status,
+      hrClearance: filters.hrClearance,
+      search: deferredSearch
+    }, securityPage, controller.signal);
+    return () => controller.abort();
+  }, [deferredSearch, filters.hrClearance, filters.role, filters.status, loadSecurityUsers, securityPage]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const handleUsersChanged = () => {
-      loadUsers({ ...filters, search: deferredSearch }, securityPage);
+      loadManagedAccounts();
     };
 
+    loadManagedAccounts(controller.signal);
     window.addEventListener('managed-users-changed', handleUsersChanged);
     window.addEventListener('storage', handleUsersChanged);
 
     return () => {
+      controller.abort();
       window.removeEventListener('managed-users-changed', handleUsersChanged);
       window.removeEventListener('storage', handleUsersChanged);
     };
-  // loadUsers is intentionally refreshed when filters change.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, deferredSearch, securityPage]);
+  }, [loadManagedAccounts]);
 
   const handleCreateManagedAccount = async () => {
     setError('');
@@ -205,7 +220,10 @@ const AdminUsersPage = () => {
         company: 'HHH Jobs',
         department: accountForm.department
       });
-      await loadUsers({ ...filters, search: deferredSearch }, 1);
+      await Promise.all([
+        loadSecurityUsers({ ...filters, search: deferredSearch }, 1),
+        loadManagedAccounts()
+      ]);
       setAccountForm({
         name: '',
         phone: '',
@@ -235,7 +253,10 @@ const AdminUsersPage = () => {
     try {
       const target = managedAccounts.find((account) => account.id === userId);
       await deleteUser(userId);
-      await loadUsers({ ...filters, search: deferredSearch }, securityPage);
+      await Promise.all([
+        loadSecurityUsers({ ...filters, search: deferredSearch }, securityPage),
+        loadManagedAccounts()
+      ]);
       setMessage(`${target?.name || 'Internal'} account deleted. Dashboard access removed.`);
       setTimeout(() => setMessage(''), 4000);
     } catch (actionError) {
@@ -659,7 +680,7 @@ const AdminUsersPage = () => {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       setSecurityPage(1);
-                      loadUsers({ ...filters, search: e.currentTarget.value }, 1);
+                      loadSecurityUsers({ ...filters, search: e.currentTarget.value }, 1);
                     }
                   }}
                   list="admin-security-user-suggestions"
@@ -676,7 +697,7 @@ const AdminUsersPage = () => {
               <button 
                 onClick={() => {
                   setSecurityPage(1);
-                  loadUsers({ ...filters, search: deferredSearch }, 1);
+                  loadSecurityUsers({ ...filters, search: deferredSearch }, 1);
                 }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-500 sm:w-auto"
               >

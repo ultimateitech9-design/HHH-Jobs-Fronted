@@ -15,6 +15,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [loginDrawerOpen, setLoginDrawerOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const headerRef = useRef(null);
   const location = useLocation();
 
@@ -60,6 +61,24 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
       resizeObserver?.disconnect();
     };
   }, [location.pathname, user]);
+
+  useEffect(() => {
+    let frameId = 0;
+    const handleScroll = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        setIsScrolled(window.scrollY > 12);
+      });
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (frameId) window.cancelAnimationFrame(frameId);
+    };
+  }, []);
 
   const isNavItemActive = (item) => {
     if (item.children) {
@@ -116,7 +135,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
     <>
       <header
         ref={headerRef}
-        className="public-navbar fixed inset-x-0 top-0 z-50 bg-white/86 backdrop-blur-xl"
+        className={`public-navbar fixed inset-x-0 top-0 z-50 border-b backdrop-blur-xl ${isScrolled ? 'public-navbar--scrolled border-[#e7ddca] bg-[#fffdf9]/96' : 'border-[#ebe3d5] bg-[#fffdf9]/94'}`}
       >
         <div className="public-navbar__inner vw-shell flex min-h-16 items-center justify-between gap-3 py-2 sm:gap-4">
           <Link to="/" className="public-navbar__brand group flex min-w-0 items-center gap-2.5">
@@ -129,16 +148,16 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
               decoding="async"
             />
             <div className="public-navbar__brand-text min-w-0 flex flex-col leading-none">
-              <span className="truncate font-heading text-base font-bold text-navy transition-colors group-hover:text-gold-dark sm:text-lg">
+              <span className="truncate font-heading text-base font-extrabold text-[#151922] transition-colors group-hover:text-[#14549a] sm:text-lg">
                 HHH Jobs
               </span>
-              <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-gold-dark">
+              <span className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#14549a]">
                 Connecting Future
               </span>
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-1 lg:flex">
+          <nav className="public-navbar__nav hidden items-center gap-1 border-x border-[#ebe3d5] px-3 py-1 lg:flex">
             {publicNavItems.map((link) => {
               const isActive = isNavItemActive(link);
 
@@ -153,7 +172,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                     <button
                       type="button"
                       aria-expanded={dropdownOpen === link.key}
-                      className={`group relative flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-navy' : 'text-slate-500 hover:text-navy'
+                      className={`group relative flex items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold transition-colors ${isActive ? 'text-[#14549a]' : 'text-slate-600 hover:text-[#151922]'
                         }`}
                     >
                       {link.label}
@@ -170,13 +189,13 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                     </button>
 
                     {dropdownOpen === link.key ? (
-                      <div className="absolute left-0 top-full mt-1 min-w-[220px] rounded-[22px] border border-slate-200/80 bg-white p-2 shadow-dropdown">
+                      <div className="absolute left-0 top-full mt-1 min-w-[220px] rounded-lg border border-[#e7ddca] bg-[#fffdf9] p-2 shadow-dropdown">
                         {link.children.map((child) => {
                           const isChildActive = isNavItemActive(child);
                           const isExternal = isExternalHref(child.to);
-                          const className = `block rounded-2xl px-3 py-2 text-sm transition-all ${isChildActive
-                              ? 'bg-brand-50 text-navy'
-                              : 'text-slate-500 hover:bg-gold/5 hover:text-navy'
+                          const className = `block rounded-md px-3 py-2 text-sm transition-all ${isChildActive
+                              ? 'bg-secondary-50 text-secondary-700'
+                              : 'text-slate-600 hover:bg-brand-50 hover:text-[#151922]'
                             }`;
 
                           return isExternal ? (
@@ -207,7 +226,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
               }
 
               const isExternal = isExternalHref(link.to);
-              const className = `group relative rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-navy' : 'text-slate-500 hover:text-navy'
+              const className = `group relative rounded-md px-3 py-2 text-sm font-semibold transition-colors ${isActive ? 'text-[#14549a]' : 'text-slate-600 hover:text-[#151922]'
                 }`;
 
               return isExternal ? (
@@ -243,7 +262,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
             {dashboardPath ? (
               <Link
                 to={dashboardPath}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-navy transition-colors hover:bg-slate-50"
+                className="rounded-md border border-[#ded4c2] px-4 py-2 text-sm font-semibold text-[#151922] transition-colors hover:border-[#d99b20] hover:bg-brand-50"
               >
                 Dashboard
               </Link>
@@ -253,7 +272,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
               <button
                 type="button"
                 onClick={handleLogoutClick}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-navy transition-colors hover:bg-slate-50"
+                className="rounded-md border border-[#ded4c2] px-4 py-2 text-sm font-semibold text-[#151922] transition-colors hover:border-[#d99b20] hover:bg-brand-50"
               >
                 Log out
               </button>
@@ -265,13 +284,13 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                     event.preventDefault();
                     handleLoginClick();
                   }}
-                  className="rounded-full px-4 py-2 text-sm font-semibold text-navy transition-colors hover:text-gold-dark"
+                  className="rounded-md px-4 py-2 text-sm font-semibold text-[#151922] transition-colors hover:text-[#14549a]"
                 >
                   Log in
                 </Link>
                 <Link to="/sign-up">
                   <span
-                    className="inline-flex rounded-full gradient-gold px-4 py-2 text-sm font-semibold text-primary shadow-lg shadow-gold/20"
+                    className="inline-flex rounded-md bg-[#d99b20] px-4 py-2 text-sm font-bold text-[#151922] shadow-[0_8px_20px_rgba(185,121,8,0.2)] transition hover:bg-[#e8b23c]"
                   >
                     Start Free
                   </span>
@@ -283,7 +302,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
           <button
             type="button"
             aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            className="rounded-xl p-2 text-slate-700 lg:hidden"
+            className="rounded-md border border-[#e7ddca] p-2 text-[#14549a] lg:hidden"
             onClick={() => setIsMenuOpen((open) => !open)}
           >
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -291,7 +310,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
         </div>
 
         {isMenuOpen ? (
-          <div className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-slate-200 bg-white/96 lg:hidden">
+          <div className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-[#e7ddca] bg-[#fffdf9]/98 lg:hidden">
             <div className="vw-shell flex flex-col gap-2 py-4">
               {publicNavItems.map((link) => {
                   const isActive = isNavItemActive(link);
@@ -303,9 +322,9 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                         {link.children.map((child) => {
                           const isChildActive = isNavItemActive(child);
                           const isExternal = isExternalHref(child.to);
-                          const className = `block rounded-2xl px-6 py-2 text-sm transition-colors ${isChildActive
-                              ? 'bg-brand-50 text-navy'
-                              : 'text-slate-500 hover:bg-slate-50 hover:text-navy'
+                          const className = `block rounded-md px-6 py-2 text-sm transition-colors ${isChildActive
+                              ? 'bg-secondary-50 text-secondary-700'
+                              : 'text-slate-600 hover:bg-brand-50 hover:text-[#151922]'
                             }`;
 
                           return isExternal ? (
@@ -334,9 +353,9 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                   }
 
                   const isExternal = isExternalHref(link.to);
-                  const className = `block rounded-2xl px-3 py-2 text-sm font-medium transition-colors ${isActive
-                      ? 'bg-brand-50 text-navy'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-navy'
+                  const className = `block rounded-md px-3 py-2 text-sm font-semibold transition-colors ${isActive
+                      ? 'bg-secondary-50 text-secondary-700'
+                      : 'text-slate-600 hover:bg-brand-50 hover:text-[#151922]'
                     }`;
 
                   return isExternal ? (
@@ -368,7 +387,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                         <Link
                           to={dashboardPath}
                           onClick={() => setIsMenuOpen(false)}
-                          className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-center text-sm font-semibold text-navy"
+                          className="flex-1 rounded-md border border-[#ded4c2] px-4 py-2 text-center text-sm font-semibold text-[#151922]"
                         >
                           Dashboard
                         </Link>
@@ -376,7 +395,7 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                       <button
                         type="button"
                         onClick={handleLogoutClick}
-                        className="flex-1 rounded-full gradient-gold px-4 py-2 text-sm font-semibold text-primary"
+                        className="flex-1 rounded-md bg-[#d99b20] px-4 py-2 text-sm font-bold text-[#151922]"
                       >
                         Log out
                       </button>
@@ -389,14 +408,14 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
                           event.preventDefault();
                           handleLoginClick();
                         }}
-                        className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-center text-sm font-semibold text-navy"
+                        className="flex-1 rounded-md border border-[#ded4c2] px-4 py-2 text-center text-sm font-semibold text-[#151922]"
                       >
                         Log in
                       </Link>
                       <Link
                         to="/sign-up"
                         onClick={() => setIsMenuOpen(false)}
-                        className="flex-1 rounded-full gradient-gold px-4 py-2 text-center text-sm font-semibold text-primary"
+                        className="flex-1 rounded-md bg-[#d99b20] px-4 py-2 text-center text-sm font-bold text-[#151922]"
                       >
                         Start Free
                       </Link>

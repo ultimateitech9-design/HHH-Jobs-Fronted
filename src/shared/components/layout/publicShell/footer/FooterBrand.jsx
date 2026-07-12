@@ -25,14 +25,14 @@ const FooterBrand = () => {
       <div className="mt-5 flex flex-wrap gap-2.5">
         <Link
           to="/sign-up"
-          className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-navy transition hover:bg-gold/90 hover:text-primary"
+          className="inline-flex items-center gap-1.5 rounded-md bg-[#d99b20] px-4 py-2 text-xs font-bold text-[#151922] transition hover:bg-[#e8b23c]"
         >
           Start Free
           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Link>
         <Link
           to="/jobs"
-          className="inline-flex items-center rounded-full border border-slate-700 px-4 py-2 text-xs font-bold text-slate-200 transition hover:border-gold/40 hover:text-gold"
+          className="inline-flex items-center rounded-md border border-slate-700 px-4 py-2 text-xs font-bold text-slate-200 transition hover:border-gold/60 hover:text-gold"
         >
           Browse Jobs
         </Link>

@@ -588,13 +588,13 @@ const StudentJobsPage = ({
 
         <div className="space-y-4">
           {jobsState.loading ? (
-            <div className="student-job-grid">
+            <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {Array.from({ length: effectiveJobsPerPage }, (_, index) => (
                 <ExternalJobCardSkeleton key={index} />
               ))}
             </div>
           ) : totalJobs > 0 ? (
-            <div className="student-job-grid">
+            <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {paginatedJobs.map((job) => {
                 const cardJob = job.__kind === 'external' ? job : mapInternalJobToExternalCard(job);
 

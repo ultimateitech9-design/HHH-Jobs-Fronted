@@ -4,6 +4,7 @@ import { apiFetch } from '../../../../utils/api';
 import { useDeferredMount } from '../../../../shared/hooks/useDeferredMount';
 
 import { HeroSection } from './HeroSection';
+import HomeConnectionRail from './HomeConnectionRail';
 
 const CategoryCards = lazy(() =>
   import('./CategoryCards').then((module) => ({ default: module.CategoryCards }))
@@ -299,7 +300,7 @@ const HomePage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-surface-base">
+    <div className="home-cinematic-page flex min-h-screen flex-col bg-[#f7f8fb]">
       <div>
         <HeroSection
           filters={filters}
@@ -309,6 +310,8 @@ const HomePage = () => {
           stats={hiringFacets.totals}
         />
       </div>
+
+      <HomeConnectionRail />
 
       <DeferredSection minHeight={540} rootMargin="180px 0px">
         <CategoryCards

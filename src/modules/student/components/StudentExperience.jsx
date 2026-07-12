@@ -64,7 +64,10 @@ export const StudentPageShell = ({
   bodyClassName = '',
   showHero = true,
   heroSize = 'default',
-  statsLayout = 'stacked'
+  statsLayout = 'stacked',
+  heroImage,
+  heroImageAlt = '',
+  heroImagePosition = 'center'
 }) => {
   const isCompactHero = heroSize === 'compact';
   const isMiniHero = heroSize === 'mini';
@@ -74,13 +77,30 @@ export const StudentPageShell = ({
     <div className={`space-y-4 pb-8 sm:space-y-6 ${bodyClassName}`.trim()}>
       {showHero ? (
         <section
-          className={`relative overflow-hidden rounded-[2.35rem] border border-white/70 bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,33,59,0.94)_36%,rgba(47,83,143,0.9)_68%,rgba(229,155,23,0.86))] text-white shadow-[0_26px_70px_rgba(17,33,59,0.16)] ${
+          className={`relative overflow-hidden rounded-[2.35rem] border border-white/70 text-white shadow-[0_26px_70px_rgba(17,33,59,0.16)] ${
+            heroImage ? 'public-cinematic-hero bg-slate-950' : 'bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,33,59,0.94)_36%,rgba(47,83,143,0.9)_68%,rgba(229,155,23,0.86))]'
+          } ${
             isMiniHero ? 'px-3.5 py-3.5 md:px-4 md:py-4' : isCompactHero ? 'px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6' : 'px-4 py-5 sm:px-6 sm:py-7 md:px-8 md:py-8'
           } ${heroClassName}`.trim()}
         >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,214,102,0.22),transparent_24%),linear-gradient(180deg,transparent,rgba(255,255,255,0.02))]" />
-          <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-white/8 blur-3xl" />
-          <div className="pointer-events-none absolute -right-16 top-0 h-56 w-56 rounded-full bg-brand-200/20 blur-3xl" />
+          {heroImage ? (
+            <>
+              <img
+                src={heroImage}
+                alt={heroImageAlt}
+                decoding="async"
+                className="public-cinematic-image absolute inset-0 h-full w-full object-cover"
+                style={{ objectPosition: heroImagePosition }}
+              />
+              <div className="pointer-events-none absolute inset-0 bg-slate-950/[0.8]" />
+            </>
+          ) : (
+            <>
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,214,102,0.22),transparent_24%),linear-gradient(180deg,transparent,rgba(255,255,255,0.02))]" />
+              <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-white/8 blur-3xl" />
+              <div className="pointer-events-none absolute -right-16 top-0 h-56 w-56 rounded-full bg-brand-200/20 blur-3xl" />
+            </>
+          )}
 
           <div className={`relative grid ${hasInlineStats ? 'xl:grid-cols-1' : 'xl:grid-cols-[minmax(0,1.18fr)_minmax(250px,0.78fr)]'} xl:items-start ${isMiniHero ? 'gap-2.5' : isCompactHero ? 'gap-4' : 'gap-5 sm:gap-6'}`}>
             <div>

@@ -5,64 +5,77 @@ import AnimatedSection from '../../../../shared/components/AnimatedSection';
 const features = [
   {
     icon: BadgeCheck,
-    title: 'Verified Jobs Only',
-    desc: 'Every listing is checked so seekers are not wasting time on low-trust posts.'
+    title: 'Verified opportunity layer',
+    desc: 'Structured employer and job checks keep discovery focused on credible openings.'
   },
   {
     icon: Brain,
-    title: 'AI-Powered Matching',
-    desc: 'Role discovery and candidate routing both get smarter as platform data improves.'
+    title: 'Context-aware matching',
+    desc: 'Skills, projects, experience, and location work together instead of relying on keywords alone.'
   },
   {
     icon: Zap,
-    title: 'Faster Workflows',
-    desc: 'Search, apply, shortlist, and follow-up all happen through cleaner guided screens.'
+    title: 'Faster hiring movement',
+    desc: 'Search, apply, shortlist, interview, and follow-up stay connected across one workflow.'
   },
   {
     icon: Shield,
-    title: 'Trusted & Secure',
-    desc: 'A more structured system for account verification, access, and workflow control.'
+    title: 'Trust-led access',
+    desc: 'Verification and role-based access support safer candidate and employer interactions.'
   },
   {
     icon: Users,
-    title: 'Inclusive Platform',
-    desc: 'Students, recruiters, admins, retired professionals, and support teams all fit into one system.'
+    title: 'Every hiring participant',
+    desc: 'Students, professionals, HR teams, campuses, and operations work inside the same network.'
   },
   {
     icon: Globe,
-    title: 'Scalable Modules',
-    desc: 'Keep the module-wise backend and routing, while unifying the UI language across them.'
+    title: 'India-wide discovery',
+    desc: 'Mapped roles and locations help opportunities travel from national demand to nearby talent.'
   }
 ];
 
 export function WhyHHHJobs() {
   return (
-    <section className="py-12 md:py-14">
-      <div className="vw-shell">
-        <AnimatedSection className="mb-8 text-center md:mb-10">
-          <h2 className="font-heading text-3xl font-bold text-navy md:text-4xl">
-            Why Choose <span className="gradient-text">HHH Jobs</span>
+    <section className="home-trust-story relative overflow-hidden border-y border-slate-800 bg-[#081426] py-14 text-white md:py-20">
+      <div className="home-trust-story__grid absolute inset-0" aria-hidden="true" />
+
+      <div className="vw-shell-wide relative z-10 grid gap-10 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:gap-16">
+        <AnimatedSection className="lg:pt-3">
+          <p className="text-[11px] font-black uppercase text-amber-300">The HHH Jobs network</p>
+          <h2 className="mt-4 max-w-xl font-heading text-3xl font-black leading-tight text-white md:text-5xl">
+            One connected path from potential to placement.
           </h2>
+          <p className="mt-5 max-w-xl text-sm leading-7 text-slate-300 md:text-base">
+            Hiring works better when candidate context, employer intent, campus readiness, and operational trust move together.
+          </p>
+
+          <div className="home-trust-signal mt-9" aria-hidden="true">
+            <span className="home-trust-signal__line" />
+            <span className="home-trust-signal__node home-trust-signal__node--candidate">Talent</span>
+            <span className="home-trust-signal__node home-trust-signal__node--match">Match</span>
+            <span className="home-trust-signal__node home-trust-signal__node--employer">Hiring</span>
+          </div>
         </AnimatedSection>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+
+        <div className="grid border-t border-white/15 sm:grid-cols-2">
           {features.map((feature, index) => (
-            <AnimatedSection key={feature.title} delay={index * 0.08}>
-              <motion.div
-                whileHover={{ y: -5, scale: 1.02 }}
-                className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-colors hover:border-gold/20 hover:shadow-strong"
+            <AnimatedSection key={feature.title} delay={index * 0.05}>
+              <motion.article
+                whileHover={{ x: 4 }}
+                className={`group min-h-[190px] border-b border-white/15 p-5 transition-colors hover:bg-white/[0.035] md:p-6 ${
+                  index % 2 === 1 ? 'sm:border-l' : ''
+                }`}
               >
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-gold/5 via-transparent to-navy/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                <div className="relative z-10">
-                  <motion.div
-                    whileHover={{ rotate: [0, -10, 10, 0] }}
-                    className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold-dark transition-all duration-300 group-hover:gradient-gold group-hover:text-primary"
-                  >
-                    <feature.icon className="h-6 w-6" />
-                  </motion.div>
-                  <h3 className="font-heading text-lg font-semibold text-navy">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{feature.desc}</p>
+                <div className="flex items-start justify-between gap-4">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-amber-300/25 bg-amber-300/10 text-amber-200">
+                    <feature.icon className="h-5 w-5" />
+                  </span>
+                  <span className="font-mono text-[10px] font-bold text-white/35">{String(index + 1).padStart(2, '0')}</span>
                 </div>
-              </motion.div>
+                <h3 className="mt-7 font-heading text-lg font-black text-white">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{feature.desc}</p>
+              </motion.article>
             </AnimatedSection>
           ))}
         </div>

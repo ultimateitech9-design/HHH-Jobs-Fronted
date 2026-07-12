@@ -24,7 +24,7 @@ const PublicFooter = () => {
   }
 
   return (
-    <footer className="relative overflow-hidden border-t border-slate-800 bg-[#0d1420] text-white">
+    <footer className="relative overflow-hidden border-t-2 border-[#d99b20]/70 bg-[#071524] text-white">
       <div className="h-0.5 bg-gold/70" />
 
       <div className="vw-shell py-8 sm:py-9 lg:py-10">

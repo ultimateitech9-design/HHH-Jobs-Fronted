@@ -33,6 +33,8 @@ import {
 import { getCurrentUser } from '../../../utils/auth';
 import { buildGovtJobSeoPath } from '../../../shared/utils/seoRoutes';
 import GooglePagination from '../../../shared/components/GooglePagination';
+import JobShareMenu from '../../../shared/components/jobs/JobShareMenu';
+import careerCompassHero from '../../../assets/career-compass-hero.jpg';
 
 const makeDefaultFilters = () => ({
   search: '',
@@ -192,7 +194,7 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
         event.preventDefault();
         onOpenDetails?.();
       }}
-      className="group flex h-full min-h-[300px] cursor-pointer flex-col rounded-[1rem] border border-slate-200/80 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.04)] outline-none transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_16px_32px_rgba(15,23,42,0.075)] focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
+      className="public-cinematic-card group flex h-full min-h-[300px] cursor-pointer flex-col rounded-lg border border-slate-200/80 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.04)] outline-none transition hover:border-brand-200 hover:shadow-[0_16px_32px_rgba(15,23,42,0.075)] focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
     >
       <div className="pb-4">
         <div className="flex items-start justify-between gap-3">
@@ -286,6 +288,13 @@ const GovtJobCard = ({ job, detailPath, canTrackGovtJobs, isLoggedIn, onOpenDeta
               Notice
             </button>
           ) : null}
+
+          <JobShareMenu
+            title={`${job.title || 'Government job'} by ${job.organization || 'Official portal'}`}
+            text={`Explore ${job.title || 'this government job'} by ${job.organization || 'the official department'} on HHH Jobs.`}
+            url={detailPath}
+            buttonClassName={compactButtonClassName}
+          />
 
           {canTrackGovtJobs ? (
             <>
@@ -549,9 +558,12 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
         ? 'Browse official updates, apply on the govt portal, then track filled forms and reminders inside HHH Jobs.'
         : 'Browse govt vacancies, results, admit cards, answer keys, syllabus updates, official links, eligibility, states, and deadlines.'}
       stats={stats}
-      heroSize="mini"
+      heroSize={publicMode ? 'compact' : 'mini'}
       statsLayout="inline"
-      heroClassName="!rounded-[1.45rem] sm:!rounded-[1.75rem]"
+      heroClassName={publicMode ? '!min-h-[290px] !rounded-lg sm:!min-h-[320px]' : '!rounded-[1.45rem] sm:!rounded-[1.75rem]'}
+      heroImage={publicMode ? careerCompassHero : undefined}
+      heroImageAlt={publicMode ? 'Candidates preparing for public sector careers' : ''}
+      heroImagePosition="center 45%"
       bodyClassName={publicMode ? 'vw-shell py-5 sm:py-6' : ''}
       actions={(
         <>

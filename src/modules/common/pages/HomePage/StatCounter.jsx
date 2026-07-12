@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 
-const StatCounter = ({ duration = 2, end, label, suffix = '' }) => {
+const StatCounter = ({ duration = 2, end, label, suffix = '', inline = false }) => {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.35 });
 
   const formatter = useMemo(
     () =>
-      new Intl.NumberFormat('en-US', {
+      new Intl.NumberFormat('en-IN', {
         notation: 'compact',
         compactDisplay: 'short',
         maximumFractionDigits: 0
@@ -17,7 +17,7 @@ const StatCounter = ({ duration = 2, end, label, suffix = '' }) => {
   );
 
   useEffect(() => {
-    if (!inView) return undefined;
+    if (!inView || end === null || end === undefined) return undefined;
 
     let start = 0;
     const step = end / (duration * 60);
@@ -43,13 +43,13 @@ const StatCounter = ({ duration = 2, end, label, suffix = '' }) => {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
       viewport={{ once: true, amount: 0.35 }}
-      className="w-full text-center"
+      className={inline ? 'flex w-full flex-wrap items-baseline justify-center gap-x-2 gap-y-1 text-center' : 'w-full text-center'}
     >
-      <div className="font-heading text-3xl font-bold tracking-tight text-white md:text-5xl">
-        {formatter.format(count)}
-        {suffix}
+      <div className={`font-heading font-bold text-white ${inline ? 'text-2xl md:text-3xl' : 'text-3xl md:text-5xl'}`}>
+        {end === null || end === undefined ? '--' : formatter.format(count)}
+        {end === null || end === undefined ? '' : suffix}
       </div>
-      <p className="mt-2 text-sm text-white/75 md:text-base">{label}</p>
+      <p className={inline ? 'text-xs font-semibold text-white/70' : 'mt-2 text-sm text-white/75 md:text-base'}>{label}</p>
     </motion.div>
   );
 };

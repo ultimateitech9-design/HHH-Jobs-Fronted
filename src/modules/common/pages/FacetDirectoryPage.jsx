@@ -1,8 +1,10 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Briefcase, Building2, CheckCircle2, MapPin, Search, TrendingUp, X } from 'lucide-react';
 import { apiFetch } from '../../../utils/api';
 import rankedSearch from '../../../shared/utils/rankedSearch';
+import useDebouncedValue from '../../../shared/hooks/useDebouncedValue';
+import DirectoryCinematicRail from '../components/DirectoryCinematicRail';
 import LocationDirectoryPage from './LocationDirectoryPage';
 
 const DIRECTORY_CONFIG = {
@@ -81,7 +83,7 @@ function FacetDirectoryContent({ directoryType }) {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [activeLetter, setActiveLetter] = useState('All');
-  const deferredQuery = useDeferredValue(query);
+  const deferredQuery = useDebouncedValue(query, 120);
 
   useEffect(() => {
     let mounted = true;
@@ -163,17 +165,17 @@ function FacetDirectoryContent({ directoryType }) {
   ];
 
   return (
-    <main className="-mt-[calc(var(--public-navbar-height,74px)+2px)] min-h-screen bg-white">
-      <section className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-[4vw] py-6">
+    <main className="-mt-[calc(var(--public-navbar-height,74px)+2px)] min-h-screen bg-[#f7f6f2]">
+      <section className="border-b border-[#e7ddca] bg-[#fffdf9] px-[4vw] py-6">
         <div className="mx-auto w-full max-w-[1760px]">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
             <div className="max-w-4xl">
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#3f56ad] shadow-sm">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[#e3dacb] bg-white text-[#14549a] shadow-sm">
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#3f56ad]">{config.eyebrow}</p>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#14549a]">{config.eyebrow}</p>
                   <h1 className="mt-1 font-heading text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
                     {config.title}
                   </h1>
@@ -195,17 +197,19 @@ function FacetDirectoryContent({ directoryType }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-              <Link to="/" className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-[#3f56ad]/30 hover:text-[#3f56ad]">
+              <Link to="/" className="inline-flex h-11 items-center justify-center rounded-md border border-[#ded4c2] bg-[#fffdf9] px-4 text-sm font-bold text-slate-700 transition hover:border-[#14549a]/40 hover:text-[#14549a]">
                 Home
               </Link>
               <Link
                 to="/jobs"
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#263754] px-5 text-sm font-black text-white shadow-[0_12px_26px_rgba(38,55,84,0.18)] transition hover:bg-[#1e2d48]"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#14549a] px-5 text-sm font-black text-white shadow-[0_12px_26px_rgba(20,84,154,0.18)] transition hover:bg-[#103f75]"
               >
                 All jobs <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
+
+          <DirectoryCinematicRail mode={directoryType} />
 
           <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <label className="relative block">
@@ -215,7 +219,7 @@ function FacetDirectoryContent({ directoryType }) {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={config.searchPlaceholder}
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-11 text-sm font-semibold text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#3f56ad]/40 focus:ring-4 focus:ring-[#3f56ad]/10"
+                className="h-12 w-full rounded-md border border-[#ded4c2] bg-white pl-11 pr-11 text-sm font-semibold text-[#151922] shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#14549a] focus:ring-4 focus:ring-secondary-100"
                 autoComplete="off"
               />
               {query ? (
@@ -231,14 +235,14 @@ function FacetDirectoryContent({ directoryType }) {
             </label>
 
             <div className="flex items-center gap-2 text-xs font-bold text-slate-500" aria-live="polite">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+              <CheckCircle2 className="h-4 w-4 text-[#14549a]" aria-hidden="true" />
               <span><span className="text-slate-950">{formatCount(filteredItems.length)}</span> shown</span>
             </div>
           </div>
 
           {popularItems.length > 0 ? (
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.12em] text-emerald-700">
+              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#925a05]">
                 <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
                 Hiring now
               </span>
@@ -246,10 +250,10 @@ function FacetDirectoryContent({ directoryType }) {
                 <Link
                   key={`popular-${directoryType}-${item.name}`}
                   to={buildFacetPath(directoryType, item.name)}
-                  className="inline-flex max-w-full items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-[#3f56ad]/35 hover:text-[#3f56ad]"
+                  className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#ded4c2] bg-[#fffdf9] px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-[#d99b20] hover:text-[#925a05]"
                 >
                   <span className="truncate">{item.name}</span>
-                  <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[0.65rem] text-emerald-700">{formatCount(item.count)}</span>
+                  <span className="rounded-full bg-brand-50 px-1.5 py-0.5 text-[0.65rem] text-brand-700">{formatCount(item.count)}</span>
                 </Link>
               ))}
             </div>
@@ -257,7 +261,7 @@ function FacetDirectoryContent({ directoryType }) {
         </div>
       </section>
 
-      <section className="sticky top-[var(--public-navbar-height,74px)] z-20 border-b border-slate-200 bg-white/95 px-[4vw] py-2.5 backdrop-blur">
+      <section className="sticky top-[var(--public-navbar-height,74px)] z-20 border-b border-[#e7ddca] bg-[#fffdf9]/95 px-[4vw] py-2.5 backdrop-blur">
         <div className="mx-auto w-full max-w-[1760px]">
           <div className="flex gap-1.5 overflow-x-auto pb-1" aria-label={`${config.title} alphabet filter`}>
             {letters.map((letter) => (
@@ -267,8 +271,8 @@ function FacetDirectoryContent({ directoryType }) {
                 onClick={() => setActiveLetter(letter)}
                 className={`flex h-8 min-w-8 items-center justify-center rounded-full px-2.5 text-xs font-black transition ${
                   activeLetter === letter
-                    ? 'bg-[#263754] text-white shadow-[0_8px_18px_rgba(38,55,84,0.16)]'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-[#263754]'
+                    ? 'bg-[#102f52] text-white shadow-[0_8px_18px_rgba(16,47,82,0.16)]'
+                    : 'text-slate-500 hover:bg-secondary-50 hover:text-[#14549a]'
                 }`}
               >
                 {letter}
@@ -283,13 +287,13 @@ function FacetDirectoryContent({ directoryType }) {
           {loading ? (
             <div className="grid gap-5">
               {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="h-28 animate-pulse rounded-xl border border-slate-100 bg-slate-50" />
+                <div key={index} className="h-28 animate-pulse rounded-lg border border-[#e7ddca] bg-[#fffdf9]" />
               ))}
             </div>
           ) : null}
 
           {!loading && error ? (
-            <div className="rounded-2xl border border-rose-100 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
+            <div className="rounded-lg border border-rose-100 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
               {error}
             </div>
           ) : null}
@@ -297,7 +301,7 @@ function FacetDirectoryContent({ directoryType }) {
           {!loading && !error ? (
             <>
               {filteredItems.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center">
+                <div className="rounded-lg border border-dashed border-[#d7c8ae] bg-[#fffdf9] px-6 py-12 text-center">
                   <p className="text-lg font-black text-slate-900">No matching {config.countLabel} found</p>
                   <p className="mt-2 text-sm text-slate-500">Try another search or reset the alphabet filter.</p>
                   {hasFilters ? (
@@ -307,7 +311,7 @@ function FacetDirectoryContent({ directoryType }) {
                         setQuery('');
                         setActiveLetter('All');
                       }}
-                      className="mt-5 rounded-full bg-[#263754] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#1e2d48]"
+                      className="mt-5 rounded-md bg-[#14549a] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#103f75]"
                     >
                       Clear filters
                     </button>
@@ -319,7 +323,7 @@ function FacetDirectoryContent({ directoryType }) {
                     <section key={group.letter} className="border-t border-slate-200 pt-5">
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <h2 className="flex items-center gap-2 text-base font-black text-slate-950">
-                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm text-[#3f56ad]">
+                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-secondary-50 text-sm text-[#14549a]">
                             {group.letter}
                           </span>
                           <span>{group.letter} results</span>
@@ -334,15 +338,15 @@ function FacetDirectoryContent({ directoryType }) {
                           <Link
                             key={`${directoryType}-${item.name}`}
                             to={buildFacetPath(directoryType, item.name)}
-                            className="group flex min-h-11 items-center justify-between gap-3 border-b border-slate-100 py-2.5 text-sm font-bold text-slate-700 transition hover:text-[#31468f]"
+                            className="group flex min-h-11 items-center justify-between gap-3 border-b border-[#ece5da] py-2.5 text-sm font-bold text-slate-700 transition hover:text-[#14549a]"
                           >
                             <span className="min-w-0 truncate">{item.name}</span>
                             {item.count > 0 ? (
-                              <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[0.68rem] font-black text-emerald-700">
+                              <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[0.68rem] font-black text-brand-700">
                                 {formatCount(item.count)}
                               </span>
                             ) : (
-                              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-[#3f56ad]" aria-hidden="true" />
+                              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-[#14549a]" aria-hidden="true" />
                             )}
                           </Link>
                         ))}

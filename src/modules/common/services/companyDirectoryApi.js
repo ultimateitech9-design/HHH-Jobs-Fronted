@@ -275,33 +275,66 @@ const normalizeCompanyJobs = (jobs = {}) => ({
 });
 
 export const getPublicCompanies = async (filters = {}) => {
+  const requestedPage = Math.max(1, Number(filters.page) || 1);
+  const requestedLimit = Math.min(50, Math.max(1, Number(filters.limit) || 50));
   const params = new URLSearchParams();
   if (filters.search) params.set('search', filters.search);
+  params.set('page', String(requestedPage));
+  params.set('limit', String(requestedLimit));
 
   const query = params.toString();
   const path = query ? `/companies?${query}` : '/companies';
 
   try {
-    const response = await apiFetch(path);
+    const response = await apiFetch(path, { skipAuth: true, signal: filters.signal });
     const payload = await parseJson(response);
 
     if (!response.ok) {
       return {
-        data: { companies: [], summary: null },
+        data: {
+          companies: [],
+          summary: null,
+          pagination: { page: requestedPage, limit: requestedLimit, totalItems: 0, totalPages: 1 }
+        },
         error: payload?.message || `Request failed (${response.status})`
       };
     }
 
+    const normalizedCompanies = normalizeCompanyCollection(payload?.companies || []);
+    const hasServerPagination = Number(payload?.pagination?.limit) > 0;
+    const totalItems = hasServerPagination
+      ? Number(payload.pagination.totalItems || 0)
+      : normalizedCompanies.length;
+    const totalPages = Math.max(1, hasServerPagination
+      ? Number(payload.pagination.totalPages || 1)
+      : Math.ceil(totalItems / requestedLimit));
+    const page = Math.min(totalPages, hasServerPagination
+      ? Math.max(1, Number(payload.pagination.page) || requestedPage)
+      : requestedPage);
+    const companies = hasServerPagination
+      ? normalizedCompanies
+      : normalizedCompanies.slice((page - 1) * requestedLimit, page * requestedLimit);
+
     return {
       data: {
-        companies: normalizeCompanyCollection(payload?.companies || []),
-        summary: payload?.summary || null
+        companies,
+        summary: payload?.summary || null,
+        pagination: {
+          page,
+          limit: requestedLimit,
+          totalItems,
+          totalPages
+        }
       },
       error: ''
     };
   } catch (error) {
     return {
-      data: { companies: [], summary: null },
+      data: {
+        companies: [],
+        summary: null,
+        pagination: { page: requestedPage, limit: requestedLimit, totalItems: 0, totalPages: 1 }
+      },
       error: error.message || 'Unable to load companies'
     };
   }

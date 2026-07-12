@@ -2,16 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
+  FiArrowRight,
   FiArrowUpRight,
+  FiBookOpen,
   FiBriefcase,
-  FiExternalLink,
   FiFilter,
-  FiGlobe,
-  FiLock,
   FiMapPin,
   FiSearch,
   FiStar,
-  FiTrendingUp
+  FiTrendingUp,
+  FiUser,
+  FiUsers
 } from 'react-icons/fi';
 
 import useAuthStore from '../../../core/auth/authStore';
@@ -21,6 +22,8 @@ import { getLoginRedirectState } from '../../common/utils/publicAccess';
 import { getStudentJobs } from '../services/studentApi';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 import GooglePagination from '../../../shared/components/GooglePagination';
+import JobShareMenu from '../../../shared/components/jobs/JobShareMenu';
+import careerCompassHero from '../../../assets/career-compass-hero.jpg';
 import {
   clearExternalApplyIntent,
   isExternalApplyIntentFresh,
@@ -136,7 +139,7 @@ const openApplyDestination = (url) => {
   }
 };
 
-const externalJobCardClassName = 'group relative flex min-h-[246px] cursor-pointer flex-col justify-between overflow-hidden rounded-[24px] border border-slate-200/60 bg-white/60 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-brand-200/80 hover:bg-white hover:shadow-[0_16px_40px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-brand-400';
+const externalJobCardClassName = 'public-cinematic-card group relative flex min-h-[252px] cursor-pointer flex-col justify-between overflow-hidden rounded-lg border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all duration-300 hover:border-brand-200 hover:shadow-[0_18px_42px_rgba(15,23,42,0.09)] focus:outline-none focus:ring-2 focus:ring-brand-400';
 
 export const ExternalJobCard = ({
   isAuthenticated,
@@ -161,6 +164,9 @@ export const ExternalJobCard = ({
     return `Up to ${currency} ${Number(job.salary_max).toLocaleString()}`;
   }, [job.salary_max, job.salary_min]);
   const companyLogoUrl = buildCompanyLogoUrl(job.company_logo, '', job.apply_url || '');
+  const shareUrl = ['portal', 'internal'].includes(job.__kind)
+    ? buildJobSeoPath('/jobs', job)
+    : job.apply_url;
 
   const locationText = job.job_location || 'Remote';
   const typeText = job.employment_type || 'Full-time';
@@ -172,10 +178,8 @@ export const ExternalJobCard = ({
       onClick={() => onApply(job, sourceName)}
       className={externalJobCardClassName}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-slate-50/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
-
       <div className="relative z-10 flex items-start gap-4">
-        <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] border border-slate-100 bg-white p-2 shadow-[0_4px_12px_rgba(15,23,42,0.04)] transition-transform duration-300 group-hover:scale-[1.04]">
+        <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-white p-2 shadow-[0_4px_12px_rgba(15,23,42,0.04)] transition-transform duration-300 group-hover:scale-[1.04]">
           {companyLogoUrl && !logoError ? (
             <img
               src={companyLogoUrl}
@@ -212,8 +216,17 @@ export const ExternalJobCard = ({
           </p>
         </div>
 
-        <div className="shrink-0 pt-1 text-slate-300 transition-colors duration-300 group-hover:text-brand-500">
-          <FiArrowUpRight size={18} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        <div className="flex shrink-0 items-center gap-1">
+          <JobShareMenu
+            title={`${job.job_title} at ${job.company_name}`}
+            text={`Explore ${job.job_title} at ${job.company_name} on HHH Jobs.`}
+            url={shareUrl}
+            iconOnly
+            buttonClassName="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+          />
+          <span className="flex h-8 w-8 items-center justify-center text-slate-300 transition-colors duration-300 group-hover:text-brand-500">
+            <FiArrowUpRight size={18} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </span>
         </div>
       </div>
 
@@ -253,10 +266,8 @@ export const ExternalJobCard = ({
 
 export const ExternalJobCardSkeleton = () => (
   <article className={`${externalJobCardClassName} animate-pulse hover:translate-y-0 hover:border-slate-200/60 hover:bg-white/60 hover:shadow-[0_8px_24px_rgba(15,23,42,0.04)]`}>
-    <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/80 to-slate-50/30 opacity-100" />
-
     <div className="relative z-10 flex items-start gap-4">
-      <div className="h-[52px] w-[52px] shrink-0 rounded-[16px] border border-slate-100 bg-slate-100 shadow-[0_4px_12px_rgba(15,23,42,0.04)]" />
+      <div className="h-[52px] w-[52px] shrink-0 rounded-lg border border-slate-100 bg-slate-100 shadow-[0_4px_12px_rgba(15,23,42,0.04)]" />
       <div className="min-w-0 flex-1 space-y-2 pt-0.5">
         <div className="mb-1.5 flex flex-wrap gap-2">
           <div className="h-5 w-24 rounded-full bg-slate-100" />
@@ -547,8 +558,83 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
   };
 
   return (
-    <div className={embedded ? 'space-y-6 pb-2' : 'vw-shell-wide py-8'}>
-      <section className="mt-4 overflow-hidden rounded-[22px] border border-white/70 bg-white/92 p-2.5 shadow-[0_14px_32px_rgba(15,23,42,0.06)] backdrop-blur xl:p-3">
+    <div className={embedded ? 'space-y-6 pb-2' : 'pb-10'}>
+      {!embedded ? (
+        <>
+          <section className="public-cinematic-hero relative isolate min-h-[390px] overflow-hidden border-b border-slate-800 bg-slate-950 text-white">
+            <img
+              src={careerCompassHero}
+              alt="Candidates and hiring teams working together"
+              className="public-cinematic-image absolute inset-0 h-full w-full object-cover object-center"
+              loading="eager"
+            />
+            <div className="absolute inset-0 bg-slate-950/[0.78]" />
+            <div className="vw-shell-wide relative flex min-h-[390px] flex-col justify-end py-8 sm:py-10 lg:py-12">
+              <div className="max-w-3xl">
+                <p className="text-[11px] font-black uppercase text-brand-300">India&apos;s connected hiring network</p>
+                <h1 className="mt-3 max-w-3xl font-heading text-4xl font-black leading-[1.08] text-white sm:text-5xl lg:text-6xl">
+                  Opportunity moves faster when everyone connects.
+                </h1>
+                <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base sm:leading-7">
+                  Students and professionals discover relevant work. HR teams and companies find capable people. Campuses turn learning into placement outcomes.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <a
+                    href="#job-search-results"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-500 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-brand-400"
+                  >
+                    Explore jobs
+                    <FiArrowRight size={16} />
+                  </a>
+                  <Link
+                    to="/govt-jobs"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 bg-slate-950/35 px-5 py-3 text-sm font-bold text-white transition hover:border-white/60 hover:bg-slate-950/55"
+                  >
+                    Government jobs
+                    <FiArrowUpRight size={15} />
+                  </Link>
+                </div>
+              </div>
+
+              <div className="mt-8 grid border-y border-white/15 sm:grid-cols-2 lg:grid-cols-4">
+                {topMetrics.map((metric) => (
+                  <div key={metric.label} className="border-white/15 px-0 py-3 sm:px-4 sm:first:pl-0 lg:border-r lg:last:border-r-0">
+                    <p className="text-[10px] font-black uppercase text-white/55">{metric.label}</p>
+                    <p className="mt-1 text-xl font-black text-white">{metric.value}</p>
+                    <p className="mt-1 text-xs text-white/60">{metric.helper}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="border-b border-slate-200 bg-white">
+            <div className="vw-shell-wide grid md:grid-cols-3">
+              {[
+                { icon: FiUser, title: 'Students & professionals', text: 'Skills, location and ambition meet the right opening.', to: '/job-seekers' },
+                { icon: FiUsers, title: 'Companies & HR teams', text: 'Roles reach relevant candidates with clearer context.', to: '/recruiters' },
+                { icon: FiBookOpen, title: 'Campuses & placement cells', text: 'Employers and emerging talent connect through one network.', to: '/campus-connect' }
+              ].map((item) => (
+                <Link key={item.title} to={item.to} className="group flex gap-3 border-slate-200 py-5 md:border-r md:px-5 md:first:pl-0 md:last:border-r-0 md:last:pr-0">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                    <item.icon size={17} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-2 text-sm font-black text-navy">
+                      {item.title}
+                      <FiArrowRight className="transition group-hover:translate-x-0.5" size={14} />
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-slate-500">{item.text}</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      <div id="job-search-results" className={embedded ? '' : 'vw-shell-wide pt-5 sm:pt-7'}>
+      <section className="overflow-hidden rounded-lg border border-white/70 bg-white/92 p-2.5 shadow-[0_14px_32px_rgba(15,23,42,0.06)] backdrop-blur xl:p-3">
         <div className="grid gap-2 lg:grid-cols-2 xl:grid-cols-[minmax(0,6fr)_minmax(0,2fr)_minmax(132px,1.15fr)_minmax(126px,1.05fr)_max-content] xl:items-center">
           <div className="relative min-w-0 lg:col-span-2 xl:col-span-1">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
@@ -593,8 +679,8 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
               onChange={(event) => updateFilter('source', event.target.value)}
             >
               <option value="">All Sources</option>
-              {sources.map((source) => (
-                <option key={source.key} value={source.key}>
+              {sources.map((source, index) => (
+                <option key={`${source.key}-${source.name}-${index}`} value={source.key}>
                   {source.name}
                 </option>
               ))}
@@ -670,14 +756,14 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
       ) : null}
 
       {jobsState.loading ? (
-        <div className="student-job-grid mt-6">
-          {Array.from({ length: filters.limit || 8 }, (_, index) => (
+        <div className="mt-6 grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {Array.from({ length: Math.min(filters.limit || 8, 8) }, (_, index) => (
             <ExternalJobCardSkeleton key={index} />
           ))}
         </div>
       ) : (
         <>
-          <div className="student-job-grid mt-6">
+          <div className="mt-6 grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {jobsState.jobs.map((job) => (
               <ExternalJobCard
                 key={`${job.__kind || 'external'}-${job.id}`}
@@ -718,6 +804,7 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
           ) : null}
         </>
       )}
+      </div>
     </div>
   );
 };

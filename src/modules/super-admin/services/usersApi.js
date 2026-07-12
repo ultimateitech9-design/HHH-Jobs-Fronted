@@ -179,9 +179,9 @@ const buildUsersQuery = (page, filters = {}, limit = USERS_BATCH_SIZE) => {
 
 const fetchUsersPage = async (page, filters = {}, limit = USERS_BATCH_SIZE) => {
   const query = new URLSearchParams(buildUsersQuery(page, filters, limit));
-  query.set('_fresh', String(Date.now()));
   return strictRequest({
-    path: `${SUPER_ADMIN_BASE}/users?${query.toString()}`
+    path: `${SUPER_ADMIN_BASE}/users?${query.toString()}`,
+    options: { signal: filters.signal }
   });
 };
 

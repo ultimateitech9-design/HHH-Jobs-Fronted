@@ -38,6 +38,8 @@ import {
   updateStudentGovtJobTracker
 } from '../services/studentApi';
 import { buildGovtJobSeoPath, extractSeoPathSegment } from '../../../shared/utils/seoRoutes';
+import JobShareMenu from '../../../shared/components/jobs/JobShareMenu';
+import JobSocialSeo from '../../../shared/components/jobs/JobSocialSeo';
 
 const QUAL_LABELS = {
   '10TH': '10th',
@@ -262,6 +264,7 @@ const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
   const hasApplied = Boolean(job?.hasApplied || job?.tracker?.status === 'applied');
   const reminderEnabled = Boolean(job?.tracker?.reminderEnabled || job?.reminderEnabled);
   const isExpired = Boolean(job?.isExpired);
+  const canonicalPath = job ? buildGovtJobSeoPath('/govt-jobs', job) : '';
 
   useEffect(() => {
     if (!job) return;
@@ -374,6 +377,7 @@ const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
 
   return (
     <StudentPageShell showHero={false} bodyClassName={publicMode ? 'vw-shell py-8 sm:py-10' : ''}>
+      {publicMode ? <JobSocialSeo job={job} canonicalPath={canonicalPath} kind="government" /> : null}
       {state.error ? <StudentNotice type="error" text={state.error} /> : null}
       {notice.text ? <StudentNotice type={notice.type} text={notice.text} /> : null}
 
@@ -443,6 +447,12 @@ const StudentGovtJobDetailsPage = ({ publicMode = false } = {}) => {
                 Official Notification
               </button>
             ) : null}
+            <JobShareMenu
+              title={`${job.title || 'Government job'} by ${job.organization || 'Official portal'}`}
+              text={`Explore ${job.title || 'this government job'} by ${job.organization || 'the official department'} on HHH Jobs.`}
+              url={canonicalPath}
+              buttonClassName={`${studentSecondaryButtonClassName} w-full px-4 py-3 text-[13px]`}
+            />
           </div>
         </div>
 

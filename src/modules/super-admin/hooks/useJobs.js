@@ -1,6 +1,7 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getJobs } from '../services/jobsApi';
 import rankedSearch from '../../../shared/utils/rankedSearch';
+import useDebouncedValue from '../../../shared/hooks/useDebouncedValue';
 
 const useJobs = () => {
   const [jobs, setJobs] = useState([]);
@@ -8,14 +9,14 @@ const useJobs = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isDemo, setIsDemo] = useState(false);
-  const deferredSearch = useDeferredValue(String(filters.search || '').trim());
+  const deferredSearch = useDebouncedValue(String(filters.search || '').trim(), 280);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       const response = await getJobs({
-        ...filters,
-        search: deferredSearch
+        search: deferredSearch,
+        status: filters.status
       });
       setJobs(response.data || []);
       setError(response.error || '');
