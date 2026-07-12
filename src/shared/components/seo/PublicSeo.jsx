@@ -156,7 +156,7 @@ const buildCanonicalSearch = (pathname = '/', search = '') => {
   const canonicalParams = new URLSearchParams();
 
   if (pathname === '/jobs') {
-    ['location', 'category', 'sector'].forEach((key) => {
+    ['stateName', 'districtName', 'cityName', 'location', 'pincode', 'category', 'sector'].forEach((key) => {
       const value = params.get(key);
       if (value) canonicalParams.set(key, value);
     });
