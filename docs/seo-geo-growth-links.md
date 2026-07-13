@@ -45,6 +45,22 @@
 
 The sitemap is generated from the live database on request and cached for five minutes. It must not be copied into the frontend web root as a static file. Install `deploy/nginx/hhh-jobs-sitemap-server.conf` as an include inside the HTTPS `server` block for `hhh-jobs.com`, then verify the index and its first child:
 
+For the standard VPS layout, the idempotent deployment script updates the backend and frontend, waits for backend readiness, installs the Nginx sitemap route, removes the legacy static sitemap, and validates the index plus its first child:
+
+```bash
+cd /opt/hhh-jobs/frontend-src
+bash deploy/update-live.sh
+```
+
+If an older VPS checkout has local edits in the retired `public/sitemap.xml`, repair that one known conflict once before pulling the script:
+
+```bash
+cd /opt/hhh-jobs/frontend-src
+git restore --source=HEAD --staged --worktree -- public/sitemap.xml
+git pull --ff-only origin main
+bash deploy/update-live.sh
+```
+
 ```bash
 curl -fsSI https://hhh-jobs.com/sitemap.xml
 curl -fsS https://hhh-jobs.com/sitemap.xml | head -30
