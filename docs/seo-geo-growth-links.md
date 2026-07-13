@@ -52,6 +52,12 @@ cd /opt/hhh-jobs/frontend-src
 bash deploy/update-live.sh
 ```
 
+To resume only the frontend/Nginx portion after confirming the backend is already healthy:
+
+```bash
+SKIP_BACKEND_UPDATE=1 bash deploy/update-live.sh
+```
+
 If an older VPS checkout has local edits in the retired `public/sitemap.xml`, repair that one known conflict once before pulling the script:
 
 ```bash

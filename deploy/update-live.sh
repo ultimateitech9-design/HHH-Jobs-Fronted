@@ -25,6 +25,8 @@ FRONTEND_DIR="${FRONTEND_DIR:-/opt/hhh-jobs/frontend-src}"
 WEB_ROOT="${WEB_ROOT:-/var/www/hhh-jobs}"
 BACKEND_ORIGIN="${BACKEND_ORIGIN:-http://127.0.0.1:5500}"
 BACKEND_SERVICE="${BACKEND_SERVICE:-hhh-jobs-backend}"
+BACKEND_WAIT_SECONDS="${BACKEND_WAIT_SECONDS:-300}"
+SKIP_BACKEND_UPDATE="${SKIP_BACKEND_UPDATE:-0}"
 NGINX_SITE_LINK="${NGINX_SITE_LINK:-/etc/nginx/sites-enabled/hhh-jobs-frontend}"
 SITEMAP_INCLUDE="/etc/nginx/snippets/hhh-jobs-sitemap-server.conf"
 
@@ -52,21 +54,33 @@ done
   echo "Frontend repository not found at $FRONTEND_DIR" >&2
   exit 1
 }
+[[ "$BACKEND_WAIT_SECONDS" =~ ^[1-9][0-9]*$ ]] || {
+  echo "BACKEND_WAIT_SECONDS must be a positive integer." >&2
+  exit 1
+}
 
-log "Updating backend"
-cd "$BACKEND_DIR"
-git pull --ff-only origin main
-npm ci --omit=dev
-npm run ensure:mysql-schema
-systemctl restart "$BACKEND_SERVICE"
+if [[ "$SKIP_BACKEND_UPDATE" == "1" ]]; then
+  log "Keeping the currently running backend"
+else
+  log "Updating backend"
+  cd "$BACKEND_DIR"
+  git pull --ff-only origin main
+  npm ci --omit=dev
+  npm run ensure:mysql-schema
+  systemctl restart "$BACKEND_SERVICE"
+fi
 
 log "Waiting for backend readiness"
 backend_ready=0
-for ((attempt = 1; attempt <= 60; attempt += 1)); do
-  if curl -fsS --max-time 3 "$BACKEND_ORIGIN/health" >/dev/null; then
+for ((attempt = 1; attempt <= BACKEND_WAIT_SECONDS; attempt += 1)); do
+  if curl -fs --max-time 3 "$BACKEND_ORIGIN/health" >/dev/null 2>&1; then
     backend_ready=1
     printf 'Backend ready after %s second(s).\n' "$attempt"
     break
+  fi
+  if (( attempt % 10 == 0 )); then
+    printf 'Still waiting for backend (%s/%s seconds)...\n' \
+      "$attempt" "$BACKEND_WAIT_SECONDS"
   fi
   sleep 1
 done
@@ -74,7 +88,7 @@ done
 if (( backend_ready == 0 )); then
   systemctl status "$BACKEND_SERVICE" --no-pager -l || true
   journalctl -u "$BACKEND_SERVICE" -n 100 --no-pager || true
-  echo "Backend did not become ready within 60 seconds." >&2
+  echo "Backend did not become ready within $BACKEND_WAIT_SECONDS seconds." >&2
   exit 1
 fi
 
