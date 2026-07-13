@@ -43,12 +43,13 @@
 
 ## VPS commands after deploy
 
-Run these after pulling frontend and backend updates on the server:
+The sitemap is generated from the live database on request and cached for five minutes. It must not be copied into the frontend web root as a static file. Install `deploy/nginx/hhh-jobs-sitemap-server.conf` as an include inside the HTTPS `server` block for `hhh-jobs.com`, then verify the index and its first child:
 
 ```bash
-cd /opt/hhh-jobs/backend
-npm run generate:sitemap
-npm run seo:indexnow
+curl -fsSI https://hhh-jobs.com/sitemap.xml
+curl -fsS https://hhh-jobs.com/sitemap.xml | head -30
+FIRST=$(curl -fsS https://hhh-jobs.com/sitemap.xml | sed -n 's:.*<loc>\(.*\)</loc>.*:\1:p' | head -1 | sed 's/&amp;/\&/g')
+curl -fsS "$FIRST" | head -20
 ```
 
-Then submit `https://hhh-jobs.com/sitemap.xml` in Google Search Console and Bing Webmaster Tools.
+Submit only `https://hhh-jobs.com/sitemap.xml` in Google Search Console and Bing Webmaster Tools. Search engines discover all current and future child chunks from that index automatically.

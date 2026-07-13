@@ -236,23 +236,25 @@ const getSearchContext = (search = '') => {
   );
 
   const role = firstParam('search', 'role', 'keyword', 'q');
+  const company = firstParam('company');
   const category = firstParam('category', 'sector');
   const state = firstParam('stateName', 'state');
   const district = firstParam('districtName', 'district');
   const city = firstParam('cityName', 'city');
+  const locality = firstParam('localityName', 'locality');
   const pincode = firstParam('pincode', 'pinCode', 'pin_code');
   const fallbackLocation = firstParam('location');
-  const location = city || district || state || pincode || fallbackLocation;
-  const locationTrail = [...new Set([city, district, state].filter(Boolean))].join(', ')
+  const location = locality || city || district || state || pincode || fallbackLocation;
+  const locationTrail = [...new Set([locality, city, district, state].filter(Boolean))].join(', ')
     || pincode
     || fallbackLocation;
 
-  return { role, category, state, district, city, pincode, location, locationTrail };
+  return { role, company, category, state, district, city, locality, pincode, location, locationTrail };
 };
 
 const buildJobsListingSeo = (search = '') => {
-  const { role, category, state, district, city, pincode, location, locationTrail } = getSearchContext(search);
-  const intent = role || category || 'Private';
+  const { role, company, category, state, district, city, locality, pincode, location, locationTrail } = getSearchContext(search);
+  const intent = role || company || category || 'Private';
   const heading = `${intent} Jobs${location ? ` in ${location}` : ' in India'}`;
   const targetLocation = locationTrail || 'India';
 
@@ -269,10 +271,13 @@ const buildJobsListingSeo = (search = '') => {
       role && location && `${role} vacancy in ${location}`,
       category && location && `${category} jobs in ${location}`,
       category && city && `${category} careers in ${city}`,
+      company && location && `${company} jobs in ${location}`,
+      company && `${company} careers`,
       role && `${role} vacancies`,
       category && `${category} careers`,
       location && `jobs near ${location}`,
       city && `latest jobs in ${city}`,
+      locality && `jobs in ${locality}`,
       district && `jobs in ${district} district`,
       state && `jobs in ${state}`,
       pincode && `jobs near ${pincode}`,
@@ -284,8 +289,9 @@ const buildJobsListingSeo = (search = '') => {
 };
 
 const buildGovernmentJobsSeo = (search = '') => {
-  const { category, state } = getSearchContext(search);
-  const heading = `${category || 'Government'} Jobs${state ? ` in ${state}` : ' in India'}`;
+  const { role, category, state } = getSearchContext(search);
+  const intent = role || category || 'Government';
+  const heading = `${intent} Jobs${state ? ` in ${state}` : ' in India'}`;
   return {
     label: heading,
     title: clampSeoText(`${heading} | Latest Sarkari Vacancies | HHH Jobs`, 68),
@@ -293,7 +299,7 @@ const buildGovernmentJobsSeo = (search = '') => {
       `Explore latest ${heading.toLowerCase()}, eligibility, vacancies, deadlines, results, admit cards, and official application links on HHH Jobs.`,
       160
     ),
-    keywords: joinKeywords(heading, category, state, 'sarkari jobs', 'government vacancies', 'government job alerts', SITE_NAME)
+    keywords: joinKeywords(heading, role, category, state, 'sarkari jobs', 'government vacancies', 'government job alerts', SITE_NAME)
   };
 };
 
@@ -347,10 +353,12 @@ const buildCanonicalSearch = (pathname = '/', search = '') => {
   if (pathname === '/jobs') {
     const context = getSearchContext(search);
     if (context.role) canonicalParams.set('search', context.role);
+    if (context.company) canonicalParams.set('company', context.company);
     if (context.state) canonicalParams.set('stateName', context.state);
     if (context.district) canonicalParams.set('districtName', context.district);
     if (context.city) canonicalParams.set('cityName', context.city);
-    if (context.location && !context.city && !context.district && !context.state && !context.pincode) {
+    if (context.locality) canonicalParams.set('localityName', context.locality);
+    if (context.location && !context.locality && !context.city && !context.district && !context.state && !context.pincode) {
       canonicalParams.set('location', context.location);
     }
     if (context.pincode) canonicalParams.set('pincode', context.pincode);
@@ -359,6 +367,7 @@ const buildCanonicalSearch = (pathname = '/', search = '') => {
 
   if (pathname === '/govt-jobs') {
     const context = getSearchContext(search);
+    if (context.role) canonicalParams.set('search', context.role);
     if (context.state) canonicalParams.set('state', context.state);
     if (context.category) canonicalParams.set('category', context.category);
   }

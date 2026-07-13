@@ -38,7 +38,11 @@ const RESPONSIVE_JOBS_PER_PAGE = [
 const makeDefaultFilters = (audience = '') => ({
   search: '',
   location: '',
+  stateName: '',
+  districtName: '',
   city: '',
+  cityName: '',
+  localityName: '',
   pincode: '',
   employmentType: '',
   experienceLevel: '',
@@ -51,8 +55,22 @@ const makeDefaultFilters = (audience = '') => ({
 const makeFiltersFromSearchParams = (audience = '', searchParams = new URLSearchParams()) => ({
   ...makeDefaultFilters(audience),
   search: searchParams.get('search') || searchParams.get('company') || '',
-  location: searchParams.get('location') || searchParams.get('city') || searchParams.get('cityName') || searchParams.get('pincode') || '',
+  location: searchParams.get('location')
+    || searchParams.get('localityName')
+    || searchParams.get('locality')
+    || searchParams.get('city')
+    || searchParams.get('cityName')
+    || searchParams.get('districtName')
+    || searchParams.get('district')
+    || searchParams.get('stateName')
+    || searchParams.get('state')
+    || searchParams.get('pincode')
+    || '',
+  stateName: searchParams.get('stateName') || searchParams.get('state') || '',
+  districtName: searchParams.get('districtName') || searchParams.get('district') || '',
   city: searchParams.get('city') || searchParams.get('cityName') || '',
+  cityName: searchParams.get('cityName') || searchParams.get('city') || '',
+  localityName: searchParams.get('localityName') || searchParams.get('locality') || '',
   pincode: searchParams.get('pincode') || searchParams.get('pinCode') || searchParams.get('pin_code') || '',
   category: searchParams.get('category') || searchParams.get('sector') || searchParams.get('sectorName') || ''
 });
@@ -258,7 +276,11 @@ const StudentJobsPage = ({
       const internalFilters = {
         search: filters.search,
         location: filters.location,
+        stateName: filters.stateName,
+        districtName: filters.districtName,
         city: filters.city,
+        cityName: filters.cityName,
+        localityName: filters.localityName,
         pincode: filters.pincode,
         sector: filters.category,
         category: filters.category,
@@ -267,7 +289,11 @@ const StudentJobsPage = ({
       const externalFilters = {
         search: filters.search,
         location: filters.location,
+        stateName: filters.stateName,
+        districtName: filters.districtName,
         city: filters.city,
+        cityName: filters.cityName,
+        localityName: filters.localityName,
         pincode: filters.pincode,
         sector: filters.category,
         category: filters.category,
