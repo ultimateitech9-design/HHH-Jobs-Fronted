@@ -1,5 +1,6 @@
-import FooterContentPage from '../FooterContentPage';
+import FooterGenericTemplate from '../../components/footerPages/FooterGenericTemplate';
+import pageData from './data/fraud-alert.json';
 
-const FraudAlertPage = () => <FooterContentPage pageKey="fraud-alert" />;
+const FraudAlertPage = () => <FooterGenericTemplate pageKey="fraud-alert" pageData={pageData} />;
 
 export default FraudAlertPage;

@@ -1,5 +1,6 @@
-import FooterContentPage from '../FooterContentPage';
+import FooterGenericTemplate from '../../components/footerPages/FooterGenericTemplate';
+import pageData from './data/trust-and-safety.json';
 
-const TrustAndSafetyPage = () => <FooterContentPage pageKey="trust-and-safety" />;
+const TrustAndSafetyPage = () => <FooterGenericTemplate pageKey="trust-and-safety" pageData={pageData} />;
 
 export default TrustAndSafetyPage;

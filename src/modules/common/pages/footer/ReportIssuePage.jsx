@@ -1,5 +1,6 @@
-import FooterContentPage from '../FooterContentPage';
+import FooterReportIssueTemplate from '../../components/footerPages/FooterReportIssueTemplate';
+import pageData from './data/report-issue.json';
 
-const ReportIssuePage = () => <FooterContentPage pageKey="report-issue" />;
+const ReportIssuePage = () => <FooterReportIssueTemplate pageData={pageData} />;
 
 export default ReportIssuePage;

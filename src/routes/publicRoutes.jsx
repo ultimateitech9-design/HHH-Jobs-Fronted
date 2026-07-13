@@ -2,40 +2,56 @@ import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import HomePage from '../modules/common/pages/HomePage';
 
-const PublicAtsPage = lazy(() => import('../modules/common/pages/PublicAtsPage'));
-const ServicesPage = lazy(() => import('../modules/common/pages/ServicesPage'));
-const EmpVerifyPage = lazy(() => import('../modules/common/pages/EmpVerifyPage'));
-const RetiredEmployeePage = lazy(() => import('../modules/common/pages/RetiredEmployeePage'));
-const JobSeekersPage = lazy(() => import('../modules/common/pages/JobSeekersPage'));
-const RecruitersPage = lazy(() => import('../modules/common/pages/RecruitersPage'));
-const FreshersPage = lazy(() => import('../modules/common/pages/FreshersPage'));
-const VeteransPage = lazy(() => import('../modules/common/pages/VeteransPage'));
-const CampusConnectPage = lazy(() => import('../modules/common/pages/CampusConnectPage'));
-const StudentExternalJobsPage = lazy(() => import('../modules/student/pages/StudentExternalJobsPage'));
-const StudentJobDetailsPage = lazy(() => import('../modules/student/pages/StudentJobDetailsPage'));
-const FacetDirectoryPage = lazy(() => import('../modules/common/pages/FacetDirectoryPage'));
-const StudentGovtJobsPage = lazy(() => import('../modules/student/pages/StudentGovtJobsPage'));
-const StudentGovtJobDetailsPage = lazy(() => import('../modules/student/pages/StudentGovtJobDetailsPage'));
+const initialPublicPath = typeof window === 'undefined' ? '/' : window.location.pathname;
+const lazyPublicRoute = (pattern, importer) => {
+  const warmedModule = pattern.test(initialPublicPath) ? importer() : null;
+  return lazy(() => warmedModule || importer());
+};
+
+const PublicAtsPage = lazyPublicRoute(/^\/ats\/?$/, () => import('../modules/common/pages/PublicAtsPage'));
+const ServicesPage = lazyPublicRoute(/^\/services\/?$/, () => import('../modules/common/pages/ServicesPage'));
+const EmpVerifyPage = lazyPublicRoute(/^\/emp-verify\/?$/, () => import('../modules/common/pages/EmpVerifyPage'));
+const RetiredEmployeePage = lazyPublicRoute(/^\/retired-employee\/?$/, () => import('../modules/common/pages/RetiredEmployeePage'));
+const JobSeekersPage = lazyPublicRoute(/^\/job-seekers\/?$/, () => import('../modules/common/pages/JobSeekersPage'));
+const RecruitersPage = lazyPublicRoute(/^\/recruiters\/?$/, () => import('../modules/common/pages/RecruitersPage'));
+const FreshersPage = lazyPublicRoute(/^\/freshers\/?$/, () => import('../modules/common/pages/FreshersPage'));
+const VeteransPage = lazyPublicRoute(/^\/veterans\/?$/, () => import('../modules/common/pages/VeteransPage'));
+const CampusConnectPage = lazyPublicRoute(/^\/campus-connect\/?$/, () => import('../modules/common/pages/CampusConnectPage'));
+const PublicJobsLandingPage = lazyPublicRoute(/^\/jobs\/?$/, () => import('../modules/student/pages/PublicJobsLandingPage'));
+const StudentJobDetailsPage = lazyPublicRoute(
+  /^\/jobs\/(?!(?:categories|cities|sectors)(?:\/|$))[^/]+\/?$/,
+  () => import('../modules/student/pages/StudentJobDetailsPage')
+);
+const FacetDirectoryPage = lazyPublicRoute(
+  /^\/jobs\/(?:categories|sectors)\/?$/,
+  () => import('../modules/common/pages/FacetDirectoryPage')
+);
+const LocationDirectoryPage = lazyPublicRoute(
+  /^\/jobs\/cities\/?$/,
+  () => import('../modules/common/pages/LocationDirectoryPage')
+);
+const StudentGovtJobsPage = lazyPublicRoute(/^\/govt-jobs\/?$/, () => import('../modules/student/pages/StudentGovtJobsPage'));
+const StudentGovtJobDetailsPage = lazyPublicRoute(/^\/govt-jobs\/[^/]+\/?$/, () => import('../modules/student/pages/StudentGovtJobDetailsPage'));
 const ForbiddenPage = lazy(() => import('../modules/common/pages/ForbiddenPage'));
 const NotFoundPage = lazy(() => import('../modules/common/pages/NotFoundPage'));
 
-const LoginPage = lazy(() => import('../modules/auth/pages/LoginPage'));
-const SignupPage = lazy(() => import('../modules/auth/pages/SignupPage'));
-const CampusConnectRegisterPage = lazy(() => import('../modules/auth/pages/CampusConnectRegisterPage'));
-const OtpVerificationPage = lazy(() => import('../modules/auth/pages/OtpVerificationPage'));
-const ForgotPasswordPage = lazy(() => import('../modules/auth/pages/ForgotPasswordPage'));
-const OAuthCallbackPage = lazy(() => import('../modules/auth/pages/OAuthCallbackPage'));
+const LoginPage = lazyPublicRoute(/^\/login(?:\/[^/]+)?\/?$/, () => import('../modules/auth/pages/LoginPage'));
+const SignupPage = lazyPublicRoute(/^\/sign-up\/?$/, () => import('../modules/auth/pages/SignupPage'));
+const CampusConnectRegisterPage = lazyPublicRoute(/^\/campus-connect\/register\/?$/, () => import('../modules/auth/pages/CampusConnectRegisterPage'));
+const OtpVerificationPage = lazyPublicRoute(/^\/verify-otp\/?$/, () => import('../modules/auth/pages/OtpVerificationPage'));
+const ForgotPasswordPage = lazyPublicRoute(/^\/forgot-password\/?$/, () => import('../modules/auth/pages/ForgotPasswordPage'));
+const OAuthCallbackPage = lazyPublicRoute(/^\/(?:oauth\/callback|auth\/oauth\/(?:google|linkedin)\/callback)\/?$/, () => import('../modules/auth/pages/OAuthCallbackPage'));
 
-const AboutUsPage = lazy(() => import('../modules/common/pages/footer/AboutUsPage'));
-const BlogPage = lazy(() => import('../modules/common/pages/footer/BlogPage'));
-const BlogArticlePage = lazy(() => import('../modules/common/pages/footer/BlogArticlePage'));
-const CareersPage = lazy(() => import('../modules/common/pages/footer/CareersPage'));
-const CompaniesPage = lazy(() => import('../modules/common/pages/CompaniesPage'));
-const CompanyJobsPage = lazy(() => import('../modules/common/pages/CompanyJobsPage'));
-const ContactUsPage = lazy(() => import('../modules/common/pages/footer/ContactUsPage'));
-const HelpCenterPage = lazy(() => import('../modules/common/pages/footer/HelpCenterPage'));
-const PrivacyPolicyPage = lazy(() => import('../modules/common/pages/footer/PrivacyPolicyPage'));
-const TermsAndConditionsPage = lazy(() => import('../modules/common/pages/footer/TermsAndConditionsPage'));
+const AboutUsPage = lazyPublicRoute(/^\/about-us\/?$/, () => import('../modules/common/pages/footer/AboutUsPage'));
+const BlogPage = lazyPublicRoute(/^\/blog\/?$/, () => import('../modules/common/pages/footer/BlogPage'));
+const BlogArticlePage = lazyPublicRoute(/^\/blog\/[^/]+\/?$/, () => import('../modules/common/pages/footer/BlogArticlePage'));
+const CareersPage = lazyPublicRoute(/^\/careers\/?$/, () => import('../modules/common/pages/footer/CareersPage'));
+const CompaniesPage = lazyPublicRoute(/^\/companies\/?$/, () => import('../modules/common/pages/CompaniesPage'));
+const CompanyJobsPage = lazyPublicRoute(/^\/companies\/[^/]+\/?$/, () => import('../modules/common/pages/CompanyJobsPage'));
+const ContactUsPage = lazyPublicRoute(/^\/contact-us\/?$/, () => import('../modules/common/pages/footer/ContactUsPage'));
+const HelpCenterPage = lazyPublicRoute(/^\/help-center\/?$/, () => import('../modules/common/pages/footer/HelpCenterPage'));
+const PrivacyPolicyPage = lazyPublicRoute(/^\/privacy-policy\/?$/, () => import('../modules/common/pages/footer/PrivacyPolicyPage'));
+const TermsAndConditionsPage = lazyPublicRoute(/^\/terms-and-conditions\/?$/, () => import('../modules/common/pages/footer/TermsAndConditionsPage'));
 const SitemapPage = lazy(() => import('../modules/common/pages/footer/SitemapPage'));
 const CreditsPage = lazy(() => import('../modules/common/pages/footer/CreditsPage'));
 const GrievancesPage = lazy(() => import('../modules/common/pages/footer/GrievancesPage'));
@@ -57,9 +73,9 @@ const publicRoutes = [
   { path: 'campus-connect', element: <CampusConnectPage /> },
   { path: 'retired-employee', element: <RetiredEmployeePage /> },
   { path: 'jobs/categories', element: <FacetDirectoryPage /> },
-  { path: 'jobs/cities', element: <FacetDirectoryPage /> },
+  { path: 'jobs/cities', element: <LocationDirectoryPage /> },
   { path: 'jobs/sectors', element: <FacetDirectoryPage /> },
-  { path: 'jobs', element: <StudentExternalJobsPage /> },
+  { path: 'jobs', element: <PublicJobsLandingPage /> },
   { path: 'jobs/:jobId', element: <StudentJobDetailsPage publicMode /> },
   { path: 'govt-jobs', element: <StudentGovtJobsPage publicMode /> },
   { path: 'govt-jobs/:jobId', element: <StudentGovtJobDetailsPage publicMode /> },

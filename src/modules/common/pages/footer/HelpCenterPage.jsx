@@ -1,5 +1,6 @@
-import FooterContentPage from '../FooterContentPage';
+import FooterGenericTemplate from '../../components/footerPages/FooterGenericTemplate';
+import pageData from './data/help-center.json';
 
-const HelpCenterPage = () => <FooterContentPage pageKey="help-center" />;
+const HelpCenterPage = () => <FooterGenericTemplate pageKey="help-center" pageData={pageData} />;
 
 export default HelpCenterPage;

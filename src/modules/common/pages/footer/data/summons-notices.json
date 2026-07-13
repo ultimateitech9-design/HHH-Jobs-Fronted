@@ -1,0 +1,38 @@
+{
+  "title": "Summons / Notices",
+  "eyebrow": "Legal",
+  "summary": "This page is reserved for official legal, regulatory, or policy communications that users may need to review carefully.",
+  "sections": [
+    {
+      "heading": "Purpose of this page",
+      "body": "HHH Jobs uses this page as a formal public record for notices that are significant to platform operations, legal compliance, policy changes, or user obligations."
+    },
+    {
+      "heading": "What are summons and notices",
+      "body": "A summons is generally a formal communication issued in a legal, regulatory, or administrative context that may require a response. A notice is broader and usually communicates updates, obligations, deadlines, or policy changes that users should be aware of."
+    },
+    {
+      "heading": "What may appear here",
+      "body": "When necessary, this page may include important communications such as:",
+      "items": [
+        "Policy notices that materially affect platform use",
+        "Regulatory or legal communications relevant to users",
+        "Compliance-related announcements linked to account or service obligations",
+        "Formal updates concerning data, conduct, or service terms"
+      ]
+    },
+    {
+      "heading": "How to read these communications",
+      "body": "Each published communication should be reviewed for its date, scope, and any actions required. If a notice relates to your account or activity, read it in full before taking any next step.",
+      "items": [
+        "Check whether the notice applies to all users or only a specific category",
+        "Review any dates, deadlines, or required responses carefully",
+        "Use the contact route provided if clarification is needed"
+      ]
+    },
+    {
+      "heading": "Questions and clarification",
+      "body": "If you need help understanding a specific notice, contact HHH Jobs support through the appropriate route so the matter can be reviewed and clarified responsibly."
+    }
+  ]
+}

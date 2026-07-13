@@ -5,7 +5,6 @@ import { apiFetch } from '../../../utils/api';
 import rankedSearch from '../../../shared/utils/rankedSearch';
 import useDebouncedValue from '../../../shared/hooks/useDebouncedValue';
 import DirectoryCinematicRail from '../components/DirectoryCinematicRail';
-import LocationDirectoryPage from './LocationDirectoryPage';
 
 const DIRECTORY_CONFIG = {
   categories: {
@@ -370,10 +369,6 @@ export default function FacetDirectoryPage() {
     : location.pathname.includes('/jobs/sectors')
       ? 'sectors'
       : 'categories';
-
-  if (directoryType === 'cities') {
-    return <LocationDirectoryPage />;
-  }
 
   return <FacetDirectoryContent directoryType={directoryType} />;
 }

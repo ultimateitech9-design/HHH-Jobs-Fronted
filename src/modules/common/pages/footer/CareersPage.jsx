@@ -1,5 +1,6 @@
-import FooterContentPage from '../FooterContentPage';
+import FooterGenericTemplate from '../../components/footerPages/FooterGenericTemplate';
+import pageData from './data/careers.json';
 
-const CareersPage = () => <FooterContentPage pageKey="careers" />;
+const CareersPage = () => <FooterGenericTemplate pageKey="careers" pageData={pageData} />;
 
 export default CareersPage;

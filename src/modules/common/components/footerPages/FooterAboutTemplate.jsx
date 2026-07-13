@@ -19,7 +19,11 @@ const FooterAboutTemplate = ({ pageData }) => {
           { label: 'Contact Team', to: '/contact-us', variant: 'ghost' }
         ]}
         media={{
-          src: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1280&q=80',
+          src: '/career-compass-hero-1024.webp?v=20260713',
+          srcSet: '/career-compass-hero-640.webp?v=20260713 640w, /career-compass-hero-1024.webp?v=20260713 1024w',
+          sizes: '100vw',
+          width: 1024,
+          height: 1024,
           alt: 'Professional hiring discussion'
         }}
       />

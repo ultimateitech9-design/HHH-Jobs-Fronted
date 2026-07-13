@@ -1,0 +1,50 @@
+{
+  "title": "Privacy Policy",
+  "eyebrow": "Policy",
+  "summary": "This Privacy Policy explains how HHH Jobs collects, uses, protects, and manages personal information in connection with its services.",
+  "sections": [
+    {
+      "heading": "1. Scope and effective date",
+      "body": "Effective Date: March 2, 2026. This policy applies to information collected through HHH Jobs when users browse the platform, create accounts, apply for opportunities, manage hiring activity, or contact the team."
+    },
+    {
+      "heading": "2. Information we collect",
+      "body": "We may collect information that users provide directly, along with technical and usage information needed to operate, secure, and improve the platform. This may include:",
+      "items": [
+        "Name, email address, phone number, and profile details",
+        "Professional, employment, or business information relevant to the service",
+        "Account credentials and communication records",
+        "Device, browser, IP, usage, and interaction data"
+      ]
+    },
+    {
+      "heading": "3. How information is used",
+      "body": "Information may be used to create and manage accounts, support hiring and application workflows, communicate service updates, maintain security, respond to support requests, and improve platform quality. We aim to collect and use only what is reasonably necessary for these purposes."
+    },
+    {
+      "heading": "4. When information may be shared",
+      "body": "HHH Jobs may share information with service providers and operational partners that help deliver the platform, with employers or candidates where that sharing is necessary for service use, and with lawful authorities where disclosure is required. HHH Jobs does not sell personal data for commercial resale."
+    },
+    {
+      "heading": "5. Cookies and similar technologies",
+      "body": "Cookies and similar technologies may be used to support account sessions, remember preferences, understand usage, and improve performance. Users may manage cookie behaviour through browser settings, subject to the impact on site functionality."
+    },
+    {
+      "heading": "6. Security and retention",
+      "body": "HHH Jobs uses reasonable administrative, technical, and organisational safeguards to protect personal information against unauthorised access, loss, misuse, or disclosure. Information may be retained for as long as it is needed for service delivery, compliance, security, or legitimate operational purposes."
+    },
+    {
+      "heading": "7. Your rights and choices",
+      "body": "Depending on applicable law and the nature of your relationship with the platform, you may have rights regarding your personal information, such as:",
+      "items": [
+        "Accessing, correcting, or requesting deletion of certain information",
+        "Managing communication preferences",
+        "Requesting more information about how data is used"
+      ]
+    },
+    {
+      "heading": "8. Policy updates and contact",
+      "body": "This policy may be updated from time to time to reflect changes in law, technology, operations, or platform features. Updated versions will be posted on this page with the revised effective date. If you have questions about this policy or need to raise a data-related request, please use the contact or support routes listed on HHH Jobs."
+    }
+  ]
+}

@@ -21,6 +21,11 @@ import { getExternalJobCategories, getExternalJobSources, getExternalJobs } from
 import { getLoginRedirectState } from '../../common/utils/publicAccess';
 import { getStudentJobs } from '../services/studentApi';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
+import {
+  CAREER_HERO_SIZES,
+  CAREER_HERO_SRC_SET,
+  getCareerHeroSrc
+} from '../../../shared/utils/publicHeroImage';
 import GooglePagination from '../../../shared/components/GooglePagination';
 import JobShareMenu from '../../../shared/components/jobs/JobShareMenu';
 import {
@@ -562,13 +567,15 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
         <>
           <section className="public-cinematic-hero relative isolate min-h-[390px] overflow-hidden border-b border-slate-800 bg-slate-950 text-white">
             <img
-              src="/career-compass-hero-1024.webp?v=20260713"
-              srcSet="/career-compass-hero-640.webp?v=20260713 640w, /career-compass-hero-1024.webp?v=20260713 1024w"
-              sizes="100vw"
+              src={getCareerHeroSrc()}
+              srcSet={CAREER_HERO_SRC_SET}
+              sizes={CAREER_HERO_SIZES}
               alt="Candidates and hiring teams working together"
+              width="1024"
+              height="1024"
               className="public-cinematic-image absolute inset-0 h-full w-full object-cover object-center"
               loading="eager"
-              decoding="async"
+              decoding="sync"
               fetchPriority="high"
             />
             <div className="absolute inset-0 bg-slate-950/[0.78]" />

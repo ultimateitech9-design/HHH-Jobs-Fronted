@@ -1,0 +1,45 @@
+{
+  "title": "Report an Issue",
+  "eyebrow": "Issue Reporting",
+  "summary": "Use this page to report technical issues, suspicious activity, or platform problems that require review and action.",
+  "sections": [
+    {
+      "heading": "What should be reported here",
+      "body": "This route is best for platform errors, broken workflows, misleading listings, suspicious activity, or anything else that affects safe and reliable use of HHH Jobs."
+    },
+    {
+      "heading": "Common report types",
+      "body": "You can use this page for problems such as:",
+      "items": [
+        "Login, application, posting, or navigation failures",
+        "Suspicious listings, misleading content, or unsafe behaviour",
+        "Broken links, incorrect information, or visual defects that affect usability",
+        "Policy concerns that need investigation but are not yet a formal grievance"
+      ]
+    },
+    {
+      "heading": "How the review process works",
+      "body": "Most issue reviews follow a simple path from submission to acknowledgement, investigation, and follow-up. The more precise the report, the easier it is to review efficiently.",
+      "items": [
+        "Submit the issue with clear context",
+        "Receive acknowledgement and initial review",
+        "Allow time for investigation or clarification if needed",
+        "Receive an update or resolution path from the team"
+      ]
+    },
+    {
+      "heading": "What helps us investigate faster",
+      "body": "Helpful reports usually include the page name, the action taken, what went wrong, and any visual proof that can help confirm the issue quickly.",
+      "items": [
+        "Mention whether the issue affects candidates, employers, or both",
+        "Add screenshots when the problem is visual or workflow-related",
+        "Share listing links, usernames, or timestamps where relevant",
+        "State whether the issue is urgent, repeated, or safety-related"
+      ]
+    },
+    {
+      "heading": "When to use another route",
+      "body": "If the matter is a formal complaint, use the Grievances page. If you need general support or guidance, use Contact Us or the Help Center for the fastest route."
+    }
+  ]
+}

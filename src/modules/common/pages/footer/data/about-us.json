@@ -1,0 +1,21 @@
+{
+  "title": "About HHH Jobs",
+  "eyebrow": "Company",
+  "summary": "HHH Jobs exists to make hiring more credible, more responsive, and more useful for both employers and professionals.",
+  "sections": [
+    {
+      "heading": "What HHH Jobs stands for",
+      "body": "HHH Jobs is built around a simple idea: people make better hiring decisions when information is clear, communication is timely, and the process feels dependable from the first click to the final decision."
+    },
+    {
+      "heading": "What users should expect",
+      "body": "Every part of the experience is designed to support serious hiring and serious career movement:",
+      "items": [
+        "Well-structured job information that helps users decide quickly",
+        "Clearer interactions between employers and applicants",
+        "Public support and policy pages that explain how the platform works",
+        "A stronger emphasis on trust, safety, and professional conduct"
+      ]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
-import FooterContentPage from '../FooterContentPage';
+import FooterGenericTemplate from '../../components/footerPages/FooterGenericTemplate';
+import pageData from './data/credits.json';
 
-const CreditsPage = () => <FooterContentPage pageKey="credits" />;
+const CreditsPage = () => <FooterGenericTemplate pageKey="credits" pageData={pageData} />;
 
 export default CreditsPage;

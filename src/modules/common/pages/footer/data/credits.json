@@ -1,0 +1,41 @@
+{
+  "title": "Credits",
+  "eyebrow": "Acknowledgements",
+  "summary": "HHH Jobs is shaped by product thinking, editorial discipline, partner trust, and the feedback of people who use the platform every day.",
+  "sections": [
+    {
+      "heading": "Platform stewardship",
+      "body": "This page recognises the collective effort behind HHH Jobs. A credible hiring platform depends on clear thinking, careful execution, and the people who uphold standards across every part of the experience."
+    },
+    {
+      "heading": "Content and editorial quality",
+      "body": "Strong public content helps users move with confidence. We value the editorial effort that turns hiring topics, policy information, and support guidance into pages that are easy to understand and useful to act on.",
+      "items": [
+        "Audience-first writing that explains without overwhelming",
+        "Clear structure that helps users find answers quickly",
+        "A tone that respects both employers and job seekers"
+      ]
+    },
+    {
+      "heading": "Design and experience standards",
+      "body": "We also recognise the discipline required to create pages, interactions, and layouts that feel professional, accessible, and easy to trust. Good design reduces confusion and improves decisions."
+    },
+    {
+      "heading": "Employer and candidate insight",
+      "body": "Real-world feedback from employers, candidates, and experienced professionals plays an important role in shaping the platform. Their perspective helps us understand what needs to be clearer, faster, and more valuable.",
+      "items": [
+        "Hiring-side feedback on role clarity and candidate quality",
+        "Candidate-side feedback on trust, usability, and communication",
+        "Professional input that improves relevance across pages and flows"
+      ]
+    },
+    {
+      "heading": "Partners and support functions",
+      "body": "The platform also benefits from operational support, business partnerships, and responsible coordination that keep the experience responsive and dependable."
+    },
+    {
+      "heading": "A continuing commitment",
+      "body": "HHH Jobs continues to evolve through thoughtful improvement. We remain committed to raising the standard of the platform in ways that serve people, not just systems."
+    }
+  ]
+}

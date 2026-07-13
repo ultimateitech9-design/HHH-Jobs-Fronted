@@ -29,6 +29,7 @@ BACKEND_WAIT_SECONDS="${BACKEND_WAIT_SECONDS:-300}"
 SKIP_BACKEND_UPDATE="${SKIP_BACKEND_UPDATE:-0}"
 NGINX_SITE_LINK="${NGINX_SITE_LINK:-/etc/nginx/sites-enabled/hhh-jobs-frontend}"
 SITEMAP_INCLUDE="/etc/nginx/snippets/hhh-jobs-sitemap-server.conf"
+PERFORMANCE_CONFIG="/etc/nginx/conf.d/20-hhh-jobs-performance.conf"
 
 log() {
   printf '\n==> %s\n' "$1"
@@ -130,6 +131,15 @@ install -m 0644 \
   "$FRONTEND_DIR/deploy/nginx/hhh-jobs-sitemap-server.conf" \
   "$SITEMAP_INCLUDE"
 
+log "Installing static compression and cache policy"
+install -m 0644 \
+  "$FRONTEND_DIR/deploy/nginx/hhh-jobs-compression.conf" \
+  "$PERFORMANCE_CONFIG"
+
+if ! nginx -T 2>&1 | grep -Eq '^[[:space:]]*gzip[[:space:]]+on;'; then
+  printf 'gzip on;\n' > /etc/nginx/conf.d/00-hhh-jobs-gzip-on.conf
+fi
+
 site_config="$(readlink -f "$NGINX_SITE_LINK")"
 [[ -n "$site_config" && -f "$site_config" ]] || {
   echo "Nginx site config not found through $NGINX_SITE_LINK" >&2
@@ -189,11 +199,30 @@ grep -q '<urlset' "$child_file" || {
   exit 1
 }
 
+asset_path="$(find "$WEB_ROOT/assets" -maxdepth 1 -type f -name '*.js' -printf '%f\n' | head -1)"
+[[ -n "$asset_path" ]] || {
+  echo "No built JavaScript asset found for compression validation." >&2
+  exit 1
+}
+
+asset_headers="$(curl -fsSI -H 'Accept-Encoding: gzip' "https://hhh-jobs.com/assets/$asset_path")"
+grep -qi '^content-encoding: gzip' <<< "$asset_headers" || {
+  printf '%s\n' "$asset_headers" >&2
+  echo "Static JavaScript is not being served with gzip compression." >&2
+  exit 1
+}
+grep -qi 'cache-control:.*immutable' <<< "$asset_headers" || {
+  printf '%s\n' "$asset_headers" >&2
+  echo "Fingerprint asset cache policy is missing immutable caching." >&2
+  exit 1
+}
+
 printf '\nDeployment complete.\n'
 printf 'Sitemap index: https://hhh-jobs.com/sitemap.xml\n'
 printf 'Sitemap chunks: %s\n' "$(grep -c '<sitemap>' "$index_file")"
 printf 'First child: %s\n' "$first_child"
 printf 'First child URLs: %s\n' "$(grep -c '<url>' "$child_file")"
+printf 'Static assets: gzip + immutable cache verified\n'
 grep -Ei '^(content-type|cache-control|x-hhh-sitemap):' "$headers_file" || true
 
 rm -f "$index_file" "$child_file" "$headers_file"

@@ -1,0 +1,41 @@
+{
+  "title": "Help Center",
+  "eyebrow": "Support",
+  "summary": "Find clear answers, practical guidance, and the right support path for using HHH Jobs with confidence.",
+  "sections": [
+    {
+      "heading": "Start with the right support path",
+      "body": "The Help Center is designed to reduce uncertainty. Whether you are applying for jobs, managing hiring activity, or resolving an account issue, start here to find the right route quickly."
+    },
+    {
+      "heading": "Help for job seekers",
+      "body": "Candidates can use this area to understand job search steps, profile quality, application progress, account access, and other practical questions that affect day-to-day use.",
+      "items": [
+        "Creating and managing a complete profile",
+        "Understanding applications, updates, and next steps",
+        "Navigating access, password, and account support"
+      ]
+    },
+    {
+      "heading": "Help for employers",
+      "body": "Employers can use the Help Center to understand posting workflows, candidate review, support routes, and the best page for resolving operational questions.",
+      "items": [
+        "Posting and managing hiring requirements",
+        "Understanding employer support and service routes",
+        "Resolving platform questions that affect hiring activity"
+      ]
+    },
+    {
+      "heading": "When to use another page",
+      "body": "Some concerns are better handled through a specialised page. Use Report Issue for platform or listing problems, Grievances for formal complaints, and Contact Us when you need direct assistance."
+    },
+    {
+      "heading": "What helps support respond faster",
+      "body": "When contacting support, include the page you were using, the action you took, and any relevant screenshots or account details. Clear context helps our team respond more accurately."
+    },
+    {
+      "heading": "Our support promise",
+      "body": "We aim to make support practical, respectful, and easy to follow. The Help Center exists to keep users informed, reduce unnecessary friction, and guide each person to the right next step."
+    }
+  ]
+}

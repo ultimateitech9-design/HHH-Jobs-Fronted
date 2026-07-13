@@ -1,5 +1,10 @@
 import { isValidElement } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  CAREER_HERO_SIZES,
+  CAREER_HERO_SRC_SET,
+  getCareerHeroSrc
+} from '../../../shared/utils/publicHeroImage';
 
 const renderIcon = (icon) => {
   if (!icon) return null;
@@ -86,9 +91,17 @@ export const StudentPageShell = ({
           {heroImage ? (
             <>
               <img
-                src={heroImage}
+                src={heroImage.includes('career-compass-hero') ? getCareerHeroSrc() : heroImage}
+                srcSet={heroImage.includes('career-compass-hero')
+                  ? CAREER_HERO_SRC_SET
+                  : undefined}
+                sizes={heroImage.includes('career-compass-hero') ? CAREER_HERO_SIZES : '100vw'}
                 alt={heroImageAlt}
-                decoding="async"
+                width="1024"
+                height="1024"
+                loading="eager"
+                decoding="sync"
+                fetchPriority="high"
                 className="public-cinematic-image absolute inset-0 h-full w-full object-cover"
                 style={{ objectPosition: heroImagePosition }}
               />

@@ -1,0 +1,28 @@
+{
+  "title": "Sitemap",
+  "eyebrow": "Navigation",
+  "summary": "A practical guide to the main public pages, hiring destinations, candidate journeys, and policy resources across HHH Jobs.",
+  "sections": [
+    {
+      "heading": "Core public pages",
+      "body": "The public experience includes homepage discovery, account access, company information, support pages, legal pages, and editorial resources."
+    },
+    {
+      "heading": "Candidate and employer journeys",
+      "body": "Job seekers can move into search, profile, application, and guidance pages. Employers can move into company visibility, service information, hiring support, and protected account areas.",
+      "items": [
+        "Candidates: jobs, applications, profile improvement, and hiring guidance",
+        "Employers: recruiter journeys, companies, services, and employer support",
+        "Experienced professionals: dedicated discovery routes and tailored positioning"
+      ]
+    },
+    {
+      "heading": "Support and trust resources",
+      "body": "Support pages help users raise concerns, find guidance, understand policies, and navigate the platform with greater confidence."
+    },
+    {
+      "heading": "Why this page matters",
+      "body": "Use the sitemap when you want a fast overview of the site structure, need to compare content areas, or want to move quickly between discovery, support, and policy pages."
+    }
+  ]
+}

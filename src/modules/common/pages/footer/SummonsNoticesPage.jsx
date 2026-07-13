@@ -1,5 +1,6 @@
-import FooterContentPage from '../FooterContentPage';
+import FooterGenericTemplate from '../../components/footerPages/FooterGenericTemplate';
+import pageData from './data/summons-notices.json';
 
-const SummonsNoticesPage = () => <FooterContentPage pageKey="summons-notices" />;
+const SummonsNoticesPage = () => <FooterGenericTemplate pageKey="summons-notices" pageData={pageData} />;
 
 export default SummonsNoticesPage;

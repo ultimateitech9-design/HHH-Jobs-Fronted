@@ -1,5 +1,10 @@
 import { Link } from 'react-router-dom';
 import AnimatedSection from '../../../../shared/components/AnimatedSection';
+import {
+  CAREER_HERO_SIZES,
+  CAREER_HERO_SRC_SET,
+  getCareerHeroSrc
+} from '../../../../shared/utils/publicHeroImage';
 
 const buttonClassByVariant = {
   primary: 'bg-[#d99b20] text-[#151922] shadow-[0_10px_24px_rgba(185,121,8,0.2)] hover:bg-[#e8b23c]',
@@ -51,8 +56,15 @@ const PublicPageHero = ({
       {isMediaHero ? (
         <>
           <img
-            src={media.src}
+            src={media.src?.includes('career-compass-hero') ? getCareerHeroSrc() : media.src}
+            srcSet={media.src?.includes('career-compass-hero') ? CAREER_HERO_SRC_SET : media.srcSet}
+            sizes={media.sizes || (media.src?.includes('career-compass-hero') ? CAREER_HERO_SIZES : '100vw')}
             alt={media.alt}
+            width={media.width || 1024}
+            height={media.height || 1024}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
             className="public-cinematic-image absolute inset-0 h-full w-full object-cover object-center"
           />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,21,36,0.96)_0%,rgba(7,21,36,0.82)_48%,rgba(7,21,36,0.54)_100%)]" />

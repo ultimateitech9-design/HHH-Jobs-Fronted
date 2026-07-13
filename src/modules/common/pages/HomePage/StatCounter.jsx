@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, useInView } from 'framer-motion';
 
 const StatCounter = ({ duration = 2, end, label, suffix = '', inline = false }) => {
   const [count, setCount] = useState(0);
+  const [inView, setInView] = useState(false);
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, amount: 0.35 });
 
   const formatter = useMemo(
     () =>
@@ -17,40 +16,54 @@ const StatCounter = ({ duration = 2, end, label, suffix = '', inline = false }) 
   );
 
   useEffect(() => {
+    const element = ref.current;
+    if (!element || typeof IntersectionObserver === 'undefined') {
+      setInView(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setInView(true);
+        observer.disconnect();
+      },
+      { threshold: 0.35 }
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (!inView || end === null || end === undefined) return undefined;
 
-    let start = 0;
-    const step = end / (duration * 60);
-    const timer = window.setInterval(() => {
-      start += step;
-
-      if (start >= end) {
+    const startedAt = performance.now();
+    let frameId = 0;
+    const tick = (timestamp) => {
+      const progress = Math.min(1, (timestamp - startedAt) / Math.max(1, duration * 1000));
+      if (progress >= 1) {
         setCount(end);
-        window.clearInterval(timer);
         return;
       }
+      setCount(Math.floor(end * progress));
+      frameId = window.requestAnimationFrame(tick);
+    };
+    frameId = window.requestAnimationFrame(tick);
 
-      setCount(Math.floor(start));
-    }, 1000 / 60);
-
-    return () => window.clearInterval(timer);
+    return () => window.cancelAnimationFrame(frameId);
   }, [duration, end, inView]);
 
   return (
-    <motion.div
+    <div
       ref={ref}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
-      viewport={{ once: true, amount: 0.35 }}
-      className={inline ? 'flex w-full flex-wrap items-baseline justify-center gap-x-2 gap-y-1 text-center' : 'w-full text-center'}
+      className={`native-animated-section ${inline ? 'flex w-full flex-wrap items-baseline justify-center gap-x-2 gap-y-1 text-center' : 'w-full text-center'}`}
     >
       <div className={`font-heading font-bold text-white ${inline ? 'text-2xl md:text-3xl' : 'text-3xl md:text-5xl'}`}>
         {end === null || end === undefined ? '--' : formatter.format(count)}
         {end === null || end === undefined ? '' : suffix}
       </div>
       <p className={inline ? 'text-xs font-semibold text-white/70' : 'mt-2 text-sm text-white/75 md:text-base'}>{label}</p>
-    </motion.div>
+    </div>
   );
 };
 

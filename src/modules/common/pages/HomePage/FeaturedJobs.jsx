@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { ArrowRight, Bookmark, Briefcase, Clock3, MapPin, Sparkles } from 'lucide-react';
 import AnimatedSection from '../../../../shared/components/AnimatedSection';
 import { getCurrentUser } from '../../../../utils/auth';
@@ -219,10 +218,8 @@ export function FeaturedJobs({
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
             {jobs.map((job, index) => (
               <AnimatedSection key={job.id || job._id || index} delay={index * 0.05}>
-                <motion.article
-                  whileHover={{ y: -3, boxShadow: '0 22px 42px -16px rgba(17, 33, 59, 0.14)' }}
-                  whileTap={{ scale: 0.99 }}
-                  className="group relative flex min-h-[240px] w-full flex-col overflow-hidden rounded-[20px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] p-3 transition-colors hover:border-brand-200"
+                <article
+                  className="group relative flex min-h-[240px] w-full flex-col overflow-hidden rounded-[20px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] p-3 transition duration-300 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_22px_42px_-16px_rgba(17,33,59,0.14)] active:scale-[0.99]"
                 >
                   <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-200/80 to-transparent" />
                   <div className="absolute -right-8 top-0 h-12 w-12 rounded-full bg-brand-50/80 blur-2xl" aria-hidden="true" />
@@ -283,7 +280,7 @@ export function FeaturedJobs({
                       </Link>
                     </div>
                   </div>
-                </motion.article>
+                </article>
               </AnimatedSection>
             ))}
           </div>

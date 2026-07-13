@@ -52,8 +52,12 @@ const PublicCinematicEnhancements = () => {
   const routeKind = getRouteKind(pathname);
   const hideCinematicDetails = AUTH_OR_LEGAL_ROUTE_PATTERN.test(pathname);
   const hideRouteSignal = pathname === '/' || hideCinematicDetails || DIRECTORY_ROUTE_PATTERN.test(pathname);
+  const isCompactViewport = typeof window !== 'undefined'
+    && window.matchMedia('(max-width: 767px)').matches;
 
   useEffect(() => {
+    if (isCompactViewport) return undefined;
+
     const root = document.querySelector('.public-route-stage');
     if (!root) return undefined;
 
@@ -107,9 +111,9 @@ const PublicCinematicEnhancements = () => {
       });
       delete root.dataset.cinematicRoute;
     };
-  }, [pathname, routeKind]);
+  }, [isCompactViewport, pathname, routeKind]);
 
-  if (hideCinematicDetails) return null;
+  if (hideCinematicDetails || isCompactViewport) return null;
 
   return (
     <>

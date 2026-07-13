@@ -1,0 +1,23 @@
+{
+  "title": "Contact Us",
+  "eyebrow": "Support",
+  "summary": "Reach the right HHH Jobs team for support, partnerships, hiring assistance, or general enquiries.",
+  "sections": [
+    {
+      "heading": "Support Requests",
+      "body": "Use the support route for account access issues, application problems, platform errors, or urgent help related to using HHH Jobs. You can also call +91 7290080025 or +91 7290080026."
+    },
+    {
+      "heading": "Business & Partnerships",
+      "body": "Regional employer onboarding, partnership discussions, and commercial conversations are handled through our business contact paths."
+    },
+    {
+      "heading": "General Information",
+      "body": "Use the general contact path for platform questions, company information, or non-urgent communication that does not require support intervention."
+    },
+    {
+      "heading": "Careers & HR",
+      "body": "If your message is related to careers with HHH Jobs, use the HR route so your enquiry reaches the appropriate team without delay."
+    }
+  ]
+}

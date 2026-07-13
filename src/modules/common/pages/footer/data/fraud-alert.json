@@ -1,0 +1,55 @@
+{
+  "title": "Fraud Alert",
+  "eyebrow": "Safety",
+  "summary": "Stay alert to scams, misleading offers, and suspicious communication that can appear in online hiring environments.",
+  "sections": [
+    {
+      "heading": "Why this page matters",
+      "body": "Most activity on HHH Jobs is genuine and professional, but online hiring always requires vigilance. This page helps users recognise common warning signs and respond with care."
+    },
+    {
+      "heading": "What fraud can look like",
+      "body": "Fraud in hiring environments usually involves deception intended to obtain money, sensitive information, or trust under false pretences. Common examples include:",
+      "items": [
+        "Fake job offers requesting fees, deposits, or payments",
+        "Requests for sensitive financial or identity details too early in the process",
+        "Impersonation of recruiters, companies, or support teams",
+        "Unrealistic offers designed to pressure quick decisions"
+      ]
+    },
+    {
+      "heading": "Warning signs to notice early",
+      "body": "The following patterns often signal elevated risk:",
+      "items": [
+        "Any request for money, gift cards, or paid access to secure a role",
+        "Pressure to share bank details, passwords, or identity data without a valid process",
+        "Messages sent through suspicious channels with vague or rushed language",
+        "Job offers that promise unusually high rewards with very little scrutiny"
+      ]
+    },
+    {
+      "heading": "How HHH Jobs helps reduce risk",
+      "body": "HHH Jobs works to reduce fraud through a mix of review practices, policy enforcement, and user reporting tools:",
+      "items": [
+        "Monitoring for suspicious listings and account activity",
+        "Verification measures where appropriate",
+        "Clear reporting routes for suspicious behaviour",
+        "Support follow-up when credible concerns are raised"
+      ]
+    },
+    {
+      "heading": "What to do if something feels wrong",
+      "body": "If you believe a listing, message, or account may be fraudulent, act carefully and avoid further engagement until the matter is reviewed.",
+      "items": [
+        "Do not respond further to suspicious communication",
+        "Report the concern through HHH Jobs as soon as possible",
+        "Preserve screenshots, links, names, and relevant context",
+        "Avoid sharing money or sensitive information until legitimacy is confirmed"
+      ]
+    },
+    {
+      "heading": "Safe application habits",
+      "body": "Good caution protects both candidates and employers. Read listings carefully, verify communication, question unusual urgency, and use official support routes whenever something appears inconsistent or unsafe."
+    }
+  ]
+}

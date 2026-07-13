@@ -19,11 +19,7 @@
           window.gtag('config', 'G-6QV4CGJDXB');
         };
         var schedule = function() {
-          if ('requestIdleCallback' in window) {
-            window.requestIdleCallback(load, { timeout: 30000 });
-          } else {
-            window.setTimeout(load, 30000);
-          }
+          window.setTimeout(load, 8000);
         };
         if (document.readyState === 'complete') schedule();
         else window.addEventListener('load', schedule, { once: true });
@@ -38,8 +34,15 @@
       as="image"
       type="image/webp"
       href="/career-compass-hero-640.webp?v=20260713"
-      imagesrcset="/career-compass-hero-640.webp?v=20260713 640w, /career-compass-hero-1024.webp?v=20260713 1024w"
-      imagesizes="100vw"
+      media="(max-width: 767px)"
+      fetchpriority="high"
+    />
+    <link
+      rel="preload"
+      as="image"
+      type="image/webp"
+      href="/career-compass-hero-1024.webp?v=20260713"
+      media="(min-width: 768px)"
       fetchpriority="high"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

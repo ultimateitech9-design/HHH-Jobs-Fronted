@@ -8,6 +8,11 @@ import { getPublicCompanies } from '../services/companyDirectoryApi';
 import { getCompanyEntryIntent } from '../utils/publicAccess';
 import GooglePagination from '../../../shared/components/GooglePagination';
 import useDebouncedValue from '../../../shared/hooks/useDebouncedValue';
+import {
+  CAREER_HERO_SIZES,
+  CAREER_HERO_SRC_SET,
+  getCareerHeroSrc
+} from '../../../shared/utils/publicHeroImage';
 
 const COMPANIES_PAGE_SIZE = 50;
 
@@ -153,13 +158,13 @@ const CompaniesPage = () => {
     <div className="min-h-screen bg-[#f7f6f2]">
       <section className="public-cinematic-hero relative isolate min-h-[380px] overflow-hidden border-b border-[#d99b20]/35 bg-[#071524] text-white">
         <img
-          src="/career-compass-hero-1024.webp?v=20260713"
-          srcSet="/career-compass-hero-640.webp?v=20260713 640w, /career-compass-hero-1024.webp?v=20260713 1024w"
-          sizes="100vw"
+          src={getCareerHeroSrc()}
+          srcSet={CAREER_HERO_SRC_SET}
+          sizes={CAREER_HERO_SIZES}
           alt="Employers and professionals collaborating"
           width="1024"
           height="1024"
-          decoding="async"
+          decoding="sync"
           loading="eager"
           fetchPriority="high"
           className="public-cinematic-image absolute inset-0 h-full w-full object-cover object-center"

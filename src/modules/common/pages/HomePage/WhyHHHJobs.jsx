@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { BadgeCheck, Brain, Globe, Shield, Users, Zap } from 'lucide-react';
 import AnimatedSection from '../../../../shared/components/AnimatedSection';
 
@@ -61,8 +60,7 @@ export function WhyHHHJobs() {
         <div className="grid border-t border-white/15 sm:grid-cols-2">
           {features.map((feature, index) => (
             <AnimatedSection key={feature.title} delay={index * 0.05}>
-              <motion.article
-                whileHover={{ x: 4 }}
+              <article
                 className={`group min-h-[190px] border-b border-white/15 p-5 transition-colors hover:bg-white/[0.035] md:p-6 ${
                   index % 2 === 1 ? 'sm:border-l' : ''
                 }`}
@@ -75,7 +73,7 @@ export function WhyHHHJobs() {
                 </div>
                 <h3 className="mt-7 font-heading text-lg font-black text-white">{feature.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-400">{feature.desc}</p>
-              </motion.article>
+              </article>
             </AnimatedSection>
           ))}
         </div>

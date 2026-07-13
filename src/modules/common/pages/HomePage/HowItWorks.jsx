@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import {
   Building2,
   CheckCircle2,
@@ -28,14 +27,11 @@ const recruiterSteps = [
 
 function StepGrid({ steps, panelId }) {
   return (
-    <motion.div
+    <div
       key={panelId}
       id={panelId}
       role="tabpanel"
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.32, ease: 'easeOut' }}
-      className="mt-9 grid border-y border-slate-200 md:grid-cols-4"
+      className="native-tab-panel mt-9 grid border-y border-slate-200 md:grid-cols-4"
     >
       {steps.map((step, index) => (
         <article
@@ -55,7 +51,7 @@ function StepGrid({ steps, panelId }) {
           <span className="absolute inset-x-6 bottom-0 h-px origin-left scale-x-0 bg-amber-500 transition-transform duration-300 group-hover:scale-x-100" />
         </article>
       ))}
-    </motion.div>
+    </div>
   );
 }
 
