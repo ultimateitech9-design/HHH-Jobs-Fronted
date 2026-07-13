@@ -40,7 +40,7 @@ if (( EUID != 0 )); then
   exit 1
 fi
 
-for required_command in git npm systemctl curl nginx install grep sed; do
+for required_command in git npm systemctl curl nginx install grep sed find; do
   command -v "$required_command" >/dev/null 2>&1 || {
     echo "Missing required command: $required_command" >&2
     exit 1
@@ -122,6 +122,9 @@ test -s dist/index.html
 
 log "Publishing frontend assets"
 install -d -m 0755 "$WEB_ROOT"
+if [[ -d "$WEB_ROOT/assets" ]]; then
+  find "$WEB_ROOT/assets" -maxdepth 1 -type f -name '*.gz' -delete
+fi
 cp -a dist/. "$WEB_ROOT/"
 rm -f "$WEB_ROOT/sitemap.xml"
 

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { Buffer } from 'node:buffer'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 
 const publicRouteChunkGroups = [
@@ -109,22 +110,26 @@ const routeAwareModulePreloads = () => ({
 const precompressBuildAssets = () => ({
   name: 'precompress-build-assets',
   apply: 'build',
-  generateBundle(_options, bundle) {
+  writeBundle(options, bundle) {
+    const outputDirectory = options.dir
+      ? resolve(options.dir)
+      : dirname(resolve(options.file))
+
     Object.values(bundle).forEach((entry) => {
       if (!/\.(?:css|html|js|json|svg|txt|xml)$/.test(entry.fileName)) return
 
-      const rawSource = entry.type === 'chunk' ? entry.code : entry.source
-      const source = Buffer.isBuffer(rawSource) ? rawSource : Buffer.from(String(rawSource))
+      // Read the written file so Vite has already replaced preload placeholders.
+      const outputPath = resolve(outputDirectory, entry.fileName)
+      const source = readFileSync(outputPath)
+      if (source.includes('__VITE_PRELOAD__')) {
+        this.error(`Unresolved Vite preload marker in ${entry.fileName}`)
+      }
       if (source.length < 1024) return
 
       const compressed = gzipSync(source, { level: 9 })
       if (compressed.length >= source.length) return
 
-      this.emitFile({
-        type: 'asset',
-        fileName: `${entry.fileName}.gz`,
-        source: compressed
-      })
+      writeFileSync(`${outputPath}.gz`, compressed)
     })
   }
 })
