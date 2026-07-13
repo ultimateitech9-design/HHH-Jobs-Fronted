@@ -8,9 +8,11 @@ import {
   Search
 } from 'lucide-react';
 
-import heroImage from '../../../../assets/career-compass-hero.jpg';
 import useAuthStore from '../../../../core/auth/authStore';
 import { normalizeRole } from '../../../../utils/auth';
+
+const HERO_IMAGE_SRC = '/career-compass-hero-1024.webp?v=20260713';
+const HERO_IMAGE_SRC_SET = '/career-compass-hero-640.webp?v=20260713 640w, /career-compass-hero-1024.webp?v=20260713 1024w';
 
 const trustBadges = ['Verified jobs', 'Relevant matching', 'Free to apply'];
 const quickTags = ['Remote', 'Full-time', 'Internship', 'Part-time', 'Freelance'];
@@ -41,12 +43,15 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
   return (
     <section className="public-cinematic-hero relative isolate min-h-[650px] overflow-hidden border-b border-[#d99b20]/35 bg-[#071524] text-white sm:min-h-[620px] lg:min-h-[640px]">
       <img
-        src={heroImage}
+        src={HERO_IMAGE_SRC}
+        srcSet={HERO_IMAGE_SRC_SET}
         alt="Candidates and hiring teams connecting at work"
         width="1024"
         height="1024"
         decoding="async"
         loading="eager"
+        fetchPriority="high"
+        sizes="100vw"
         className="public-cinematic-image absolute inset-0 h-full w-full object-cover object-center"
       />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,21,36,0.96)_0%,rgba(7,21,36,0.84)_54%,rgba(7,21,36,0.68)_100%)]" />

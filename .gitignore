@@ -48,6 +48,7 @@ pw_log*.txt
 test_*.txt
 vite-preview-visual.log
 admin_headers.txt
+.lighthouse-*.json
 
 # Generated document exports
 docs/manuals/*.pdf

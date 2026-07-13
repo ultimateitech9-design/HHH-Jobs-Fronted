@@ -2,15 +2,46 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6QV4CGJDXB"></script>
+    <!-- Keep analytics outside the critical rendering path. -->
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-6QV4CGJDXB');
+      window.gtag = window.gtag || function(){window.dataLayer.push(arguments);};
+      (function deferGoogleTag() {
+        var loaded = false;
+        var load = function() {
+          if (loaded) return;
+          loaded = true;
+          var script = document.createElement('script');
+          script.async = true;
+          script.src = 'https://www.googletagmanager.com/gtag/js?id=G-6QV4CGJDXB';
+          document.head.appendChild(script);
+          window.gtag('js', new Date());
+          window.gtag('config', 'G-6QV4CGJDXB');
+        };
+        var schedule = function() {
+          if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(load, { timeout: 30000 });
+          } else {
+            window.setTimeout(load, 30000);
+          }
+        };
+        if (document.readyState === 'complete') schedule();
+        else window.addEventListener('load', schedule, { once: true });
+        ['pointerdown', 'keydown', 'touchstart'].forEach(function(eventName) {
+          window.addEventListener(eventName, load, { once: true, passive: true });
+        });
+      })();
     </script>
-    <link rel="icon" type="image/svg+xml" href="/favicon-circle.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon-circle.svg?v=20260713" />
+    <link
+      rel="preload"
+      as="image"
+      type="image/webp"
+      href="/career-compass-hero-640.webp?v=20260713"
+      imagesrcset="/career-compass-hero-640.webp?v=20260713 640w, /career-compass-hero-1024.webp?v=20260713 1024w"
+      imagesizes="100vw"
+      fetchpriority="high"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
       document.documentElement.dataset.shell = /^\/(?:portal|management)\b/i.test(window.location.pathname) ? 'portal' : 'public';
@@ -25,15 +56,16 @@
       .home-hero__title{margin:.95rem 0 0;color:var(--navy);font:800 2rem/1.05 Manrope,Inter,sans-serif;letter-spacing:0}.home-hero__title span{display:block}.home-hero__copy{max-width:36rem;margin:1rem 0 0;color:#475569;font-size:.95rem;line-height:1.75}.home-hero__trust{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-top:1rem;color:#475569;font-size:.875rem}.home-hero__trust span{display:inline-flex;align-items:center;gap:.45rem}
       .home-hero__search{position:relative;z-index:2;display:flex;flex-direction:column;gap:.5rem;margin-top:1.5rem;border:1px solid #e2e8f0;border-radius:24px;background:#fff;padding:.375rem;box-shadow:0 22px 54px rgba(6,26,58,.1)}.home-hero__search>div{display:flex;flex:1;align-items:center;gap:.5rem;padding-inline:.75rem}.home-hero__search input{width:100%;border:0;background:transparent;padding:.75rem 0;color:#0f172a;outline:0}.home-hero__search button{min-height:44px;padding-inline:1.5rem}
       .home-hero__quick-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;margin-top:1rem}.home-hero__quick-tags button{border:1px solid transparent;border-radius:999px;background:rgba(6,26,58,.05);padding:.25rem .75rem;color:var(--navy);font-size:.75rem;font-weight:600}.home-hero__actions{display:flex;flex-direction:column;gap:.75rem;margin-top:1.5rem}.home-hero__actions a{flex:1}.home-hero__actions span{display:inline-flex;min-height:42px;width:100%;align-items:center;justify-content:center;gap:.4rem;border-radius:999px;padding:.5rem 1rem;font-size:.85rem;font-weight:700}.home-hero__stats{display:grid;gap:1rem;margin-top:1.75rem}.home-hero__stats p{margin:0}.home-hero__stats p:first-child{color:var(--navy);font:800 1.5rem/1.2 Manrope,Inter,sans-serif}.home-hero__stats p:last-child{margin-top:.25rem;color:#64748b;font-size:.875rem}
-      @media (min-width:640px){.sm\:flex-row{flex-direction:row}.sm\:flex-nowrap{flex-wrap:nowrap}.sm\:flex-1{flex:1}.home-hero__title{font-size:2.25rem}.home-hero__stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
-      @media (min-width:1024px){.lg\:flex{display:flex}.lg\:block{display:block}.lg\:hidden{display:none}.home-hero__grid{grid-template-columns:minmax(0,1fr) minmax(320px,36rem);gap:2.5rem}.home-hero__search{flex-direction:row}.home-hero__content{padding-right:1rem}.home-hero__title{font-size:3rem}.home-hero__copy{font-size:1rem}.home-hero__stats p:first-child{font-size:1.75rem}}
+      .vw-shell-wide{width:min(100% - 2rem,1240px);margin-inline:auto}.public-cinematic-hero{position:relative;isolation:isolate;min-height:650px;overflow:hidden;background:#071524;color:#fff}.public-cinematic-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}.public-cinematic-hero>.public-cinematic-image+div{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,21,36,.96) 0%,rgba(7,21,36,.84) 54%,rgba(7,21,36,.68) 100%)}.public-cinematic-hero>.vw-shell-wide{position:relative;display:flex;min-height:650px;flex-direction:column;justify-content:flex-end;padding-block:2rem}.public-cinematic-hero h1{max-width:56rem;margin:1rem 0 0;color:#fff;font:900 clamp(2.25rem,5vw,3.75rem)/1.06 Manrope,Inter,system-ui,sans-serif}.public-cinematic-hero p{max-width:42rem}.public-cinematic-hero form{position:relative;z-index:2}
+      @media (min-width:640px){.sm\:flex-row{flex-direction:row}.sm\:flex-nowrap{flex-wrap:nowrap}.sm\:flex-1{flex:1}.home-hero__title{font-size:2.25rem}.home-hero__stats{grid-template-columns:repeat(3,minmax(0,1fr))}.public-cinematic-hero,.public-cinematic-hero>.vw-shell-wide{min-height:620px}}
+      @media (min-width:1024px){.lg\:flex{display:flex}.lg\:block{display:block}.lg\:hidden{display:none}.home-hero__grid{grid-template-columns:minmax(0,1fr) minmax(320px,36rem);gap:2.5rem}.home-hero__search{flex-direction:row}.home-hero__content{padding-right:1rem}.home-hero__title{font-size:3rem}.home-hero__copy{font-size:1rem}.home-hero__stats p:first-child{font-size:1.75rem}.public-cinematic-hero,.public-cinematic-hero>.vw-shell-wide{min-height:640px}}
     </style>
 
     <!-- Primary Meta Tags -->
     <title>HHH Jobs | Jobs in India, Fresher Jobs, Hiring and Campus Placement</title>
     <meta name="title" content="HHH Jobs | Jobs in India, Fresher Jobs, Hiring and Campus Placement" />
     <meta name="description" content="Find private jobs, government jobs, fresher hiring, campus placement opportunities, ATS resume tools, and verified employer connections on HHH Jobs." />
-    <meta name="keywords" content="HHH Jobs, Job search, Job finder, Find a job near me, Job openings, Job Vacancies, Hiring now, Career opportunities, Employment agency, Recruitment app, Job alert, Real time notifications, Remote jobs, Work from home, Part-time jobs, Full-time jobs, Entry-level jobs, Fresher jobs, Gig work, Freelance jobs, Local jobs, One-click apply, Easy apply, Resume builder, CV maker, AI job matching, Salary insights, Salary estimation, Verified employers, Job tracker, Application tracking, Software engineer jobs, IT staffing jobs, Developer Jobs, Data analyst Jobs, Nurse jobs, Registered nurse Jobs, Medical Assistant Jobs, Pharmacist Jobs, Delivery driver Jobs, Warehouse worker Jobs, Security Jobs, Cashier Jobs, Helper Jobs, Project manager Jobs, Marketing Jobs, Accountant Jobs, HR Jobs, Jobs in Delhi, Jobs in Noida, Jobs in Gurgaon, Jobs in Ghaziabad, Jobs in Mumbai, Jobs in Pune, Jobs in Kolkata, Jobs in Patna, Jobs in Ranchi, Jobs in Lucknow, Jobs in Varanasi, Jobs in Dehradun, Jobs in Jaipur, Jobs in Gwalior, Jobs in Ahmedabad, Jobs in Bhopal, Jobs in Guwahati, Jobs in Bhubaneswar, Jobs in Raipur, Jobs in Bengaluru, Jobs in Chennai, Jobs in Hyderabad, Jobs in Visakhapatnam, Jobs in Chandigarh, Jobs in Ludhiana, Jobs in Shimla, Jobs in Jammu, job portals in india, top 10 job sites india, best job sites in india, Jobs Recruitment, Job Search India, Search Jobs Online, Hire Candidates, India's fastest growing Job Portal, India's leading job portal, Best job search app in India, Job Search App, Naukri job search, Naukri job search by company, Amaravati, Andhra Pradesh, Itanagar, Arunachal Pradesh, Dispur, Assam, Patna, Bihar, Raipur, Chhattisgarh, Panaji, Goa, Gandhinagar, Ahmedabad, Gujarat, Punjab, Haryana, Chandigarh, Shimla, Himachal Pradesh, Ranchi, Jharkhand, Bengaluru, Karnataka, Thiruvananthapuram, Kerala, Bhopal, Madhya Pradesh, Mumbai, Maharashtra, Imphal, Manipur, Shillong, Meghalaya, Aizawl, Mizoram, Kohima, Nagaland, Bhubaneswar, Odisha, Jaipur, Rajasthan, Gangtok, Sikkim, Chennai, Tamil Nadu, Hyderabad, Telangana, Agartala, Tripura, Lucknow, Uttar Pradesh, Dehradun, Uttarakhand, Kolkata, West Bengal, Port Blair, Andaman and Nicobar Islands, Dadra Nagar Haveli, Daman Diu, Srinagar, Jammu, Kashmir, Leh, Ladakh, Kargil, Kavaratti Lakshadweep, New Delhi, Delhi, Pondicherry, India, Gulf country jobs, Jobs in UAE, Jobs in Saudi Arabia, Jobs in Qatar, Jobs in Oman, Jobs in Bahrain, Jobs in Kuwait, Jobs in Middle East, Jobs in Germany, Jobs in Canada, Jobs in the UK, Jobs in London, Jobs in European countries, Jobs in Romania, Jobs in Hungary, Abroad Jobs, Jobs in United States, Jobs in America" />
+    <meta name="keywords" content="jobs in India, private jobs, government jobs, fresher jobs, jobs by city, jobs by category, verified employers, campus placements, recruiter hiring, ATS resume checker, HHH Jobs" />
     <meta name="author" content="HHH Jobs" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />

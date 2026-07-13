@@ -34,7 +34,6 @@ import { getCurrentUser } from '../../../utils/auth';
 import { buildGovtJobSeoPath } from '../../../shared/utils/seoRoutes';
 import GooglePagination from '../../../shared/components/GooglePagination';
 import JobShareMenu from '../../../shared/components/jobs/JobShareMenu';
-import careerCompassHero from '../../../assets/career-compass-hero.jpg';
 
 const makeDefaultFilters = () => ({
   search: '',
@@ -561,7 +560,7 @@ const StudentGovtJobsPage = ({ publicMode = false } = {}) => {
       heroSize={publicMode ? 'compact' : 'mini'}
       statsLayout="inline"
       heroClassName={publicMode ? '!min-h-[290px] !rounded-lg sm:!min-h-[320px]' : '!rounded-[1.45rem] sm:!rounded-[1.75rem]'}
-      heroImage={publicMode ? careerCompassHero : undefined}
+      heroImage={publicMode ? '/career-compass-hero-1024.webp?v=20260713' : undefined}
       heroImageAlt={publicMode ? 'Candidates preparing for public sector careers' : ''}
       heroImagePosition="center 45%"
       bodyClassName={publicMode ? 'vw-shell py-5 sm:py-6' : ''}

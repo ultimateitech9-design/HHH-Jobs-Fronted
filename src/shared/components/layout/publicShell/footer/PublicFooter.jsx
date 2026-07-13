@@ -36,7 +36,7 @@ const PublicFooter = () => {
           ))}
 
           <section>
-            <h4 className="font-heading text-sm font-bold text-slate-100">Contact & Alerts</h4>
+            <h2 className="font-heading text-sm font-bold text-slate-100">Contact & Alerts</h2>
             <div className="mt-3.5 grid gap-3 text-sm leading-6 text-slate-400">
               <a
                 href={`mailto:${HHH_JOBS_SUPPORT_EMAIL}`}

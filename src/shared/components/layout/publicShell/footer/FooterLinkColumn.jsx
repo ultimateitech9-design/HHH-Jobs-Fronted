@@ -4,7 +4,7 @@ import { isExternalHref } from '../../../../utils/externalLinks.js';
 const FooterLinkColumn = ({ column }) => {
   return (
     <section>
-      <h4 className="font-heading text-sm font-bold text-slate-100">{column.title}</h4>
+      <h2 className="font-heading text-sm font-bold text-slate-100">{column.title}</h2>
 
       <ul className="mt-3.5 grid gap-2.5">
         {column.links.map((link) => {

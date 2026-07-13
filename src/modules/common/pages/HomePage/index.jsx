@@ -32,7 +32,7 @@ const HiringFacetsSection = lazy(() =>
 );
 
 const JOBS_PER_PAGE = 8;
-const INITIAL_PORTAL_JOB_LIMIT = 32;
+const INITIAL_PORTAL_JOB_LIMIT = 12;
 
 const mapExternalJobToFeaturedJob = (job = {}) => ({
   id: job.id ? `external-${job.id}` : undefined,
@@ -60,28 +60,6 @@ const mergeFeaturedJobs = (portalJobs = [], externalJobs = []) => [
 
 const includesTerm = (value, keyword) =>
   String(value || '').toLowerCase().includes(String(keyword || '').toLowerCase());
-
-const matchesCategory = (job = {}, category = null) => {
-  if (!category) return true;
-  const haystack = [
-    job.jobTitle,
-    job.companyName,
-    job.description,
-    job.jobLocation,
-    job.category,
-    Array.isArray(job.skills) ? job.skills.join(' ') : ''
-  ].join(' ').toLowerCase();
-  return (category.keywords || []).some((keyword) =>
-    haystack.includes(String(keyword).toLowerCase())
-  );
-};
-
-const scrollToJobsSection = () => {
-  const jobsSection = document.getElementById('jobs');
-  if (jobsSection) {
-    jobsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-};
 
 const DeferredSection = ({ children, minHeight = 220, rootMargin = '260px 0px' }) => {
   const sectionRef = useRef(null);
@@ -135,15 +113,14 @@ const HomePage = () => {
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [jobsError, setJobsError] = useState('');
   const [reloadSeed, setReloadSeed] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState(null);
   const [hiringFacets, setHiringFacets] = useState({
     roles: [],
     sectors: [],
     cities: [],
     totals: { openJobs: null, companies: null, roles: null, sectors: null, cities: null }
   });
-  const shouldLoadFeaturedJobs = useDeferredMount(true, { delayMs: 1200, timeoutMs: 3000 });
-  const shouldLoadHiringFacets = useDeferredMount(true, { delayMs: 3600, timeoutMs: 8000 });
+  const shouldLoadFeaturedJobs = useDeferredMount(true, { delayMs: 2200, timeoutMs: 4500 });
+  const shouldLoadHiringFacets = useDeferredMount(true, { delayMs: 5000, timeoutMs: 9000 });
 
   useEffect(() => {
     if (!shouldLoadFeaturedJobs) return undefined;
@@ -196,7 +173,7 @@ const HomePage = () => {
 
     const loadHiringFacets = async () => {
       try {
-        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=72&sectorLimit=90&cityLimit=96');
+        const response = await apiFetch('/jobs/meta/homepage-facets?roleLimit=24&sectorLimit=24&cityLimit=24');
         const payload = response.ok ? await response.json().catch(() => null) : null;
         if (!mounted || !payload?.status) return;
 
@@ -237,11 +214,9 @@ const HomePage = () => {
         filters.experience === 'Any Experience' ||
         includesTerm(job.experienceLevel, filters.experience.replace('+', ''));
 
-      const categoryMatch = matchesCategory(job, selectedCategory);
-
-      return keywordMatch && locationMatch && experienceMatch && categoryMatch;
+      return keywordMatch && locationMatch && experienceMatch;
     });
-  }, [filters, jobs, selectedCategory]);
+  }, [filters, jobs]);
 
   const pagedJobs = useMemo(() => {
     return filteredJobs.slice(0, JOBS_PER_PAGE);
@@ -251,17 +226,6 @@ const HomePage = () => {
   );
 
   const handleFiltersChange = (nextFilters) => {
-    if (
-      selectedCategory
-      && (
-        nextFilters.keyword !== filters.keyword
-        || nextFilters.location !== filters.location
-        || nextFilters.experience !== filters.experience
-      )
-    ) {
-      setSelectedCategory(null);
-    }
-
     setFilters(nextFilters);
   };
 
@@ -279,20 +243,7 @@ const HomePage = () => {
     navigate(`/jobs${params.toString() ? `?${params.toString()}` : ''}`);
   };
 
-  const handleCategorySelect = (_searchTerm, category) => {
-    setSelectedCategory(category);
-    setFilters((current) => ({ ...current, keyword: '' }));
-    scrollToJobsSection();
-  };
-
-  const handleBrowseAll = () => {
-    setSelectedCategory(null);
-    setFilters((current) => ({ ...current, keyword: '' }));
-    scrollToJobsSection();
-  };
-
   const handleKeywordChipClick = (keyword) => {
-    setSelectedCategory(null);
     setFilters((current) => ({ ...current, keyword }));
     const params = new URLSearchParams();
     params.set('search', keyword);
@@ -314,11 +265,7 @@ const HomePage = () => {
       <HomeConnectionRail />
 
       <DeferredSection minHeight={540} rootMargin="180px 0px">
-        <CategoryCards
-          selectedCategory={selectedCategory}
-          onCategorySelect={handleCategorySelect}
-          onBrowseAll={handleBrowseAll}
-        />
+        <CategoryCards />
       </DeferredSection>
 
       <DeferredSection minHeight={360} rootMargin="220px 0px">

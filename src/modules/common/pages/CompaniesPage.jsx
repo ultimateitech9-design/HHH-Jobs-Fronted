@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiBriefcase, FiSearch, FiShield, FiUsers } from 'react-icons/fi';
 
-import careerCompassHero from '../../../assets/career-compass-hero.jpg';
 import useAuthStore from '../../../core/auth/authStore';
 import CompanyDirectoryCard from '../components/CompanyDirectoryCard';
 import { getPublicCompanies } from '../services/companyDirectoryApi';
@@ -154,12 +153,15 @@ const CompaniesPage = () => {
     <div className="min-h-screen bg-[#f7f6f2]">
       <section className="public-cinematic-hero relative isolate min-h-[380px] overflow-hidden border-b border-[#d99b20]/35 bg-[#071524] text-white">
         <img
-          src={careerCompassHero}
+          src="/career-compass-hero-1024.webp?v=20260713"
+          srcSet="/career-compass-hero-640.webp?v=20260713 640w, /career-compass-hero-1024.webp?v=20260713 1024w"
+          sizes="100vw"
           alt="Employers and professionals collaborating"
           width="1024"
           height="1024"
           decoding="async"
           loading="eager"
+          fetchPriority="high"
           className="public-cinematic-image absolute inset-0 h-full w-full object-cover object-center"
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,21,36,0.96)_0%,rgba(7,21,36,0.82)_55%,rgba(7,21,36,0.68)_100%)]" />

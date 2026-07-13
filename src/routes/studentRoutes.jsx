@@ -2,11 +2,10 @@ import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
 import { PORTAL_ACCESS } from './portalAccess';
-import StudentModuleLayout from '../modules/student/components/StudentModuleLayout';
-import StudentCompaniesPage from '../modules/student/pages/StudentCompaniesPage';
-import StudentJobsPage from '../modules/student/pages/StudentJobsPage';
-import StudentServicesPage from '../modules/student/pages/StudentServicesPage';
-
+const StudentModuleLayout = lazy(() => import('../modules/student/components/StudentModuleLayout'));
+const StudentCompaniesPage = lazy(() => import('../modules/student/pages/StudentCompaniesPage'));
+const StudentJobsPage = lazy(() => import('../modules/student/pages/StudentJobsPage'));
+const StudentServicesPage = lazy(() => import('../modules/student/pages/StudentServicesPage'));
 const StudentProfilePage = lazy(() => import('../modules/student/pages/StudentProfilePage'));
 const StudentJobDetailsPage = lazy(() => import('../modules/student/pages/StudentJobDetailsPage'));
 const StudentApplicationsPage = lazy(() => import('../modules/student/pages/StudentApplicationsPage'));

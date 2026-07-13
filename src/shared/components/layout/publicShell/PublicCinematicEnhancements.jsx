@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const AUTH_OR_LEGAL_ROUTE_PATTERN = /^\/(?:login|sign-up|forgot-password|verify-otp|oauth|privacy-policy|terms-and-conditions|summons-notices)\b/i;
@@ -53,7 +53,7 @@ const PublicCinematicEnhancements = () => {
   const hideCinematicDetails = AUTH_OR_LEGAL_ROUTE_PATTERN.test(pathname);
   const hideRouteSignal = pathname === '/' || hideCinematicDetails || DIRECTORY_ROUTE_PATTERN.test(pathname);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = document.querySelector('.public-route-stage');
     if (!root) return undefined;
 
@@ -83,8 +83,7 @@ const PublicCinematicEnhancements = () => {
         section.style.setProperty('--cinematic-order', String(Math.min(order, 5)));
         section.dataset.cinematicIndex = String(order + 1).padStart(2, '0');
 
-        const bounds = section.getBoundingClientRect();
-        if (!revealObserver || bounds.top < window.innerHeight * 0.92) {
+        if (!revealObserver || order < 2) {
           section.classList.add('is-in-view');
         } else {
           revealObserver.observe(section);

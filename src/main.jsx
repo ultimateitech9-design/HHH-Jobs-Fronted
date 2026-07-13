@@ -22,11 +22,6 @@ if (typeof window !== 'undefined') {
   if (needsPortalStylesNow) {
     loadGlobalStyles();
     window.setTimeout(loadAnimationStyles, 5000);
-  } else {
-    window.setTimeout(() => {
-      loadGlobalStyles();
-      loadAnimationStyles();
-    }, 8000);
   }
 }
 

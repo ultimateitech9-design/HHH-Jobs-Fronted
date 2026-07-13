@@ -140,12 +140,13 @@ const PublicNavbar = ({ dashboardPath, onLogout, user }) => {
         <div className="public-navbar__inner vw-shell flex min-h-16 items-center justify-between gap-3 py-2 sm:gap-4">
           <Link to="/" className="public-navbar__brand group flex min-w-0 items-center gap-2.5">
             <img
-              src="/hhh-job-logo-128.png"
+              src="/favicon-circle.svg?v=20260713"
               alt="HHH Jobs"
               className="h-14 w-14 object-contain"
               width="56"
               height="56"
-              decoding="async"
+              decoding="sync"
+              fetchPriority="high"
             />
             <div className="public-navbar__brand-text min-w-0 flex flex-col leading-none">
               <span className="truncate font-heading text-base font-extrabold text-[#151922] transition-colors group-hover:text-[#14549a] sm:text-lg">

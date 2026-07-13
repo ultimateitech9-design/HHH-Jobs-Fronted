@@ -23,7 +23,6 @@ import { getStudentJobs } from '../services/studentApi';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 import GooglePagination from '../../../shared/components/GooglePagination';
 import JobShareMenu from '../../../shared/components/jobs/JobShareMenu';
-import careerCompassHero from '../../../assets/career-compass-hero.jpg';
 import {
   clearExternalApplyIntent,
   isExternalApplyIntentFresh,
@@ -563,10 +562,14 @@ const StudentExternalJobsPage = ({ embedded = false }) => {
         <>
           <section className="public-cinematic-hero relative isolate min-h-[390px] overflow-hidden border-b border-slate-800 bg-slate-950 text-white">
             <img
-              src={careerCompassHero}
+              src="/career-compass-hero-1024.webp?v=20260713"
+              srcSet="/career-compass-hero-640.webp?v=20260713 640w, /career-compass-hero-1024.webp?v=20260713 1024w"
+              sizes="100vw"
               alt="Candidates and hiring teams working together"
               className="public-cinematic-image absolute inset-0 h-full w-full object-cover object-center"
               loading="eager"
+              decoding="async"
+              fetchPriority="high"
             />
             <div className="absolute inset-0 bg-slate-950/[0.78]" />
             <div className="vw-shell-wide relative flex min-h-[390px] flex-col justify-end py-8 sm:py-10 lg:py-12">

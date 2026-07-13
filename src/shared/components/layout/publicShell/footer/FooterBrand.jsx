@@ -6,9 +6,13 @@ const FooterBrand = () => {
     <section className="max-w-sm">
       <div className="flex min-w-0 items-center gap-2.5">
         <img
-          src="/hhh-job-logo-128.png"
+          src="/favicon-circle.svg?v=20260713"
           alt="HHH Jobs"
           className="h-10 w-10 rounded-lg object-cover ring-1 ring-white/10"
+          width="40"
+          height="40"
+          loading="lazy"
+          decoding="async"
         />
         <div className="min-w-0">
           <span className="block truncate font-heading text-xl font-black tracking-tight text-slate-50">HHH Jobs</span>

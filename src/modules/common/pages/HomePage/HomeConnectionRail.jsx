@@ -56,7 +56,7 @@ const HomeConnectionRail = () => (
             className="group relative flex min-h-[210px] flex-col border-b border-white/10 px-5 py-6 transition-colors hover:bg-white/[0.045] sm:border-r xl:border-b-0 xl:last:border-r-0"
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="text-[10px] font-black uppercase text-white/40">{path.number}</span>
+              <span className="text-[10px] font-black uppercase text-slate-300">{path.number}</span>
               <Icon className={`h-5 w-5 ${path.tone}`} />
             </div>
             <p className={`mt-8 text-[10px] font-black uppercase ${path.tone}`}>{path.eyebrow}</p>
