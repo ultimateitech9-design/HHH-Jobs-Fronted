@@ -44,6 +44,10 @@ import {
   canApplyInternallyToJob,
   getJobExternalApplyUrl
 } from '../../../shared/utils/jobApplication';
+import {
+  isJobSalaryDisclosed,
+  SALARY_NOT_DISCLOSED_LABEL
+} from '../../../shared/utils/jobSalary';
 
 const buildCurrentPath = (location) => `${location.pathname || ''}${location.search || ''}${location.hash || ''}`;
 
@@ -186,6 +190,7 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
 
   const salaryLabel = useMemo(() => {
     if (!state.job) return '-';
+    if (!isJobSalaryDisclosed(state.job)) return SALARY_NOT_DISCLOSED_LABEL;
     const minSalary = state.job.minPrice ? formatSalaryAmount(state.job.minPrice) : '';
     const maxSalary = state.job.maxPrice ? formatSalaryAmount(state.job.maxPrice) : '';
     const salaryRange = minSalary && maxSalary ? `${minSalary} - ${maxSalary}` : minSalary || maxSalary || '-';

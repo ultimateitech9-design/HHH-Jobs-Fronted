@@ -107,6 +107,19 @@ test.describe('HR Portal E2E', () => {
     await expect(page.getByText('Senior Dev')).toBeVisible();
   });
 
+  test('hr can publish a job without disclosing salary', async ({ page }) => {
+    await page.goto('/portal/hr/jobs');
+    await page.getByRole('button', { name: /post a job/i }).click();
+
+    const disclosureSwitch = page.getByRole('switch', { name: /disclose salary to candidates/i });
+    await expect(disclosureSwitch).toHaveAttribute('aria-checked', 'true');
+    await disclosureSwitch.click();
+
+    await expect(disclosureSwitch).toHaveAttribute('aria-checked', 'false');
+    await expect(page.getByText('Salary will be shown as Not disclosed')).toBeVisible();
+    await expect(page.getByText('Salary Mode', { exact: true })).toHaveCount(0);
+  });
+
   test('hr can view candidate database', async ({ page }) => {
     await page.goto('/portal/hr/candidates');
     await expect(page.getByRole('heading', { name: /Candidate DB/i }).first()).toBeVisible();

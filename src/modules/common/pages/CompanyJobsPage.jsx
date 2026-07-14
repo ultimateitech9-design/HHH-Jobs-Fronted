@@ -32,6 +32,10 @@ import {
   saveCompanyJobIntent
 } from '../utils/companyJobIntent';
 import { buildCompanySeoPath, buildJobSeoPath } from '../../../shared/utils/seoRoutes';
+import {
+  isJobSalaryDisclosed,
+  SALARY_NOT_DISCLOSED_LABEL
+} from '../../../shared/utils/jobSalary';
 
 const SOURCE_COLOR_VARIANTS = [
   'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -94,6 +98,7 @@ const openApplyDestination = (url) => {
 };
 
 const formatPortalSalary = (job) => {
+  if (!isJobSalaryDisclosed(job)) return SALARY_NOT_DISCLOSED_LABEL;
   const minValue = String(job.minPrice || '').trim();
   const maxValue = String(job.maxPrice || '').trim();
   const salaryType = String(job.salaryType || '').trim();

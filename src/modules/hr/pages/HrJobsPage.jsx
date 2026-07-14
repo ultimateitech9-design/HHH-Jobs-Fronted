@@ -10,6 +10,7 @@ import {
   FiTrash2,
   FiUsers,
   FiEye,
+  FiEyeOff,
   FiMapPin,
   FiImage,
   FiGlobe,
@@ -774,9 +775,9 @@ const HrJobsPage = () => {
         employmentType: draft.employmentType,
         sectorName: draft.sectorName,
         jobLocation: draft.jobLocation,
-        salaryType: draft.salaryType,
-        minPrice: draft.minPrice,
-        maxPrice: draft.maxPrice,
+        salaryType: draft.salaryDisclosed ? draft.salaryType : '',
+        minPrice: draft.salaryDisclosed ? draft.minPrice : '',
+        maxPrice: draft.salaryDisclosed ? draft.maxPrice : '',
         skills: String(draft.skillsInput || '').split(',').map((item) => item.trim()).filter(Boolean),
         prompt: descriptionPrompt,
         targetWordCount: TARGET_AI_DESCRIPTION_WORDS
@@ -1005,7 +1006,8 @@ const HrJobsPage = () => {
       return 'Complete this hiring company in Company Profile before posting jobs for it.';
     }
 
-    const requiredFields = ['companyName', 'jobTitle', 'salaryType', 'experienceLevel', 'employmentType', 'sectorName', 'stateName', 'description', 'jobLocation'];
+    const requiredFields = ['companyName', 'jobTitle', 'experienceLevel', 'employmentType', 'sectorName', 'stateName', 'description', 'jobLocation'];
+    if (draft.salaryDisclosed) requiredFields.push('salaryType', 'maxPrice');
     const missing = requiredFields.filter((key) => !String(draft[key] || '').trim());
 
     if (missing.length > 0) {
@@ -1815,24 +1817,62 @@ const HrJobsPage = () => {
               <p className="text-xs font-medium text-neutral-400">Enter any city, state, remote, or work location.</p>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-neutral-700">Salary Mode</label>
-              <select required value={draft.salaryType} onChange={(e) => updateDraftField('salaryType', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium">
-                {SALARY_TYPE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-4 md:col-span-2">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-700 shadow-sm">
+                  {draft.salaryDisclosed ? <FiEye size={17} /> : <FiEyeOff size={17} />}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-neutral-800">Disclose salary to candidates</p>
+                  <p className="mt-1 text-xs font-medium text-neutral-500">
+                    {draft.salaryDisclosed
+                      ? 'The salary range will appear on public job pages.'
+                      : 'Candidates will see "Not disclosed" instead of an amount.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={draft.salaryDisclosed}
+                aria-label="Disclose salary to candidates"
+                onClick={() => updateDraftField('salaryDisclosed', !draft.salaryDisclosed)}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${draft.salaryDisclosed ? 'bg-brand-600' : 'bg-neutral-300'}`}
+              >
+                <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${draft.salaryDisclosed ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-neutral-700">{salaryTypeMeta.minLabel}</label>
-              <input type="number" value={draft.minPrice} onChange={(e) => updateDraftField('minPrice', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder={salaryTypeMeta.minPlaceholder} />
-            </div>
+            {draft.salaryDisclosed ? (
+              <div className="grid gap-6 md:col-span-2 md:grid-cols-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">Salary Mode</label>
+                  <select required value={draft.salaryType} onChange={(e) => updateDraftField('salaryType', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium">
+                    {SALARY_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-neutral-700">{salaryTypeMeta.maxLabel}</label>
-              <input type="number" required value={draft.maxPrice} onChange={(e) => updateDraftField('maxPrice', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder={salaryTypeMeta.maxPlaceholder} />
-            </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">{salaryTypeMeta.minLabel}</label>
+                  <input type="number" min="0" value={draft.minPrice} onChange={(e) => updateDraftField('minPrice', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder={salaryTypeMeta.minPlaceholder} />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-neutral-700">{salaryTypeMeta.maxLabel}</label>
+                  <input type="number" min="0" required value={draft.maxPrice} onChange={(e) => updateDraftField('maxPrice', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder={salaryTypeMeta.maxPlaceholder} />
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-amber-900 md:col-span-2">
+                <FiEyeOff className="mt-0.5 shrink-0" size={17} />
+                <div>
+                  <p className="text-sm font-bold">Salary will be shown as Not disclosed</p>
+                  <p className="mt-1 text-xs font-medium leading-5 text-amber-800">Structured salary amounts will not be published or included in job SEO. Avoid adding the amount manually inside the description.</p>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-bold text-neutral-700">Required Skills (Comma separated)</label>

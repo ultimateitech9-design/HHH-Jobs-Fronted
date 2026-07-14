@@ -515,4 +515,52 @@ test.describe('Student Portal E2E', () => {
     await expect(page.getByText('82%').first()).toBeVisible();
     await expect(page.getByText('Redux')).toBeVisible();
   });
+
+  test('undisclosed job salary is masked in the UI and job schema', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.removeItem('job_portal_token');
+      window.localStorage.removeItem('job_portal_user');
+    });
+    await page.route(jobsApiPattern, async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (route.request().resourceType() === 'document') {
+        await route.continue();
+        return;
+      }
+      if (!/^\/jobs\/[^/]+$/.test(pathname)) {
+        await route.fallback();
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: true,
+          job: {
+            id: 'job-1',
+            jobTitle: 'Frontend Developer',
+            companyName: 'Tech Co',
+            jobLocation: 'Remote',
+            employmentType: 'Full-time',
+            salaryDisclosed: false,
+            minPrice: 400000,
+            maxPrice: 700000,
+            salaryType: 'yearly',
+            description: 'Build product experiences for students.'
+          }
+        })
+      });
+    });
+
+    await page.goto('/jobs/frontend-developer-tech-co-remote');
+
+    await expect(page.getByText('Not disclosed', { exact: true })).toBeVisible();
+    await expect(page.getByText(/₹\s*4,00,000|₹\s*7,00,000/)).toHaveCount(0);
+
+    const schemas = await page.locator('script[type="application/ld+json"]').allTextContents();
+    const jobPosting = schemas.map((content) => JSON.parse(content)).find((schema) => schema['@type'] === 'JobPosting');
+    expect(jobPosting).toBeTruthy();
+    expect(jobPosting).not.toHaveProperty('baseSalary');
+  });
 });

@@ -1,5 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { canApplyInternallyToJob, getJobExternalApplyUrl } from '../../utils/jobApplication';
+import { isJobSalaryDisclosed } from '../../utils/jobSalary';
 
 const SITE_ORIGIN = 'https://hhh-jobs.com';
 const DEFAULT_LOGO = `${SITE_ORIGIN}/favicon-circle.svg?v=20260713`;
@@ -75,8 +76,9 @@ const buildLocation = (job = {}) => {
 };
 
 const buildSalarySchema = (job = {}) => {
-  const minValue = Number(job.salaryMin ?? job.salary_min ?? job.minSalary ?? 0);
-  const maxValue = Number(job.salaryMax ?? job.salary_max ?? job.maxSalary ?? 0);
+  if (!isJobSalaryDisclosed(job)) return null;
+  const minValue = Number(job.salaryMin ?? job.salary_min ?? job.minSalary ?? job.minPrice ?? job.min_price ?? 0);
+  const maxValue = Number(job.salaryMax ?? job.salary_max ?? job.maxSalary ?? job.maxPrice ?? job.max_price ?? 0);
   if (!(minValue > 0 || maxValue > 0)) return null;
   const salaryPeriod = firstText(job.salaryPeriod, job.salary_period, job.salaryType, job.salary_type).toLowerCase();
   const unitText = /year|annual|lpa|package/.test(salaryPeriod) ? 'YEAR' : 'MONTH';

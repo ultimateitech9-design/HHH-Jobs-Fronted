@@ -1,5 +1,6 @@
 import { apiFetch } from '../../../utils/api';
 import { extractUuidFromSlug } from '../../../shared/utils/seoRoutes';
+import { isJobSalaryDisclosed } from '../../../shared/utils/jobSalary';
 
 const parseJson = async (response) => {
   try {
@@ -111,6 +112,7 @@ const defaultJobDraft = {
   companyAbout: '',
   applicationMode: 'internal',
   externalApplyUrl: '',
+  salaryDisclosed: true,
   minPrice: '',
   maxPrice: '',
   salaryType: 'LPA',
@@ -153,9 +155,10 @@ const formatJobDraftForApi = (draft = {}) => ({
   companyAbout: draft.companyAbout,
   applicationMode: draft.applicationMode || 'internal',
   externalApplyUrl: draft.applicationMode === 'internal' ? '' : draft.externalApplyUrl,
-  minPrice: draft.minPrice ? Number(draft.minPrice) : null,
-  maxPrice: draft.maxPrice ? Number(draft.maxPrice) : null,
-  salaryType: draft.salaryType,
+  salaryDisclosed: draft.salaryDisclosed !== false,
+  minPrice: draft.salaryDisclosed !== false && draft.minPrice ? Number(draft.minPrice) : null,
+  maxPrice: draft.salaryDisclosed !== false && draft.maxPrice ? Number(draft.maxPrice) : null,
+  salaryType: draft.salaryDisclosed !== false ? draft.salaryType : null,
   jobLocation: draft.jobLocation,
   jobLocations: String(draft.jobLocation || '').trim() ? [String(draft.jobLocation || '').trim()] : [],
   postingDate: draft.postingDate || null,
@@ -188,6 +191,7 @@ const hydrateJobDraftFromJob = (job = {}) => ({
   companyAbout: job.companyAbout || '',
   applicationMode: job.applicationMode || job.application_mode || 'internal',
   externalApplyUrl: job.externalApplyUrl || job.external_apply_url || job.applyUrl || '',
+  salaryDisclosed: isJobSalaryDisclosed(job),
   minPrice: job.minPrice || '',
   maxPrice: job.maxPrice || '',
   salaryType: job.salaryType || 'LPA',
