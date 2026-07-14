@@ -6,6 +6,7 @@ import {
   FiBriefcase,
   FiCheckCircle,
   FiClock,
+  FiExternalLink,
   FiMapPin,
   FiTrash2
 } from 'react-icons/fi';
@@ -26,6 +27,12 @@ import {
   removeSavedJobForStudent
 } from '../services/studentApi';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
+import {
+  canApplyExternallyToJob,
+  canApplyInternallyToJob,
+  getJobExternalApplyUrl,
+  openExternalApplyDestination
+} from '../../../shared/utils/jobApplication';
 
 const StudentSavedJobsPage = () => {
   const [state, setState] = useState({ loading: true, error: '', jobs: [] });
@@ -90,8 +97,13 @@ const StudentSavedJobsPage = () => {
     }
   };
 
-  const handleApply = async (jobId) => {
+  const handleApply = async (job, jobId) => {
     setNotice({ type: '', text: '' });
+
+    if (!canApplyInternallyToJob(job) && canApplyExternallyToJob(job)) {
+      openExternalApplyDestination(getJobExternalApplyUrl(job));
+      return;
+    }
 
     try {
       await applyToJob({ jobId, coverLetter: '' });
@@ -140,6 +152,9 @@ const StudentSavedJobsPage = () => {
               {state.jobs.map((item) => {
                 const job = item.job || {};
                 const jobId = item.jobId || item.job_id || job.id || job._id;
+                const canApplyInternally = canApplyInternallyToJob(job);
+                const canApplyExternally = canApplyExternallyToJob(job);
+                const externalApplyUrl = getJobExternalApplyUrl(job);
 
                 return (
                   <article
@@ -200,10 +215,23 @@ const StudentSavedJobsPage = () => {
                         <FiTrash2 size={14} />
                         Remove
                       </button>
-                      <button type="button" className={studentPrimaryButtonClassName} onClick={() => handleApply(jobId)}>
-                        <FiCheckCircle size={15} />
-                        Apply Now
-                      </button>
+                      {(canApplyInternally || canApplyExternally) ? (
+                        <button type="button" className={studentPrimaryButtonClassName} onClick={() => handleApply(job, jobId)}>
+                          {canApplyInternally ? <FiCheckCircle size={15} /> : <FiExternalLink size={15} />}
+                          {canApplyInternally ? 'Apply on HHH Jobs' : 'Apply on company site'}
+                        </button>
+                      ) : null}
+                      {canApplyInternally && canApplyExternally ? (
+                        <a
+                          href={externalApplyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={studentGhostButtonClassName}
+                        >
+                          <FiExternalLink size={15} />
+                          Company site
+                        </a>
+                      ) : null}
                     </div>
                   </article>
                 );

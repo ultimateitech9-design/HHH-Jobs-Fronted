@@ -9,6 +9,7 @@ import {
   FiCheckCircle,
   FiChevronLeft,
   FiClock,
+  FiExternalLink,
   FiFileText,
   FiMapPin
 } from 'react-icons/fi';
@@ -38,6 +39,11 @@ import { buildCompanyLogoUrl } from '../../common/services/companyLogoUrl';
 import JobShareMenu from '../../../shared/components/jobs/JobShareMenu';
 import JobSocialSeo from '../../../shared/components/jobs/JobSocialSeo';
 import JobDescriptionContent from '../../../shared/components/jobs/JobDescriptionContent';
+import {
+  canApplyExternallyToJob,
+  canApplyInternallyToJob,
+  getJobExternalApplyUrl
+} from '../../../shared/utils/jobApplication';
 
 const buildCurrentPath = (location) => `${location.pathname || ''}${location.search || ''}${location.hash || ''}`;
 
@@ -188,6 +194,9 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
 
   const applicationStatus = String(state.application?.status || '').toLowerCase();
   const hasApplied = Boolean(state.application);
+  const canApplyInternally = canApplyInternallyToJob(state.job);
+  const canApplyExternally = canApplyExternallyToJob(state.job);
+  const externalApplyUrl = getJobExternalApplyUrl(state.job);
 
   const applicationStatusLabel = useMemo(() => {
     if (!applicationStatus) return 'Applied';
@@ -450,10 +459,14 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
         <aside className="space-y-4 lg:sticky lg:top-[96px]">
           <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_16px_36px_rgba(15,23,42,0.08)]">
             <div className="border-b border-slate-100 px-5 py-4">
-              <p className="text-[11px] font-black uppercase text-brand-700">{hasApplied ? 'Application status' : 'Your application'}</p>
-              <h2 className="mt-1 text-xl font-black text-navy">{hasApplied ? 'Application submitted' : 'Ready to apply?'}</h2>
+              <p className="text-[11px] font-black uppercase text-brand-700">{hasApplied ? 'Application status' : canApplyExternally && !canApplyInternally ? 'Company application' : 'Your application'}</p>
+              <h2 className="mt-1 text-xl font-black text-navy">{hasApplied ? 'Application submitted' : canApplyExternally && !canApplyInternally ? 'Continue on company site' : 'Ready to apply?'}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                {hasApplied ? 'Track recruiter movement from your application workspace.' : 'Your profile resume will be sent securely to the hiring team.'}
+                {hasApplied
+                  ? 'Track recruiter movement from your application workspace.'
+                  : canApplyExternally && !canApplyInternally
+                    ? 'The company manages applications for this role on its secure careers page.'
+                    : 'Your profile resume will be sent securely to the hiring team.'}
               </p>
             </div>
 
@@ -476,7 +489,7 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
                     <FiArrowRight size={15} />
                   </Link>
                 </>
-              ) : (
+              ) : canApplyInternally ? (
                 <>
                   <label>
                     <span className="mb-2 block text-sm font-bold text-slate-700">Message to recruiter</span>
@@ -493,7 +506,33 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
                     <FiArrowRight size={15} />
                   </button>
                 </>
+              ) : canApplyExternally ? (
+                <div className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-4">
+                  <div className="flex items-start gap-3">
+                    <FiExternalLink className="mt-0.5 shrink-0 text-brand-700" size={18} />
+                    <div>
+                      <p className="text-sm font-black text-navy">Company careers page</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-600">Your application will be completed directly with {state.job.companyName || 'the hiring company'}.</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                  The application destination is temporarily unavailable.
+                </p>
               )}
+
+              {canApplyExternally ? (
+                <a
+                  href={externalApplyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${canApplyInternally ? studentSecondaryButtonClassName : studentPrimaryButtonClassName} w-full px-4 py-3 text-[13px]`}
+                >
+                  Apply on company site
+                  <FiExternalLink size={15} />
+                </a>
+              ) : null}
             </div>
           </section>
 
@@ -502,7 +541,7 @@ const StudentJobDetailsPage = ({ publicMode = false }) => {
               <FiCheckCircle className="mt-0.5 shrink-0 text-emerald-700" size={17} />
               <div>
                 <p className="text-sm font-black text-emerald-900">Candidate-first application</p>
-                <p className="mt-1 text-xs leading-5 text-emerald-800">HHH Jobs never asks candidates to pay for applying to this role.</p>
+                <p className="mt-1 text-xs leading-5 text-emerald-800">HHH Jobs never asks candidates to pay for applying to this role. Verify the company domain before sharing personal information.</p>
               </div>
             </div>
           </section>

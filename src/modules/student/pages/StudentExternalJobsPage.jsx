@@ -85,7 +85,8 @@ const mapPortalJobToExternalCard = (job = {}) => ({
   salary_min: '',
   salary_max: '',
   tags: Array.isArray(job.skills) ? job.skills : [],
-  apply_url: '',
+  application_mode: job.applicationMode || job.application_mode || 'internal',
+  apply_url: job.externalApplyUrl || job.external_apply_url || job.applyUrl || '',
   __kind: 'portal',
   details_id: job.id || job._id
 });

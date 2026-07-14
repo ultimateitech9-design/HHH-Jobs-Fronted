@@ -135,6 +135,8 @@ const buildUnifiedJobs = (jobs = {}) => {
     isRemote: /remote/i.test(String(job.jobLocation || '')),
     salaryText: formatPortalSalary(job),
     isFeatured: Boolean(job.isFeatured),
+    applicationMode: job.applicationMode || job.application_mode || 'internal',
+    applyUrl: job.externalApplyUrl || job.external_apply_url || job.applyUrl || '',
     postedAt: job.postingDate || job.createdAt || ''
   }));
   const externalJobs = (jobs.external || []).map((job) => ({

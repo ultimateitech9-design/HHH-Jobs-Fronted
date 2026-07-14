@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { canApplyInternallyToJob, getJobExternalApplyUrl } from '../../utils/jobApplication';
 
 const SITE_ORIGIN = 'https://hhh-jobs.com';
 const DEFAULT_LOGO = `${SITE_ORIGIN}/favicon-circle.svg?v=20260713`;
@@ -106,7 +107,6 @@ const buildJobPostingSchema = ({ job, canonicalUrl, kind }) => {
   const skills = normalizeSkills(job);
   const datePosted = normalizeSchemaDate(job.postingDate || job.postedAt || job.posted_at || job.createdAt || job.created_at);
   const validThrough = normalizeSchemaDate(job.validTill || job.valid_till || job.lastDate || job.last_date);
-  const externalApplyUrl = absoluteUrl(job.applyUrl || job.apply_url || job.externalUrl || job.external_url);
   const isRemote = /remote|work from home|wfh/i.test([
     employmentType,
     location.label,
@@ -121,7 +121,7 @@ const buildJobPostingSchema = ({ job, canonicalUrl, kind }) => {
     title,
     description,
     url: canonicalUrl,
-    directApply: kind !== 'government' && !externalApplyUrl,
+    directApply: kind !== 'government' && canApplyInternallyToJob(job),
     ...(datePosted ? { datePosted } : {}),
     ...(validThrough ? { validThrough } : {}),
     ...(employmentType ? { employmentType } : {}),
@@ -178,9 +178,12 @@ const JobSocialSeo = ({ job, canonicalPath, kind = 'private' }) => {
     ? buildBrandedTitle(`${jobTitle} Recruitment${location.state ? ` in ${location.state}` : ''}`, organization)
     : buildBrandedTitle(`${jobTitle} Jobs in ${location.headline}`, organization);
   const jobDetails = [category, employmentType, skills.slice(0, 4).join(', ')].filter(Boolean).join(', ');
+  const privateApplyLabel = getJobExternalApplyUrl(job) && !canApplyInternallyToJob(job)
+    ? 'apply on the company careers site'
+    : 'apply on HHH Jobs';
   const factualIntro = kind === 'government'
     ? `${organization} ${jobTitle} recruitment${location.state ? ` in ${location.state}` : ''}. Check eligibility, vacancies, deadline, and official application details.`
-    : `${jobTitle} opening at ${organization} in ${location.label}. ${jobDetails ? `Check ${jobDetails} and apply on HHH Jobs.` : 'Review the role details and apply on HHH Jobs.'}`;
+    : `${jobTitle} opening at ${organization} in ${location.label}. ${jobDetails ? `Check ${jobDetails} and ${privateApplyLabel}.` : `Review the role details and ${privateApplyLabel}.`}`;
   const description = clampText(`${factualIntro} ${cleanText(job.description || '')}`, 165);
   const keywords = [...new Set([
     `${jobTitle} jobs`,

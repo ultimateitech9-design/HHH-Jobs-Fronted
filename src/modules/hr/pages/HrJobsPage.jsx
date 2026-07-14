@@ -13,6 +13,7 @@ import {
   FiMapPin,
   FiImage,
   FiGlobe,
+  FiExternalLink,
   FiChevronRight,
   FiZap
 } from 'react-icons/fi';
@@ -48,6 +49,7 @@ import { invalidatePlanAccessCache } from '../../../shared/hooks/usePlanAccess';
 import { buildJobSeoPath } from '../../../shared/utils/seoRoutes';
 import { notify } from '../../../shared/utils/toastBus';
 import SearchableSectorSelect from '../../../shared/components/SearchableSectorSelect';
+import { isValidHttpsApplyUrl, JOB_APPLICATION_MODES } from '../../../shared/utils/jobApplication';
 import {
   formatRoleTrialProgressLabel,
   isPendingRoleSubscriptionSetup,
@@ -163,6 +165,12 @@ const SALARY_TYPE_OPTIONS = [
   { value: 'Monthly', label: 'Monthly Salary', minLabel: 'Min Monthly Salary', maxLabel: 'Max Monthly Salary', minPlaceholder: 'Eg. 25000', maxPlaceholder: 'Eg. 45000' },
   { value: 'Annual', label: 'Annual Salary', minLabel: 'Min Annual Salary', maxLabel: 'Max Annual Salary', minPlaceholder: 'Eg. 500000', maxPlaceholder: 'Eg. 800000' },
   { value: 'Stipend', label: 'Stipend', minLabel: 'Min Stipend', maxLabel: 'Max Stipend', minPlaceholder: 'Eg. 8000', maxPlaceholder: 'Eg. 15000' }
+];
+
+const APPLICATION_MODE_OPTIONS = [
+  { value: JOB_APPLICATION_MODES.INTERNAL, label: 'Apply on HHH Jobs', icon: FiUsers },
+  { value: JOB_APPLICATION_MODES.EXTERNAL, label: 'Apply on company site', icon: FiExternalLink },
+  { value: JOB_APPLICATION_MODES.BOTH, label: 'Offer both options', icon: FiCheckCircle }
 ];
 
 const getSalaryTypeMeta = (salaryType = '') =>
@@ -1021,6 +1029,15 @@ const HrJobsPage = () => {
       return `Description cannot exceed ${JOB_DESCRIPTION_MAX_WORDS} words.`;
     }
 
+    if ([JOB_APPLICATION_MODES.EXTERNAL, JOB_APPLICATION_MODES.BOTH].includes(draft.applicationMode)) {
+      if (!String(draft.externalApplyUrl || '').trim()) {
+        return 'Company application URL is required for the selected application method.';
+      }
+      if (!isValidHttpsApplyUrl(draft.externalApplyUrl)) {
+        return 'Enter a valid HTTPS company application URL.';
+      }
+    }
+
     if (selectedPlan) {
       if (!editingJobId && isDisabledPostingPlan(selectedPlan)) {
         return 'Free job posting is disabled. Use your active recruiter plan.';
@@ -1596,6 +1613,62 @@ const HrJobsPage = () => {
                 </select>
               </div>
             </div>
+
+            <fieldset className="space-y-4 border-y border-neutral-100 py-5 md:col-span-2">
+              <legend className="px-1 text-sm font-bold text-neutral-700">Application Method</legend>
+              <div className="grid overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 sm:grid-cols-3" role="radiogroup" aria-label="Application method">
+                {APPLICATION_MODE_OPTIONS.map((option) => {
+                  const Icon = option.icon;
+                  const selected = draft.applicationMode === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => updateDraftField('applicationMode', option.value)}
+                      className={`inline-flex min-h-12 items-center justify-center gap-2 border-b px-4 py-3 text-sm font-bold transition sm:border-b-0 sm:border-r sm:last:border-r-0 ${selected ? 'bg-navy text-white' : 'bg-white text-neutral-600 hover:bg-brand-50 hover:text-navy'}`}
+                    >
+                      <Icon size={16} />
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {[JOB_APPLICATION_MODES.EXTERNAL, JOB_APPLICATION_MODES.BOTH].includes(draft.applicationMode) ? (
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label htmlFor="external-apply-url" className="text-sm font-bold text-neutral-700">Company Application URL</label>
+                    {draft.companyWebsite ? (
+                      <button
+                        type="button"
+                        onClick={() => updateDraftField('externalApplyUrl', draft.companyWebsite)}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-600"
+                      >
+                        <FiGlobe size={13} />
+                        Use company website
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="relative">
+                    <FiExternalLink className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={15} />
+                    <input
+                      id="external-apply-url"
+                      type="url"
+                      required
+                      value={draft.externalApplyUrl}
+                      onChange={(event) => updateDraftField('externalApplyUrl', event.target.value)}
+                      className="w-full rounded-xl border border-neutral-200 bg-neutral-50 py-3 pl-10 pr-4 font-medium transition-all focus:ring-2 focus:ring-brand-500"
+                      placeholder="https://careers.company.com/jobs/role-id"
+                      inputMode="url"
+                      autoComplete="url"
+                    />
+                  </div>
+                  <p className="text-xs font-medium text-neutral-400">Use the secure careers page where candidates can complete this application.</p>
+                </div>
+              ) : null}
+            </fieldset>
 
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-neutral-700">Job Title</label>
