@@ -548,7 +548,10 @@ export const generateHrJobDescription = async (descriptionPayload = {}) =>
       description: responsePayload?.description || '',
       wordCount: Number(responsePayload?.wordCount || 0),
       minWords: Number(responsePayload?.minWords || 500),
-      maxWords: Number(responsePayload?.maxWords || 1500)
+      maxWords: Number(responsePayload?.maxWords || 1500),
+      generationMode: responsePayload?.generationMode || 'ai',
+      provider: responsePayload?.provider || '',
+      providerWarning: responsePayload?.providerWarning || ''
     })
   });
 

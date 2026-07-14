@@ -16,7 +16,12 @@ import {
   FiGlobe,
   FiExternalLink,
   FiChevronRight,
-  FiZap
+  FiZap,
+  FiCpu,
+  FiFileText,
+  FiTarget,
+  FiRefreshCw,
+  FiAlertTriangle
 } from 'react-icons/fi';
 import {
   checkoutRolePlan,
@@ -148,7 +153,13 @@ const isCurrentRoleSubscriptionPlan = (subscription = null, plan = null) => {
 
 const JOB_DESCRIPTION_MIN_WORDS = 500;
 const JOB_DESCRIPTION_MAX_WORDS = 1500;
-const TARGET_AI_DESCRIPTION_WORDS = 850;
+const DEFAULT_AI_DESCRIPTION_WORDS = 850;
+const AI_DESCRIPTION_WORD_TARGETS = [600, DEFAULT_AI_DESCRIPTION_WORDS, 1200];
+const AI_PROMPT_PRESETS = [
+  { label: 'Responsibilities', value: 'Emphasize measurable day-to-day responsibilities and ownership.' },
+  { label: 'Skills & tools', value: 'Explain how the required skills and tools will be used in this role.' },
+  { label: 'Hiring context', value: 'Keep the hiring process, work expectations, and success measures practical.' }
+];
 const TRACKED_JOB_PLAN_SLUGS = ['premium', 'hot_vacancy', 'standard'];
 const AUTO_JOB_PLAN_SLUGS = ['standard', 'hot_vacancy', 'premium'];
 const JOB_PLAN_PRIORITY = Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug, index) => [slug, index]));
@@ -215,6 +226,8 @@ const HrJobsPage = () => {
   const [saving, setSaving] = useState(false);
   const [descriptionPrompt, setDescriptionPrompt] = useState('');
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [descriptionTargetWordCount, setDescriptionTargetWordCount] = useState(DEFAULT_AI_DESCRIPTION_WORDS);
+  const [descriptionGenerationMeta, setDescriptionGenerationMeta] = useState({ mode: 'idle', provider: '', warning: '' });
 
   const [plans, setPlans] = useState([]);
   const [rolePlans, setRolePlans] = useState([]);
@@ -752,6 +765,8 @@ const HrJobsPage = () => {
     return companyScopedJobs.filter((job) => String(job.status || '').toLowerCase() === statusFilter);
   }, [activeCompanyKeys, jobs, selectedCompanyKey, statusFilter]);
   const descriptionWordCount = useMemo(() => countWords(draft.description), [draft.description]);
+  const descriptionWordProgress = Math.min(100, Math.round((descriptionWordCount / JOB_DESCRIPTION_MIN_WORDS) * 100));
+  const descriptionIsPublishable = descriptionWordCount >= JOB_DESCRIPTION_MIN_WORDS && descriptionWordCount <= JOB_DESCRIPTION_MAX_WORDS;
   const salaryTypeMeta = useMemo(() => getSalaryTypeMeta(draft.salaryType), [draft.salaryType]);
 
   const updateDraftField = (key, value) => {
@@ -767,6 +782,7 @@ const HrJobsPage = () => {
     }
 
     setGeneratingDescription(true);
+    setDescriptionGenerationMeta({ mode: 'generating', provider: '', warning: '' });
     try {
       const response = await generateHrJobDescription({
         jobTitle: draft.jobTitle,
@@ -780,11 +796,19 @@ const HrJobsPage = () => {
         maxPrice: draft.salaryDisclosed ? draft.maxPrice : '',
         skills: String(draft.skillsInput || '').split(',').map((item) => item.trim()).filter(Boolean),
         prompt: descriptionPrompt,
-        targetWordCount: TARGET_AI_DESCRIPTION_WORDS
+        targetWordCount: descriptionTargetWordCount
       });
       updateDraftField('description', response.description || '');
-      setMessage(`AI job description generated (${response.wordCount || countWords(response.description)} words). Review once before publishing.`);
+      const mode = response.generationMode || 'ai';
+      setDescriptionGenerationMeta({
+        mode,
+        provider: response.provider || '',
+        warning: response.providerWarning || ''
+      });
+      const sourceLabel = mode === 'ai' ? 'AI draft' : 'Smart structured draft';
+      setMessage(`${sourceLabel} generated (${response.wordCount || countWords(response.description)} words). Review once before publishing.`);
     } catch (descriptionError) {
+      setDescriptionGenerationMeta({ mode: 'error', provider: '', warning: String(descriptionError.message || '') });
       setError(String(descriptionError.message || 'Unable to generate job description.'));
     } finally {
       setGeneratingDescription(false);
@@ -968,6 +992,9 @@ const HrJobsPage = () => {
 
   const resetForm = () => {
     setEditingJobId('');
+    setDescriptionPrompt('');
+    setDescriptionTargetWordCount(DEFAULT_AI_DESCRIPTION_WORDS);
+    setDescriptionGenerationMeta({ mode: 'idle', provider: '', warning: '' });
     const nextDraft = { ...getEmptyJobDraft(), planSlug: autoPostingPlan?.slug || selectedPlan?.slug || 'standard' };
     if (selectedCompany) {
       nextDraft.companyKey = normalizeCompanyKeyForUi(selectedCompany.companyKey || selectedCompany.companyName);
@@ -1096,6 +1123,8 @@ const HrJobsPage = () => {
 
   const startEdit = async (job) => {
     setEditingJobId(job.id || job._id);
+    setDescriptionPrompt('');
+    setDescriptionGenerationMeta({ mode: 'idle', provider: '', warning: '' });
     const nextDraft = getJobDraftFromJob(job);
     if (!nextDraft.companyKey) {
       const matchedCompany = selectableHiringCompanies.find((company) => String(company.companyName || '').toLowerCase() === String(nextDraft.companyName || '').toLowerCase());
@@ -1879,32 +1908,153 @@ const HrJobsPage = () => {
               <input value={draft.skillsInput} onChange={(e) => updateDraftField('skillsInput', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="React, Node, MongoDB" />
             </div>
 
-            <div className="space-y-1.5 md:col-span-2">
+            <div className="md:col-span-2">
               <label className="text-sm font-bold text-neutral-700">Full Job Description</label>
-              <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-3">
-                <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-                  <textarea
-                    rows={2}
-                    value={descriptionPrompt}
-                    onChange={(e) => setDescriptionPrompt(e.target.value)}
-                    className="w-full rounded-xl border border-brand-100 bg-white px-4 py-3 text-sm font-medium text-neutral-700 outline-none transition-all focus:ring-2 focus:ring-brand-500"
-                    placeholder="Tell AI the role, responsibilities, must-have tools, work mode, and hiring context..."
-                  />
-                  <button
-                    type="button"
-                    onClick={handleGenerateJobDescription}
-                    disabled={generatingDescription}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-500 disabled:opacity-70"
-                  >
-                    <FiZap size={16} />
-                    {generatingDescription ? 'Writing...' : 'Write with AI'}
-                  </button>
+              <section className="mt-2 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,35,60,0.08)]">
+                <div className="relative overflow-hidden bg-[#0b2039] px-5 py-5 text-white sm:px-6">
+                  <span className="absolute inset-y-0 left-0 w-1 bg-amber-400" aria-hidden="true" />
+                  <span className="absolute right-10 top-0 h-full w-px bg-white/10" aria-hidden="true" />
+                  <span className="absolute right-0 top-7 h-px w-28 bg-amber-400/70" aria-hidden="true" />
+                  <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-amber-300/40 bg-amber-400/10 text-amber-300">
+                        <FiCpu size={19} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Hiring Intelligence</p>
+                        <h3 className="mt-1 text-base font-extrabold text-white sm:text-lg">AI Job Description Studio</h3>
+                      </div>
+                    </div>
+                    <div
+                      aria-live="polite"
+                      className={`inline-flex w-fit items-center gap-2 rounded-md border px-3 py-2 text-xs font-bold ${
+                        generatingDescription
+                          ? 'border-sky-300/40 bg-sky-300/10 text-sky-200'
+                          : descriptionGenerationMeta.mode === 'ai'
+                            ? 'border-emerald-300/40 bg-emerald-300/10 text-emerald-200'
+                            : descriptionGenerationMeta.mode === 'smart_template'
+                              ? 'border-amber-300/40 bg-amber-300/10 text-amber-200'
+                              : descriptionGenerationMeta.mode === 'error'
+                                ? 'border-red-300/40 bg-red-300/10 text-red-200'
+                                : 'border-white/20 bg-white/5 text-slate-200'
+                      }`}
+                    >
+                      <span className={`h-2 w-2 rounded-full ${generatingDescription ? 'animate-pulse bg-sky-300' : descriptionGenerationMeta.mode === 'ai' ? 'bg-emerald-300' : descriptionGenerationMeta.mode === 'error' ? 'bg-red-300' : 'bg-amber-300'}`} />
+                      {generatingDescription
+                        ? 'Composing draft'
+                        : descriptionGenerationMeta.mode === 'ai'
+                          ? `${descriptionGenerationMeta.provider || 'AI'} draft ready`
+                          : descriptionGenerationMeta.mode === 'smart_template'
+                            ? 'Smart draft ready'
+                            : descriptionGenerationMeta.mode === 'error'
+                              ? 'Generation failed'
+                              : 'Ready to compose'}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <textarea required rows={14} value={draft.description} onChange={(e) => updateDraftField('description', e.target.value)} className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-brand-500 transition-all font-medium" placeholder="Detailed job description and responsibilities..."></textarea>
-              <p className={`text-xs font-bold ${descriptionWordCount < JOB_DESCRIPTION_MIN_WORDS || descriptionWordCount > JOB_DESCRIPTION_MAX_WORDS ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {descriptionWordCount}/{JOB_DESCRIPTION_MAX_WORDS} words | minimum {JOB_DESCRIPTION_MIN_WORDS}
-              </p>
+
+                <div className="grid lg:grid-cols-[minmax(0,1fr)_280px]">
+                  <div className="border-b border-slate-200 p-5 sm:p-6 lg:border-b-0 lg:border-r">
+                    <div className="mb-3 flex items-center gap-2 text-slate-800">
+                      <FiFileText size={16} />
+                      <span className="text-xs font-black uppercase tracking-[0.16em]">Role brief</span>
+                    </div>
+                    <textarea
+                      rows={5}
+                      value={descriptionPrompt}
+                      onChange={(e) => setDescriptionPrompt(e.target.value)}
+                      className="min-h-[132px] w-full resize-y rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium leading-6 text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-100"
+                      placeholder="Describe the role, responsibilities, must-have tools, work mode, team context, and expected outcomes."
+                    />
+                    <div className="mt-3 flex flex-wrap gap-2" aria-label="Role brief suggestions">
+                      {AI_PROMPT_PRESETS.map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setDescriptionPrompt((current) => current ? `${current}\n${preset.value}` : preset.value)}
+                          className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+                        >
+                          + {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col justify-between gap-5 bg-slate-50 p-5 sm:p-6">
+                    <div>
+                      <div className="mb-3 flex items-center gap-2 text-slate-800">
+                        <FiTarget size={16} />
+                        <span className="text-xs font-black uppercase tracking-[0.16em]">Draft length</span>
+                      </div>
+                      <div className="grid grid-cols-3 rounded-md border border-slate-200 bg-white p-1" role="group" aria-label="Target job description length">
+                        {AI_DESCRIPTION_WORD_TARGETS.map((wordTarget) => (
+                          <button
+                            key={wordTarget}
+                            type="button"
+                            aria-pressed={descriptionTargetWordCount === wordTarget}
+                            onClick={() => setDescriptionTargetWordCount(wordTarget)}
+                            className={`h-9 rounded text-xs font-extrabold transition-colors ${descriptionTargetWordCount === wordTarget ? 'bg-[#17365d] text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
+                          >
+                            {wordTarget}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleGenerateJobDescription}
+                      disabled={generatingDescription}
+                      className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-amber-400 px-4 text-sm font-black text-[#0b2039] shadow-[0_10px_24px_rgba(217,155,32,0.2)] transition-colors hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70"
+                    >
+                      {generatingDescription ? <FiRefreshCw className="animate-spin" size={17} /> : <FiZap size={17} />}
+                      {generatingDescription ? 'Writing draft' : draft.description ? 'Rewrite with AI' : 'Write with AI'}
+                    </button>
+                  </div>
+                </div>
+
+                {descriptionGenerationMeta.warning && (
+                  <div className="flex items-start gap-3 border-t border-amber-200 bg-amber-50 px-5 py-3 text-amber-900 sm:px-6">
+                    <FiAlertTriangle className="mt-0.5 shrink-0" size={16} />
+                    <p className="text-xs font-semibold leading-5">{descriptionGenerationMeta.warning}</p>
+                  </div>
+                )}
+
+                <div className="border-t border-slate-200 p-5 sm:p-6">
+                  <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2">
+                      <FiEdit2 className="text-brand-600" size={16} />
+                      <span className="text-xs font-black uppercase tracking-[0.16em] text-slate-800">Draft editor</span>
+                    </div>
+                    <span className={`w-fit rounded-md px-2.5 py-1 text-xs font-extrabold ${descriptionIsPublishable ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                      {descriptionWordCount}/{JOB_DESCRIPTION_MAX_WORDS} words
+                    </span>
+                  </div>
+                  <textarea
+                    required
+                    rows={14}
+                    value={draft.description}
+                    onChange={(e) => updateDraftField('description', e.target.value)}
+                    aria-label="Full job description draft"
+                    className="min-h-[340px] w-full resize-y rounded-md border border-slate-200 bg-white px-4 py-4 text-sm font-medium leading-7 text-slate-700 outline-none transition-colors focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                    placeholder="Your complete job description will appear here."
+                  />
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className={`h-full rounded-full transition-[width] duration-500 ${descriptionIsPublishable ? 'bg-emerald-500' : 'bg-amber-400'}`}
+                        style={{ width: `${descriptionWordProgress}%` }}
+                      />
+                    </div>
+                    <p className={`shrink-0 text-xs font-bold ${descriptionIsPublishable ? 'text-emerald-700' : 'text-slate-500'}`}>
+                      {descriptionIsPublishable
+                        ? 'Publishing length ready'
+                        : descriptionWordCount > JOB_DESCRIPTION_MAX_WORDS
+                          ? `${descriptionWordCount - JOB_DESCRIPTION_MAX_WORDS} words over limit`
+                          : `${JOB_DESCRIPTION_MIN_WORDS - descriptionWordCount} words to minimum`}
+                    </p>
+                  </div>
+                </div>
+              </section>
             </div>
 
             <div className="md:col-span-2 pt-6 border-t border-neutral-100 flex gap-4 justify-end">
