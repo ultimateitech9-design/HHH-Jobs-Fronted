@@ -50,9 +50,21 @@ export const getPublicNavItems = ({ jobsNavPath, govtJobsNavPath, govtJobsNavSta
   },
   {
     key: 'companies',
-    to: '/companies',
     label: 'Companies',
-    matchers: [/^\/companies(?:\/.*)?$/, /^\/employer-home(?:\/.*)?$/]
+    children: [
+      {
+        key: 'company-directory',
+        to: '/companies',
+        label: 'Company Directory',
+        matchers: [/^\/companies(?:\/.*)?$/, /^\/employer-home(?:\/.*)?$/]
+      },
+      {
+        key: 'recruitment-consultancy',
+        to: '/consultancy',
+        label: 'Recruitment Consultancy',
+        matchers: [/^\/consultancy(?:\/.*)?$/]
+      }
+    ]
   },
   {
     key: 'pricing',

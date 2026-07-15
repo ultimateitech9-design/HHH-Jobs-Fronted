@@ -17,6 +17,7 @@ const RecruitersPage = lazyPublicRoute(/^\/recruiters\/?$/, () => import('../mod
 const FreshersPage = lazyPublicRoute(/^\/freshers\/?$/, () => import('../modules/common/pages/FreshersPage'));
 const VeteransPage = lazyPublicRoute(/^\/veterans\/?$/, () => import('../modules/common/pages/VeteransPage'));
 const CampusConnectPage = lazyPublicRoute(/^\/campus-connect\/?$/, () => import('../modules/common/pages/CampusConnectPage'));
+const ConsultancyLandingPage = lazyPublicRoute(/^\/consultancy\/?$/, () => import('../modules/consultancy/pages/ConsultancyLandingPage'));
 const PublicJobsLandingPage = lazyPublicRoute(/^\/jobs\/?$/, () => import('../modules/student/pages/PublicJobsLandingPage'));
 const StudentJobDetailsPage = lazyPublicRoute(
   /^\/jobs\/(?!(?:categories|cities|sectors)(?:\/|$))[^/]+\/?$/,
@@ -71,6 +72,7 @@ const publicRoutes = [
   { path: 'freshers', element: <FreshersPage /> },
   { path: 'veterans', element: <VeteransPage /> },
   { path: 'campus-connect', element: <CampusConnectPage /> },
+  { path: 'consultancy', element: <ConsultancyLandingPage /> },
   { path: 'retired-employee', element: <RetiredEmployeePage /> },
   { path: 'jobs/categories', element: <FacetDirectoryPage /> },
   { path: 'jobs/cities', element: <LocationDirectoryPage /> },

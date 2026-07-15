@@ -7,6 +7,7 @@ import {
   FiFileText,
   FiHome,
   FiLock,
+  FiLayers,
   FiSearch,
   FiSettings,
   FiShield,
@@ -33,7 +34,8 @@ export const superAdminNavItems = [
       { to: '/portal/super-admin/companies', label: 'Companies', icon: FiHome },
       { to: '/portal/super-admin/campuses', label: 'Campuses', icon: FiBookOpen },
       { to: '/portal/super-admin/jobs', label: 'Jobs', icon: FiBriefcase },
-      { to: '/portal/super-admin/applications', label: 'Applications', icon: FiFileText }
+      { to: '/portal/super-admin/applications', label: 'Applications', icon: FiFileText },
+      { to: '/portal/super-admin/consultancy', label: 'Consultancy', icon: FiLayers }
     ]
   },
   {

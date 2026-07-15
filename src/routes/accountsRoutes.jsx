@@ -15,6 +15,7 @@ const Reports = lazy(() => import('../modules/accounts-dashboard/pages/Reports')
 const PaymentSettings = lazy(() => import('../modules/accounts-dashboard/pages/PaymentSettings'));
 const ClientSearchPage = lazy(() => import('../shared/pages/ClientSearchPage'));
 const DepartmentLiveChatPage = lazy(() => import('../shared/pages/DepartmentLiveChatPage'));
+const ConsultancyWorkspacePage = lazy(() => import('../modules/consultancy/pages/ConsultancyWorkspacePage'));
 
 const accountsRoutes = [
   {
@@ -29,6 +30,7 @@ const accountsRoutes = [
       { path: 'overview', element: <AccountsOverview /> },
       { path: 'transactions', element: <Transactions /> },
       { path: 'invoices', element: <Invoices /> },
+      { path: 'consultancy', element: <ConsultancyWorkspacePage audience="internal" /> },
       { path: 'subscriptions', element: <Subscriptions /> },
       { path: 'expenses', element: <Expenses /> },
       { path: 'payouts', element: <Payouts /> },

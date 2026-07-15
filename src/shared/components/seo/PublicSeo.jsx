@@ -51,6 +51,13 @@ const pageDefinitions = [
     description: 'Discover verified companies, employer profiles, active job openings, and hiring opportunities across India on HHH Jobs.'
   },
   {
+    match: /^\/consultancy$/,
+    label: 'Recruitment Consultancy',
+    title: 'Recruitment Consultancy in India | Staffing and RPO | HHH Jobs',
+    description: 'Request a recruitment quotation for permanent hiring, bulk hiring, executive search, campus recruitment, staffing, and RPO services across India.',
+    keywords: 'recruitment consultancy India, staffing company, RPO services, bulk hiring, executive search, campus recruitment, recruitment quotation, HHH Jobs consultancy'
+  },
+  {
     match: /^\/ats$/,
     label: 'ATS Resume Checker',
     title: 'Free ATS Resume Checker | Resume Score and Skill Match | HHH Jobs',

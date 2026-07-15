@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Briefcase, Building2, GraduationCap, UserRoundSearch } from 'lucide-react';
+import { ArrowRight, Briefcase, Building2, GraduationCap, Handshake, UserRoundSearch } from 'lucide-react';
 import AnimatedSection from '../../../../shared/components/AnimatedSection';
 import useAuthStore from '../../../../core/auth/authStore';
 import { normalizeRole } from '../../../../utils/auth';
@@ -47,6 +47,13 @@ export function CtaBanner() {
                   >
                     <Briefcase className="h-4 w-4" />
                     {isHrUser ? 'Open HR workspace' : 'Start hiring'}
+                  </Link>
+                  <Link
+                    to="/consultancy"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-amber-300/40 px-5 py-3 text-sm font-black text-amber-100 transition hover:border-amber-300 hover:bg-amber-300/10"
+                  >
+                    <Handshake className="h-4 w-4" />
+                    Recruitment consultancy
                   </Link>
                 </div>
               </div>

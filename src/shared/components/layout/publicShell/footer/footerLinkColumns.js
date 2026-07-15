@@ -24,6 +24,7 @@ export const footerLinkColumns = [
     title: 'Employers',
     links: [
       { label: 'For Recruiters', to: '/recruiters' },
+      { label: 'Recruitment Consultancy', to: '/consultancy' },
       { label: 'Companies', to: '/companies' },
       { label: 'Services', to: '/services' },
       { label: 'Employee Verification', to: '/emp-verify' }

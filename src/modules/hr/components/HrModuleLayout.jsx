@@ -9,6 +9,7 @@ import {
   FiHome,
   FiHelpCircle,
   FiLink,
+  FiLayers,
   FiSend,
   FiStar,
   FiUser,
@@ -28,6 +29,7 @@ import {
 const hrNavItems = [
   { to: '/portal/hr/dashboard', label: 'Dashboard', icon: FiHome },
   { to: '/portal/hr/jobs', label: 'Job Postings', icon: FiBriefcase },
+  { to: '/portal/hr/consultancy', label: 'Consultancy MIS', icon: FiLayers },
   { to: '/portal/hr/candidates', label: 'Candidate DB', icon: FiUsers },
   { to: '/portal/hr/shortlisted', label: 'Shortlisted', icon: FiStar },
   { to: '/portal/hr/interests', label: 'Sent Interests', icon: FiSend },

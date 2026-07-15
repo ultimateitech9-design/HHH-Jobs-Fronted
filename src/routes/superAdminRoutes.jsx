@@ -20,6 +20,7 @@ const CommandSearchPage = lazy(() => import('../modules/super-admin/pages/Comman
 const UserSupportContextPage = lazy(() => import('../modules/super-admin/pages/UserSupportContextPage'));
 const RolesPermissions = lazy(() => import('../modules/super-admin/pages/RolesPermissions'));
 const SystemSettings = lazy(() => import('../modules/super-admin/pages/SystemSettings'));
+const ConsultancyWorkspacePage = lazy(() => import('../modules/consultancy/pages/ConsultancyWorkspacePage'));
 
 const superAdminRoutes = [
   {
@@ -37,6 +38,7 @@ const superAdminRoutes = [
       { path: 'campuses', element: <CampusesManagement /> },
       { path: 'jobs', element: <JobsManagement /> },
       { path: 'applications', element: <ApplicationsManagement /> },
+      { path: 'consultancy', element: <ConsultancyWorkspacePage audience="internal" /> },
       { path: 'payments', element: <PaymentsManagement /> },
       { path: 'subscriptions', element: <SubscriptionsManagement /> },
       { path: 'reports', element: <ReportsAnalytics /> },

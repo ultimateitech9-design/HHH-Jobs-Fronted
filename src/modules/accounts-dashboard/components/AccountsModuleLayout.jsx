@@ -16,6 +16,7 @@ const accountsNavItems = [
   { to: '/portal/accounts/overview', label: 'Overview', icon: FiBarChart2 },
   { to: '/portal/accounts/transactions', label: 'Transactions', icon: FiCreditCard },
   { to: '/portal/accounts/invoices', label: 'Invoices', icon: FiFileText },
+  { to: '/portal/accounts/consultancy', label: 'Consultancy Billing', icon: FiLayers },
   { to: '/portal/accounts/subscriptions', label: 'Subscriptions', icon: FiLayers },
   { to: '/portal/accounts/expenses', label: 'Expenses', icon: FaRupeeSign },
   { to: '/portal/accounts/payouts', label: 'Payouts', icon: FiTrendingUp },

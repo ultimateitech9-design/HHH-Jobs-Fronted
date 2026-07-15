@@ -17,6 +17,7 @@ const AdminSettingsPage = lazy(() => import('../modules/admin/pages/AdminSetting
 const ExternalJobsMonitorPage = lazy(() => import('../modules/platform/pages/ExternalJobsMonitorPage'));
 const CommandSearchPage = lazy(() => import('../modules/super-admin/pages/CommandSearchPage'));
 const UserSupportContextPage = lazy(() => import('../modules/super-admin/pages/UserSupportContextPage'));
+const ConsultancyWorkspacePage = lazy(() => import('../modules/consultancy/pages/ConsultancyWorkspacePage'));
 
 const adminRoutes = [
   {
@@ -33,6 +34,7 @@ const adminRoutes = [
       { path: 'jobs', element: <AdminJobsPage /> },
       { path: 'reports', element: <AdminReportsPage /> },
       { path: 'applications', element: <AdminApplicationsPage /> },
+      { path: 'consultancy', element: <ConsultancyWorkspacePage audience="internal" /> },
       { path: 'master-data', element: <AdminMasterDataPage /> },
       { path: 'payments', element: <AdminPaymentsPage /> },
       { path: 'audit', element: <AdminAuditLogsPage /> },

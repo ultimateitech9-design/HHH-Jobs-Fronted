@@ -22,6 +22,7 @@ const HrCampusDrivesPage = lazy(() => import('../modules/hr/pages/HrCampusDrives
 const HrCampusConnectionsPage = lazy(() => import('../modules/hr/pages/HrCampusConnectionsPage'));
 const HrCampusConnectionActivityPage = lazy(() => import('../modules/hr/pages/HrCampusConnectionActivityPage'));
 const HelpSupportPage = lazy(() => import('../shared/pages/HelpSupportPage'));
+const ConsultancyWorkspacePage = lazy(() => import('../modules/consultancy/pages/ConsultancyWorkspacePage'));
 
 const hrRoutes = [
   {
@@ -52,6 +53,7 @@ const hrRoutes = [
       { path: 'campus-connections/activity', element: <Navigate to="sent" replace /> },
       { path: 'campus-connections/activity/:view', element: <HrCampusConnectionActivityPage /> },
       { path: 'campus-drives', element: <HrCampusDrivesPage /> },
+      { path: 'consultancy', element: <ConsultancyWorkspacePage audience="company" /> },
       { path: 'help-support', element: <HelpSupportPage /> }
     ]
   },

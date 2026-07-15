@@ -17,6 +17,7 @@ const salesNavItems = [
   { to: '/portal/sales/overview', label: 'Overview', icon: FiBarChart2 },
   { to: '/portal/sales/payments', label: 'Payments', icon: FiShoppingCart },
   { to: '/portal/sales/leads', label: 'Leads', icon: FiUserCheck },
+  { to: '/portal/sales/consultancy', label: 'Consultancy', icon: FiLayers },
   { to: '/portal/sales/customers', label: 'Customers', icon: FiUsers },
   { to: '/portal/sales/client-search', label: 'Client Search', icon: FiSearch },
   { to: '/portal/sales/team', label: 'Sales Team', icon: FiLayers },
