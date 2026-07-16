@@ -5,6 +5,7 @@ import { useDeferredMount } from '../../../../shared/hooks/useDeferredMount';
 
 import { HeroSection } from './HeroSection';
 import HomeConnectionRail from './HomeConnectionRail';
+import './homeCinematic.css';
 
 const CategoryCards = lazy(() =>
   import('./CategoryCards').then((module) => ({ default: module.CategoryCards }))
@@ -30,6 +31,7 @@ const CtaBanner = lazy(() =>
 const HiringFacetsSection = lazy(() =>
   import('./HiringFacetsSection').then((module) => ({ default: module.HiringFacetsSection }))
 );
+const HomeStoryExperience = lazy(() => import('./HomeStoryExperience'));
 
 const JOBS_PER_PAGE = 8;
 const INITIAL_PORTAL_JOB_LIMIT = 12;
@@ -263,6 +265,10 @@ const HomePage = () => {
       </div>
 
       <HomeConnectionRail />
+
+      <DeferredSection minHeight={1040} rootMargin="320px 0px">
+        <HomeStoryExperience />
+      </DeferredSection>
 
       <DeferredSection minHeight={540} rootMargin="180px 0px">
         <CategoryCards />

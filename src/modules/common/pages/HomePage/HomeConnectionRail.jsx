@@ -1,4 +1,4 @@
-import { ArrowRight, BriefcaseBusiness, Building2, GraduationCap, UserRoundSearch } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, Building2, GraduationCap, Network, UserRoundSearch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const connectionPaths = [
@@ -46,6 +46,13 @@ const connectionPaths = [
 
 const HomeConnectionRail = () => (
   <section className="home-connection-rail border-y border-white/10 bg-slate-950 text-white">
+    <div className="vw-shell-wide flex flex-col gap-2 border-b border-white/10 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="inline-flex items-center gap-2 text-[11px] font-black uppercase text-amber-200">
+        <Network className="h-4 w-4" aria-hidden="true" />
+        Find your place in the hiring story
+      </p>
+      <p className="font-mono text-[10px] font-bold text-slate-500">TALENT / SKILLS / MATCH / OUTCOME</p>
+    </div>
     <div className="vw-shell-wide grid sm:grid-cols-2 xl:grid-cols-4">
       {connectionPaths.map((path) => {
         const Icon = path.icon;
@@ -53,7 +60,7 @@ const HomeConnectionRail = () => (
           <Link
             key={path.number}
             to={path.to}
-            className="group relative flex min-h-[210px] flex-col border-b border-white/10 px-5 py-6 transition-colors hover:bg-white/[0.045] sm:border-r xl:border-b-0 xl:last:border-r-0"
+            className="home-connection-path group relative flex min-h-[210px] flex-col overflow-hidden border-b border-white/10 px-5 py-6 transition-colors hover:bg-white/[0.045] sm:border-r xl:border-b-0 xl:last:border-r-0"
           >
             <div className="flex items-center justify-between gap-3">
               <span className="text-[10px] font-black uppercase text-slate-300">{path.number}</span>

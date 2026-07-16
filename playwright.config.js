@@ -1,4 +1,10 @@
 import { defineConfig } from '@playwright/test';
+import process from 'node:process';
+
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173';
+const skipWebServer = /^(?:1|true)$/i.test(process.env.PLAYWRIGHT_SKIP_WEBSERVER || '');
+const serverUrl = new URL(baseURL);
+const serverPort = serverUrl.port || '4173';
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -13,7 +19,7 @@ export default defineConfig({
     ['html', { open: 'never' }]
   ],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL,
     headless: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
@@ -29,10 +35,12 @@ export default defineConfig({
       use: { browserName: 'chromium', channel: 'chrome' }
     }
   ],
-  webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 4173',
-    url: 'http://127.0.0.1:4173',
-    reuseExistingServer: true,
-    timeout: 120_000
-  }
+  webServer: skipWebServer
+    ? undefined
+    : {
+        command: `npm run dev -- --host ${serverUrl.hostname} --port ${serverPort}`,
+        url: baseURL,
+        reuseExistingServer: true,
+        timeout: 120_000
+      }
 });

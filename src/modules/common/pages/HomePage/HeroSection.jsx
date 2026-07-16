@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -5,6 +6,8 @@ import {
   CheckCircle2,
   GraduationCap,
   MapPin,
+  Pause,
+  Play,
   Search
 } from 'lucide-react';
 
@@ -35,28 +38,118 @@ const buildStatItems = (stats = {}) => [
 const heroActionClassName =
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold transition hover:-translate-y-0.5';
 
+const canUseCinematicVideo = () => {
+  if (typeof window === 'undefined') return false;
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const constrainedConnection = connection?.saveData
+    || ['slow-2g', '2g'].includes(String(connection?.effectiveType || '').toLowerCase());
+
+  return !prefersReducedMotion && !constrainedConnection;
+};
+
 export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipClick, stats }) {
   const user = useAuthStore((state) => state.user);
+  const videoRef = useRef(null);
+  const [videoEnabled, setVideoEnabled] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [videoPaused, setVideoPaused] = useState(false);
   const isHrUser = normalizeRole(user?.role) === 'hr';
   const hrJobsPath = '/portal/hr/jobs';
   const postJobPath = isHrUser ? hrJobsPath : '/login/hr';
   const statItems = buildStatItems(stats);
 
+  useEffect(() => {
+    if (!canUseCinematicVideo()) return undefined;
+
+    let timerId;
+    let idleId = null;
+    const enableVideo = () => setVideoEnabled(true);
+    const scheduleVideo = () => {
+      if (typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(enableVideo, { timeout: 2600 });
+      } else {
+        timerId = window.setTimeout(enableVideo, 1400);
+      }
+    };
+
+    if (document.readyState === 'complete') scheduleVideo();
+    else window.addEventListener('load', scheduleVideo, { once: true });
+
+    return () => {
+      window.removeEventListener('load', scheduleVideo);
+      if (idleId !== null) window.cancelIdleCallback?.(idleId);
+      if (timerId) window.clearTimeout(timerId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!videoEnabled || videoPaused) return undefined;
+
+    const handleVisibilityChange = () => {
+      const video = videoRef.current;
+      if (!video) return;
+      if (document.hidden) video.pause();
+      else video.play().catch(() => undefined);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [videoEnabled, videoPaused]);
+
+  const toggleVideoPlayback = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused) {
+      video.play().catch(() => undefined);
+      setVideoPaused(false);
+      return;
+    }
+
+    video.pause();
+    setVideoPaused(true);
+  };
+
   return (
-    <section className="public-cinematic-hero relative isolate min-h-[650px] overflow-hidden border-b border-[#d99b20]/35 bg-[#071524] text-white sm:min-h-[620px] lg:min-h-[640px]">
-      <img
-        src={getCareerHeroSrc()}
-        srcSet={CAREER_HERO_SRC_SET}
-        alt="Candidates and hiring teams connecting at work"
-        width="1024"
-        height="1024"
-        decoding="sync"
-        loading="eager"
-        fetchPriority="high"
-        sizes={CAREER_HERO_SIZES}
-        className="public-cinematic-image absolute inset-0 h-full w-full object-cover object-center"
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,21,36,0.96)_0%,rgba(7,21,36,0.84)_54%,rgba(7,21,36,0.68)_100%)]" />
+    <section className="home-film-hero public-cinematic-hero relative isolate min-h-[650px] overflow-hidden border-b border-[#d99b20]/35 bg-[#071524] text-white sm:min-h-[620px] lg:min-h-[640px]">
+      <div className="home-film-hero__media absolute inset-0" aria-hidden="true">
+        <img
+          src={getCareerHeroSrc()}
+          srcSet={CAREER_HERO_SRC_SET}
+          alt=""
+          width="1024"
+          height="1024"
+          decoding="sync"
+          loading="eager"
+          fetchPriority="high"
+          sizes={CAREER_HERO_SIZES}
+          className="public-cinematic-image absolute inset-0 h-full w-full object-cover object-center"
+        />
+        {videoEnabled ? (
+          <video
+            ref={videoRef}
+            className={`home-film-hero__video absolute inset-0 h-full w-full object-cover ${videoReady ? 'is-ready' : ''}`}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster={getCareerHeroSrc()}
+            onCanPlay={() => setVideoReady(true)}
+            onPlay={() => setVideoPaused(false)}
+            onPause={() => {
+              if (!document.hidden) setVideoPaused(true);
+            }}
+          >
+            <source src="/media/hhh-home-story.webm" type="video/webm" />
+            <source src="/media/hhh-home-story.mp4" type="video/mp4" />
+          </video>
+        ) : null}
+      </div>
+      <div className="home-film-hero__shade absolute inset-0" aria-hidden="true" />
+      <div className="home-film-hero__grain absolute inset-0" aria-hidden="true" />
 
       <div className="home-match-stream" aria-hidden="true">
         <span className="home-match-stream__line home-match-stream__line--primary" />
@@ -67,18 +160,31 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
         <span className="home-match-stream__packet home-match-stream__packet--match">MATCH</span>
       </div>
 
-      <div className="vw-shell-wide relative flex min-h-[650px] flex-col justify-end pb-7 pt-8 sm:min-h-[620px] sm:pb-9 lg:min-h-[640px] lg:pb-10">
+      {videoEnabled && videoReady ? (
+        <button
+          type="button"
+          onClick={toggleVideoPlayback}
+          className="home-film-hero__control"
+          aria-label={videoPaused ? 'Play hero film' : 'Pause hero film'}
+          title={videoPaused ? 'Play hero film' : 'Pause hero film'}
+        >
+          {videoPaused ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
+        </button>
+      ) : null}
+
+      <div className="vw-shell-wide relative z-10 flex min-h-[650px] flex-col justify-end pb-7 pt-8 sm:min-h-[620px] sm:pb-9 lg:min-h-[640px] lg:pb-10">
         <div className="max-w-4xl">
-          <div className="inline-flex items-center gap-2 border-l-2 border-brand-400 pl-3 text-[11px] font-black uppercase text-brand-300">
+          <div className="home-film-hero__eyebrow inline-flex items-center gap-2 border-l-2 border-brand-400 pl-3 text-[11px] font-black uppercase text-brand-300">
+            <span className="home-film-hero__live-dot" aria-hidden="true" />
             HHH Jobs connected hiring network
           </div>
 
           <h1 className="mt-4 max-w-4xl font-heading text-4xl font-black leading-[1.06] tracking-normal text-white sm:text-5xl lg:text-6xl">
-            Jobs in India, connected to real opportunity.
+            Ambition meets the right opportunity.
           </h1>
 
           <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base sm:leading-7">
-            Students, professionals, campuses, recruiters, and companies move from discovery to hiring through one trusted platform.
+            From a student&apos;s first project to a company&apos;s next hire, HHH Jobs connects skills, location, trust, and real hiring movement across India.
           </p>
 
           <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-slate-200 sm:text-sm">

@@ -6,7 +6,7 @@ const FooterBrand = () => {
     <section className="max-w-sm">
       <div className="flex min-w-0 items-center gap-2.5">
         <img
-          src="/favicon-circle.svg?v=20260713"
+          src="/hhh-job-logo-128.png"
           alt="HHH Jobs"
           className="h-10 w-10 rounded-lg object-cover ring-1 ring-white/10"
           width="40"
