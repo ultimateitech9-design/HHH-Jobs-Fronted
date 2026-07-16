@@ -21,6 +21,7 @@ import { normalizeRole } from '../../../../utils/auth';
 
 const trustBadges = ['Verified jobs', 'Relevant matching', 'Free to apply'];
 const quickTags = ['Remote', 'Full-time', 'Internship', 'Part-time', 'Freelance'];
+const CINEMATIC_VIDEO_VERSION = '20260716-2';
 
 const formatLiveCount = (value) => {
   if (value === null || value === undefined || value === '') return null;
@@ -38,7 +39,7 @@ const buildStatItems = (stats = {}) => [
 const heroActionClassName =
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold transition hover:-translate-y-0.5';
 
-const canUseCinematicVideo = () => {
+const shouldAutoplayCinematicVideo = () => {
   if (typeof window === 'undefined') return false;
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -55,34 +56,31 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [videoPaused, setVideoPaused] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const isHrUser = normalizeRole(user?.role) === 'hr';
   const hrJobsPath = '/portal/hr/jobs';
   const postJobPath = isHrUser ? hrJobsPath : '/login/hr';
   const statItems = buildStatItems(stats);
 
   useEffect(() => {
-    if (!canUseCinematicVideo()) return undefined;
+    if (!shouldAutoplayCinematicVideo()) {
+      setVideoPaused(true);
+      return undefined;
+    }
 
-    let timerId;
-    let idleId = null;
-    const enableVideo = () => setVideoEnabled(true);
-    const scheduleVideo = () => {
-      if (typeof window.requestIdleCallback === 'function') {
-        idleId = window.requestIdleCallback(enableVideo, { timeout: 2600 });
-      } else {
-        timerId = window.setTimeout(enableVideo, 1400);
-      }
-    };
+    const frameId = window.requestAnimationFrame(() => {
+      setVideoEnabled(true);
+      setVideoPaused(false);
+    });
 
-    if (document.readyState === 'complete') scheduleVideo();
-    else window.addEventListener('load', scheduleVideo, { once: true });
-
-    return () => {
-      window.removeEventListener('load', scheduleVideo);
-      if (idleId !== null) window.cancelIdleCallback?.(idleId);
-      if (timerId) window.clearTimeout(timerId);
-    };
+    return () => window.cancelAnimationFrame(frameId);
   }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!videoEnabled || videoPaused || !video || video.readyState < 2) return;
+    video.play().catch(() => setVideoPaused(true));
+  }, [videoEnabled, videoPaused, videoReady]);
 
   useEffect(() => {
     if (!videoEnabled || videoPaused) return undefined;
@@ -100,7 +98,20 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
 
   const toggleVideoPlayback = () => {
     const video = videoRef.current;
-    if (!video) return;
+
+    if (!videoEnabled || videoError || !video) {
+      setVideoError(false);
+      setVideoReady(false);
+      setVideoPaused(false);
+      setVideoEnabled(true);
+      window.requestAnimationFrame(() => {
+        const nextVideo = videoRef.current;
+        if (!nextVideo) return;
+        nextVideo.load();
+        nextVideo.play().catch(() => setVideoPaused(true));
+      });
+      return;
+    }
 
     if (video.paused) {
       video.play().catch(() => undefined);
@@ -135,16 +146,25 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
             muted
             loop
             playsInline
-            preload="metadata"
+            preload="auto"
             poster={getCareerHeroSrc()}
-            onCanPlay={() => setVideoReady(true)}
+            onCanPlay={() => {
+              setVideoReady(true);
+              setVideoError(false);
+              if (!videoPaused) videoRef.current?.play().catch(() => setVideoPaused(true));
+            }}
             onPlay={() => setVideoPaused(false)}
             onPause={() => {
               if (!document.hidden) setVideoPaused(true);
             }}
+            onError={() => {
+              setVideoReady(false);
+              setVideoError(true);
+              setVideoPaused(true);
+            }}
           >
-            <source src="/media/hhh-home-story.webm" type="video/webm" />
-            <source src="/media/hhh-home-story.mp4" type="video/mp4" />
+            <source src={`/media/hhh-home-story.webm?v=${CINEMATIC_VIDEO_VERSION}`} type="video/webm" />
+            <source src={`/media/hhh-home-story.mp4?v=${CINEMATIC_VIDEO_VERSION}`} type="video/mp4" />
           </video>
         ) : null}
       </div>
@@ -160,17 +180,16 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
         <span className="home-match-stream__packet home-match-stream__packet--match">MATCH</span>
       </div>
 
-      {videoEnabled && videoReady ? (
-        <button
-          type="button"
-          onClick={toggleVideoPlayback}
-          className="home-film-hero__control"
-          aria-label={videoPaused ? 'Play hero film' : 'Pause hero film'}
-          title={videoPaused ? 'Play hero film' : 'Pause hero film'}
-        >
-          {videoPaused ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
-        </button>
-      ) : null}
+      <button
+        type="button"
+        onClick={toggleVideoPlayback}
+        className="home-film-hero__control"
+        data-state={videoError ? 'error' : videoReady && !videoPaused ? 'playing' : 'paused'}
+        aria-label={videoError ? 'Retry hero film' : videoReady && !videoPaused ? 'Pause hero film' : 'Play hero film'}
+        title={videoError ? 'Retry hero film' : videoReady && !videoPaused ? 'Pause hero film' : 'Play hero film'}
+      >
+        {videoReady && !videoPaused ? <Pause className="h-4 w-4" aria-hidden="true" /> : <Play className="h-4 w-4" aria-hidden="true" />}
+      </button>
 
       <div className="vw-shell-wide relative z-10 flex min-h-[650px] flex-col justify-end pb-7 pt-8 sm:min-h-[620px] sm:pb-9 lg:min-h-[640px] lg:pb-10">
         <div className="max-w-4xl">
