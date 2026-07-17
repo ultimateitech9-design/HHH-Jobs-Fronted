@@ -254,7 +254,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
               key={tag}
               type="button"
               onClick={() => onKeywordChipClick(tag)}
-              className="rounded-full border border-white/20 bg-[#071524]/55 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:border-[#f2c75f] hover:text-[#fff1c9]"
+              className="rounded-full border border-white/25 bg-white/[0.07] px-3 py-1 text-xs font-semibold text-slate-100 backdrop-blur-sm transition hover:border-[#f2c75f] hover:bg-white/[0.12] hover:text-[#fff1c9]"
             >
               {tag}
             </button>
@@ -269,21 +269,21 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
           <Link
             to={postJobPath}
             state={isHrUser ? undefined : { portalLabel: 'Recruiter / HR login', from: hrJobsPath }}
-            className={`${heroActionClassName} border border-white/30 bg-[#071524]/45 text-white hover:border-[#f2c75f]/70 hover:bg-[#071524]/70`}
+            className={`${heroActionClassName} border border-white/30 bg-white/[0.08] text-white backdrop-blur-sm hover:border-[#f2c75f]/70 hover:bg-white/[0.14]`}
           >
             <Briefcase className="h-4 w-4" />
             Post a job
           </Link>
           <Link
             to="/campus-connect"
-            className={`${heroActionClassName} border border-white/30 bg-[#071524]/45 text-white hover:border-[#f2c75f]/70 hover:bg-[#071524]/70`}
+            className={`${heroActionClassName} border border-white/30 bg-white/[0.08] text-white backdrop-blur-sm hover:border-[#f2c75f]/70 hover:bg-white/[0.14]`}
           >
             <GraduationCap className="h-4 w-4" />
             Campus connect
           </Link>
         </div>
 
-        <div className="mt-6 grid grid-cols-3 border-y border-white/15 bg-slate-950/20">
+        <div className="mt-6 grid grid-cols-3 border-y border-[#f2c75f]/20 bg-[#06192b]/35 backdrop-blur-[2px]">
           {statItems.map((item, index) => (
             <div
               key={item.label}
