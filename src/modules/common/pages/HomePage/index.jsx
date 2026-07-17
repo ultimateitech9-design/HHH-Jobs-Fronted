@@ -114,7 +114,6 @@ const HomePage = () => {
   const [jobs, setJobs] = useState([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [jobsError, setJobsError] = useState('');
-  const [reloadSeed, setReloadSeed] = useState(0);
   const [hiringFacets, setHiringFacets] = useState({
     roles: [],
     sectors: [],
@@ -166,7 +165,7 @@ const HomePage = () => {
     return () => {
       mounted = false;
     };
-  }, [reloadSeed, shouldLoadFeaturedJobs]);
+  }, [shouldLoadFeaturedJobs]);
 
   useEffect(() => {
     if (!shouldLoadHiringFacets) return undefined;
@@ -196,7 +195,7 @@ const HomePage = () => {
     return () => {
       mounted = false;
     };
-  }, [reloadSeed, shouldLoadHiringFacets]);
+  }, [shouldLoadHiringFacets]);
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
@@ -279,7 +278,6 @@ const HomePage = () => {
           jobs={pagedJobs}
           loading={loadingJobs}
           error={jobsError}
-          onRefresh={() => setReloadSeed((current) => current + 1)}
         />
       </DeferredSection>
 
