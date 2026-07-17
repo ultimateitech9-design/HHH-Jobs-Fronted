@@ -63,7 +63,7 @@ const mergeFeaturedJobs = (portalJobs = [], externalJobs = []) => [
 const includesTerm = (value, keyword) =>
   String(value || '').toLowerCase().includes(String(keyword || '').toLowerCase());
 
-const DeferredSection = ({ children, minHeight = 220, rootMargin = '260px 0px' }) => {
+const DeferredSection = ({ children, id, minHeight = 220, rootMargin = '260px 0px' }) => {
   const sectionRef = useRef(null);
   const [shouldRender, setShouldRender] = useState(false);
 
@@ -98,7 +98,7 @@ const DeferredSection = ({ children, minHeight = 220, rootMargin = '260px 0px' }
   }, [rootMargin, shouldRender]);
 
   return (
-    <div ref={sectionRef} style={shouldRender ? undefined : { minHeight }}>
+    <div id={id} ref={sectionRef} className={id ? 'scroll-mt-24' : undefined} style={shouldRender ? undefined : { minHeight }}>
       {shouldRender ? <Suspense fallback={<div style={{ minHeight }} aria-hidden="true" />}>{children}</Suspense> : null}
     </div>
   );
@@ -270,7 +270,7 @@ const HomePage = () => {
         <HomeStoryExperience />
       </DeferredSection>
 
-      <DeferredSection minHeight={540} rootMargin="180px 0px">
+      <DeferredSection id="job-categories" minHeight={540} rootMargin="180px 0px">
         <CategoryCards />
       </DeferredSection>
 
