@@ -259,7 +259,6 @@ const HomePage = () => {
           onFiltersChange={handleFiltersChange}
           onSearch={handleSearchSubmit}
           onKeywordChipClick={handleKeywordChipClick}
-          stats={hiringFacets.totals}
         />
       </div>
 
@@ -300,7 +299,7 @@ const HomePage = () => {
       </DeferredSection>
 
       <DeferredSection minHeight={260}>
-        <StatsSection totals={hiringFacets.totals} />
+        <StatsSection />
       </DeferredSection>
 
       <DeferredSection minHeight={260}>

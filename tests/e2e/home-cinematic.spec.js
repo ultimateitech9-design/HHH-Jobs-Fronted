@@ -9,6 +9,13 @@ test('home hero film and story chapters stay interactive on desktop', async ({ p
   await page.goto('/', { waitUntil: 'load' });
 
   await expect(page.getByRole('heading', { name: /ambition meets the right opportunity/i })).toBeVisible();
+  const hero = page.locator('.home-film-hero');
+  await expect(hero.getByText('36', { exact: true })).toBeVisible();
+  await expect(hero.getByText('States & UTs', { exact: true })).toBeVisible();
+  await expect(hero.getByText('650', { exact: true })).toBeVisible();
+  await expect(hero.getByText('Career categories', { exact: true })).toBeVisible();
+  await expect(hero.getByText('5K', { exact: true })).toBeVisible();
+  await expect(hero.getByText('Cities covered', { exact: true })).toBeVisible();
   const heroVideo = page.locator('.home-film-hero__video');
   await expect(heroVideo).toHaveCount(1, { timeout: 7000 });
   await expect.poll(() => heroVideo.evaluate((video) => video.readyState), { timeout: 10_000 }).toBeGreaterThanOrEqual(2);
@@ -33,6 +40,24 @@ test('home hero film and story chapters stay interactive on desktop', async ({ p
   }
 });
 
+test('deferred platform coverage stays static and readable', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  const platformStats = page.locator('.home-platform-stats');
+  for (let step = 0; step < 20 && (await platformStats.count()) === 0; step += 1) {
+    await page.evaluate(() => window.scrollBy({ top: Math.max(window.innerHeight * 0.85, 480), behavior: 'instant' }));
+    await page.waitForTimeout(120);
+  }
+
+  await expect(platformStats).toHaveCount(1);
+  await platformStats.scrollIntoViewIfNeeded();
+  await expect(platformStats.getByText('36', { exact: true })).toBeVisible();
+  await expect(platformStats.getByText('783', { exact: true })).toBeVisible();
+  await expect(platformStats.getByText('650', { exact: true })).toBeVisible();
+  await expect(platformStats.getByText('5K', { exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test.describe('mobile home cinematic experience', () => {
   test.use({ viewport: { width: 393, height: 851 }, deviceScaleFactor: 1 });
 
@@ -40,6 +65,10 @@ test.describe('mobile home cinematic experience', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByRole('heading', { name: /ambition meets the right opportunity/i })).toBeVisible();
+    const hero = page.locator('.home-film-hero');
+    await expect(hero.getByText('36', { exact: true })).toBeVisible();
+    await expect(hero.getByText('650', { exact: true })).toBeVisible();
+    await expect(hero.getByText('5K', { exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     await page.locator('.home-connection-rail').evaluate((rail) => {

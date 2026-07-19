@@ -58,7 +58,7 @@ const StatCounter = ({ duration = 2, end, label, suffix = '', inline = false }) 
       ref={ref}
       className={`native-animated-section ${inline ? 'flex w-full flex-wrap items-baseline justify-center gap-x-2 gap-y-1 text-center' : 'w-full text-center'}`}
     >
-      <div className={`font-heading font-bold text-white ${inline ? 'text-2xl md:text-3xl' : 'text-3xl md:text-5xl'}`}>
+      <div className={`font-heading font-black text-white ${inline ? 'text-3xl sm:text-4xl xl:text-[2.75rem]' : 'text-3xl md:text-5xl'}`}>
         {end === null || end === undefined ? '--' : formatter.format(count)}
         {end === null || end === undefined ? '' : suffix}
       </div>

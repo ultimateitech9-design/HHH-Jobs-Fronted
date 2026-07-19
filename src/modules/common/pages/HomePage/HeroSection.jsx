@@ -18,23 +18,11 @@ import {
   getCareerHeroSrc
 } from '../../../../shared/utils/publicHeroImage';
 import { normalizeRole } from '../../../../utils/auth';
+import { HOME_HERO_METRICS } from './platformMetrics';
 
 const trustBadges = ['Verified jobs', 'Relevant matching', 'Free to apply'];
 const quickTags = ['Remote', 'Full-time', 'Internship', 'Part-time', 'Freelance'];
 const CINEMATIC_VIDEO_VERSION = '20260716-2';
-
-const formatLiveCount = (value) => {
-  if (value === null || value === undefined || value === '') return null;
-  const count = Number(value);
-  if (!Number.isFinite(count)) return null;
-  return new Intl.NumberFormat('en-IN').format(Math.max(0, count));
-};
-
-const buildStatItems = (stats = {}) => [
-  { label: 'Open roles', value: formatLiveCount(stats.openJobs) },
-  { label: 'Companies hiring', value: formatLiveCount(stats.companies) },
-  { label: 'Career categories', value: formatLiveCount(stats.roles) }
-];
 
 const heroActionClassName =
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold transition hover:-translate-y-0.5';
@@ -50,7 +38,7 @@ const shouldAutoplayCinematicVideo = () => {
   return !prefersReducedMotion && !constrainedConnection;
 };
 
-export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipClick, stats }) {
+export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipClick }) {
   const user = useAuthStore((state) => state.user);
   const videoRef = useRef(null);
   const [videoEnabled, setVideoEnabled] = useState(false);
@@ -60,7 +48,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
   const isHrUser = normalizeRole(user?.role) === 'hr';
   const hrJobsPath = '/portal/hr/jobs';
   const postJobPath = isHrUser ? hrJobsPath : '/login/hr';
-  const statItems = buildStatItems(stats);
+  const statItems = HOME_HERO_METRICS;
 
   useEffect(() => {
     if (!shouldAutoplayCinematicVideo()) {
@@ -287,16 +275,12 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
           {statItems.map((item, index) => (
             <div
               key={item.label}
-              className={`flex min-h-[62px] flex-wrap items-center gap-x-2 gap-y-0.5 py-3 ${
+              className={`flex min-h-[76px] flex-wrap items-center gap-x-2 gap-y-0.5 py-3 ${
                 index > 0 ? 'border-l border-white/15 pl-3 sm:pl-5' : ''
               }`}
             >
-              {item.value === null ? (
-                <span className="block h-6 w-12 animate-pulse rounded bg-white/20" aria-hidden="true" />
-              ) : (
-                <p className="text-lg font-black text-white sm:text-2xl">{item.value}</p>
-              )}
-              <p className="max-w-[8rem] text-[9px] font-black uppercase leading-4 text-white/60 sm:text-[10px]">{item.label}</p>
+              <p className="font-heading text-2xl font-black text-white sm:text-4xl">{item.displayValue}</p>
+              <p className="max-w-[8rem] text-[9px] font-black uppercase leading-4 text-white/65 sm:text-[11px]">{item.label}</p>
             </div>
           ))}
         </div>
