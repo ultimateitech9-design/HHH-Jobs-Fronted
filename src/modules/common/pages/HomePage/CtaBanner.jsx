@@ -49,7 +49,7 @@ export function CtaBanner() {
                     {isHrUser ? 'Open HR workspace' : 'Start hiring'}
                   </Link>
                   <Link
-                    to="/consultancy"
+                    to="/job-consultant"
                     className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-amber-300/40 px-5 py-3 text-sm font-black text-amber-100 transition hover:border-amber-300 hover:bg-amber-300/10"
                   >
                     <Handshake className="h-4 w-4" />

@@ -60,9 +60,9 @@ export const getPublicNavItems = ({ jobsNavPath, govtJobsNavPath, govtJobsNavSta
       },
       {
         key: 'recruitment-consultancy',
-        to: '/consultancy',
+        to: '/job-consultant',
         label: 'Recruitment Consultancy',
-        matchers: [/^\/consultancy(?:\/.*)?$/]
+        matchers: [/^\/job-consultant(?:\/.*)?$/]
       }
     ]
   },

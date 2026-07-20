@@ -31,6 +31,28 @@ const getContactEmail = (record = {}) => (
   || ''
 );
 
+const normalizeCompanyRelations = (user = {}) => {
+  const source = user.companyRelations || user.company_relations || {};
+  const rawCompanies = source.companies || user.companyNames || user.company_names || [];
+  const companies = [...new Set(
+    (Array.isArray(rawCompanies) ? rawCompanies : [])
+      .map((value) => String(value || '').trim())
+      .filter(Boolean)
+  )];
+  const fallbackCompany = String(user.company || '').trim();
+
+  if (fallbackCompany && !['employer', 'hhh jobs'].includes(fallbackCompany.toLowerCase()) && !companies.includes(fallbackCompany)) {
+    companies.unshift(fallbackCompany);
+  }
+
+  return {
+    ...source,
+    companies,
+    linkedCompanyCount: Number(source.linkedCompanyCount ?? source.linked_company_count ?? companies.length),
+    jobCount: Number(source.jobCount ?? source.job_count ?? user.postedJobCount ?? user.posted_job_count ?? 0)
+  };
+};
+
 const mapJobStage = (value) => {
   const status = String(value || '').toLowerCase();
   if (status === 'interviewed') return 'interview';
@@ -38,27 +60,34 @@ const mapJobStage = (value) => {
   return status || 'applied';
 };
 
-export const mapApiUserToUi = (user = {}) => ({
-  id: user.id,
-  displayId: user.employeeCode || user.employee_code || getManagementDisplayId(user.id, user.role),
-  name: user.name || '-',
-  email: user.email || '-',
-  phone: getContactNumber(user),
-  mobile: user.mobile || '',
-  contactNumber: getContactNumber(user),
-  contactEmail: getContactEmail(user),
-  role: user.role || 'student',
-  company: user.company || user.department || (user.role === 'hr' ? 'Employer' : 'HHH Jobs'),
-  assignedStates: Array.isArray(user.assignedStates)
-    ? user.assignedStates
-    : (Array.isArray(user.assigned_states) ? user.assigned_states : []),
-  salesCode: user.salesCode || user.sales_code || '',
-  status: normalizeUserStatus(user),
-  verified: Boolean(user.verified ?? user.is_email_verified ?? user.is_hr_approved),
-  lastActiveAt: user.lastActiveAt || user.last_login_at || null,
-  onboardingDate: user.onboardingDate || user.onboarding_date || user.createdAt || user.created_at || null,
-  createdAt: user.createdAt || user.created_at || null
-});
+export const mapApiUserToUi = (user = {}) => {
+  const companyRelations = normalizeCompanyRelations(user);
+
+  return {
+    id: user.id,
+    displayId: user.employeeCode || user.employee_code || getManagementDisplayId(user.id, user.role),
+    name: user.name || '-',
+    email: user.email || '-',
+    phone: getContactNumber(user),
+    mobile: user.mobile || '',
+    contactNumber: getContactNumber(user),
+    contactEmail: getContactEmail(user),
+    role: user.role || 'student',
+    company: companyRelations.companies[0] || user.company || user.department || (user.role === 'hr' ? 'Employer' : 'HHH Jobs'),
+    companyNames: companyRelations.companies,
+    companyRelations,
+    postedJobCount: companyRelations.jobCount,
+    assignedStates: Array.isArray(user.assignedStates)
+      ? user.assignedStates
+      : (Array.isArray(user.assigned_states) ? user.assigned_states : []),
+    salesCode: user.salesCode || user.sales_code || '',
+    status: normalizeUserStatus(user),
+    verified: Boolean(user.verified ?? user.is_email_verified ?? user.is_hr_approved),
+    lastActiveAt: user.lastActiveAt || user.last_login_at || null,
+    onboardingDate: user.onboardingDate || user.onboarding_date || user.createdAt || user.created_at || null,
+    createdAt: user.createdAt || user.created_at || null
+  };
+};
 
 export const mapApiCompanyToUi = (company = {}) => {
   const owner = firstRelation(company.users);

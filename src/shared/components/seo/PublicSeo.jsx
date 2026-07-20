@@ -51,7 +51,7 @@ const pageDefinitions = [
     description: 'Discover verified companies, employer profiles, active job openings, and hiring opportunities across India on HHH Jobs.'
   },
   {
-    match: /^\/consultancy$/,
+    match: /^\/job-consultant$/,
     label: 'Recruitment Consultancy',
     title: 'Recruitment Consultancy in India | Staffing and RPO | HHH Jobs',
     description: 'Request a recruitment quotation for permanent hiring, bulk hiring, executive search, campus recruitment, staffing, and RPO services across India.',

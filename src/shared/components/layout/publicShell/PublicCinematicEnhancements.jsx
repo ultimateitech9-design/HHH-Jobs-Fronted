@@ -8,7 +8,7 @@ const getRouteFlow = (pathname = '/') => {
   if (pathname === '/') return { from: 'TALENT', signal: 'MATCH', to: 'HIRED' };
   if (/^\/govt-jobs\b/i.test(pathname)) return { from: 'ALERT', signal: 'TRACK', to: 'FORM' };
   if (/^\/companies\b/i.test(pathname)) return { from: 'PROFILE', signal: 'FIT', to: 'TEAM' };
-  if (/^\/consultancy\b/i.test(pathname)) return { from: 'BRIEF', signal: 'DELIVER', to: 'PARTNER' };
+  if (/^\/job-consultant\b/i.test(pathname)) return { from: 'BRIEF', signal: 'DELIVER', to: 'PARTNER' };
   if (/^\/(?:campus-connect|freshers)\b/i.test(pathname)) return { from: 'CAMPUS', signal: 'PLACE', to: 'CAREER' };
   if (/^\/(?:ats|job-seekers|veterans|retired-employee)\b/i.test(pathname)) return { from: 'PROFILE', signal: 'SCORE', to: 'ROLE' };
   if (/^\/(?:recruiters|emp-verify)\b/i.test(pathname)) return { from: 'ROLE', signal: 'VERIFY', to: 'HIRE' };
@@ -28,7 +28,7 @@ const getRouteKind = (pathname = '/') => {
   if (/^\/jobs\/categories\/?$/i.test(pathname)) return 'category';
   if (/^\/govt-jobs\b/i.test(pathname)) return 'government';
   if (/^\/companies\b/i.test(pathname)) return 'companies';
-  if (/^\/consultancy\b/i.test(pathname)) return 'consultancy';
+  if (/^\/job-consultant\b/i.test(pathname)) return 'consultancy';
   if (/^\/(?:campus-connect|freshers)\b/i.test(pathname)) return 'campus';
   if (/^\/(?:services|pricing)\b/i.test(pathname)) return 'commercial';
   if (/^\/(?:about|about-us)\b/i.test(pathname)) return 'about';

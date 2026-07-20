@@ -331,7 +331,18 @@ const AdminUsersPage = () => {
   const securitySearchSuggestions = useMemo(() => {
     const values = new Set();
     users.forEach((user) => {
-      [user.name, user.email, user.role, user.status]
+      const companyNames = user.companyRelations?.companies || user.company_names || user.companyNames || [];
+      [
+        user.name,
+        user.email,
+        user.contactNumber,
+        user.phone,
+        user.mobile,
+        user.company,
+        user.role,
+        user.status,
+        ...(Array.isArray(companyNames) ? companyNames : [])
+      ]
         .map((value) => String(value || '').trim())
         .filter(Boolean)
         .forEach((value) => values.add(value));
@@ -714,11 +725,12 @@ const AdminUsersPage = () => {
              </div>
           ) : null}
 
-          <table className="w-full min-w-[1360px] border-collapse text-left xl:min-w-[1420px]">
+          <table className="w-full min-w-[1580px] border-collapse text-left xl:min-w-[1640px]">
             <thead>
               <tr className="bg-neutral-50">
                 <th className="border-b border-neutral-200 p-3 pl-5 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Account Identity</th>
                 <th className="w-[145px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Contact</th>
+                <th className="w-[270px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Company / Posting Context</th>
                 <th className="w-[118px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">System Role</th>
                 <th className="w-[118px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Auth Status</th>
                 <th className="w-[126px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">HR Clearance</th>
@@ -730,7 +742,7 @@ const AdminUsersPage = () => {
             <tbody className="divide-y divide-neutral-100 bg-white">
               {filteredSecurityUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="p-10 text-center text-sm font-medium text-neutral-500">
+                  <td colSpan="9" className="p-10 text-center text-sm font-medium text-neutral-500">
                     No users matched the current security filters.
                   </td>
                 </tr>
@@ -738,6 +750,18 @@ const AdminUsersPage = () => {
                 paginatedSecurityUsers.map((user) => {
                   const normalizedRole = String(user.role || '').toLowerCase();
                   const isHr = normalizedRole === 'hr' || normalizedRole === 'company_admin';
+                  const relationCompanies = user.companyRelations?.companies || user.company_relations?.companies || user.companyNames || user.company_names || [];
+                  const companyNames = [...new Set(
+                    (Array.isArray(relationCompanies) ? relationCompanies : [])
+                      .map((value) => String(value || '').trim())
+                      .filter(Boolean)
+                  )];
+                  const fallbackCompany = String(user.company || '').trim();
+                  if (isHr && fallbackCompany && !['employer', 'hhh jobs'].includes(fallbackCompany.toLowerCase()) && !companyNames.includes(fallbackCompany)) {
+                    companyNames.unshift(fallbackCompany);
+                  }
+                  const postedJobCount = Number(user.companyRelations?.jobCount ?? user.company_relations?.jobCount ?? user.postedJobCount ?? user.posted_job_count ?? 0);
+                  const companySummary = companyNames.join(', ');
                   const isStatusBusy = busyAction === `status:${user.id}`;
                   const isApprovalBusy = busyAction === `approval:${user.id}`;
                   
@@ -749,6 +773,27 @@ const AdminUsersPage = () => {
                       </td>
                       <td className="p-3 align-middle text-xs font-semibold text-neutral-600">
                         {user.contactNumber || user.phone || user.mobile || '-'}
+                      </td>
+                      <td className="p-3 align-middle">
+                        {isHr ? (
+                          <div className="max-w-[250px] space-y-0.5">
+                            <div className="truncate text-xs font-bold text-primary" title={companySummary || 'No company linked'}>
+                              {companyNames[0] || 'No company linked'}
+                            </div>
+                            {companyNames.length > 1 ? (
+                              <div className="line-clamp-2 text-[11px] font-medium leading-4 text-neutral-500" title={companySummary}>
+                                HR for: {companySummary}
+                              </div>
+                            ) : null}
+                            <div className={`text-[10px] font-bold ${postedJobCount > 0 ? 'text-emerald-700' : 'text-neutral-400'}`}>
+                              {postedJobCount > 0
+                                ? `${postedJobCount} posted job${postedJobCount === 1 ? '' : 's'}${companyNames.length ? ` across ${companyNames.length} linked compan${companyNames.length === 1 ? 'y' : 'ies'}` : ''}`
+                                : 'No job posts'}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-bold text-neutral-300">—</span>
+                        )}
                       </td>
                       <td className="p-3 align-middle">
                         <span className="inline-flex min-w-[70px] items-center justify-center whitespace-nowrap rounded-md bg-neutral-100 px-2.5 py-1 text-center text-[11px] font-bold uppercase tracking-wider text-neutral-700">

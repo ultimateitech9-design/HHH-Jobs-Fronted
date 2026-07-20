@@ -364,7 +364,7 @@ const ConsultancyWorkspacePage = ({ audience = 'internal' }) => {
             : 'Track meetings, quotations, requirements, candidate movement, invoices, and the next committed action.'}</p>
         </div>
         <div className="consultancy-workspace__header-actions">
-          {!internal ? <Link to="/consultancy"><Plus /> New enquiry</Link> : null}
+          {!internal ? <Link to="/job-consultant"><Plus /> New enquiry</Link> : null}
           <button type="button" onClick={() => runAction('refresh', async () => {}, 'Consultancy data refreshed.')} disabled={action === 'refresh'} title="Refresh data">
             <RefreshCw className={action === 'refresh' ? 'animate-spin' : ''} /> Refresh
           </button>
@@ -432,7 +432,7 @@ const ConsultancyWorkspacePage = ({ audience = 'internal' }) => {
               <BriefcaseBusiness />
               <h2>{internal ? 'No matching cases' : 'No consultancy case yet'}</h2>
               <p>{internal ? 'Change the filters or wait for a new enquiry.' : 'Start with a hiring brief and the case will appear here.'}</p>
-              {!internal ? <Link to="/consultancy">Request consultation <ArrowRight /></Link> : null}
+              {!internal ? <Link to="/job-consultant">Request consultation <ArrowRight /></Link> : null}
             </div>
           ) : null}
           <div className="consultancy-case-list__items">

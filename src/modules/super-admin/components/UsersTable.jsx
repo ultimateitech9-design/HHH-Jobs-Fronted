@@ -3,6 +3,43 @@ import DateTimeCell from '../../../shared/components/DateTimeCell';
 import { USER_ROLE_LABELS } from '../constants/userRoles';
 import StatusBadge from './StatusBadge';
 
+const CompanyPostingContext = ({ row }) => {
+  const isHr = ['hr', 'company_admin'].includes(String(row.role || '').toLowerCase());
+  const companyNames = row.companyRelations?.companies || row.companyNames || [];
+  const companies = Array.isArray(companyNames) ? companyNames.filter(Boolean) : [];
+  const summary = companies.join(', ');
+  const jobCount = Number(row.companyRelations?.jobCount ?? row.postedJobCount ?? 0);
+
+  if (!isHr) {
+    return (
+      <span className="inline-flex min-w-0 flex-col gap-0.5">
+        <span>{row.company || '-'}</span>
+        {row.role === 'sales' && row.salesCode ? (
+          <span className="font-mono text-[10.5px] font-semibold uppercase text-brand-600">{row.salesCode}</span>
+        ) : null}
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex min-w-0 max-w-[230px] flex-col gap-0.5">
+      <span className="truncate font-semibold text-slate-900" title={summary || 'No company linked'}>
+        {companies[0] || 'No company linked'}
+      </span>
+      {companies.length > 1 ? (
+        <span className="line-clamp-2 text-[11px] leading-4 text-slate-500" title={summary}>
+          HR for: {summary}
+        </span>
+      ) : null}
+      <span className={`text-[10.5px] font-semibold ${jobCount > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>
+        {jobCount > 0
+          ? `${jobCount} posted job${jobCount === 1 ? '' : 's'}${companies.length ? ` across ${companies.length} compan${companies.length === 1 ? 'y' : 'ies'}` : ''}`
+          : 'No job posts'}
+      </span>
+    </span>
+  );
+};
+
 const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) => {
   const columns = [
     {
@@ -28,17 +65,10 @@ const UsersTable = ({ rows = [], onDelete, onStatusChange, busyUserId = '' }) =>
     { key: 'role', label: 'Role', width: 92, cellClassName: 'text-[12px] font-medium uppercase tracking-[0.04em] text-slate-600', render: (value) => USER_ROLE_LABELS[value] || value },
     {
       key: 'company',
-      label: 'Company / Team',
-      width: 148,
+      label: 'Company / Posting Context',
+      width: 238,
       cellClassName: 'text-[12.5px] leading-5 text-slate-600',
-      render: (value, row) => (
-        <span className="inline-flex min-w-0 flex-col gap-0.5">
-          <span>{value || '-'}</span>
-          {row.role === 'sales' && row.salesCode ? (
-            <span className="font-mono text-[10.5px] font-semibold uppercase text-brand-600">{row.salesCode}</span>
-          ) : null}
-        </span>
-      )
+      render: (_, row) => <CompanyPostingContext row={row} />
     },
     {
       key: 'assignedStates',
