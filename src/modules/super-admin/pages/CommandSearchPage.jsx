@@ -28,11 +28,81 @@ const COMMAND_SEARCH_DEBOUNCE_MS = 300;
 
 const formatRole = (role = '') => USER_ROLE_LABELS[role] || String(role || '-').replace(/_/g, ' ');
 
-const formatCompanyRelation = (relation) => {
-  if (!relation?.companies?.length) return '';
-  const visibleCompanies = relation.companies.slice(0, 3).join(', ');
-  const remainingCount = Math.max(0, relation.companies.length - 3);
-  return `${visibleCompanies}${remainingCount ? ` +${remainingCount} more` : ''}`;
+const uniqueCompanyNames = (values = []) => {
+  const seen = new Set();
+
+  return values.reduce((companies, value) => {
+    const company = String(value || '').trim();
+    const key = company.toLowerCase();
+    if (!company || company === '-' || seen.has(key)) return companies;
+    seen.add(key);
+    companies.push(company);
+    return companies;
+  }, []);
+};
+
+const CompanyPostingContext = ({ row }) => {
+  const relation = row.companyRelations || {};
+  const isHr = ['hr', 'company_admin'].includes(String(row.role || '').toLowerCase());
+  const companies = uniqueCompanyNames([
+    relation.matchedCompany,
+    row.company,
+    ...(relation.postedCompanies || []),
+    ...(relation.managedCompanies || []),
+    ...(relation.companies || [])
+  ]);
+
+  if (!isHr) {
+    return <span className="text-xs font-semibold text-slate-700">{companies[0] || '-'}</span>;
+  }
+
+  const primaryCompany = companies[0] || 'No company linked';
+  const jobCount = Number(relation.jobCount || row.metrics?.jobs || 0);
+  const postedCompanyCount = Number(relation.postedCompanyCount || relation.postedCompanies?.length || 0);
+
+  return (
+    <div className="min-w-[250px] text-xs leading-5">
+      <strong className="block text-[13px] text-slate-900">{primaryCompany}</strong>
+      {companies.length ? (
+        <div className="mt-1 flex flex-wrap gap-1" aria-label={`Companies linked to ${row.name || 'HR'}`}>
+          {companies.map((company) => (
+            <span
+              key={company.toLowerCase()}
+              className={`inline-flex max-w-full rounded-md border px-2 py-0.5 text-[10.5px] font-semibold leading-4 ${company === primaryCompany
+                ? 'border-amber-300 bg-amber-50 text-amber-800'
+                : 'border-slate-200 bg-slate-50 text-slate-600'}`}
+              title={company}
+            >
+              {company}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      <span className={`mt-1 block text-[10.5px] font-semibold ${jobCount ? 'text-emerald-700' : 'text-slate-400'}`}>
+        {jobCount
+          ? `${jobCount} posted job${jobCount === 1 ? '' : 's'}${postedCompanyCount ? ` across ${postedCompanyCount} posting compan${postedCompanyCount === 1 ? 'y' : 'ies'}` : ''}`
+          : 'No job posts found'}
+      </span>
+    </div>
+  );
+};
+
+const ProfileContext = ({ row }) => {
+  const isHr = ['hr', 'company_admin'].includes(String(row.role || '').toLowerCase());
+  const profileLabel = isHr
+    ? (row.profile?.verified ? 'Verified HR profile' : 'HR verification pending')
+    : (row.profile?.headline || row.recordType || '-');
+
+  return (
+    <div className="min-w-0 text-xs leading-5 text-slate-600">
+      <strong className="block text-slate-800">{profileLabel}</strong>
+      <span className="block break-words">{row.profile?.location || '-'}</span>
+      <span className="block break-words">{row.recordType || (row.profile?.verified ? 'Verified profile' : 'Verification not complete')}</span>
+      {row.employee?.code && row.employee.code !== '-' ? (
+        <span className="block font-mono text-[11px] text-slate-400">{row.employee.code}</span>
+      ) : null}
+    </div>
+  );
 };
 
 const getSupportContextPath = (portalBasePath, userId, view) => (
@@ -163,8 +233,14 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
     {
       key: 'role',
       label: 'Role',
-      width: 130,
+      width: 105,
       render: (value) => <StatusBadge value={formatRole(value)} />
+    },
+    {
+      key: 'company',
+      label: 'Companies / Posting Context',
+      width: 320,
+      render: (_value, row) => <CompanyPostingContext row={row} />
     },
     {
       key: 'status',
@@ -181,27 +257,8 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
     {
       key: 'profile',
       label: 'Profile Context',
-      width: 260,
-      render: (_value, row) => (
-        <div className="min-w-0 text-xs leading-5 text-slate-600">
-          <strong className="block truncate text-slate-800">{row.profile?.headline || row.company || '-'}</strong>
-          {row.companyRelations?.companies?.length ? (
-            <span className="block truncate text-slate-700">
-              HR for: {formatCompanyRelation(row.companyRelations)}
-            </span>
-          ) : null}
-          <span className="block truncate">{row.profile?.location || '-'}</span>
-          <span className="block truncate">{row.recordType || (row.profile?.verified ? 'Verified profile' : 'Verification not complete')}</span>
-          {row.companyRelations?.jobCount ? (
-            <span className="block truncate text-[11px] font-semibold text-emerald-700">
-              {row.companyRelations.jobCount} posted job{row.companyRelations.jobCount === 1 ? '' : 's'} across linked companies
-            </span>
-          ) : null}
-          {row.employee?.code && row.employee.code !== '-' ? (
-            <span className="block truncate font-mono text-[11px] text-slate-400">{row.employee.code}</span>
-          ) : null}
-        </div>
-      )
+      width: 220,
+      render: (_value, row) => <ProfileContext row={row} />
     },
     {
       key: 'metrics',
@@ -349,7 +406,7 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
               : 'Search with at least one filter to inspect a user support context.'}
           </p>
         ) : null}
-        <DataTable columns={columns} rows={results} compact fitOnDesktop />
+        <DataTable columns={columns} rows={results} compact />
       </section>
     </div>
   );
