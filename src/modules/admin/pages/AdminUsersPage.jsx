@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { 
+import {
   FiUsers, 
   FiSearch, 
-  FiFilter, 
   FiShield, 
   FiLock, 
   FiUserX, 
@@ -13,7 +12,8 @@ import {
   FiKey, 
   FiChevronDown,
   FiEye,
-  FiEyeOff
+  FiEyeOff,
+  FiX
 } from 'react-icons/fi';
 import {
   getAdminUsers,
@@ -25,6 +25,7 @@ import { getDashboardPathByRole } from '../../../utils/auth';
 import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
 import Pagination from '../../../shared/components/Pagination';
 import DateTimeCell from '../../../shared/components/DateTimeCell';
+import CompanyContextSummary from '../../../shared/components/CompanyContextSummary';
 import useDebouncedValue from '../../../shared/hooks/useDebouncedValue';
 import {
   getManagementDisplayId
@@ -32,6 +33,18 @@ import {
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERS_PAGE_SIZE = 10;
+
+const getUserInitials = (name = '') => {
+  const initials = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
+
+  return initials || 'U';
+};
 
 const initialFilters = {
   role: 'all',
@@ -101,6 +114,7 @@ const AdminUsersPage = () => {
   const [busyAction, setBusyAction] = useState('');
   const [managedPage, setManagedPage] = useState(1);
   const [securityPage, setSecurityPage] = useState(1);
+  const [showProvisionForm, setShowProvisionForm] = useState(false);
   const [showAuthKey, setShowAuthKey] = useState(false);
   const [accountFormTouched, setAccountFormTouched] = useState({ email: false, password: false });
   const [accountForm, setAccountForm] = useState({
@@ -233,6 +247,7 @@ const AdminUsersPage = () => {
         department: 'Operations'
       });
       setAccountFormTouched({ email: false, password: false });
+      setShowProvisionForm(false);
       setManagedPage(1);
       setSecurityPage(1);
       setMessage(`${created.name || accountForm.name} account ${getManagementDisplayId(created.id, created.role || accountForm.role)} created for ${created.role || accountForm.role}. Login will open ${getDashboardPathByRole(created.role || accountForm.role)}.`);
@@ -276,28 +291,28 @@ const AdminUsersPage = () => {
         value: String(totalUsers),
         helper: `${hrUsers.length} HR accounts on this page`,
         icon: <FiUsers className="text-blue-500" />,
-        bg: 'bg-blue-50'
+        tone: 'blue'
       },
       {
         label: 'HR Security Approvals',
         value: String(pendingHr),
         helper: 'Requires admin review',
         icon: <FiShield className={pendingHr > 0 ? "text-amber-500" : "text-emerald-500"} />,
-        bg: pendingHr > 0 ? 'bg-amber-50' : 'bg-emerald-50'
+        tone: pendingHr > 0 ? 'amber' : 'green'
       },
       {
         label: 'Temporarily Blocked',
         value: String(blocked),
         helper: 'Restricted access',
         icon: <FiLock className="text-amber-500" />,
-        bg: 'bg-amber-50'
+        tone: 'amber'
       },
       {
         label: 'Banned Accounts',
         value: String(banned),
         helper: 'Permanently suspended',
         icon: <FiUserX className="text-red-500" />,
-        bg: 'bg-red-50'
+        tone: 'red'
       }
     ];
   }, [users, totalUsers]);
@@ -315,6 +330,10 @@ const AdminUsersPage = () => {
     () => managedAccounts.slice((managedPage - 1) * USERS_PAGE_SIZE, managedPage * USERS_PAGE_SIZE),
     [managedAccounts, managedPage]
   );
+  const hasActiveSecurityFilters = filters.role !== 'all'
+    || filters.status !== 'all'
+    || filters.hrClearance !== 'all'
+    || Boolean(String(filters.search || '').trim());
 
   useEffect(() => {
     if (securityPage > securityTotalPages) {
@@ -399,12 +418,17 @@ const AdminUsersPage = () => {
   return (
     <div className="admin-ops-page">
       
-      <header className="admin-ops-header">
-        <div>
+      <header className="admin-ops-header admin-users-header">
+        <div className="admin-users-header__copy">
+          <span className="admin-ops-kicker"><FiShield /> Access governance</span>
           <h1 className="admin-ops-title">
             Identity & Access
           </h1>
           <p className="admin-ops-subtitle">Manage platform users, HR verifications, and internal workforce accounts.</p>
+        </div>
+        <div className="admin-users-header__meta" aria-label="Directory summary">
+          <span><strong>{totalUsers}</strong> platform records</span>
+          <span><strong>{managedAccounts.length}</strong> workforce accounts</span>
         </div>
       </header>
 
@@ -422,13 +446,13 @@ const AdminUsersPage = () => {
       {/* Stats Grid */}
       <section className="admin-ops-stats">
         {stats.map((card) => (
-          <article key={card.label} className="admin-ops-stat-card">
-            <div className={`admin-ops-stat-card__icon ${card.bg}`}>
+          <article key={card.label} className="admin-ops-stat-card" data-tone={card.tone}>
+            <div className="admin-ops-stat-card__icon">
               {card.icon}
             </div>
-            <div>
-              <h3 className="admin-ops-stat-card__value">{card.value}</h3>
+            <div className="admin-ops-stat-card__copy">
               <p className="admin-ops-stat-card__label">{card.label}</p>
+              <h3 className="admin-ops-stat-card__value">{card.value}</h3>
               <p className="admin-ops-stat-card__helper">{card.helper}</p>
             </div>
           </article>
@@ -436,41 +460,59 @@ const AdminUsersPage = () => {
       </section>
 
       {/* Internal Workforce Management */}
-      <section className="admin-ops-panel">
+      <section className="admin-ops-panel admin-workforce-panel">
         <div className="admin-ops-panel-header">
-          <div>
+          <div className="admin-panel-heading">
+            <span className="admin-panel-eyebrow">Internal access</span>
             <h2 className="admin-ops-panel-title">
               <FiKey className="text-brand-500" /> Internal Workforce Accounts
             </h2>
-            <p className="admin-ops-panel-note">Provision access credentials for Data Entry, Accounts, and Support teams.</p>
+            <p className="admin-ops-panel-note">Provision access credentials for Data Entry, Accounts, Support, and Sales teams.</p>
           </div>
+          <button
+            type="button"
+            className={`admin-toolbar-button${showProvisionForm ? ' admin-toolbar-button--active' : ''}`}
+            onClick={() => setShowProvisionForm((current) => !current)}
+            aria-expanded={showProvisionForm}
+          >
+            {showProvisionForm ? <FiX /> : <FiPlus />}
+            {showProvisionForm ? 'Close form' : 'New account'}
+          </button>
         </div>
 
-        <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-neutral-100">
-          
-          {/* Create Form */}
-          <div className="w-full shrink-0 bg-white p-5 lg:w-1/3 md:p-6">
-            <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-neutral-400">Create New Identity</h3>
-            <form className="space-y-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Full Name</label>
+        {showProvisionForm ? (
+          <form
+            className="admin-provision-panel"
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleCreateManagedAccount();
+            }}
+          >
+            <div className="admin-provision-panel__heading">
+              <span>Create internal identity</span>
+              <small>Credentials and workspace access are applied immediately.</small>
+            </div>
+
+            <div className="admin-provision-panel__grid">
+              <label className="admin-form-field">
+                <span>Full name</span>
                 <input
                   value={accountForm.name}
-                  placeholder="Employee Name"
-                  onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
-                  className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-sm font-medium focus:ring-2 focus:ring-brand-500"
+                  placeholder="Employee name"
+                  onChange={(event) => setAccountForm({ ...accountForm, name: event.target.value })}
+                  className="admin-form-input"
                 />
-              </div>
+              </label>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                  <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Email</label>
+              <label className="admin-form-field">
+                <span>Email</span>
+                <div>
                   <input
                     type="email"
                     value={accountForm.email}
                     placeholder="name@company.com"
-                    onChange={(e) => {
-                      setAccountForm({ ...accountForm, email: e.target.value });
+                    onChange={(event) => {
+                      setAccountForm({ ...accountForm, email: event.target.value });
                       setAccountFormTouched((current) => ({ ...current, email: true }));
                       if (error) setError('');
                     }}
@@ -478,19 +520,34 @@ const AdminUsersPage = () => {
                     autoComplete="email"
                     inputMode="email"
                     aria-invalid={Boolean(normalizedAccountEmail) && !emailRegex.test(normalizedAccountEmail)}
-                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-sm font-medium focus:ring-2 focus:ring-brand-500"
+                    className="admin-form-input"
                   />
-                  {showEmailValidationMessage ? <p className="text-[11px] font-semibold text-rose-600">{emailValidationMessage}</p> : null}
+                  {showEmailValidationMessage ? <p className="admin-form-error">{emailValidationMessage}</p> : null}
                 </div>
-                <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                  <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Auth Key</label>
+              </label>
+
+              <label className="admin-form-field">
+                <span>Phone</span>
+                <input
+                  type="tel"
+                  value={accountForm.phone}
+                  placeholder="+91 98765 43210"
+                  onChange={(event) => setAccountForm({ ...accountForm, phone: event.target.value })}
+                  autoComplete="tel"
+                  className="admin-form-input"
+                />
+              </label>
+
+              <label className="admin-form-field">
+                <span>Auth key</span>
+                <div>
                   <div className="relative">
                     <input
                       type={showAuthKey ? 'text' : 'password'}
                       value={accountForm.password}
                       placeholder="Strong auth key"
-                      onChange={(e) => {
-                        setAccountForm({ ...accountForm, password: e.target.value });
+                      onChange={(event) => {
+                        setAccountForm({ ...accountForm, password: event.target.value });
                         setAccountFormTouched((current) => ({ ...current, password: true }));
                         if (error) setError('');
                       }}
@@ -498,7 +555,7 @@ const AdminUsersPage = () => {
                       autoComplete="new-password"
                       minLength={8}
                       aria-invalid={Boolean(authKeyPolicyError)}
-                      className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 pr-10 text-sm font-medium focus:ring-2 focus:ring-brand-500"
+                      className="admin-form-input pr-10"
                     />
                     <button
                       type="button"
@@ -510,384 +567,328 @@ const AdminUsersPage = () => {
                       {showAuthKey ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                     </button>
                   </div>
-                  {showAuthKeyValidationMessage ? <p className="text-[11px] font-semibold text-rose-600">{authKeyValidationMessage}</p> : null}
+                  {showAuthKeyValidationMessage ? <p className="admin-form-error">{authKeyValidationMessage}</p> : null}
                 </div>
-              </div>
+              </label>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                  <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Role Assignment</label>
-                  <div className="relative">
-                    <select 
-                      value={accountForm.role} 
-                      onChange={(e) => setAccountForm({ ...accountForm, role: e.target.value })}
-                      className="w-full appearance-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-500"
-                    >
-                      {ADMIN_MANAGED_ROLE_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
-                    <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
-                  </div>
+              <label className="admin-form-field">
+                <span>Role assignment</span>
+                <div className="relative">
+                  <select
+                    value={accountForm.role}
+                    onChange={(event) => setAccountForm({ ...accountForm, role: event.target.value })}
+                    className="admin-form-select"
+                  >
+                    {ADMIN_MANAGED_ROLE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  <FiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                 </div>
-                <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                  <label className="text-xs font-bold text-neutral-700 uppercase tracking-wide">Department</label>
-                  <div className="relative">
-                    <select 
-                      value={accountForm.department} 
-                      onChange={(e) => setAccountForm({ ...accountForm, department: e.target.value })}
-                      className="w-full appearance-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-500"
-                    >
-                      <option value="Operations">Operations</option>
-                      <option value="Customer Support">Customer Support</option>
-                      <option value="Finance">Finance</option>
-                      <option value="Sales">Sales</option>
-                    </select>
-                    <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
+              </label>
 
-              <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-800">
+              <label className="admin-form-field">
+                <span>Department</span>
+                <div className="relative">
+                  <select
+                    value={accountForm.department}
+                    onChange={(event) => setAccountForm({ ...accountForm, department: event.target.value })}
+                    className="admin-form-select"
+                  >
+                    <option value="Operations">Operations</option>
+                    <option value="Customer Support">Customer Support</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Sales">Sales</option>
+                  </select>
+                  <FiChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                </div>
+              </label>
+            </div>
+
+            <div className="admin-provision-panel__footer">
+              <div className="admin-provision-panel__scope">
                 State scope is fixed by Super Admin. New dashboard IDs inherit your assigned state automatically.
               </div>
-
-              <button 
-                type="button" 
-                onClick={handleCreateManagedAccount}
-                disabled={busyAction === 'create-managed-account'}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <FiPlus /> {busyAction === 'create-managed-account' ? 'Provisioning...' : 'Provision Account'}
+              <button type="submit" disabled={busyAction === 'create-managed-account'} className="admin-primary-action">
+                <FiPlus /> {busyAction === 'create-managed-account' ? 'Provisioning...' : 'Provision account'}
               </button>
-            </form>
-          </div>
-
-          {/* Managed Accounts Table */}
-          <div className="w-full overflow-x-auto bg-neutral-50/30 p-0 custom-scrollbar lg:w-2/3">
-            <table className="w-full min-w-[640px] border-collapse text-left">
-              <thead>
-                <tr className="bg-neutral-100/50">
-                  <th className="border-b border-neutral-200 p-3 pl-5 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Employee</th>
-                  <th className="border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Workspace</th>
-                  <th className="border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Dept</th>
-                  <th className="border-b border-neutral-200 p-3 pr-5 text-right text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Access</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 bg-white">
-                {managedAccounts.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" className="p-10 text-center text-sm font-medium text-neutral-500">
-                      No internal workforce accounts provisioned yet.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedManagedAccounts.map((acc) => (
-                    <tr key={acc.id} className="hover:bg-neutral-50 transition-colors">
-                      <td className="p-3 pl-5 align-middle">
-                        <div className="text-sm font-bold text-primary">{acc.name}</div>
-                        <div className="font-medium text-neutral-500 text-xs">{acc.email}</div>
-                        <div className="mt-1 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
-                          ID {getManagementDisplayId(acc.id, acc.role)}
-                        </div>
-                        {Array.isArray(acc.assignedStates) && acc.assignedStates.length ? (
-                          <div className="mt-1 text-[11px] font-semibold text-neutral-500">
-                            {acc.assignedStates.join(', ')}
-                          </div>
-                        ) : null}
-                        {acc.salesCode ? (
-                          <div className="mt-1 font-mono text-[11px] font-semibold text-brand-700">
-                            Code {acc.salesCode}
-                          </div>
-                        ) : null}
-                      </td>
-                      <td className="p-3">
-                        <span className="inline-block rounded-md border border-brand-100 bg-brand-50 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-brand-700">
-                          {acc.role}
-                        </span>
-                      </td>
-                      <td className="p-3 text-sm font-bold text-neutral-600">{acc.department}</td>
-                      <td className="p-3 pr-5 text-right">
-                        <button 
-                          onClick={() => handleDeleteManagedAccount(acc.id)}
-                          className="rounded-lg border border-transparent p-1.5 text-red-500 transition-colors hover:border-red-100 hover:bg-red-50 hover:text-red-700"
-                          title="Revoke Access"
-                        >
-                          <FiTrash2 size={15} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-            <div className="border-t border-neutral-100 bg-white px-5 py-3">
-              <Pagination page={managedPage} totalPages={managedTotalPages} onChange={setManagedPage} />
             </div>
-          </div>
+          </form>
+        ) : null}
 
+        <div className="admin-workforce-directory" role="table" aria-label="Internal workforce accounts">
+          <div className="admin-workforce-directory__head" role="row">
+            <span>Employee</span>
+            <span>Access profile</span>
+            <span>Department & scope</span>
+            <span className="text-right">Actions</span>
+          </div>
+          {managedAccounts.length === 0 ? (
+            <div className="admin-directory-empty">No internal workforce accounts provisioned yet.</div>
+          ) : paginatedManagedAccounts.map((acc) => (
+            <article key={acc.id} className="admin-workforce-row" role="row">
+              <div className="admin-workforce-row__identity" role="cell">
+                <strong>{acc.name}</strong>
+                <span>{acc.email}</span>
+                <small>ID {getManagementDisplayId(acc.id, acc.role)}</small>
+              </div>
+              <div className="admin-workforce-row__access" role="cell">
+                <span className="admin-access-chip">{acc.role}</span>
+                {acc.salesCode ? <small>Code {acc.salesCode}</small> : null}
+              </div>
+              <div className="admin-workforce-row__scope" role="cell">
+                <strong>{acc.department || 'Operations'}</strong>
+                <span>{Array.isArray(acc.assignedStates) && acc.assignedStates.length ? acc.assignedStates.join(', ') : 'Assigned operational scope'}</span>
+              </div>
+              <div className="admin-workforce-row__actions" role="cell">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteManagedAccount(acc.id)}
+                  className="admin-icon-button admin-icon-button--danger"
+                  title="Revoke access"
+                  aria-label={`Revoke access for ${acc.name}`}
+                >
+                  <FiTrash2 size={15} />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="admin-ops-pagination admin-ops-pagination--compact">
+          <p>{managedAccounts.length} workforce account{managedAccounts.length === 1 ? '' : 's'}</p>
+          <Pagination page={managedPage} totalPages={managedTotalPages} onChange={setManagedPage} />
         </div>
       </section>
 
       {/* Public Platform Users */}
-      <section className="admin-ops-panel min-h-[420px]">
-        <div className="admin-ops-panel-header">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
+      <section className="admin-ops-panel admin-security-panel min-h-[420px]">
+        <div className="admin-security-panel__header">
+          <div className="admin-security-panel__heading">
+            <div className="admin-panel-heading">
+              <span className="admin-panel-eyebrow">Public directory</span>
               <h2 className="admin-ops-panel-title">
                 <FiUsers className="text-brand-500" /> Platform Security Database
               </h2>
-              <p className="admin-ops-panel-note">Audit trail of all public users (Students & Recruiters).</p>
+              <p className="admin-ops-panel-note">Review public identities, employer context, access state, and account activity.</p>
             </div>
+            <span className={`admin-directory-state${loading ? ' admin-directory-state--loading' : ''}`} role="status">
+              {loading ? 'Updating records' : `${totalUsers} records`}
+            </span>
+          </div>
 
-            {/* Filters */}
-            <div className="admin-ops-filterbar">
-              <div className="relative w-full sm:w-auto">
+          <div className="admin-security-toolbar">
+            <label className="admin-security-search">
+              <span className="sr-only">Search platform users</span>
+              <FiSearch aria-hidden="true" />
+              <input
+                value={filters.search}
+                placeholder="Search name, email, phone, company, or role"
+                onChange={(event) => setFilters({ ...filters, search: event.target.value })}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    setSecurityPage(1);
+                    loadSecurityUsers({ ...filters, search: event.currentTarget.value }, 1);
+                  }
+                }}
+                list="admin-security-user-suggestions"
+                autoComplete="off"
+              />
+              <datalist id="admin-security-user-suggestions">
+                {securitySearchSuggestions.map((suggestion) => (
+                  <option key={suggestion} value={suggestion} />
+                ))}
+              </datalist>
+            </label>
+
+            <div className="admin-security-toolbar__filters">
+              <label className="admin-filter-field">
+                <span>Role</span>
                 <select 
                   value={filters.role} 
                   onChange={(e) => setFilters({ ...filters, role: e.target.value })}
-                  className="w-full appearance-none rounded-xl border border-neutral-200 bg-white py-2 pl-3 pr-8 text-sm font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500 sm:min-w-[145px]"
                 >
                   {ADMIN_USER_ROLE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
-                <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
-              </div>
+                <FiChevronDown aria-hidden="true" />
+              </label>
 
-              <div className="relative w-full sm:w-auto">
+              <label className="admin-filter-field">
+                <span>Status</span>
                 <select 
                   value={filters.status} 
                   onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                  className="w-full appearance-none rounded-xl border border-neutral-200 bg-white py-2 pl-3 pr-8 text-sm font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500 sm:min-w-[145px]"
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
                   <option value="blocked">Blocked</option>
                   <option value="banned">Banned</option>
                 </select>
-                <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
-              </div>
+                <FiChevronDown aria-hidden="true" />
+              </label>
 
-              <div className="relative w-full sm:w-auto">
+              <label className="admin-filter-field admin-filter-field--clearance">
+                <span>HR clearance</span>
                 <select
                   value={filters.hrClearance}
                   onChange={(e) => setFilters({ ...filters, hrClearance: e.target.value })}
-                  className="w-full appearance-none rounded-xl border border-neutral-200 bg-white py-2 pl-3 pr-8 text-sm font-bold text-neutral-700 shadow-sm focus:ring-2 focus:ring-brand-500 sm:min-w-[160px]"
                 >
                   <option value="all">All HR Clearance</option>
                   <option value="verified">Verified</option>
                   <option value="pending">Pending</option>
                 </select>
-                <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
-              </div>
+                <FiChevronDown aria-hidden="true" />
+              </label>
 
-              <div className="relative w-full flex-1 sm:min-w-[200px]">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-                <input
-                  value={filters.search}
-                  placeholder="Search by name, email, role, or status"
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      setSecurityPage(1);
-                      loadSecurityUsers({ ...filters, search: e.currentTarget.value }, 1);
-                    }
-                  }}
-                  list="admin-security-user-suggestions"
-                  autoComplete="off"
-                  className="w-full rounded-xl border border-neutral-200 bg-white py-2 pl-9 pr-3 text-sm font-medium shadow-sm focus:ring-2 focus:ring-brand-500"
-                />
-                <datalist id="admin-security-user-suggestions">
-                  {securitySearchSuggestions.map((suggestion) => (
-                    <option key={suggestion} value={suggestion} />
-                  ))}
-                </datalist>
-              </div>
-
-              <button 
+              <button
+                type="button"
+                className="admin-filter-reset"
+                disabled={!hasActiveSecurityFilters}
                 onClick={() => {
+                  setFilters(initialFilters);
                   setSecurityPage(1);
-                  loadSecurityUsers({ ...filters, search: deferredSearch }, 1);
                 }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-500 sm:w-auto"
+                title="Clear all filters"
               >
-                <FiFilter /> Apply
+                <FiX aria-hidden="true" /> Clear
               </button>
             </div>
           </div>
         </div>
 
-        <div className="admin-ops-table-wrap custom-scrollbar">
-          {loading ? (
-             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
-               <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
-             </div>
-          ) : null}
+        <div className={`admin-user-directory${loading ? ' is-loading' : ''}`} role="table" aria-label="Platform users" aria-busy={loading}>
+          {loading ? <span className="admin-directory-progress" aria-hidden="true" /> : null}
+          <div className="admin-user-directory__head" role="row">
+            <span>Account</span>
+            <span>Company / posting context</span>
+            <span>Access</span>
+            <span>Activity</span>
+            <span>Security controls</span>
+          </div>
 
-          <table className="w-full min-w-[1580px] border-collapse text-left xl:min-w-[1640px]">
-            <thead>
-              <tr className="bg-neutral-50">
-                <th className="border-b border-neutral-200 p-3 pl-5 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Account Identity</th>
-                <th className="w-[145px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Contact</th>
-                <th className="w-[270px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Company / Posting Context</th>
-                <th className="w-[118px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">System Role</th>
-                <th className="w-[118px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Auth Status</th>
-                <th className="w-[126px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">HR Clearance</th>
-                <th className="w-[150px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Onboarding</th>
-                <th className="w-[150px] border-b border-neutral-200 p-3 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Last Active</th>
-                <th className="min-w-[280px] border-b border-neutral-200 p-3 pr-5 text-right text-[11px] font-black uppercase tracking-[0.18em] text-neutral-400">Security Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 bg-white">
-              {filteredSecurityUsers.length === 0 ? (
-                <tr>
-                  <td colSpan="9" className="p-10 text-center text-sm font-medium text-neutral-500">
-                    No users matched the current security filters.
-                  </td>
-                </tr>
-              ) : (
-                paginatedSecurityUsers.map((user) => {
-                  const normalizedRole = String(user.role || '').toLowerCase();
-                  const isHr = normalizedRole === 'hr' || normalizedRole === 'company_admin';
-                  const relationCompanies = user.companyRelations?.companies || user.company_relations?.companies || user.companyNames || user.company_names || [];
-                  const companyNames = [...new Set(
-                    (Array.isArray(relationCompanies) ? relationCompanies : [])
-                      .map((value) => String(value || '').trim())
-                      .filter(Boolean)
-                  )];
-                  const fallbackCompany = String(user.company || '').trim();
-                  if (isHr && fallbackCompany && !['employer', 'hhh jobs'].includes(fallbackCompany.toLowerCase()) && !companyNames.includes(fallbackCompany)) {
-                    companyNames.unshift(fallbackCompany);
-                  }
-                  const postedJobCount = Number(user.companyRelations?.jobCount ?? user.company_relations?.jobCount ?? user.postedJobCount ?? user.posted_job_count ?? 0);
-                  const companySummary = companyNames.join(', ');
-                  const isStatusBusy = busyAction === `status:${user.id}`;
-                  const isApprovalBusy = busyAction === `approval:${user.id}`;
-                  
-                  return (
-                    <tr key={user.id} className="group transition-colors hover:bg-neutral-50/50">
-                      <td className="p-3 pl-5">
-                        <div className="text-sm font-bold text-primary">{user.name || 'Unknown'}</div>
-                        <div className="font-medium text-neutral-500 text-xs">{user.email || 'No email'}</div>
-                      </td>
-                      <td className="p-3 align-middle text-xs font-semibold text-neutral-600">
-                        {user.contactNumber || user.phone || user.mobile || '-'}
-                      </td>
-                      <td className="p-3 align-middle">
-                        {isHr ? (
-                          <div className="max-w-[250px] space-y-0.5">
-                            <div className="truncate text-xs font-bold text-primary" title={companySummary || 'No company linked'}>
-                              {companyNames[0] || 'No company linked'}
-                            </div>
-                            {companyNames.length > 1 ? (
-                              <div className="line-clamp-2 text-[11px] font-medium leading-4 text-neutral-500" title={companySummary}>
-                                HR for: {companySummary}
-                              </div>
-                            ) : null}
-                            <div className={`text-[10px] font-bold ${postedJobCount > 0 ? 'text-emerald-700' : 'text-neutral-400'}`}>
-                              {postedJobCount > 0
-                                ? `${postedJobCount} posted job${postedJobCount === 1 ? '' : 's'}${companyNames.length ? ` across ${companyNames.length} linked compan${companyNames.length === 1 ? 'y' : 'ies'}` : ''}`
-                                : 'No job posts'}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-xs font-bold text-neutral-300">—</span>
-                        )}
-                      </td>
-                      <td className="p-3 align-middle">
-                        <span className="inline-flex min-w-[70px] items-center justify-center whitespace-nowrap rounded-md bg-neutral-100 px-2.5 py-1 text-center text-[11px] font-bold uppercase tracking-wider text-neutral-700">
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="p-3 align-middle">
-                        <span className={`inline-flex min-w-[82px] items-center justify-center whitespace-nowrap rounded-md border px-2.5 py-1 text-center text-[10px] font-black uppercase tracking-wider ${getStatusBadge(user.status || 'active')}`}>
-                          {user.status || 'Active'}
-                        </span>
-                      </td>
-                      <td className="p-3 align-middle">
-                        {isHr ? (
-                          <span className={`inline-flex min-w-[92px] items-center justify-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-center text-[10px] font-black uppercase tracking-wider ${user.is_hr_approved ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                            {user.is_hr_approved ? <><FiCheckCircle /> Verified</> : <><FiShield /> Pending</>}
-                          </span>
-                        ) : (
-                          <span className="text-neutral-300 text-xs font-bold">—</span>
-                        )}
-                      </td>
-                      <td className="p-3 align-middle">
-                        <DateTimeCell value={user.onboardingDate || user.createdAt || user.created_at} />
-                      </td>
-                      <td className="p-3 align-middle">
-                        <DateTimeCell value={user.lastActiveAt || user.last_login_at} emptyLabel="Never logged in" />
-                      </td>
-                      <td className="p-3 pr-5 align-middle">
-                        <div className="flex flex-nowrap items-center justify-end gap-2 whitespace-nowrap opacity-100 transition-opacity md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto">
-                          {/* HR Verification Toggle */}
-                          {isHr && (
-                            <button
-                              disabled={isApprovalBusy}
-                              onClick={() => handleHrApproval(user.id, !user.is_hr_approved)}
-                              className={`whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
-                                user.is_hr_approved 
-                                  ? 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50' 
-                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                              } disabled:opacity-50`}
-                            >
-                              {isApprovalBusy ? '...' : user.is_hr_approved ? 'Revoke HR' : 'Verify HR'}
-                            </button>
-                          )}
-                          
-                          {/* Generic Status Actions */}
-                          <div className="flex flex-nowrap items-center rounded-lg border border-neutral-200 bg-neutral-100 p-0.5">
-                             <button
-                               disabled={isStatusBusy}
-                               onClick={() => handleStatusChange(user.id, 'active')}
-                               className={`whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold transition-all ${user.status === 'active' ? 'bg-white text-primary shadow-sm' : 'text-neutral-500 hover:text-neutral-700'} disabled:opacity-50`}
-                             >
-                               Active
-                             </button>
-                             <button
-                               disabled={isStatusBusy}
-                               onClick={() => handleStatusChange(user.id, 'banned')}
-                               className={`whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-bold transition-all ${user.status === 'banned' ? 'bg-red-100 text-red-800 shadow-sm' : 'text-neutral-500 hover:text-red-700'} disabled:opacity-50`}
-                             >
-                               Ban
-                             </button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+          {filteredSecurityUsers.length === 0 ? (
+            <div className="admin-directory-empty">No users matched the current security filters.</div>
+          ) : paginatedSecurityUsers.map((user) => {
+            const normalizedRole = String(user.role || '').toLowerCase();
+            const isHr = normalizedRole === 'hr' || normalizedRole === 'company_admin';
+            const relationCompanies = user.companyRelations?.companies || user.company_relations?.companies || user.companyNames || user.company_names || [];
+            const companyNames = [...new Set(
+              (Array.isArray(relationCompanies) ? relationCompanies : [])
+                .map((value) => String(value || '').trim())
+                .filter(Boolean)
+            )];
+            const fallbackCompany = String(user.company || '').trim();
+            if (isHr && fallbackCompany && !['employer', 'hhh jobs'].includes(fallbackCompany.toLowerCase()) && !companyNames.includes(fallbackCompany)) {
+              companyNames.unshift(fallbackCompany);
+            }
+            const relation = user.companyRelations || user.company_relations || {};
+            const postedJobCount = Number(relation.jobCount ?? user.postedJobCount ?? user.posted_job_count ?? 0);
+            const postingCompanyCount = Number(relation.postedCompanyCount ?? relation.postedCompanies?.length ?? companyNames.length ?? 0);
+            const isStatusBusy = busyAction === `status:${user.id}`;
+            const isApprovalBusy = busyAction === `approval:${user.id}`;
+
+            return (
+              <article key={user.id} className="admin-user-row" role="row">
+                <div className="admin-user-row__account" data-label="Account" role="cell">
+                  <span className="admin-user-avatar" aria-hidden="true">{getUserInitials(user.name)}</span>
+                  <div className="admin-user-row__account-copy">
+                    <strong>{user.name || 'Unknown'}</strong>
+                    <span title={user.email || 'No email'}>{user.email || 'No email'}</span>
+                    <small>{user.contactNumber || user.phone || user.mobile || 'No contact number'}</small>
+                  </div>
+                </div>
+
+                <div className="admin-user-row__company" data-label="Company / posting context" role="cell">
+                  {isHr ? (
+                    <CompanyContextSummary
+                      companies={companyNames}
+                      primaryCompany={companyNames[0]}
+                      jobCount={postedJobCount}
+                      postingCompanyCount={postingCompanyCount}
+                    />
+                  ) : (
+                    <span className="admin-muted-value">Not applicable</span>
+                  )}
+                </div>
+
+                <div className="admin-user-row__access" data-label="Access" role="cell">
+                  <div className="admin-access-stack">
+                    <span className="admin-role-chip">{user.role}</span>
+                    <span className={`admin-status-chip border ${getStatusBadge(user.status || 'active')}`}>{user.status || 'Active'}</span>
+                    {isHr ? (
+                      <span className={`admin-status-chip border ${user.is_hr_approved ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+                        {user.is_hr_approved ? <><FiCheckCircle /> Verified HR</> : <><FiShield /> HR pending</>}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="admin-user-row__activity" data-label="Activity" role="cell">
+                  <div className="admin-date-pair">
+                    <span>Onboarded</span>
+                    <DateTimeCell
+                      value={user.onboardingDate || user.createdAt || user.created_at}
+                      className="admin-date-value"
+                      dateClassName="admin-date-value__date"
+                      timeClassName="admin-date-value__time"
+                    />
+                  </div>
+                  <div className="admin-date-pair">
+                    <span>Last active</span>
+                    <DateTimeCell
+                      value={user.lastActiveAt || user.last_login_at}
+                      emptyLabel="Never logged in"
+                      className="admin-date-value"
+                      dateClassName="admin-date-value__date"
+                      timeClassName="admin-date-value__time"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-user-row__actions" data-label="Security controls" role="cell">
+                  {isHr ? (
+                    <button
+                      type="button"
+                      disabled={isApprovalBusy}
+                      onClick={() => handleHrApproval(user.id, !user.is_hr_approved)}
+                      className="admin-control-button"
+                    >
+                      {user.is_hr_approved ? <FiShield /> : <FiCheckCircle />}
+                      {isApprovalBusy ? 'Updating...' : user.is_hr_approved ? 'Revoke HR' : 'Verify HR'}
+                    </button>
+                  ) : null}
+                  <label className="admin-status-control">
+                    <span className="sr-only">Account status for {user.name || 'user'}</span>
+                    <select
+                      value={user.status || 'active'}
+                      disabled={isStatusBusy}
+                      onChange={(event) => handleStatusChange(user.id, event.target.value)}
+                    >
+                      <option value="active">Active</option>
+                      <option value="blocked">Blocked</option>
+                      <option value="banned">Banned</option>
+                    </select>
+                    <FiChevronDown aria-hidden="true" />
+                  </label>
+                </div>
+              </article>
+            );
+          })}
         </div>
         <div className="admin-ops-pagination">
-          <p className="text-xs font-semibold text-neutral-500">
-            Showing <span className="text-neutral-800">{paginatedSecurityUsers.length}</span> of <span className="text-neutral-800">{totalUsers}</span> users
+          <p className="admin-pagination-summary">
+            Showing <strong>{paginatedSecurityUsers.length}</strong> of <strong>{totalUsers}</strong> users
           </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSecurityPage((current) => Math.max(1, current - 1))}
-              disabled={securityPage <= 1}
-              className="btn-secondary"
-            >
-              Previous
-            </button>
-            <p className="text-xs font-semibold text-neutral-500">
-              Page <span className="text-neutral-800">{securityPage}</span> of <span className="text-neutral-800">{securityTotalPages}</span>
-            </p>
-            <button
-              type="button"
-              onClick={() => setSecurityPage((current) => Math.min(securityTotalPages, current + 1))}
-              disabled={securityPage >= securityTotalPages}
-              className="btn-secondary"
-            >
-              Next
-            </button>
-          </div>
+          <Pagination
+            page={securityPage}
+            totalPages={securityTotalPages}
+            onChange={setSecurityPage}
+            maxVisiblePages={5}
+            scrollTarget=".admin-security-panel"
+            className="admin-pagination-control"
+          />
         </div>
       </section>
 

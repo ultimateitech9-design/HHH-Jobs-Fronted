@@ -28,6 +28,7 @@ const DataTable = ({
   fitOnDesktop = false,
   searchable = false,
   pagination = false,
+  professional = false,
   itemsPerPage = 10,
   searchPlaceholder = 'Search...',
 }) => {
@@ -81,8 +82,8 @@ const DataTable = ({
     : 'px-4 py-3 align-middle text-[14px] leading-relaxed text-slate-700 font-sans';
   
   const mobileCardClassName = compact
-    ? 'rounded-xl border border-slate-200 bg-white p-3 shadow-sm font-sans transition-all hover:shadow-md'
-    : 'rounded-xl border border-slate-200 bg-white p-4 shadow-sm font-sans transition-all hover:shadow-md';
+    ? `${professional ? 'rounded-lg' : 'rounded-xl'} border border-slate-200 bg-white p-3 shadow-sm font-sans transition-all hover:shadow-md`
+    : `${professional ? 'rounded-lg' : 'rounded-xl'} border border-slate-200 bg-white p-4 shadow-sm font-sans transition-all hover:shadow-md`;
   const mobileLabelClassName = compact
     ? 'block text-[11px] font-semibold uppercase tracking-wider text-slate-400'
     : 'block text-[12px] font-bold uppercase tracking-wider text-slate-400';
@@ -152,7 +153,7 @@ const DataTable = ({
       )}
 
       {/* Desktop Table */}
-      <div className="hidden overflow-hidden rounded-[1.25rem] border border-slate-200/90 bg-white shadow-[0_16px_34px_rgba(15,23,42,0.06)] lg:block">
+      <div className={`hidden overflow-hidden border border-slate-200/90 bg-white lg:block ${professional ? 'rounded-lg shadow-[0_8px_22px_rgba(15,23,42,0.05)]' : 'rounded-[1.25rem] shadow-[0_16px_34px_rgba(15,23,42,0.06)]'}`}>
         <div className="max-w-full overflow-x-auto">
           <table className={`w-full divide-y divide-slate-200 ${desktopTableClassName}`} style={desktopTableStyle}>
             <colgroup>

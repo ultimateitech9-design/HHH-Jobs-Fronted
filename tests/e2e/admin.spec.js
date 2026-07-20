@@ -8,7 +8,7 @@ test.describe('Admin Portal E2E', () => {
         {
           origin: typeof process.env.BASE_URL === 'string' ? process.env.BASE_URL : 'http://127.0.0.1:4173',
           localStorage: [
-            { name: 'job_portal_token', value: 'mock-admin-token' },
+            { name: 'job_portal_token', value: 'mock.admin.token' },
             {
               name: 'job_portal_user',
               value: JSON.stringify({ id: 'mock-admin', role: 'admin', name: 'Mock Admin', isEmailVerified: true })
@@ -35,11 +35,18 @@ test.describe('Admin Portal E2E', () => {
     // 2. Users
     await page.route('**/admin/users*', async (route) => {
       if (route.request().resourceType() === 'document') return route.continue();
+      const requestUrl = new URL(route.request().url());
+      const isWorkforceRequest = requestUrl.searchParams.get('roleGroup') === 'operations';
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          users: [ { id: 'user-1', name: 'Admin Test User', email: 'test@example.com', role: 'student', status: 'active' } ]
+          users: isWorkforceRequest
+            ? []
+            : [ { id: 'user-1', name: 'Admin Test User', email: 'test@example.com', role: 'student', status: 'active' } ],
+          total: isWorkforceRequest ? 0 : 1,
+          page: 1,
+          limit: 10
         })
       });
     });
@@ -149,7 +156,7 @@ test.describe('Admin Portal E2E', () => {
   test('admin can view user management', async ({ page }) => {
     await page.goto('/portal/admin/users');
     await expect(page.getByText(/Identity & Access/i).first()).toBeVisible();
-    await expect(page.getByText('Admin Test User')).toBeVisible();
+    await expect(page.getByText('Admin Test User', { exact: true })).toBeVisible();
   });
 
   test('admin can view job moderation', async ({ page }) => {

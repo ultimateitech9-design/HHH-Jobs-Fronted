@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiExternalLink, FiSearch } from 'react-icons/fi';
+import { FiActivity, FiExternalLink, FiSearch, FiUser } from 'react-icons/fi';
 import DataTable from '../../../shared/components/DataTable';
+import CompanyContextSummary from '../../../shared/components/CompanyContextSummary';
+import { normalizeCompanies } from '../../../shared/utils/companyContext';
 import AdminHeader from '../components/AdminHeader';
 import DashboardStatsCards from '../components/DashboardStatsCards';
 import StatusBadge from '../components/StatusBadge';
@@ -28,23 +30,10 @@ const COMMAND_SEARCH_DEBOUNCE_MS = 300;
 
 const formatRole = (role = '') => USER_ROLE_LABELS[role] || String(role || '-').replace(/_/g, ' ');
 
-const uniqueCompanyNames = (values = []) => {
-  const seen = new Set();
-
-  return values.reduce((companies, value) => {
-    const company = String(value || '').trim();
-    const key = company.toLowerCase();
-    if (!company || company === '-' || seen.has(key)) return companies;
-    seen.add(key);
-    companies.push(company);
-    return companies;
-  }, []);
-};
-
 const CompanyPostingContext = ({ row }) => {
   const relation = row.companyRelations || {};
   const isHr = ['hr', 'company_admin'].includes(String(row.role || '').toLowerCase());
-  const companies = uniqueCompanyNames([
+  const companies = normalizeCompanies([
     relation.matchedCompany,
     row.company,
     ...(relation.postedCompanies || []),
@@ -56,34 +45,16 @@ const CompanyPostingContext = ({ row }) => {
     return <span className="text-xs font-semibold text-slate-700">{companies[0] || '-'}</span>;
   }
 
-  const primaryCompany = companies[0] || 'No company linked';
   const jobCount = Number(relation.jobCount || row.metrics?.jobs || 0);
   const postedCompanyCount = Number(relation.postedCompanyCount || relation.postedCompanies?.length || 0);
 
   return (
-    <div className="min-w-[250px] text-xs leading-5">
-      <strong className="block text-[13px] text-slate-900">{primaryCompany}</strong>
-      {companies.length ? (
-        <div className="mt-1 flex flex-wrap gap-1" aria-label={`Companies linked to ${row.name || 'HR'}`}>
-          {companies.map((company) => (
-            <span
-              key={company.toLowerCase()}
-              className={`inline-flex max-w-full rounded-md border px-2 py-0.5 text-[10.5px] font-semibold leading-4 ${company === primaryCompany
-                ? 'border-amber-300 bg-amber-50 text-amber-800'
-                : 'border-slate-200 bg-slate-50 text-slate-600'}`}
-              title={company}
-            >
-              {company}
-            </span>
-          ))}
-        </div>
-      ) : null}
-      <span className={`mt-1 block text-[10.5px] font-semibold ${jobCount ? 'text-emerald-700' : 'text-slate-400'}`}>
-        {jobCount
-          ? `${jobCount} posted job${jobCount === 1 ? '' : 's'}${postedCompanyCount ? ` across ${postedCompanyCount} posting compan${postedCompanyCount === 1 ? 'y' : 'ies'}` : ''}`
-          : 'No job posts found'}
-      </span>
-    </div>
+    <CompanyContextSummary
+      companies={companies}
+      primaryCompany={companies[0]}
+      jobCount={jobCount}
+      postingCompanyCount={postedCompanyCount}
+    />
   );
 };
 
@@ -220,69 +191,61 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
   const columns = [
     {
       key: 'name',
-      label: 'User',
-      width: 230,
+      label: 'Account',
+      width: 210,
       render: (_value, row) => (
-        <div className="min-w-0">
-          <strong className="block truncate text-slate-900">{row.name || '-'}</strong>
-          <span className="block truncate text-xs text-slate-500">{row.email || '-'}</span>
-          <span className="block truncate text-xs text-slate-400">{row.contactNumber || row.phone || row.mobile || '-'}</span>
+        <div className="command-result-account">
+          <strong title={row.name || '-'}>{row.name || '-'}</strong>
+          <span title={row.email || '-'}>{row.email || '-'}</span>
+          <small>{row.contactNumber || row.phone || row.mobile || 'No contact number'}</small>
         </div>
       )
     },
     {
-      key: 'role',
-      label: 'Role',
-      width: 105,
-      render: (value) => <StatusBadge value={formatRole(value)} />
+      key: 'context',
+      label: 'Organisation & profile',
+      width: 360,
+      render: (_value, row) => (
+        <div className="command-result-context">
+          <CompanyPostingContext row={row} />
+          <ProfileContext row={row} />
+        </div>
+      )
     },
     {
-      key: 'company',
-      label: 'Companies / Posting Context',
-      width: 320,
-      render: (_value, row) => <CompanyPostingContext row={row} />
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      width: 120,
-      render: (value) => <StatusBadge value={value || 'active'} />
-    },
-    {
-      key: 'onboardingDate',
-      label: 'Onboarding',
-      width: 170,
-      render: (value, row) => formatDateTime(value || row.createdAt)
-    },
-    {
-      key: 'profile',
-      label: 'Profile Context',
-      width: 220,
-      render: (_value, row) => <ProfileContext row={row} />
+      key: 'access',
+      label: 'Access & activity',
+      width: 250,
+      render: (_value, row) => (
+        <div className="command-result-access">
+          <div className="command-result-access__badges">
+            <StatusBadge value={formatRole(row.role)} />
+            <StatusBadge value={row.status || 'active'} />
+          </div>
+          <div className="command-result-access__dates">
+            <span><small>Onboarded</small>{formatDateTime(row.onboardingDate || row.createdAt)}</span>
+            <span><small>Last active</small>{formatDateTime(row.lastActiveAt) || '-'}</span>
+          </div>
+        </div>
+      )
     },
     {
       key: 'metrics',
       label: 'Signals',
-      width: 210,
+      width: 130,
       render: (_value, row) => (
-        <div className="grid grid-cols-2 gap-1 text-[11px] font-semibold text-slate-600">
-          <span>Jobs: {row.metrics?.jobs || 0}</span>
-          <span>Apps: {row.metrics?.applications || 0}</span>
-          <span>Pay: {row.metrics?.payments || 0}</span>
-          <span>Logs: {row.metrics?.activityEvents || 0}</span>
+        <div className="command-result-signals">
+          <span><strong>{row.metrics?.jobs || 0}</strong>Jobs</span>
+          <span><strong>{row.metrics?.applications || 0}</strong>Apps</span>
+          <span><strong>{row.metrics?.payments || 0}</strong>Pay</span>
+          <span><strong>{row.metrics?.activityEvents || 0}</strong>Logs</span>
         </div>
       )
     },
     {
-      key: 'lastActiveAt',
-      label: 'Last Active',
-      width: 160,
-      render: (value) => formatDateTime(value) || '-'
-    },
-    {
       key: 'actions',
       label: 'Support Actions',
-      width: 280,
+      width: 240,
       stickyRight: true,
       render: (_value, row) => {
         const isEmployeeRecord = row.contextType === 'employee_record';
@@ -293,20 +256,20 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
         const canOpenContext = Boolean(row.id);
 
         return (
-          <div className="flex min-w-[240px] flex-wrap items-center gap-2">
+          <div className="command-result-actions">
             {isEmployeeRecord ? (
               <Link
-                className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
+                className={`command-result-action ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
                 to={recordPath}
                 aria-disabled={!canOpenContext}
                 onClick={() => cacheSupportContextSeed(row)}
               >
-                Record
+                <FiActivity size={13} /> Record
               </Link>
             ) : (
               <>
                 <Link
-                  className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
+                  className={`command-result-action ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
                   to={dashboardPath}
                   aria-disabled={!canOpenContext}
                   onClick={() => cacheSupportContextSeed(row)}
@@ -314,24 +277,24 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
                   <FiExternalLink size={13} /> Dashboard
                 </Link>
                 <Link
-                  className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
+                  className={`command-result-action ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
                   to={profilePath}
                   aria-disabled={!canOpenContext}
                   onClick={() => cacheSupportContextSeed(row)}
                 >
-                  Profile
+                  <FiUser size={13} /> Profile
                 </Link>
               </>
             )}
             <Link
-              className={`btn-secondary py-1.5 text-xs ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
+              className={`command-result-action ${canOpenContext ? '' : 'pointer-events-none opacity-50'}`}
               to={activityPath}
               aria-disabled={!canOpenContext}
             >
-              Activity
+              <FiActivity size={13} /> Activity
             </Link>
             <select
-              className="rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700"
+              className="command-result-status-select"
               value={row.status || 'active'}
               disabled={savingUserId === row.id}
               onChange={(event) => handleStatusChange(row, event.target.value)}
@@ -356,7 +319,7 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
       {error ? <p className="form-error">{error}</p> : null}
       <DashboardStatsCards cards={cards} />
 
-      <section className="panel-card">
+      <section className="panel-card command-search-results">
         <div className="command-search-bar">
           <div className="filter-bar__search">
             <div className="relative">
@@ -406,7 +369,7 @@ const CommandSearchPage = ({ portalBasePath = '/portal/super-admin' }) => {
               : 'Search with at least one filter to inspect a user support context.'}
           </p>
         ) : null}
-        <DataTable columns={columns} rows={results} compact />
+        <DataTable columns={columns} rows={results} compact fitOnDesktop professional />
       </section>
     </div>
   );
