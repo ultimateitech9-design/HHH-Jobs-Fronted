@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiArrowRight, FiCheckCircle, FiClock, FiCreditCard, FiPhoneCall, FiUsers } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
-import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import DashboardFocusNav from '../../../shared/components/dashboard/DashboardFocusNav';
+import DashboardPageHeader from '../../../shared/components/dashboard/DashboardPageHeader';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
+import DashboardSummaryStrip from '../../../shared/components/dashboard/DashboardSummaryStrip';
+import useDashboardView from '../../../shared/hooks/useDashboardView';
 import { formatDateTime } from '../../../shared/utils/dateTime';
 import { getSalesOverview, getSalesReferralCode, getSalesRevenueAutomation } from '../services/salesApi';
 import { formatCompactCurrency } from '../utils/currencyFormat';
@@ -16,7 +19,10 @@ const queueToneClass = {
   default: 'text-slate-700 bg-slate-50 border-slate-100'
 };
 
+const SALES_DASHBOARD_VIEWS = ['priorities', 'automation', 'audience', 'payments', 'activity'];
+
 const SalesOverview = () => {
+  const [activeView, setActiveView] = useDashboardView(SALES_DASHBOARD_VIEWS, 'priorities');
   const [state, setState] = useState({ loading: true, error: '', overview: null });
   const [referral, setReferral] = useState({ salesCode: '', assignedStates: [], shareText: '' });
   const [automation, setAutomation] = useState(null);
@@ -46,51 +52,20 @@ const SalesOverview = () => {
   const workQueue = state.overview?.workQueue || [];
   const recentActivity = state.overview?.recentActivity || [];
 
-  const cards = useMemo(() => [
-    {
-      label: 'Commercial Users',
-      value: formatNumber(stats.totalLeads),
-      helper: `${formatNumber(stats.planPendingCustomers)} pending plans`,
-      tone: 'info',
-      icon: FiUsers,
-      to: '/portal/sales/leads',
-      ctaLabel: 'Open leads'
-    },
-    {
-      label: 'Plan Taken',
-      value: formatNumber(stats.convertedLeads),
-      helper: `${stats.conversionRate || 0}% conversion`,
-      tone: 'success',
-      icon: FiCheckCircle,
-      to: '/portal/sales/customers',
-      ctaLabel: 'Open customers'
-    },
-    {
-      label: 'Follow-Up Due',
-      value: formatNumber((stats.followupDueToday || 0) + (stats.overdueFollowups || 0)),
-      helper: `${formatNumber(stats.overdueFollowups)} overdue`,
-      tone: stats.overdueFollowups > 0 ? 'danger' : 'warning',
-      icon: FiClock,
-      to: '/portal/sales/leads',
-      ctaLabel: 'Open queue'
-    },
-    {
-      label: 'Collected Revenue',
-      value: formatCompactCurrency(stats.totalRevenue || 0),
-      helper: `${formatNumber(stats.paidPayments)} paid payments`,
-      tone: 'default',
-      icon: FiCreditCard,
-      to: '/portal/sales/payments',
-      ctaLabel: 'Open payments'
-    }
-  ], [stats]);
-
   const paymentRows = [
     ['Paid payments', formatNumber(paymentSummary.paidPayments || stats.paidPayments), formatCompactCurrency(paymentSummary.totalRevenue || stats.totalRevenue)],
     ['This month', formatCompactCurrency(paymentSummary.monthlyRevenue || stats.monthlyRevenue), 'Collected'],
     ['Pending payments', formatNumber(paymentSummary.pendingPayments || stats.pendingPayments), formatCompactCurrency(paymentSummary.pendingValue || stats.pendingPaymentValue)],
     ['Refund exposure', formatNumber(paymentSummary.refunds || stats.refunds), formatCompactCurrency(paymentSummary.refundValue || stats.refundValue)],
     ['Average paid value', formatCompactCurrency(paymentSummary.averageOrderValue || stats.averageOrderValue), 'Per paid payment']
+  ];
+
+  const focusItems = [
+    { key: 'priorities', label: 'Priorities', description: 'Work the follow-up and conversion queue in the recommended order.', count: workQueue.length, icon: FiClock },
+    { key: 'automation', label: 'Revenue automation', description: 'Review forecasts, next-best actions, lead priority, and revenue risk.', count: automation?.automationActions?.length || 0, icon: FiCheckCircle },
+    { key: 'audience', label: 'Audience', description: 'Compare plan conversion across commercial audience segments.', count: audienceBreakdown.length, icon: FiUsers },
+    { key: 'payments', label: 'Payments', description: 'Review paid value, pending recovery, refunds, and average order value.', count: Number(paymentSummary.pendingPayments || stats.pendingPayments || 0), icon: FiCreditCard },
+    { key: 'activity', label: 'Activity', description: 'Continue from the latest calls and payment events.', count: recentActivity.length, icon: FiPhoneCall }
   ];
 
   return (
@@ -100,30 +75,37 @@ const SalesOverview = () => {
 
       {!state.loading && state.overview ? (
         <div className="space-y-3">
-          {referral.salesCode ? (
-            <section className="rounded-lg border border-brand-100 bg-brand-50 px-4 py-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-brand-600">Your sales code</p>
-                  <p className="mt-1 font-mono text-xl font-black text-navy">{referral.salesCode}</p>
-                  <p className="mt-1 text-xs font-semibold text-slate-600">
-                    {(referral.assignedStates || []).length ? `State scope: ${referral.assignedStates.join(', ')}` : 'Use this code for HR, campus, or student registrations.'}
-                  </p>
-                </div>
+          <DashboardPageHeader
+            eyebrow="Commercial operations"
+            title="Sales workspace"
+            description="Move from follow-up priorities to revenue recovery, conversion, and recent activity without mixing workflows."
+            meta={referral.salesCode ? [
+              { label: 'Sales code', value: referral.salesCode },
+              { label: 'Assigned scope', value: (referral.assignedStates || []).join(', ') || 'All assigned states' }
+            ] : []}
+            actions={referral.salesCode ? (
                 <button
                   type="button"
                   className="btn-secondary"
                   onClick={() => navigator.clipboard?.writeText(referral.shareText || referral.salesCode)}
                 >
-                  Copy Code
+                  Copy code
                 </button>
-              </div>
-            </section>
-          ) : null}
+            ) : null}
+          />
 
-          <DashboardMetricCards cards={cards} />
+          <DashboardSummaryStrip
+            items={[
+              { label: 'Commercial users', value: formatNumber(stats.totalLeads), helper: `${formatNumber(stats.planPendingCustomers)} pending plans`, icon: FiUsers, to: '/portal/sales/leads' },
+              { label: 'Plans taken', value: formatNumber(stats.convertedLeads), helper: `${stats.conversionRate || 0}% conversion`, icon: FiCheckCircle, to: '/portal/sales/customers' },
+              { label: 'Follow-up due', value: formatNumber((stats.followupDueToday || 0) + (stats.overdueFollowups || 0)), helper: `${formatNumber(stats.overdueFollowups)} overdue`, icon: FiClock, to: '/portal/sales/leads' },
+              { label: 'Collected revenue', value: formatCompactCurrency(stats.totalRevenue || 0), helper: `${formatNumber(stats.paidPayments)} paid payments`, icon: FiCreditCard, to: '/portal/sales/payments' }
+            ]}
+          />
 
-          {automation ? (
+          <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Sales dashboard workspaces" title="Sales view" />
+
+          {activeView === 'automation' && automation ? (
             <DashboardSectionCard
               eyebrow="Revenue Automation"
               title="Next best actions for growth"
@@ -187,6 +169,7 @@ const SalesOverview = () => {
             </DashboardSectionCard>
           ) : null}
 
+          {activeView === 'priorities' ? (
           <DashboardSectionCard
             eyebrow="Work Queue"
             title="Sales operating priorities"
@@ -216,8 +199,9 @@ const SalesOverview = () => {
               })}
             </div>
           </DashboardSectionCard>
+          ) : null}
 
-          <div className="split-grid">
+          {activeView === 'audience' ? (
             <DashboardSectionCard eyebrow="Audience" title="Plan coverage by audience">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[520px] text-left text-sm">
@@ -244,7 +228,9 @@ const SalesOverview = () => {
                 </table>
               </div>
             </DashboardSectionCard>
+          ) : null}
 
+          {activeView === 'payments' ? (
             <DashboardSectionCard eyebrow="Payments" title="Payment health">
               <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100">
                 {paymentRows.map(([label, value, helper]) => (
@@ -258,8 +244,9 @@ const SalesOverview = () => {
                 ))}
               </div>
             </DashboardSectionCard>
-          </div>
+          ) : null}
 
+          {activeView === 'activity' ? (
           <DashboardSectionCard eyebrow="Activity" title="Recent real sales activity">
             {recentActivity.length === 0 ? (
               <p className="module-note">No sales activity recorded yet.</p>
@@ -287,6 +274,7 @@ const SalesOverview = () => {
               </div>
             )}
           </DashboardSectionCard>
+          ) : null}
         </div>
       ) : null}
     </div>

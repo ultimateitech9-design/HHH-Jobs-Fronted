@@ -1,15 +1,25 @@
-import { useEffect, useMemo, useState } from 'react';
-import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import { useEffect, useState } from 'react';
+import { FiBarChart2, FiCreditCard, FiFileText, FiRepeat } from 'react-icons/fi';
+import DashboardFocusNav from '../../../shared/components/dashboard/DashboardFocusNav';
+import DashboardPageHeader from '../../../shared/components/dashboard/DashboardPageHeader';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
-import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
+import DashboardSummaryStrip from '../../../shared/components/dashboard/DashboardSummaryStrip';
+import useDashboardView from '../../../shared/hooks/useDashboardView';
 import InvoiceTable from '../components/InvoiceTable';
 import PaymentMethodCard from '../components/PaymentMethodCard';
 import RevenueChart from '../components/RevenueChart';
 import TransactionTable from '../components/TransactionTable';
 import { getAccountsOverview } from '../services/accountsApi';
-import { formatCurrency } from '../utils/currencyFormat';
+
+const ACCOUNTS_DASHBOARD_VIEWS = ['cashflow', 'transactions', 'invoices', 'methods'];
+const formatCurrency = (value) => new Intl.NumberFormat('en-IN', {
+  style: 'currency',
+  currency: 'INR',
+  maximumFractionDigits: 0
+}).format(Number(value || 0));
 
 const AccountsOverview = () => {
+  const [activeView, setActiveView] = useDashboardView(ACCOUNTS_DASHBOARD_VIEWS, 'cashflow');
   const [state, setState] = useState({
     loading: true,
     error: '',
@@ -37,97 +47,63 @@ const AccountsOverview = () => {
     };
   }, []);
 
-  const cards = useMemo(() => {
-    const overview = state.overview || {};
-    const revenueSummary = overview.revenueSummary || {};
-    const invoiceSummary = overview.invoiceSummary || {};
-    const subscriptionSummary = overview.subscriptionSummary || {};
-
-    return [
-      {
-        label: 'Gross Revenue',
-        value: formatCurrency(revenueSummary.grossRevenue || 0),
-        helper: 'Total collections across portal billing',
-        tone: 'success'
-      },
-      {
-        label: 'Outstanding Revenue',
-        value: formatCurrency(revenueSummary.outstandingRevenue || 0),
-        helper: `${invoiceSummary.pendingInvoices || 0} invoices pending`,
-        tone: 'warning'
-      },
-      {
-        label: 'MRR',
-        value: formatCurrency(subscriptionSummary.monthlyRecurringRevenue || 0),
-        helper: `${subscriptionSummary.activeSubscriptions || 0} active subscriptions`,
-        tone: 'info'
-      },
-      {
-        label: 'Net Revenue',
-        value: formatCurrency(revenueSummary.netRevenue || 0),
-        helper: 'After expenses and refunds',
-        tone: 'default'
-      }
-    ];
-  }, [state.overview]);
-
-  const summarySignals = useMemo(() => {
-    const overview = state.overview || {};
-    const transactions = overview.transactionSummary || {};
-    const payouts = overview.payoutSummary || {};
-    const expenses = overview.expenseSummary || {};
-
-    return [
-      { label: 'Transactions', value: transactions.totalTransactions || 0 },
-      { label: 'Pending Payouts', value: payouts.pendingPayouts || 0 },
-      { label: 'Approved Expenses', value: expenses.approvedExpenses || 0 },
-      { label: 'Refund Risk', value: formatCurrency(overview.revenueSummary?.refundAmount || 0) }
-    ];
-  }, [state.overview]);
+  const overview = state.overview || {};
+  const focusItems = [
+    { key: 'cashflow', label: 'Cash flow', description: 'Review collection movement and expense pressure over time.', icon: FiBarChart2 },
+    { key: 'transactions', label: 'Transactions', description: 'Inspect the most recent portal collections.', count: overview.recentTransactions?.length || 0, icon: FiRepeat },
+    { key: 'invoices', label: 'Invoices', description: 'Review recent invoice activity and pending collection records.', count: overview.invoiceSummary?.pendingInvoices || overview.recentInvoices?.length || 0, icon: FiFileText },
+    { key: 'methods', label: 'Payment methods', description: 'Monitor payment gateways and settlement rails.', count: overview.paymentMethods?.length || 0, icon: FiCreditCard }
+  ];
 
   return (
     <div className="space-y-3 pb-2">
       {state.error ? <p className="form-error">{state.error}</p> : null}
-      <PortalDashboardHero
-        tone="accounts"
-        eyebrow="Accounts Overview"
-        badge="Finance live"
-        title="Revenue, invoices, collections, and settlements across the HHH Jobs platform"
-        description="Review cash flow trends, collection backlog, active subscription billing, refund exposure, and the payment rails used to settle platform revenue."
-        chips={['Collections', 'Subscriptions', 'Payouts']}
-        primaryAction={{ to: '/portal/accounts/invoices', label: 'Open Invoices' }}
-        secondaryAction={{ to: '/portal/accounts/payouts', label: 'Review Payouts' }}
-        metrics={summarySignals.map((signal) => ({ ...signal, helper: 'Current finance signal' }))}
+      <DashboardPageHeader
+        eyebrow="Finance operations"
+        title="Accounts overview"
+        description="Review collections, invoices, and settlement methods one financial workflow at a time."
       />
       {state.loading ? <p className="module-note">Loading accounts overview...</p> : null}
 
       {!state.loading && state.overview ? (
         <>
-          <DashboardMetricCards cards={cards} />
+          <DashboardSummaryStrip
+            items={[
+              { label: 'Collected revenue', value: formatCurrency(overview.revenueSummary?.collectedRevenue), helper: 'Settled collections', icon: FiBarChart2 },
+              { label: 'Outstanding', value: formatCurrency(overview.revenueSummary?.outstandingRevenue), helper: 'Pending recovery', icon: FiRepeat },
+              { label: 'Pending invoices', value: Number(overview.invoiceSummary?.pendingInvoices || 0).toLocaleString('en-IN'), helper: `${overview.invoiceSummary?.totalInvoices || 0} total invoices`, icon: FiFileText },
+              { label: 'Payment methods', value: Number(overview.paymentMethods?.length || 0).toLocaleString('en-IN'), helper: 'Active settlement rails', icon: FiCreditCard }
+            ]}
+          />
+          <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Accounts dashboard workspaces" />
 
-          <div className="split-grid">
+          {activeView === 'cashflow' ? (
             <DashboardSectionCard eyebrow="Revenue Trend" title="Collections vs expense pressure">
               <RevenueChart points={state.overview.monthlyRevenue || []} />
             </DashboardSectionCard>
+          ) : null}
 
+          {activeView === 'methods' ? (
             <DashboardSectionCard eyebrow="Payment Rails" title="Settlement Channels" subtitle="Gateways and collection rails active on the portal.">
-              <div className="split-grid">
+              <div className="grid gap-3 md:grid-cols-2">
                 {(state.overview.paymentMethods || []).map((method) => (
                   <PaymentMethodCard key={method.id} method={method} />
                 ))}
               </div>
             </DashboardSectionCard>
-          </div>
+          ) : null}
 
-          <div className="split-grid">
+          {activeView === 'transactions' ? (
             <DashboardSectionCard eyebrow="Transactions" title="Recent Collections">
               <TransactionTable rows={state.overview.recentTransactions || []} />
             </DashboardSectionCard>
+          ) : null}
 
+          {activeView === 'invoices' ? (
             <DashboardSectionCard eyebrow="Invoices" title="Recent Invoice Activity">
               <InvoiceTable rows={state.overview.recentInvoices || []} />
             </DashboardSectionCard>
-          </div>
+          ) : null}
         </>
       ) : null}
     </div>

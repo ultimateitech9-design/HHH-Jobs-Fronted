@@ -1,34 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
-import AdminHeader from '../components/AdminHeader';
-import AdminSidebar from '../components/AdminSidebar';
+import { FiActivity, FiBarChart2, FiGrid, FiMessageCircle, FiShield } from 'react-icons/fi';
 import ReportsChart from '../components/ReportsChart';
 import StatusBadge from '../components/StatusBadge';
-import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import DashboardFocusNav from '../../../shared/components/dashboard/DashboardFocusNav';
 import DashboardLoadingSkeleton from '../../../shared/components/dashboard/DashboardLoadingSkeleton';
+import DashboardPageHeader from '../../../shared/components/dashboard/DashboardPageHeader';
+import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
+import DashboardSummaryStrip from '../../../shared/components/dashboard/DashboardSummaryStrip';
 import Pagination from '../../../shared/components/Pagination';
 import { getDashboardWorkspaceButtonClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
+import useDashboardView from '../../../shared/hooks/useDashboardView';
 import useDashboardStats from '../hooks/useDashboardStats';
 import { formatCurrency } from '../utils/currencyFormat';
 import { formatDateTime } from '../utils/formatDate';
 
 const DASHBOARD_PAGE_SIZE = 10;
+const SUPER_ADMIN_DASHBOARD_VIEWS = ['overview', 'workspaces', 'support', 'logs'];
 
 const SuperAdminDashboard = () => {
+  const [activeView, setActiveView] = useDashboardView(SUPER_ADMIN_DASHBOARD_VIEWS, 'overview');
   const { dashboard, loading, error } = useDashboardStats();
   const [selectedWorkspace, setSelectedWorkspace] = useState('super_admin');
   const [selectedRecordId, setSelectedRecordId] = useState('');
   const [workspacePage, setWorkspacePage] = useState(1);
   const [supportPage, setSupportPage] = useState(1);
-
-  const cards = useMemo(() => {
-    const stats = dashboard?.stats || {};
-    return [
-      { label: 'Total Users', value: String(stats.totalUsers || 0), helper: `${stats.pendingApprovals || 0} pending approvals`, tone: 'info' },
-      { label: 'Active Companies', value: String(stats.activeCompanies || 0), helper: `${stats.activeSubscriptions || 0} active subscriptions`, tone: 'success' },
-      { label: 'Live Jobs', value: String(stats.liveJobs || 0), helper: `${stats.totalApplications || 0} applications received`, tone: 'default' },
-      { label: 'Monthly Revenue', value: formatCurrency(stats.monthlyRevenue || 0), helper: `${stats.openSupportTickets || 0} support tickets open`, tone: 'warning' }
-    ];
-  }, [dashboard]);
 
   const workspaceSnapshots = useMemo(() => {
     const source = dashboard || {};
@@ -279,28 +274,50 @@ const SuperAdminDashboard = () => {
     if (supportPage > supportTotalPages) setSupportPage(supportTotalPages);
   }, [supportPage, supportTotalPages]);
 
+  const stats = dashboard?.stats || {};
+  const focusItems = [
+    { key: 'overview', label: 'Platform overview', description: 'Review top-line revenue movement and platform health.', icon: FiBarChart2 },
+    { key: 'workspaces', label: 'Role workspaces', description: 'Inspect one operational role and one record at a time.', count: workspaceSnapshots.length, icon: FiGrid },
+    { key: 'support', label: 'Escalations', description: 'Review open support escalations that need governance attention.', count: supportTickets.length, icon: FiMessageCircle },
+    { key: 'logs', label: 'Critical logs', description: 'Inspect recent incidents and unusual platform behavior.', count: dashboard?.systemLogs?.length || 0, icon: FiActivity }
+  ];
+
   return (
     <div className="super-admin-dashboard space-y-3 pb-2">
+      <DashboardPageHeader
+        eyebrow="Platform governance"
+        title="Super admin control center"
+        description="Monitor platform health, cross-role operations, escalations, and system incidents in separate workspaces."
+      />
       {error ? <p className="form-error">{error}</p> : null}
       {loading ? <DashboardLoadingSkeleton panels={4} /> : null}
 
       {!loading && dashboard ? (
         <>
-          <DashboardMetricCards cards={cards} className="super-admin-metric-cards" />
-          <div className="split-grid">
-            <section className="panel-card">
-              <AdminHeader eyebrow="Revenue Trend" title="Platform Revenue Movement" subtitle="Monthly top-line collections and refund pressure." />
+          <DashboardSummaryStrip
+            items={[
+              { label: 'Total users', value: Number(stats.totalUsers || 0).toLocaleString('en-IN'), helper: `${stats.pendingApprovals || 0} pending approvals`, icon: FiShield, to: '/portal/super-admin/users' },
+              { label: 'Active companies', value: Number(stats.activeCompanies || 0).toLocaleString('en-IN'), helper: `${stats.activeSubscriptions || 0} active subscriptions`, icon: FiGrid, to: '/portal/super-admin/companies' },
+              { label: 'Live jobs', value: Number(stats.liveJobs || 0).toLocaleString('en-IN'), helper: `${stats.totalApplications || 0} applications`, icon: FiActivity, to: '/portal/super-admin/jobs' },
+              { label: 'Monthly revenue', value: formatCurrency(stats.monthlyRevenue || 0), helper: `${stats.openSupportTickets || 0} tickets open`, icon: FiBarChart2, to: '/portal/super-admin/payments' }
+            ]}
+          />
+
+          <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Super admin dashboard workspaces" title="Control view" />
+
+          {activeView === 'overview' ? (
+            <DashboardSectionCard eyebrow="Revenue trend" title="Platform revenue movement" subtitle="Monthly top-line collections and refund pressure.">
               <ReportsChart rows={dashboard.reports?.revenueTrend || []} />
-            </section>
-            <AdminSidebar />
-          </div>
-          <section className="panel-card">
-            <AdminHeader
-              eyebrow="Cross-Role Access"
-              title="Monitor any operational dashboard"
-              subtitle="Switch workspaces and open full record details from this panel."
-            />
-            <div className="student-job-actions">
+            </DashboardSectionCard>
+          ) : null}
+
+          {activeView === 'workspaces' ? (
+          <DashboardSectionCard
+            eyebrow="Cross-role access"
+            title={activeWorkspace?.title || 'Operational workspace'}
+            subtitle={activeWorkspace?.subtitle || 'Choose a role workspace to inspect its records.'}
+          >
+            <div className="mb-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {workspaceSnapshots.map((workspace) => (
                 <button
                   key={workspace.key}
@@ -313,100 +330,94 @@ const SuperAdminDashboard = () => {
               ))}
             </div>
             {activeWorkspace ? (
-              <div className="split-grid" style={{ marginTop: '1rem', alignItems: 'start' }}>
-                <section className="panel-card">
-                  <AdminHeader
-                    eyebrow="Workspace Snapshot"
-                    title={activeWorkspace.title}
-                    subtitle={activeWorkspace.subtitle}
-                  />
-                  <div className="dash-stat-grid" style={{ marginBottom: '1rem' }}>
+              <div className="overflow-hidden rounded-lg border border-slate-200 lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(22rem,1.05fr)]">
+                <div className="min-w-0 border-b border-slate-200 lg:border-b-0 lg:border-r">
+                  <div className="grid grid-cols-3 border-b border-slate-200 bg-slate-50/80">
                     {activeWorkspace.metrics.map((metric) => (
-                      <article key={metric.label} className="dash-card">
-                        <strong>{metric.value}</strong>
-                        <span>{metric.label}</span>
-                      </article>
+                      <div key={metric.label} className="min-w-0 border-r border-slate-200 px-3 py-3 last:border-r-0">
+                        <strong className="block text-lg font-black text-navy">{metric.value}</strong>
+                        <span className="block truncate text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">{metric.label}</span>
+                      </div>
                     ))}
                   </div>
-                  <ul className="dash-feed">
+                  <ul className="divide-y divide-slate-100">
                     {activeWorkspace.records.length === 0 ? (
-                      <li><p className="module-note">No records available for this workspace yet.</p></li>
+                      <li className="p-5 text-sm text-slate-500">No records available for this workspace yet.</li>
                     ) : paginatedWorkspaceRecords.map((record) => (
                       <li
                         key={record.id}
-                        style={{
-                          cursor: 'pointer',
-                          border: activeRecord?.id === record.id ? '1px solid rgba(31, 122, 97, 0.28)' : undefined,
-                          borderRadius: '14px',
-                          padding: '0.85rem'
-                        }}
+                        className={`flex cursor-pointer items-start justify-between gap-3 px-4 py-3 transition hover:bg-slate-50 ${activeRecord?.id === record.id ? 'bg-brand-50/70' : ''}`}
                         onClick={() => setSelectedRecordId(record.id)}
                       >
-                        <div>
-                          <strong>{record.title}</strong>
-                          <p>{record.subtitle}</p>
-                          <span>{record.meta}</span>
+                        <div className="min-w-0">
+                          <strong className="block truncate text-sm text-slate-900">{record.title}</strong>
+                          <p className="mt-0.5 truncate text-xs text-slate-500">{record.subtitle}</p>
+                          <span className="mt-1 block text-[11px] font-semibold text-slate-400">{record.meta}</span>
                         </div>
                         <StatusBadge value={activeRecord?.id === record.id ? 'selected' : 'active'} />
                       </li>
                     ))}
                   </ul>
-                  <Pagination page={workspacePage} totalPages={workspaceTotalPages} onChange={setWorkspacePage} />
-                </section>
-                <section className="panel-card">
-                  <AdminHeader
-                    eyebrow="Full Record"
-                    title={activeRecord?.title || 'No record selected'}
-                    subtitle={activeRecord?.subtitle || 'Select any row from the workspace list to inspect full details.'}
-                  />
+                  <div className="border-t border-slate-200 px-3 py-2">
+                    <Pagination page={workspacePage} totalPages={workspaceTotalPages} onChange={setWorkspacePage} />
+                  </div>
+                </div>
+                <section className="min-w-0 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-brand-700">Selected record</p>
+                  <h3 className="mt-1 text-lg font-bold text-navy">{activeRecord?.title || 'No record selected'}</h3>
+                  <p className="mt-1 text-xs text-slate-500">{activeRecord?.subtitle || 'Select a row to inspect full details.'}</p>
                   {activeRecord ? (
-                    <div className="profile-overview-meta-grid">
+                    <dl className="mt-4 divide-y divide-slate-100 border-y border-slate-100">
                       {activeRecord.profile.map(([label, value]) => (
-                        <p key={label}>
-                          <strong>{label}:</strong> {value}
-                        </p>
+                        <div key={label} className="grid grid-cols-[8rem_minmax(0,1fr)] gap-3 py-2.5 text-sm">
+                          <dt className="font-semibold text-slate-500">{label}</dt>
+                          <dd className="min-w-0 break-words font-medium text-slate-800">{value}</dd>
+                        </div>
                       ))}
-                    </div>
+                    </dl>
                   ) : (
                     <p className="module-note">No data available for this workspace right now.</p>
                   )}
                 </section>
               </div>
             ) : null}
-          </section>
-          <div className="split-grid">
-            <section className="panel-card">
-              <AdminHeader eyebrow="Escalations" title="Open Support Escalations" subtitle="Critical or high-priority issues that need immediate attention." />
-              <ul className="dash-feed">
+          </DashboardSectionCard>
+          ) : null}
+
+          {activeView === 'support' ? (
+            <DashboardSectionCard eyebrow="Escalations" title="Open support escalations" subtitle="Critical or high-priority issues that need immediate attention.">
+              <ul className="divide-y divide-slate-100">
                 {paginatedSupportTickets.map((ticket) => (
-                  <li key={ticket.id}>
-                    <div>
-                      <strong>{ticket.title}</strong>
-                      <p>{ticket.company} · Assigned to {ticket.assignedTo}</p>
-                      <span>{formatDateTime(ticket.updatedAt)}</span>
+                  <li key={ticket.id} className="flex items-start justify-between gap-4 px-2 py-3">
+                    <div className="min-w-0">
+                      <strong className="block truncate text-sm text-slate-900">{ticket.title}</strong>
+                      <p className="mt-0.5 truncate text-xs text-slate-500">{ticket.company} · Assigned to {ticket.assignedTo}</p>
+                      <span className="mt-1 block text-[11px] font-semibold text-slate-400">{formatDateTime(ticket.updatedAt)}</span>
                     </div>
                     <StatusBadge value={ticket.status} />
                   </li>
                 ))}
               </ul>
               <Pagination page={supportPage} totalPages={supportTotalPages} onChange={setSupportPage} />
-            </section>
-            <section className="panel-card">
-              <AdminHeader eyebrow="System Watch" title="Critical Logs" subtitle="Recent incidents and unusual platform behavior." />
-              <ul className="dash-feed">
+            </DashboardSectionCard>
+          ) : null}
+
+          {activeView === 'logs' ? (
+            <DashboardSectionCard eyebrow="System watch" title="Critical logs" subtitle="Recent incidents and unusual platform behavior.">
+              <ul className="divide-y divide-slate-100">
                 {(dashboard.systemLogs || []).slice(0, 4).map((log) => (
-                  <li key={log.id}>
-                    <div>
-                      <strong>{log.action}</strong>
-                      <p>{log.details}</p>
-                      <span>{formatDateTime(log.createdAt)}</span>
+                  <li key={log.id} className="flex items-start justify-between gap-4 px-2 py-3">
+                    <div className="min-w-0">
+                      <strong className="block truncate text-sm text-slate-900">{log.action}</strong>
+                      <p className="mt-0.5 text-xs leading-5 text-slate-500">{log.details}</p>
+                      <span className="mt-1 block text-[11px] font-semibold text-slate-400">{formatDateTime(log.createdAt)}</span>
                     </div>
                     <StatusBadge value={log.level} />
                   </li>
                 ))}
               </ul>
-            </section>
-          </div>
+            </DashboardSectionCard>
+          ) : null}
         </>
       ) : null}
     </div>

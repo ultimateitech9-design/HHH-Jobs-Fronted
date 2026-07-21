@@ -3,6 +3,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { FiBriefcase, FiUsers, FiCalendar, FiTrendingUp, FiArrowRight, FiPlus, FiClock } from 'react-icons/fi';
 import StatusPill from '../../../shared/components/StatusPill';
 import FeatureGate from '../../../shared/components/FeatureGate';
+import DashboardFocusNav from '../../../shared/components/dashboard/DashboardFocusNav';
+import DashboardPageHeader from '../../../shared/components/dashboard/DashboardPageHeader';
+import DashboardSummaryStrip from '../../../shared/components/dashboard/DashboardSummaryStrip';
+import useDashboardView from '../../../shared/hooks/useDashboardView';
 import {
   formatInterviewDateTime,
   getHrDashboard,
@@ -91,7 +95,10 @@ const normalizePipeline = (pipeline = {}) => ({
   hired: Number(pipeline.hired || 0)
 });
 
+const HR_DASHBOARD_VIEWS = ['pipeline', 'activity', 'applicants', 'interviews'];
+
 const HrDashboardPage = () => {
+  const [activeView, setActiveView] = useDashboardView(HR_DASHBOARD_VIEWS, 'pipeline');
   const [state, setState] = useState({
     loading: true,
     error: '',
@@ -323,6 +330,12 @@ const HrDashboardPage = () => {
   };
   const stageThemeList = Object.values(stageTheme);
   const firstName = (user?.name || user?.fullName || 'there').split(' ')[0];
+  const focusItems = [
+    { key: 'pipeline', label: 'Hiring pipeline', description: 'Review candidate movement across every active hiring stage.', count: pipelineTotal > 1 ? pipelineTotal : 0, icon: FiTrendingUp },
+    { key: 'activity', label: 'Activity', description: 'Continue from the latest job, applicant, drive, and interview events.', count: activityFeed.length, icon: FiBriefcase },
+    { key: 'applicants', label: 'Applicants', description: 'Review the newest job and campus applicants in one focused queue.', count: latestApplicants.length, icon: FiUsers },
+    { key: 'interviews', label: 'Interviews', description: 'Prepare for upcoming candidate conversations and scheduling.', count: upcomingInterviews.length, icon: FiCalendar }
+  ];
 
   return (
     <div className="space-y-4 pb-6">
@@ -340,55 +353,36 @@ const HrDashboardPage = () => {
         </div>
       )}
 
-      <section className="overflow-hidden rounded-lg border border-slate-800 bg-navy text-white shadow-[0_18px_42px_rgba(15,23,42,0.16)]">
-        <div className="h-1 bg-brand-500" />
-        <div className="flex flex-col gap-4 px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase text-brand-300">
-              {new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'}, {firstName}
-            </p>
-            <h1 className="mt-1 text-[23px] font-extrabold leading-tight text-white sm:text-[27px]">Hiring command center</h1>
-            <p className="mt-1.5 max-w-2xl text-[12px] leading-5 text-white/65 sm:text-[13px]">
-              {state.loading
-                ? 'Loading your current hiring movement.'
-                : `${Number(analytics.openJobs || analytics.totalJobs || 0).toLocaleString('en-IN')} active roles, ${Number(totalApplicantCount || 0).toLocaleString('en-IN')} applicants, and ${Number(scheduledInterviewCount || 0).toLocaleString('en-IN')} interviews in motion.`}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
+      <DashboardPageHeader
+        eyebrow={`Hiring workspace · ${firstName}`}
+        title="Hiring command center"
+        description="Move from open roles to applicants, interviews, and hires through one focused workflow at a time."
+        actions={(
+          <>
             <Link to="/portal/hr/jobs?tab=post" className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-brand-500 px-4 py-2 text-[12px] font-black text-slate-950 transition hover:bg-brand-400 active:scale-[0.98]">
               <FiPlus size={14} strokeWidth={2.5} /> New job
             </Link>
-            <Link to="/portal/hr/candidates" className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-white/25 bg-white/[0.08] px-4 py-2 text-[12px] font-bold text-white transition hover:border-white/45 hover:bg-white/[0.12] active:scale-[0.98]">
+            <Link to="/portal/hr/candidates" className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-[12px] font-bold text-navy transition hover:bg-slate-50 active:scale-[0.98]">
               <FiUsers size={14} /> Find candidates
             </Link>
-          </div>
-        </div>
+          </>
+        )}
+      />
 
-        <div className="grid grid-cols-2 border-t border-white/10 lg:grid-cols-4">
-          {[
-            { label: 'Open roles', val: analytics.openJobs || analytics.totalJobs || 0, icon: FiBriefcase, to: jobPostingsRoute },
-            { label: 'Applicants', val: totalApplicantCount, icon: FiUsers, to: applicantHubRoute },
-            { label: 'Interviews', val: scheduledInterviewCount, icon: FiCalendar, to: '/portal/hr/interviews' },
-            { label: 'Hired', val: combinedPipeline.hired || 0, icon: FiTrendingUp, to: `${applicantHubRoute}?status=hired` }
-          ].map((metric) => (
-            <Link
-              key={metric.label}
-              to={metric.to}
-              className="group flex min-h-[78px] items-center gap-3 border-b border-r border-white/10 px-4 py-3 transition hover:bg-white/[0.07] lg:border-b-0 lg:last:border-r-0"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.08] text-brand-300 transition group-hover:border-brand-300/50 group-hover:bg-brand-400/15">
-                <metric.icon size={16} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[22px] font-extrabold leading-none text-white">{state.loading ? '--' : Number(metric.val || 0).toLocaleString('en-IN')}</p>
-                <p className="mt-1 text-[10px] font-bold uppercase text-white/48">{metric.label}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <DashboardSummaryStrip
+        loading={state.loading}
+        items={[
+          { label: 'Open roles', value: Number(analytics.openJobs || analytics.totalJobs || 0).toLocaleString('en-IN'), icon: FiBriefcase, to: jobPostingsRoute },
+          { label: 'Applicants', value: Number(totalApplicantCount || 0).toLocaleString('en-IN'), icon: FiUsers, to: applicantHubRoute },
+          { label: 'Interviews', value: Number(scheduledInterviewCount || 0).toLocaleString('en-IN'), icon: FiCalendar, to: '/portal/hr/interviews' },
+          { label: 'Hired', value: Number(combinedPipeline.hired || 0).toLocaleString('en-IN'), icon: FiTrendingUp, to: `${applicantHubRoute}?status=hired` }
+        ]}
+      />
 
-      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="HR dashboard workspaces" title="Hiring view" />
+
+      {activeView === 'pipeline' ? (
+      <section id="dashboard-view-pipeline" role="tabpanel" aria-labelledby="dashboard-tab-pipeline" className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between px-5 py-3.5">
           <div>
             <h2 className="text-[15px] font-bold text-slate-900">Hiring Pipeline</h2>
@@ -437,9 +431,10 @@ const HrDashboardPage = () => {
           ))}
         </div>
       </section>
+      ) : null}
 
-      <div className="grid items-start gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      {activeView === 'activity' ? (
+        <section id="dashboard-view-activity" role="tabpanel" aria-labelledby="dashboard-tab-activity" className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-50 px-5 py-3.5">
             <h2 className="text-[15px] font-bold text-slate-900">Activity Feed</h2>
             <Link to={jobPostingsRoute} className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700">
@@ -489,8 +484,10 @@ const HrDashboardPage = () => {
             )}
           </div>
         </section>
+      ) : null}
 
-        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      {activeView === 'applicants' ? (
+        <section id="dashboard-view-applicants" role="tabpanel" aria-labelledby="dashboard-tab-applicants" className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-50 px-5 py-3.5">
             <h2 className="text-[15px] font-bold text-slate-900">Applicant Pipelines</h2>
             <Link to={applicantHubRoute} className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700">
@@ -533,9 +530,10 @@ const HrDashboardPage = () => {
             )}
           </div>
         </section>
-      </div>
+      ) : null}
 
-      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      {activeView === 'interviews' ? (
+      <section id="dashboard-view-interviews" role="tabpanel" aria-labelledby="dashboard-tab-interviews" className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-50 px-5 py-3.5">
           <div className="flex items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
@@ -595,6 +593,7 @@ const HrDashboardPage = () => {
           )}
         </div>
       </section>
+      ) : null}
     </div>
   );
 };

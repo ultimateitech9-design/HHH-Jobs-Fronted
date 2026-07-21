@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FiEye, FiEyeOff, FiPlus, FiX } from 'react-icons/fi';
-import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import { FiAlertTriangle, FiBriefcase, FiDatabase, FiEye, FiEyeOff, FiPlus, FiShield, FiX } from 'react-icons/fi';
+import DashboardFocusNav from '../../../shared/components/dashboard/DashboardFocusNav';
+import DashboardPageHeader from '../../../shared/components/dashboard/DashboardPageHeader';
+import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
+import DashboardSummaryStrip from '../../../shared/components/dashboard/DashboardSummaryStrip';
+import useDashboardView from '../../../shared/hooks/useDashboardView';
 import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/passwordPolicy';
 import { createDataEntryUserId, getDataEntryDashboard } from '../services/dataentryApi';
 
@@ -50,6 +54,8 @@ const roleLabels = {
   hr: 'HR',
   student: 'Student'
 };
+
+const DATA_ENTRY_DASHBOARD_VIEWS = ['throughput', 'quality'];
 
 const initialUserForm = {
   name: '',
@@ -247,6 +253,7 @@ const CreateDataEntryUserModal = ({ open, onClose, onCreated }) => {
 };
 
 const DataEntryDashboard = () => {
+  const [activeView, setActiveView] = useDashboardView(DATA_ENTRY_DASHBOARD_VIEWS, 'throughput');
   const [state, setState] = useState({
     loading: true,
     error: '',
@@ -289,38 +296,12 @@ const DataEntryDashboard = () => {
     };
   }, []);
 
-  const stats = useMemo(() => {
-    const totals = state.dashboard.totals || {};
-    const quality = state.dashboard.quality || {};
-
-    return [
-      {
-        label: 'Candidates Added',
-        value: Number(totals.candidatesAdded || 0),
-        helper: 'Profiles created by the data entry team'
-      },
-      {
-        label: 'Jobs Posted',
-        value: Number(totals.jobsPosted || 0),
-        helper: 'Openings added to the system'
-      },
-      {
-        label: 'Companies Added',
-        value: Number(totals.companiesAdded || 0),
-        helper: 'Company records created'
-      },
-      {
-        label: 'Errors / Duplicates',
-        value: Number(quality.errors || 0) + Number(quality.duplicateEntries || 0),
-        helper: `${quality.errors || 0} errors | ${quality.duplicateEntries || 0} duplicates`
-      }
-    ];
-  }, [state.dashboard]);
-
-  const statCards = stats.map((card, index) => ({
-    ...card,
-    tone: ['accent', 'info', 'success', 'danger'][index] || 'default'
-  }));
+  const totals = state.dashboard.totals || {};
+  const quality = state.dashboard.quality || {};
+  const focusItems = [
+    { key: 'throughput', label: 'Entry throughput', description: 'Review the volume created across candidates, jobs, companies, and HR contacts.', count: Number(totals.totalEntries || 0), icon: FiDatabase },
+    { key: 'quality', label: 'Quality queue', description: 'Resolve validation errors, duplicate records, and pending review work.', count: Number(quality.errors || 0) + Number(quality.duplicateEntries || 0) + Number(quality.pendingReview || 0), icon: FiShield }
+  ];
 
   const handleCreatedUser = (user) => {
     const roleName = roleLabels[user?.role] || 'User';
@@ -330,18 +311,16 @@ const DataEntryDashboard = () => {
 
   return (
     <div className="space-y-3 pb-2">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Data Entry Workspace</p>
-          <h1 className="mt-1 text-2xl font-black tracking-tight text-navy sm:text-3xl">Data Entry Dashboard</h1>
-          <p className="mt-1 max-w-2xl text-sm font-semibold text-slate-500">
-            Candidate, company, and job entry operations in one command view.
-          </p>
-        </div>
-        <button type="button" className="btn-primary inline-flex w-full items-center justify-center gap-2 sm:w-auto" onClick={() => setIsCreateUserOpen(true)}>
-          <FiPlus size={14} /> Create User ID
-        </button>
-      </div>
+      <DashboardPageHeader
+        eyebrow="Data operations"
+        title="Entry workspace"
+        description="Create reliable candidate, employer, and job records while keeping quality review separate from throughput."
+        actions={(
+          <button type="button" className="btn-primary inline-flex w-full items-center justify-center gap-2 sm:w-auto" onClick={() => setIsCreateUserOpen(true)}>
+            <FiPlus size={14} /> Create user ID
+          </button>
+        )}
+      />
 
       {state.isDemo ? <p className="module-note">Demo data is being shown because the data entry backend is not connected.</p> : null}
       {state.error ? <p className="form-error">{state.error}</p> : null}
@@ -351,7 +330,59 @@ const DataEntryDashboard = () => {
 
       {!state.loading ? (
         <>
-          <DashboardMetricCards cards={statCards} />
+          <DashboardSummaryStrip
+            items={[
+              { label: 'Candidates added', value: Number(totals.candidatesAdded || 0).toLocaleString('en-IN'), icon: FiDatabase },
+              { label: 'Jobs posted', value: Number(totals.jobsPosted || 0).toLocaleString('en-IN'), icon: FiBriefcase },
+              { label: 'Companies added', value: Number(totals.companiesAdded || 0).toLocaleString('en-IN'), icon: FiDatabase },
+              { label: 'Errors / duplicates', value: (Number(quality.errors || 0) + Number(quality.duplicateEntries || 0)).toLocaleString('en-IN'), icon: FiAlertTriangle }
+            ]}
+          />
+
+          <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Data entry dashboard workspaces" title="Entry view" />
+
+          {activeView === 'throughput' ? (
+            <DashboardSectionCard eyebrow="Throughput" title="Created records" subtitle="Current output recorded by the data entry team.">
+              <div className="divide-y divide-slate-100">
+                {[
+                  ['Candidate profiles', totals.candidatesAdded, 'Profiles created by the data entry team'],
+                  ['Job openings', totals.jobsPosted, 'Openings added to the platform'],
+                  ['Company records', totals.companiesAdded, 'Employer records created'],
+                  ['HR contacts', totals.hrContactsAdded, 'Recruiter contacts linked to companies']
+                ].map(([label, value, helper]) => (
+                  <div key={label} className="flex min-h-14 items-center justify-between gap-4 px-2 py-3">
+                    <div>
+                      <p className="text-sm font-bold text-navy">{label}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">{helper}</p>
+                    </div>
+                    <strong className="text-lg font-black tabular-nums text-slate-800">{Number(value || 0).toLocaleString('en-IN')}</strong>
+                  </div>
+                ))}
+              </div>
+            </DashboardSectionCard>
+          ) : null}
+
+          {activeView === 'quality' ? (
+            <DashboardSectionCard eyebrow="Quality control" title="Review queue" subtitle="Records that need correction, review, or approval.">
+              <div className="divide-y divide-slate-100">
+                {[
+                  ['Validation errors', quality.errors, 'Records with incomplete or invalid fields'],
+                  ['Possible duplicates', quality.duplicateEntries, 'Records that may represent the same entity'],
+                  ['Pending review', quality.pendingReview, 'Entries waiting for a reviewer'],
+                  ['Approved', quality.approved, 'Entries cleared by quality review'],
+                  ['Drafts', quality.drafts, 'Incomplete work saved for later']
+                ].map(([label, value, helper]) => (
+                  <div key={label} className="flex min-h-14 items-center justify-between gap-4 px-2 py-3">
+                    <div>
+                      <p className="text-sm font-bold text-navy">{label}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">{helper}</p>
+                    </div>
+                    <strong className="text-lg font-black tabular-nums text-slate-800">{Number(value || 0).toLocaleString('en-IN')}</strong>
+                  </div>
+                ))}
+              </div>
+            </DashboardSectionCard>
+          ) : null}
         </>
       ) : null}
       <CreateDataEntryUserModal

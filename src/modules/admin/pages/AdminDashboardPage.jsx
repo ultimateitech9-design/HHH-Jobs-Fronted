@@ -7,17 +7,23 @@ import {
   FiShield,
   FiUsers
 } from 'react-icons/fi';
-import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import DashboardFocusNav from '../../../shared/components/dashboard/DashboardFocusNav';
 import DashboardLoadingSkeleton from '../../../shared/components/dashboard/DashboardLoadingSkeleton';
+import DashboardPageHeader from '../../../shared/components/dashboard/DashboardPageHeader';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
+import DashboardSummaryStrip from '../../../shared/components/dashboard/DashboardSummaryStrip';
 import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import StatusPill from '../../../shared/components/StatusPill';
+import useDashboardView from '../../../shared/hooks/useDashboardView';
 import {
   formatDateTime,
   getAdminDashboard
 } from '../services/adminApi';
 
+const ADMIN_DASHBOARD_VIEWS = ['priorities', 'recruiters', 'jobs', 'reports'];
+
 const AdminDashboardPage = () => {
+  const [activeView, setActiveView] = useDashboardView(ADMIN_DASHBOARD_VIEWS, 'priorities');
   const [state, setState] = useState({
     loading: true,
     error: '',
@@ -67,60 +73,6 @@ const AdminDashboardPage = () => {
     };
   }, []);
 
-  const cards = useMemo(() => {
-    const analytics = state.analytics || {
-      totalUsers: 0,
-      totalHr: 0,
-      approvedHr: 0,
-      activeUsers: 0,
-      blockedUsers: 0,
-      totalJobs: 0,
-      openJobs: 0,
-      pendingJobs: 0,
-      reportsOpen: 0,
-      reportsTotal: 0
-    };
-
-    return [
-      {
-        label: 'Total Users',
-        value: String(analytics.totalUsers || 0),
-        helper: `Active: ${analytics.activeUsers || 0} | Blocked: ${analytics.blockedUsers || 0}`,
-        icon: <FiUsers className="text-sky-700" />,
-        tone: 'info',
-        to: '/portal/admin/users',
-        ctaLabel: 'Open users'
-      },
-      {
-        label: 'HR Accounts',
-        value: String(analytics.totalHr || 0),
-        helper: `Approved: ${analytics.approvedHr || 0} | Pending: ${(analytics.totalHr || 0) - (analytics.approvedHr || 0)}`,
-        icon: <FiShield className="text-brand-700" />,
-        tone: 'accent',
-        to: '/portal/admin/users',
-        ctaLabel: 'Review accounts'
-      },
-      {
-        label: 'Job Listings',
-        value: String(analytics.totalJobs || 0),
-        helper: `Open: ${analytics.openJobs || 0} | Pending: ${analytics.pendingJobs || 0}`,
-        icon: <FiBriefcase className="text-emerald-700" />,
-        tone: 'success',
-        to: '/portal/admin/jobs',
-        ctaLabel: 'Open jobs'
-      },
-      {
-        label: 'Open Reports',
-        value: String(analytics.reportsTotal || 0),
-        helper: `Needs attention: ${analytics.reportsOpen || 0}`,
-        icon: <FiFlag className="text-amber-700" />,
-        tone: 'warning',
-        to: '/portal/admin/reports',
-        ctaLabel: 'Open reports'
-      }
-    ];
-  }, [state.analytics]);
-
   const priorityItems = useMemo(() => (
     [
       {
@@ -144,15 +96,20 @@ const AdminDashboardPage = () => {
     ]
   ), [state.pendingHr, state.pendingJobs, state.openReports]);
 
+  const focusItems = [
+    { key: 'priorities', label: 'Priorities', description: 'Start with the queues that need an admin decision today.', count: priorityItems.reduce((sum, item) => sum + item.value, 0), icon: FiShield },
+    { key: 'recruiters', label: 'Recruiter approvals', description: 'Review recent employer accounts waiting for verification.', count: state.pendingHr.length, icon: FiUsers },
+    { key: 'jobs', label: 'Job review', description: 'Review listings waiting for a publishing decision.', count: state.pendingJobs.length, icon: FiBriefcase },
+    { key: 'reports', label: 'Reports', description: 'Resolve reported content and account issues.', count: state.openReports.length, icon: FiFlag }
+  ];
+
   return (
     <div className="admin-dashboard-page pb-3">
-      <div className="mb-4">
-        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Admin Console</p>
-        <h1 className="mt-1 text-2xl font-black tracking-tight text-navy sm:text-3xl">Admin Dashboard</h1>
-        <p className="mt-1 max-w-2xl text-sm font-semibold text-slate-500">
-          Manage approvals, users, jobs, reports, and payments from one workspace.
-        </p>
-      </div>
+      <DashboardPageHeader
+        eyebrow="Admin console"
+        title="Operations overview"
+        description="Work through approvals, listing reviews, and reports one queue at a time."
+      />
 
       {state.isDemo ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 font-semibold text-amber-700">
@@ -169,18 +126,20 @@ const AdminDashboardPage = () => {
 
       {!state.loading ? (
         <>
-          <div className="mt-4 rounded-[1.1rem] border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="mb-2 flex items-center justify-between gap-3 px-1">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Quick Access</p>
-                <p className="mt-1 text-sm font-semibold text-slate-600">Open the main admin areas directly from here.</p>
-              </div>
-            </div>
-            <DashboardMetricCards cards={cards} className="gap-3" />
+          <DashboardSummaryStrip
+            className="mt-3"
+            items={[
+              { label: 'Recruiter approvals', value: state.pendingHr.length, icon: FiUsers, to: '/portal/admin/users' },
+              { label: 'Listings in review', value: state.pendingJobs.length, icon: FiBriefcase, to: '/portal/admin/jobs' },
+              { label: 'Open reports', value: state.openReports.length, icon: FiFlag, to: '/portal/admin/reports' }
+            ]}
+          />
+          <div className="mt-3">
+            <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Admin dashboard workspaces" title="Review queue" />
           </div>
 
-          <div className="mt-4 grid gap-3 xl:grid-cols-[1.1fr_0.9fr]">
-            <div className="grid gap-3">
+          <div className="mt-3">
+            {activeView === 'recruiters' ? (
               <DashboardSectionCard
                 eyebrow="Recruiter Queue"
                 title="Pending recruiter approvals"
@@ -209,7 +168,9 @@ const AdminDashboardPage = () => {
                   )}
                 </div>
               </DashboardSectionCard>
+            ) : null}
 
+            {activeView === 'jobs' ? (
               <DashboardSectionCard
                 eyebrow="Listing Review"
                 title="Jobs awaiting decision"
@@ -238,9 +199,9 @@ const AdminDashboardPage = () => {
                   )}
                 </div>
               </DashboardSectionCard>
-            </div>
+            ) : null}
 
-            <div className="grid gap-3">
+            {activeView === 'reports' ? (
               <DashboardSectionCard
                 eyebrow="Report Center"
                 title="Open reports"
@@ -278,7 +239,9 @@ const AdminDashboardPage = () => {
                   )}
                 </div>
               </DashboardSectionCard>
+            ) : null}
 
+            {activeView === 'priorities' ? (
               <DashboardSectionCard
                 eyebrow="Daily Priorities"
                 title="Admin focus for today"
@@ -299,7 +262,7 @@ const AdminDashboardPage = () => {
                   ))}
                 </div>
               </DashboardSectionCard>
-            </div>
+            ) : null}
           </div>
         </>
       ) : null}

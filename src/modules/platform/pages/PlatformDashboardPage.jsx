@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
+import { FiActivity, FiGrid, FiLink, FiMessageCircle, FiShield } from 'react-icons/fi';
 import StatusPill from '../../../shared/components/StatusPill';
-import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
-import DashboardQuickActionCard from '../../../shared/components/dashboard/DashboardQuickActionCard';
+import DashboardFocusNav from '../../../shared/components/dashboard/DashboardFocusNav';
+import DashboardPageHeader from '../../../shared/components/dashboard/DashboardPageHeader';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
-import PortalDashboardHero from '../../../shared/components/dashboard/PortalDashboardHero';
+import DashboardSummaryStrip from '../../../shared/components/dashboard/DashboardSummaryStrip';
 import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
+import useDashboardView from '../../../shared/hooks/useDashboardView';
 import {
   formatDateTime,
   getPlatformIntegrations,
@@ -15,7 +17,10 @@ import {
   getPlatformTenants
 } from '../services/platformApi';
 
+const PLATFORM_DASHBOARD_VIEWS = ['priorities', 'tenants', 'support', 'integrations', 'security'];
+
 const PlatformDashboardPage = () => {
+  const [activeView, setActiveView] = useDashboardView(PLATFORM_DASHBOARD_VIEWS, 'priorities');
   const [state, setState] = useState({
     loading: true,
     isDemo: false,
@@ -70,64 +75,6 @@ const PlatformDashboardPage = () => {
     };
   }, []);
 
-  const cards = useMemo(() => {
-    const overview = state.overview || {
-      totalTenants: 0,
-      activeTenants: 0,
-      suspendedTenants: 0,
-      pendingTenants: 0,
-      openTickets: 0,
-      healthyIntegrations: 0,
-      degradedIntegrations: 0,
-      monthlyRevenue: 0,
-      complianceHealthy: 0,
-      complianceTotal: 0
-    };
-
-    return [
-      {
-        label: 'Tenants',
-        value: String(overview.totalTenants || 0),
-        helper: `${overview.activeTenants || 0} active • ${overview.suspendedTenants || 0} suspended`,
-        tone: 'info'
-      },
-      {
-        label: 'Revenue (Monthly)',
-        value: String(overview.monthlyRevenue || 0),
-        helper: 'Paid invoices aggregate',
-        tone: 'success'
-      },
-      {
-        label: 'Open Tickets',
-        value: String(overview.openTickets || 0),
-        helper: 'Priority support queue',
-        tone: overview.openTickets > 0 ? 'warning' : 'default'
-      },
-      {
-        label: 'Compliance Health',
-        value: `${overview.complianceHealthy || 0}/${overview.complianceTotal || 0}`,
-        helper: `${overview.healthyIntegrations || 0} healthy integrations`,
-        tone: overview.degradedIntegrations > 0 ? 'warning' : 'success'
-      }
-    ];
-  }, [state.overview]);
-
-  const platformSignals = useMemo(() => {
-    const highPriorityTickets = state.tickets.filter((ticket) => String(ticket.priority || '').toLowerCase() === 'high').length;
-    const degradedIntegrations = state.integrations.filter(
-      (integration) => String(integration.status || '').toLowerCase() !== 'active'
-    ).length;
-    const unhealthyChecks = state.checks.filter((check) => String(check.status || '').toLowerCase() !== 'healthy').length;
-    const nonActiveTenants = state.tenants.filter((tenant) => String(tenant.status || '').toLowerCase() !== 'active').length;
-
-    return [
-      { label: 'Non-active tenants', value: nonActiveTenants },
-      { label: 'High priority tickets', value: highPriorityTickets },
-      { label: 'Degraded integrations', value: degradedIntegrations },
-      { label: 'Compliance warnings', value: unhealthyChecks }
-    ];
-  }, [state.tenants, state.tickets, state.integrations, state.checks]);
-
   const operationsChecklist = useMemo(() => {
     const openTickets = state.tickets.filter((ticket) => String(ticket.status || '').toLowerCase() === 'open').length;
     const degradedIntegrations = state.integrations.filter(
@@ -160,74 +107,71 @@ const PlatformDashboardPage = () => {
     ];
   }, [state.tickets, state.integrations, state.checks]);
 
-  const quickActions = [
-    {
-      title: 'Tenant Lifecycle',
-      description: 'Oversee tenant status, plan allocations, and renewal posture.',
-      to: '/portal/platform/tenants'
-    },
-    {
-      title: 'Billing Control',
-      description: 'Track invoice health, payment states, and revenue consistency.',
-      to: '/portal/platform/billing'
-    },
-    {
-      title: 'Integration Health',
-      description: 'Detect degraded connectors and trigger sync recovery quickly.',
-      to: '/portal/platform/integrations'
-    },
-    {
-      title: 'Security Controls',
-      description: 'Review compliance checks and close risk observations proactively.',
-      to: '/portal/platform/security'
-    }
+  const overview = state.overview || {};
+  const focusItems = [
+    { key: 'priorities', label: 'Priorities', description: 'Follow the recommended order for tenant reliability and service quality.', icon: FiActivity },
+    { key: 'tenants', label: 'Tenants', description: 'Review active and non-active tenant posture.', count: state.tenants.length, icon: FiGrid },
+    { key: 'support', label: 'Support', description: 'Inspect recent priority tenant tickets.', count: state.tickets.length, icon: FiMessageCircle },
+    { key: 'integrations', label: 'Integrations', description: 'Review connector sync and recovery health.', count: state.integrations.length, icon: FiLink },
+    { key: 'security', label: 'Security', description: 'Inspect compliance controls and risk observations.', count: state.checks.length, icon: FiShield }
   ];
 
   return (
     <div className="space-y-3 pb-2">
       {state.isDemo ? <p className="module-note">Showing fallback platform telemetry because the live backend is unavailable right now.</p> : null}
       {state.error ? <p className="form-error">{state.error}</p> : null}
-      <PortalDashboardHero
-        tone="platform"
-        eyebrow="Platform Dashboard"
-        badge={state.isDemo ? 'Demo telemetry' : 'Operations live'}
-        title="Operations command center for tenants, billing, integrations, and risk"
-        description="Monitor multi-tenant reliability, billing posture, connector state, and support pressure from one executive platform screen."
-        chips={['Tenant health', 'Billing posture', 'Compliance watch']}
-        primaryAction={{ to: '/portal/platform/tenants', label: 'Manage Tenants' }}
-        secondaryAction={{ to: '/portal/platform/support', label: 'Open Support Ops' }}
-        metrics={platformSignals.map((signal) => ({ ...signal, helper: 'Current live count' }))}
+
+      <DashboardPageHeader
+        eyebrow="Platform operations"
+        title="Platform control center"
+        description="Review tenant health, support pressure, connector reliability, and compliance without mixing unrelated workflows."
+        meta={[
+          { label: 'Environment', value: state.isDemo ? 'Demo data' : 'Live' },
+          { label: 'Tenant state', value: `${overview.activeTenants || 0} active` }
+        ]}
+        actions={(
+          <>
+            <Link to="/portal/platform/tenants" className={dashboardSectionActionClassName}>Manage tenants</Link>
+            <Link to="/portal/platform/support" className={dashboardSectionActionClassName}>Open support</Link>
+          </>
+        )}
+      />
+
+      <DashboardSummaryStrip
+        loading={state.loading}
+        items={[
+          { label: 'Active tenants', value: overview.activeTenants || 0, helper: `${overview.pendingTenants || 0} pending`, icon: FiGrid },
+          { label: 'Monthly revenue', value: `INR ${Number(overview.monthlyRevenue || 0).toLocaleString('en-IN')}`, helper: 'Current billing run' },
+          { label: 'Open tickets', value: state.tickets.filter((ticket) => String(ticket.status || '').toLowerCase() === 'open').length, helper: `${state.tickets.length} visible`, icon: FiMessageCircle },
+          { label: 'Healthy controls', value: overview.complianceHealthy || 0, helper: `${state.checks.length} checks`, icon: FiShield }
+        ]}
+      />
+
+      <DashboardFocusNav
+        title="Operations view"
+        label="Platform operations views"
+        items={focusItems}
+        activeKey={activeView}
+        onChange={setActiveView}
       />
 
       {state.loading ? <p className="module-note">Loading platform dashboard...</p> : null}
 
       {!state.loading ? (
         <>
-          <DashboardMetricCards cards={cards} />
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {quickActions.map((action) => (
-              <DashboardQuickActionCard
-                key={action.title}
-                to={action.to}
-                title={action.title}
-                description={action.description}
-                tone="info"
-                ctaLabel="Open workspace"
-              />
-            ))}
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          {activeView === 'priorities' ? (
             <DashboardSectionCard
-              eyebrow="Shift Brief"
-              title="Immediate Platform Priorities"
-              subtitle="Suggested order to stabilize reliability and tenant service quality."
+              eyebrow="Shift brief"
+              title="Immediate platform priorities"
+              subtitle="Work through the highest-value reliability checks in order."
+              id="dashboard-view-priorities"
+              role="tabpanel"
+              aria-labelledby="dashboard-tab-priorities"
             >
-              <ul className="space-y-3">
+              <ol className="divide-y divide-slate-200 border-y border-slate-200">
                 {operationsChecklist.map((item, index) => (
-                  <li key={item.title} className="flex gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-black text-brand-700">
+                  <li key={item.title} className="flex gap-4 px-1 py-5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-50 text-sm font-black text-brand-700">
                       {index + 1}
                     </div>
                     <div>
@@ -236,56 +180,23 @@ const PlatformDashboardPage = () => {
                     </div>
                   </li>
                 ))}
-              </ul>
+              </ol>
             </DashboardSectionCard>
+          ) : null}
 
+          {activeView === 'tenants' ? (
             <DashboardSectionCard
-              eyebrow="Health Snapshot"
-              title="Tenant and Reliability Mix"
-              subtitle="Cross-check tenant state with integration and control outcomes."
+              eyebrow="Tenant directory"
+              title="Tenant health and access"
+              subtitle="Review plan, usage, renewal, and operating status for each tenant."
+              action={<Link to="/portal/platform/tenants" className={dashboardSectionActionClassName}>Manage tenants</Link>}
+              id="dashboard-view-tenants"
+              role="tabpanel"
+              aria-labelledby="dashboard-tab-tenants"
             >
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-500">Active tenants</p>
-                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.activeTenants || 0}</p>
-                </article>
-                <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-500">Pending tenants</p>
-                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.pendingTenants || 0}</p>
-                </article>
-                <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-500">Suspended tenants</p>
-                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.suspendedTenants || 0}</p>
-                </article>
-                <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-500">Healthy integrations</p>
-                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.healthyIntegrations || 0}</p>
-                </article>
-                <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-500">Degraded integrations</p>
-                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.degradedIntegrations || 0}</p>
-                </article>
-                <article className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-500">Healthy controls</p>
-                  <p className="mt-3 font-heading text-3xl font-bold text-navy">{state.overview?.complianceHealthy || 0}</p>
-                </article>
-              </div>
-            </DashboardSectionCard>
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-2">
-            <DashboardSectionCard
-              eyebrow="Top Tenants"
-              title="Active Tenant Footprint"
-              action={
-                <Link to="/portal/platform/tenants" className={dashboardSectionActionClassName}>
-                  Open Tenant Manager
-                </Link>
-              }
-            >
-              <ul className="space-y-3">
-                {state.tenants.slice(0, 6).map((tenant) => (
-                  <li key={tenant.id} className="flex items-start justify-between gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+              <ul className="divide-y divide-slate-200 border-y border-slate-200">
+                {state.tenants.map((tenant) => (
+                  <li key={tenant.id} className="flex items-start justify-between gap-4 px-1 py-5">
                     <div>
                       <p className="font-semibold text-slate-900">{tenant.name}</p>
                       <p className="mt-1 text-sm text-slate-500">{tenant.domain || '-'} • Plan: {tenant.plan}</p>
@@ -295,25 +206,27 @@ const PlatformDashboardPage = () => {
                   </li>
                 ))}
                 {state.tenants.length === 0 ? (
-                  <li className="rounded-[1.4rem] border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
+                  <li className="px-4 py-8 text-center text-sm text-slate-500">
                     No tenant records available.
                   </li>
                 ) : null}
               </ul>
             </DashboardSectionCard>
+          ) : null}
 
+          {activeView === 'support' ? (
             <DashboardSectionCard
-              eyebrow="Support Queue"
-              title="Recent Priority Tickets"
-              action={
-                <Link to="/portal/platform/support" className={dashboardSectionActionClassName}>
-                  Open Support Ops
-                </Link>
-              }
+              eyebrow="Support queue"
+              title="Priority tenant tickets"
+              subtitle="See ownership, urgency, and current ticket state in one list."
+              action={<Link to="/portal/platform/support" className={dashboardSectionActionClassName}>Open support operations</Link>}
+              id="dashboard-view-support"
+              role="tabpanel"
+              aria-labelledby="dashboard-tab-support"
             >
-              <ul className="space-y-3">
-                {state.tickets.slice(0, 6).map((ticket) => (
-                  <li key={ticket.id} className="flex items-start justify-between gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+              <ul className="divide-y divide-slate-200 border-y border-slate-200">
+                {state.tickets.map((ticket) => (
+                  <li key={ticket.id} className="flex items-start justify-between gap-4 px-1 py-5">
                     <div>
                       <p className="font-semibold text-slate-900">{ticket.title}</p>
                       <p className="mt-1 text-sm text-slate-500">{ticket.tenantName || ticket.tenantId} • Owner: {ticket.owner || '-'}</p>
@@ -326,27 +239,25 @@ const PlatformDashboardPage = () => {
                   </li>
                 ))}
                 {state.tickets.length === 0 ? (
-                  <li className="rounded-[1.4rem] border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
-                    No support tickets.
-                  </li>
+                  <li className="px-4 py-8 text-center text-sm text-slate-500">No support tickets.</li>
                 ) : null}
               </ul>
             </DashboardSectionCard>
-          </div>
+          ) : null}
 
-          <div className="grid gap-6 xl:grid-cols-2">
+          {activeView === 'integrations' ? (
             <DashboardSectionCard
               eyebrow="Integrations"
-              title="Connector Health"
-              action={
-                <Link to="/portal/platform/integrations" className={dashboardSectionActionClassName}>
-                  Open Integration Manager
-                </Link>
-              }
+              title="Connector health"
+              subtitle="Review synchronization state and ownership without unrelated platform noise."
+              action={<Link to="/portal/platform/integrations" className={dashboardSectionActionClassName}>Manage integrations</Link>}
+              id="dashboard-view-integrations"
+              role="tabpanel"
+              aria-labelledby="dashboard-tab-integrations"
             >
-              <ul className="space-y-3">
-                {state.integrations.slice(0, 6).map((integration) => (
-                  <li key={integration.id} className="flex items-start justify-between gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+              <ul className="divide-y divide-slate-200 border-y border-slate-200">
+                {state.integrations.map((integration) => (
+                  <li key={integration.id} className="flex items-start justify-between gap-4 px-1 py-5">
                     <div>
                       <p className="font-semibold text-slate-900">{integration.name}</p>
                       <p className="mt-1 text-sm text-slate-500">{integration.category} • Owner: {integration.owner}</p>
@@ -356,25 +267,25 @@ const PlatformDashboardPage = () => {
                   </li>
                 ))}
                 {state.integrations.length === 0 ? (
-                  <li className="rounded-[1.4rem] border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
-                    No integrations available.
-                  </li>
+                  <li className="px-4 py-8 text-center text-sm text-slate-500">No integrations available.</li>
                 ) : null}
               </ul>
             </DashboardSectionCard>
+          ) : null}
 
+          {activeView === 'security' ? (
             <DashboardSectionCard
               eyebrow="Security"
-              title="Compliance Controls"
-              action={
-                <Link to="/portal/platform/security" className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
-                  Open Security Controls
-                </Link>
-              }
+              title="Compliance controls"
+              subtitle="Keep each control, observation, and health outcome easy to scan."
+              action={<Link to="/portal/platform/security" className={dashboardSectionActionClassName}>Open security controls</Link>}
+              id="dashboard-view-security"
+              role="tabpanel"
+              aria-labelledby="dashboard-tab-security"
             >
-              <ul className="space-y-3">
-                {state.checks.slice(0, 6).map((check) => (
-                  <li key={check.id} className="flex items-start justify-between gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+              <ul className="divide-y divide-slate-200 border-y border-slate-200">
+                {state.checks.map((check) => (
+                  <li key={check.id} className="flex items-start justify-between gap-4 px-1 py-5">
                     <div>
                       <p className="font-semibold text-slate-900">{check.control}</p>
                       <p className="mt-1 text-sm text-slate-500">{check.note}</p>
@@ -383,13 +294,11 @@ const PlatformDashboardPage = () => {
                   </li>
                 ))}
                 {state.checks.length === 0 ? (
-                  <li className="rounded-[1.4rem] border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
-                    No compliance checks available.
-                  </li>
+                  <li className="px-4 py-8 text-center text-sm text-slate-500">No compliance checks available.</li>
                 ) : null}
               </ul>
             </DashboardSectionCard>
-          </div>
+          ) : null}
         </>
       ) : null}
     </div>

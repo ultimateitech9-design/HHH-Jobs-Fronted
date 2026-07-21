@@ -5,10 +5,14 @@ const DashboardSectionCard = ({
   action,
   className = '',
   bodyClassName = '',
-  children
+  children,
+  ...sectionProps
 }) => {
   return (
-    <section className={`rounded-[1.2rem] border border-slate-200 bg-white p-3.5 shadow-sm md:p-4 ${className}`.trim()}>
+    <section
+      className={`rounded-lg border border-slate-200 bg-white p-3.5 shadow-sm md:p-4 ${className}`.trim()}
+      {...sectionProps}
+    >
       {(eyebrow || title || subtitle || action) ? (
         <div className="mb-3.5 flex min-w-0 flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">

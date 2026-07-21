@@ -3,8 +3,6 @@ import {
   FiUsers, 
   FiSearch, 
   FiShield, 
-  FiLock, 
-  FiUserX, 
   FiCheckCircle, 
   FiXCircle, 
   FiTrash2, 
@@ -26,13 +24,17 @@ import { PASSWORD_POLICY_HELPER, getPasswordPolicyError } from '../../../utils/p
 import Pagination from '../../../shared/components/Pagination';
 import DateTimeCell from '../../../shared/components/DateTimeCell';
 import CompanyContextSummary from '../../../shared/components/CompanyContextSummary';
+import DashboardFocusNav from '../../../shared/components/dashboard/DashboardFocusNav';
+import DashboardPageHeader from '../../../shared/components/dashboard/DashboardPageHeader';
 import useDebouncedValue from '../../../shared/hooks/useDebouncedValue';
+import useDashboardView from '../../../shared/hooks/useDashboardView';
 import {
   getManagementDisplayId
 } from '../../../utils/managedUsers';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERS_PAGE_SIZE = 10;
+const ADMIN_USER_VIEWS = ['directory', 'workforce'];
 
 const getUserInitials = (name = '') => {
   const initials = String(name || '')
@@ -103,6 +105,7 @@ const getStatusBadge = (status) => {
 };
 
 const AdminUsersPage = () => {
+  const [activeView, setActiveView] = useDashboardView(ADMIN_USER_VIEWS, 'directory');
   const [users, setUsers] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [responseLimit, setResponseLimit] = useState(USERS_PAGE_SIZE);
@@ -279,44 +282,6 @@ const AdminUsersPage = () => {
     }
   };
 
-  const stats = useMemo(() => {
-    const hrUsers = users.filter((user) => String(user.role || '').toLowerCase() === 'hr');
-    const pendingHr = hrUsers.filter((user) => !user.is_hr_approved).length;
-    const blocked = users.filter((user) => String(user.status || '').toLowerCase() === 'blocked').length;
-    const banned = users.filter((user) => String(user.status || '').toLowerCase() === 'banned').length;
-
-    return [
-      {
-        label: 'Total Platform Users',
-        value: String(totalUsers),
-        helper: `${hrUsers.length} HR accounts on this page`,
-        icon: <FiUsers className="text-blue-500" />,
-        tone: 'blue'
-      },
-      {
-        label: 'HR Security Approvals',
-        value: String(pendingHr),
-        helper: 'Requires admin review',
-        icon: <FiShield className={pendingHr > 0 ? "text-amber-500" : "text-emerald-500"} />,
-        tone: pendingHr > 0 ? 'amber' : 'green'
-      },
-      {
-        label: 'Temporarily Blocked',
-        value: String(blocked),
-        helper: 'Restricted access',
-        icon: <FiLock className="text-amber-500" />,
-        tone: 'amber'
-      },
-      {
-        label: 'Banned Accounts',
-        value: String(banned),
-        helper: 'Permanently suspended',
-        icon: <FiUserX className="text-red-500" />,
-        tone: 'red'
-      }
-    ];
-  }, [users, totalUsers]);
-
   const filteredSecurityUsers = users;
 
   useEffect(() => {
@@ -415,22 +380,35 @@ const AdminUsersPage = () => {
     }
   };
 
+  const focusItems = [
+    {
+      key: 'directory',
+      label: 'Public directory',
+      description: 'Search and review public accounts, employer context, access, and recent activity.',
+      count: totalUsers,
+      icon: FiUsers
+    },
+    {
+      key: 'workforce',
+      label: 'Internal workforce',
+      description: 'Provision and revoke operational access for internal HHH Jobs teams.',
+      count: managedAccounts.length,
+      icon: FiKey
+    }
+  ];
+
   return (
     <div className="admin-ops-page">
       
-      <header className="admin-ops-header admin-users-header">
-        <div className="admin-users-header__copy">
-          <span className="admin-ops-kicker"><FiShield /> Access governance</span>
-          <h1 className="admin-ops-title">
-            Identity & Access
-          </h1>
-          <p className="admin-ops-subtitle">Manage platform users, HR verifications, and internal workforce accounts.</p>
-        </div>
-        <div className="admin-users-header__meta" aria-label="Directory summary">
-          <span><strong>{totalUsers}</strong> platform records</span>
-          <span><strong>{managedAccounts.length}</strong> workforce accounts</span>
-        </div>
-      </header>
+      <DashboardPageHeader
+        eyebrow="Access governance"
+        title="Identity & Access"
+        description="Review public identities or manage internal workforce access in a dedicated workspace."
+        meta={[
+          { label: 'Platform records', value: totalUsers.toLocaleString('en-IN') },
+          { label: 'Workforce accounts', value: managedAccounts.length.toLocaleString('en-IN') }
+        ]}
+      />
 
       {error && (
         <div className="admin-ops-alert admin-ops-alert--error animate-fade-in">
@@ -443,24 +421,17 @@ const AdminUsersPage = () => {
         </div>
       )}
 
-      {/* Stats Grid */}
-      <section className="admin-ops-stats">
-        {stats.map((card) => (
-          <article key={card.label} className="admin-ops-stat-card" data-tone={card.tone}>
-            <div className="admin-ops-stat-card__icon">
-              {card.icon}
-            </div>
-            <div className="admin-ops-stat-card__copy">
-              <p className="admin-ops-stat-card__label">{card.label}</p>
-              <h3 className="admin-ops-stat-card__value">{card.value}</h3>
-              <p className="admin-ops-stat-card__helper">{card.helper}</p>
-            </div>
-          </article>
-        ))}
-      </section>
+      <DashboardFocusNav
+        items={focusItems}
+        activeKey={activeView}
+        onChange={setActiveView}
+        label="Identity and access workspaces"
+        title="Directory"
+      />
 
       {/* Internal Workforce Management */}
-      <section className="admin-ops-panel admin-workforce-panel">
+      {activeView === 'workforce' ? (
+      <section id="dashboard-view-workforce" role="tabpanel" aria-labelledby="dashboard-tab-workforce" className="admin-ops-panel admin-workforce-panel">
         <div className="admin-ops-panel-header">
           <div className="admin-panel-heading">
             <span className="admin-panel-eyebrow">Internal access</span>
@@ -660,9 +631,11 @@ const AdminUsersPage = () => {
           <Pagination page={managedPage} totalPages={managedTotalPages} onChange={setManagedPage} />
         </div>
       </section>
+      ) : null}
 
       {/* Public Platform Users */}
-      <section className="admin-ops-panel admin-security-panel min-h-[420px]">
+      {activeView === 'directory' ? (
+      <section id="dashboard-view-directory" role="tabpanel" aria-labelledby="dashboard-tab-directory" className="admin-ops-panel admin-security-panel min-h-[420px]">
         <div className="admin-security-panel__header">
           <div className="admin-security-panel__heading">
             <div className="admin-panel-heading">
@@ -891,6 +864,7 @@ const AdminUsersPage = () => {
           />
         </div>
       </section>
+      ) : null}
 
     </div>
   );

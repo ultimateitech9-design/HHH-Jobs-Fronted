@@ -2,30 +2,25 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { FiAlertCircle, FiClock, FiMessageCircle, FiShield } from 'react-icons/fi';
 import StatusPill from '../../../shared/components/StatusPill';
-import DashboardMetricCards from '../../../shared/components/dashboard/DashboardMetricCards';
+import DashboardFocusNav from '../../../shared/components/dashboard/DashboardFocusNav';
+import DashboardPageHeader from '../../../shared/components/dashboard/DashboardPageHeader';
 import DashboardSectionCard from '../../../shared/components/dashboard/DashboardSectionCard';
+import DashboardSummaryStrip from '../../../shared/components/dashboard/DashboardSummaryStrip';
 import { dashboardSectionActionClassName } from '../../../shared/components/dashboard/dashboardActionStyles';
 import useSupportStats from '../hooks/useSupportStats';
 import useTickets from '../hooks/useTickets';
 import { formatDateTime } from '../utils/formatDate';
 import { getTicketDisplayId } from '../utils/ticketHelpers';
+import useDashboardView from '../../../shared/hooks/useDashboardView';
 
 const TICKET_QUEUE_ROUTE = '/portal/support/tickets';
 const ticketStatusRoute = (status) => `${TICKET_QUEUE_ROUTE}?status=${status}`;
+const SUPPORT_DASHBOARD_VIEWS = ['priorities', 'queue', 'recent'];
 
 const SupportDashboard = () => {
+  const [activeView, setActiveView] = useDashboardView(SUPPORT_DASHBOARD_VIEWS, 'priorities');
   const { stats, loading, error, isDemo } = useSupportStats();
   const { tickets, loading: ticketsLoading, error: ticketsError } = useTickets();
-
-  const cards = useMemo(() => {
-    const data = stats || {};
-    return [
-      { label: 'Total Tickets', value: String(data.totalTickets || 0), helper: `${data.openTickets || 0} open`, tone: 'info', icon: FiShield, to: TICKET_QUEUE_ROUTE, ctaLabel: 'Open tickets' },
-      { label: 'Resolved', value: String(data.resolvedTickets || 0), helper: `${data.avgResolutionHours || 0} hrs avg resolution`, tone: 'success', icon: FiClock, to: ticketStatusRoute('resolved'), ctaLabel: 'Open resolved tickets' },
-      { label: 'Escalations', value: String(data.escalatedTickets || 0), helper: `${data.pendingTickets || 0} pending`, tone: 'warning', icon: FiAlertCircle, to: ticketStatusRoute('escalated'), ctaLabel: 'Open escalations' },
-      { label: 'Live Chat', value: String(data.liveChats || 0), helper: `${data.feedbackItems || 0} feedback items`, tone: 'default', icon: FiMessageCircle, to: '/portal/support/live-chat', ctaLabel: 'Open live chat' }
-    ];
-  }, [stats]);
 
   const supportChecklist = useMemo(() => {
     const data = stats || {};
@@ -63,8 +58,19 @@ const SupportDashboard = () => {
     return bucket;
   }, [tickets]);
 
+  const focusItems = [
+    { key: 'priorities', label: 'Priorities', description: 'Follow the recommended service sequence for the current shift.', count: Number(stats?.escalatedTickets || 0) + Number(stats?.pendingTickets || 0), icon: FiAlertCircle },
+    { key: 'queue', label: 'Queue status', description: 'See active ticket distribution without opening every queue.', count: Number(stats?.totalTickets || tickets.length || 0), icon: FiShield },
+    { key: 'recent', label: 'Recent tickets', description: 'Open the latest support records and continue handling.', count: tickets.length, icon: FiMessageCircle }
+  ];
+
   return (
     <div className="space-y-3 pb-2">
+      <DashboardPageHeader
+        eyebrow="Service operations"
+        title="Support workspace"
+        description="Triage priorities, inspect queue balance, and continue recent tickets in separate views."
+      />
       {isDemo ? <p className="module-note">Demo support data is shown because backend support endpoints are not connected.</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {ticketsError ? <p className="form-error">{ticketsError}</p> : null}
@@ -72,9 +78,17 @@ const SupportDashboard = () => {
 
       {!loading ? (
         <>
-          <DashboardMetricCards cards={cards} />
+          <DashboardSummaryStrip
+            items={[
+              { label: 'Total tickets', value: Number(stats?.totalTickets || tickets.length || 0).toLocaleString('en-IN'), icon: FiMessageCircle, to: TICKET_QUEUE_ROUTE },
+              { label: 'Open', value: Number(queueMix.open || 0).toLocaleString('en-IN'), icon: FiClock, to: ticketStatusRoute('open') },
+              { label: 'Pending', value: Number(queueMix.pending || 0).toLocaleString('en-IN'), icon: FiClock, to: ticketStatusRoute('pending') },
+              { label: 'Escalated', value: Number(queueMix.escalated || 0).toLocaleString('en-IN'), icon: FiAlertCircle, to: ticketStatusRoute('escalated') }
+            ]}
+          />
+          <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Support dashboard workspaces" />
 
-          <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          {activeView === 'priorities' ? (
             <DashboardSectionCard
               eyebrow="Service Protocol"
               title="Immediate Desk Priorities"
@@ -85,7 +99,7 @@ const SupportDashboard = () => {
                   <li key={item.title}>
                     <Link
                       to={item.to}
-                      className="flex gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4 transition hover:border-brand-200 hover:bg-brand-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+                    className="flex gap-4 border-b border-slate-100 px-3 py-4 transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-300"
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-black text-brand-700">
                         {index + 1}
@@ -99,13 +113,15 @@ const SupportDashboard = () => {
                 ))}
               </ul>
             </DashboardSectionCard>
+          ) : null}
 
+          {activeView === 'queue' ? (
             <DashboardSectionCard
               eyebrow="Queue Mix"
               title="Ticket Status Distribution"
               subtitle="Snapshot of how the support desk is balancing active and resolved workload."
             >
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="divide-y divide-slate-100">
                 {[
                   ['Open', queueMix.open, ticketStatusRoute('open')],
                   ['Pending', queueMix.pending, ticketStatusRoute('pending')],
@@ -116,16 +132,17 @@ const SupportDashboard = () => {
                     key={label}
                     to={to}
                     aria-label={`Open ${String(label).toLowerCase()} tickets`}
-                    className="rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4 transition hover:border-brand-200 hover:bg-brand-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+                    className="flex items-center justify-between px-3 py-4 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-300"
                   >
                     <p className="text-sm font-semibold text-slate-500">{label}</p>
-                    <p className="mt-3 font-heading text-3xl font-bold text-navy">{value}</p>
+                    <p className="font-heading text-2xl font-bold text-navy">{value}</p>
                   </Link>
                 ))}
               </div>
             </DashboardSectionCard>
-          </div>
+          ) : null}
 
+          {activeView === 'recent' ? (
           <DashboardSectionCard
             eyebrow="Priority Tickets"
             title="Latest Queue Items"
@@ -141,7 +158,7 @@ const SupportDashboard = () => {
             ) : (
               <ul className="space-y-3">
                 {tickets.slice(0, 6).map((ticket) => (
-                  <li key={ticket.id} className="flex items-start justify-between gap-4 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <li key={ticket.id} className="flex items-start justify-between gap-4 border-b border-slate-100 px-3 py-4 last:border-b-0">
                     <div>
                       <p className="font-semibold text-slate-900">
                         <Link to={`/portal/support/ticket-details/${encodeURIComponent(ticket.id)}`} className="hover:text-brand-700">
@@ -173,6 +190,7 @@ const SupportDashboard = () => {
               </ul>
             )}
           </DashboardSectionCard>
+          ) : null}
         </>
       ) : null}
     </div>
