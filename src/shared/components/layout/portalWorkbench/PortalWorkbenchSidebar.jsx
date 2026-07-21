@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Building2, ChevronDown, LogOut } from 'lucide-react';
 import PortalWorkbenchBrand from './PortalWorkbenchBrand';
@@ -125,7 +125,7 @@ const PortalWorkbenchSidebar = ({
           {profilePath ? (
             <Link
               to={profilePath}
-              className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[0.94rem] font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
             >
               <Building2 className="h-4 w-4 shrink-0" />
               <span className="truncate">{profileShortcutLabel}</span>
@@ -135,31 +135,40 @@ const PortalWorkbenchSidebar = ({
       )}
 
       <nav className={`flex-1 space-y-0.5 overflow-y-auto ${isCollapsed ? 'px-2 py-2' : 'px-3 py-1'}`}>
-        {navItems.map((item) => {
+        {navItems.map((item, index) => {
           const Icon = item.icon;
           const itemKey = getItemKey(item);
           const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+          const showSectionLabel = !isCollapsed && item.section && item.section !== navItems[index - 1]?.section;
           const isGroupedItemActive = hasChildren
             ? item.children.some((child) => pathMatches(location.pathname, child.to))
             : false;
 
+          const sectionLabel = showSectionLabel ? (
+            <p className={`${index === 0 ? 'pb-1' : 'pb-1 pt-3'} px-3 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-slate-400`}>
+              {item.section}
+            </p>
+          ) : null;
+
           if (hasChildren && !isCollapsed) {
             return (
-              <div key={itemKey} className="space-y-1">
+              <Fragment key={itemKey}>
+                {sectionLabel}
+              <div className="space-y-1">
                 <button
                   type="button"
                   onClick={() => setOpenGroups((current) => ({ ...current, [itemKey]: !current[itemKey] }))}
-                  className={`group flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition-all duration-150 ${
+                  className={`group flex w-full items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-[0.94rem] font-medium transition-all duration-150 ${
                     isGroupedItemActive
-                      ? 'bg-gradient-to-r from-brand-50 to-brand-100 text-brand-800 shadow-sm ring-1 ring-brand-200'
-                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'border-brand-500 bg-brand-50 text-slate-900'
+                      : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
                   {Icon ? (
                     <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-150 ${
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 ${
                         isGroupedItemActive
-                          ? 'bg-brand-500 text-white shadow-sm'
+                          ? 'bg-brand-500 text-white'
                           : 'bg-slate-100 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-700'
                       }`}
                     >
@@ -184,7 +193,7 @@ const PortalWorkbenchSidebar = ({
                           key={getItemKey(child)}
                           to={child.to}
                           className={({ isActive }) =>
-                            `flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${
+                            `flex items-center gap-2 rounded-lg px-3 py-2.5 text-[0.9rem] transition-colors ${
                               isActive
                                 ? 'bg-brand-50 text-brand-700'
                                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
@@ -207,6 +216,7 @@ const PortalWorkbenchSidebar = ({
                   </div>
                 ) : null}
               </div>
+              </Fragment>
             );
           }
 
@@ -218,11 +228,11 @@ const PortalWorkbenchSidebar = ({
                 key={itemKey}
                 to={targetChild?.to || '/'}
                 className={({ isActive }) =>
-                  `group flex w-full items-center text-sm font-medium transition-all duration-150 ${
-                    isCollapsed ? 'justify-center rounded-[1.1rem] px-0 py-1.5' : 'gap-3 rounded-2xl px-3 py-2'
+                  `group flex w-full items-center text-[0.94rem] font-medium transition-all duration-150 ${
+                    isCollapsed ? 'justify-center rounded-lg px-0 py-1.5' : 'gap-3 rounded-lg px-3 py-2.5'
                   } ${
                     isActive || isGroupedItemActive
-                      ? 'bg-gradient-to-r from-brand-50 to-brand-100 text-brand-800 shadow-sm ring-1 ring-brand-200'
+                      ? 'bg-brand-50 text-brand-800 ring-1 ring-brand-200'
                       : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                   }`
                 }
@@ -231,7 +241,7 @@ const PortalWorkbenchSidebar = ({
                   <>
                     {Icon ? (
                       <span
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-150 ${
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 ${
                           isActive || isGroupedItemActive
                             ? 'bg-brand-500 text-white shadow-sm'
                             : 'bg-slate-100 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-700'
@@ -247,16 +257,17 @@ const PortalWorkbenchSidebar = ({
           }
 
           return (
+            <Fragment key={itemKey}>
+            {sectionLabel}
             <NavLink
-              key={itemKey}
               to={item.to}
               className={({ isActive }) =>
-                `group flex w-full items-center text-sm font-medium transition-all duration-150 ${
-                  isCollapsed ? 'justify-center rounded-[1.1rem] px-0 py-1.5' : 'gap-3 rounded-2xl px-3 py-2'
+                `group flex w-full items-center border-l-2 text-[0.94rem] font-medium transition-all duration-150 ${
+                  isCollapsed ? 'justify-center rounded-lg border-transparent px-0 py-1.5' : 'gap-3 rounded-lg px-3 py-2.5'
                 } ${
                   isActive
-                    ? 'bg-gradient-to-r from-brand-50 to-brand-100 text-brand-800 shadow-sm ring-1 ring-brand-200'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'border-brand-500 bg-brand-50 text-slate-900'
+                    : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`
               }
             >
@@ -264,9 +275,9 @@ const PortalWorkbenchSidebar = ({
                 <>
                   {Icon ? (
                     <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-150 ${
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 ${
                         isActive
-                          ? 'bg-brand-500 text-white shadow-sm'
+                          ? 'bg-brand-500 text-white'
                           : 'bg-slate-100 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-700'
                       }`}
                     >
@@ -279,6 +290,7 @@ const PortalWorkbenchSidebar = ({
                 </>
               )}
             </NavLink>
+            </Fragment>
           );
         })}
       </nav>

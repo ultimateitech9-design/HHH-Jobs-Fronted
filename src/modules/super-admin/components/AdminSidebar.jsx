@@ -15,11 +15,12 @@ import {
 } from 'react-icons/fi';
 
 export const superAdminNavItems = [
-  { to: '/portal/super-admin/dashboard', label: 'Dashboard', icon: FiBarChart2 },
+  { to: '/portal/super-admin/dashboard', label: 'Platform Overview', icon: FiBarChart2, section: 'Overview' },
   {
     key: 'people-access',
     label: 'People & Access',
     icon: FiUsers,
+    section: 'Governance',
     children: [
       { to: '/portal/super-admin/users', label: 'Users', icon: FiUsers },
       { to: '/portal/super-admin/360-search', label: '360 Search', icon: FiSearch },
@@ -30,6 +31,7 @@ export const superAdminNavItems = [
     key: 'marketplace',
     label: 'Marketplace',
     icon: FiBriefcase,
+    section: 'Operations',
     children: [
       { to: '/portal/super-admin/companies', label: 'Companies', icon: FiHome },
       { to: '/portal/super-admin/campuses', label: 'Campuses', icon: FiBookOpen },
@@ -42,6 +44,7 @@ export const superAdminNavItems = [
     key: 'activity',
     label: 'Activity Logs',
     icon: FiActivity,
+    section: 'Monitoring',
     children: [
       { to: '/portal/super-admin/student-activity-log', label: 'Student Activity Log', icon: FiActivity },
       { to: '/portal/super-admin/hr-activity-log', label: 'HR Activity Log', icon: FiActivity },
@@ -53,6 +56,7 @@ export const superAdminNavItems = [
     key: 'finance',
     label: 'Finance',
     icon: FiCreditCard,
+    section: 'Commercials',
     children: [
       { to: '/portal/super-admin/payments', label: 'Payments', icon: FiCreditCard },
       { to: '/portal/super-admin/subscriptions', label: 'Subscriptions', icon: FiActivity }
@@ -62,6 +66,7 @@ export const superAdminNavItems = [
     key: 'operations',
     label: 'Operations',
     icon: FiShield,
+    section: 'Administration',
     children: [
       { to: '/portal/super-admin/reports', label: 'Website Reports', icon: FiBarChart2 },
       { to: '/portal/super-admin/support-tickets', label: 'Support Tickets', icon: FiShield },

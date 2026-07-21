@@ -27,19 +27,19 @@ import {
 } from '../../../shared/utils/roleSubscriptions';
 
 const hrNavItems = [
-  { to: '/portal/hr/dashboard', label: 'Dashboard', icon: FiHome },
-  { to: '/portal/hr/jobs', label: 'Job Postings', icon: FiBriefcase },
-  { to: '/portal/hr/consultancy', label: 'Consultancy MIS', icon: FiLayers },
-  { to: '/portal/hr/candidates', label: 'Candidate DB', icon: FiUsers },
-  { to: '/portal/hr/shortlisted', label: 'Shortlisted', icon: FiStar },
-  { to: '/portal/hr/interests', label: 'Sent Interests', icon: FiSend },
-  { to: '/portal/hr/interviews', label: 'Interviews', icon: FiCalendar },
-  { to: '/portal/hr/campus-connections', label: 'Campus Connections', icon: FiLink },
-  { to: '/portal/hr/campus-drives', label: 'Campus Drives', icon: FiBook },
-  { to: '/portal/hr/notifications', label: 'Notifications', icon: FiBell },
-  { to: '/portal/hr/analytics', label: 'Reports', icon: FiFileText },
-  { to: '/portal/hr/employee-verification', label: 'Employee Verification', icon: FiCheckSquare },
-  { to: '/portal/hr/help-support', label: 'Help & Support', icon: FiHelpCircle }
+  { to: '/portal/hr/dashboard', label: 'Hiring Overview', icon: FiHome, section: 'Overview' },
+  { to: '/portal/hr/jobs', label: 'Job Postings', icon: FiBriefcase, section: 'Hiring' },
+  { to: '/portal/hr/candidates', label: 'Candidate Search', icon: FiUsers, section: 'Hiring' },
+  { to: '/portal/hr/shortlisted', label: 'Shortlisted Candidates', icon: FiStar, section: 'Hiring' },
+  { to: '/portal/hr/interests', label: 'Candidate Outreach', icon: FiSend, section: 'Hiring' },
+  { to: '/portal/hr/interviews', label: 'Interviews', icon: FiCalendar, section: 'Hiring' },
+  { to: '/portal/hr/campus-connections', label: 'Campus Partners', icon: FiLink, section: 'Partnerships' },
+  { to: '/portal/hr/campus-drives', label: 'Campus Drives', icon: FiBook, section: 'Partnerships' },
+  { to: '/portal/hr/consultancy', label: 'Consultancy MIS', icon: FiLayers, section: 'Partnerships' },
+  { to: '/portal/hr/analytics', label: 'Hiring Reports', icon: FiFileText, section: 'Insights & Compliance' },
+  { to: '/portal/hr/employee-verification', label: 'Employee Verification', icon: FiCheckSquare, section: 'Insights & Compliance' },
+  { to: '/portal/hr/notifications', label: 'Notifications', icon: FiBell, section: 'Account' },
+  { to: '/portal/hr/help-support', label: 'Help & Support', icon: FiHelpCircle, section: 'Account' }
 ];
 
 const trackedJobPlanSlugs = ['premium', 'hot_vacancy', 'standard'];

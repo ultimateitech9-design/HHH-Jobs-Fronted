@@ -20,28 +20,19 @@ import { getCurrentUser, getToken, setAuthSession } from '../../../utils/auth';
 import { getStudentProfile } from '../services/studentApi';
 
 const studentDashboardNavItems = [
-  { to: '/portal/student/companies', label: 'Companies', icon: FiLayers },
-  { to: '/portal/student/jobs', label: 'Jobs', icon: FiBriefcase },
-  { to: '/portal/student/govt-jobs', label: 'Govt Jobs', icon: FiFlag },
-  { to: '/portal/student/campus-connect', label: 'Campus Connect', icon: FiBookOpen },
-  { to: '/portal/student/profile', label: 'Profile', icon: FiUser },
-  { to: '/portal/student/ats', label: 'ATS', icon: FiActivity },
-  {
-    key: 'student-jobs-group',
-    label: 'More Jobs',
-    icon: FiGlobe,
-    children: [
-      { to: '/portal/student/jobs', label: 'Jobs', icon: FiBriefcase },
-      { to: '/portal/student/govt-jobs', label: 'Govt Jobs', icon: FiFlag },
-      { to: '/portal/student/global-jobs', label: 'Global Jobs', icon: FiGlobe }
-    ]
-  },
-  { to: '/portal/student/applications', label: 'My Applications', icon: FiFileText },
-  { to: '/portal/student/saved-jobs', label: 'Saved Jobs', icon: FiBookmark },
-  { to: '/portal/student/interviews', label: 'Interviews', icon: FiCalendar },
-  { to: '/portal/student/analytics', label: 'Analytics', icon: FiBarChart2 },
-  { to: '/portal/student/hr-interests', label: 'HR Interests', icon: FiSend },
-  { to: '/portal/student/help-support', label: 'Help & Support', icon: FiHelpCircle }
+  { to: '/portal/student/jobs', label: 'Recommended Jobs', icon: FiBriefcase, section: 'Discover' },
+  { to: '/portal/student/companies', label: 'Companies', icon: FiLayers, section: 'Discover' },
+  { to: '/portal/student/govt-jobs', label: 'Government Jobs', icon: FiFlag, section: 'Discover' },
+  { to: '/portal/student/campus-connect', label: 'Campus Opportunities', icon: FiBookOpen, section: 'Discover' },
+  { to: '/portal/student/global-jobs', label: 'Global Jobs', icon: FiGlobe, section: 'Discover' },
+  { to: '/portal/student/profile', label: 'Career Profile', icon: FiUser, section: 'Career Toolkit' },
+  { to: '/portal/student/ats', label: 'Resume ATS', icon: FiActivity, section: 'Career Toolkit' },
+  { to: '/portal/student/applications', label: 'Applications', icon: FiFileText, section: 'My Activity' },
+  { to: '/portal/student/saved-jobs', label: 'Saved Jobs', icon: FiBookmark, section: 'My Activity' },
+  { to: '/portal/student/interviews', label: 'Interviews', icon: FiCalendar, section: 'My Activity' },
+  { to: '/portal/student/hr-interests', label: 'Recruiter Interest', icon: FiSend, section: 'My Activity' },
+  { to: '/portal/student/analytics', label: 'Career Analytics', icon: FiBarChart2, section: 'Insights' },
+  { to: '/portal/student/help-support', label: 'Help & Support', icon: FiHelpCircle, section: 'Support' }
 ];
 
 const studentHomeNavItems = [

@@ -5,13 +5,13 @@ import useAuthStore from '../../../../core/auth/authStore';
 import useNotificationStore from '../../../../core/notifications/notificationStore';
 import PortalNotificationsDrawer from './PortalNotificationsDrawer';
 
-const COMPACT_HEADER_ROLES = ['admin', 'super_admin', 'dataentry', 'support', 'sales', 'accounts', 'hr'];
 const LOGOUT_ONLY_MENU_ROLES = ['admin', 'super_admin', 'dataentry', 'support', 'sales', 'accounts', 'campus_connect'];
 
 const PortalWorkbenchHeader = ({
   activePortalRole,
   avatarLetter,
   avatarUrl,
+  contextLabel,
   headerBadge,
   headerNavItems = [],
   headerSearchPlaceholder,
@@ -40,7 +40,6 @@ const PortalWorkbenchHeader = ({
   const isStudentMarketplaceHeader = headerVariant === 'student-marketplace';
   const showRoleSwitcher = roleSwitchOptions.length > 1;
   const useLogoutOnlyMenu = LOGOUT_ONLY_MENU_ROLES.includes(String(activePortalRole || '').trim().toLowerCase());
-  const showHeaderTitleBlock = !COMPACT_HEADER_ROLES.includes(String(activePortalRole || '').trim().toLowerCase());
   const showStudentApplicationsShortcut = ['student', 'retired_employee'].includes(String(activePortalRole || '').trim().toLowerCase());
 
   const renderProfileMenu = () => (
@@ -277,7 +276,7 @@ const PortalWorkbenchHeader = ({
         notifications={notifications}
       />
 
-      <header className="sticky top-0 z-30 flex min-h-11 flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 bg-white/94 px-3 py-1.5 backdrop-blur-xl sm:px-4 md:min-h-11 md:flex-nowrap md:px-4 md:py-0">
+      <header className="portal-workbench-header sticky top-0 z-30 flex min-h-14 flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white/96 px-3 py-2 backdrop-blur-xl sm:px-4 md:min-h-16 md:flex-nowrap md:px-5">
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -287,12 +286,12 @@ const PortalWorkbenchHeader = ({
             <Menu className="h-5 w-5" />
           </button>
 
-          {showHeaderTitleBlock ? (
-            <div className="min-w-0">
-              <h1 className="truncate font-heading text-[14px] font-semibold text-slate-900 sm:text-[15px]">{title}</h1>
-              <p className="hidden truncate text-xs text-slate-500 md:block">{subtitle}</p>
-            </div>
-          ) : null}
+          <div className="min-w-0">
+            <p className="truncate text-[0.72rem] font-bold uppercase tracking-[0.1em] text-slate-500">
+              {contextLabel || subtitle || 'Workspace'}
+            </p>
+            <h1 className="truncate font-heading text-base font-bold leading-tight text-slate-900 sm:text-[1.05rem]">{title}</h1>
+          </div>
         </div>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-3">

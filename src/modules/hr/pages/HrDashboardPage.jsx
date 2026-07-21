@@ -359,10 +359,10 @@ const HrDashboardPage = () => {
         description="Move from open roles to applicants, interviews, and hires through one focused workflow at a time."
         actions={(
           <>
-            <Link to="/portal/hr/jobs?tab=post" className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-brand-500 px-4 py-2 text-[12px] font-black text-slate-950 transition hover:bg-brand-400 active:scale-[0.98]">
+            <Link to="/portal/hr/jobs?tab=post" className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-brand-500 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-brand-400 active:scale-[0.98]">
               <FiPlus size={14} strokeWidth={2.5} /> New job
             </Link>
-            <Link to="/portal/hr/candidates" className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-[12px] font-bold text-navy transition hover:bg-slate-50 active:scale-[0.98]">
+            <Link to="/portal/hr/candidates" className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-navy transition hover:bg-slate-50 active:scale-[0.98]">
               <FiUsers size={14} /> Find candidates
             </Link>
           </>
@@ -386,9 +386,9 @@ const HrDashboardPage = () => {
         <div className="flex items-center justify-between px-5 py-3.5">
           <div>
             <h2 className="text-[15px] font-bold text-slate-900">Hiring Pipeline</h2>
-            <p className="mt-0.5 text-[11px] text-slate-400">{pipelineTotal > 1 ? `${pipelineTotal} candidates across all stages` : 'Candidate funnel stages'}</p>
+            <p className="mt-0.5 text-sm text-slate-500">{pipelineTotal > 1 ? `${pipelineTotal} candidates across all stages` : 'Candidate funnel stages'}</p>
           </div>
-          <Link to={hrReportsRoute} className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50">
+          <Link to={hrReportsRoute} className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
             View all <FiArrowRight size={11} />
           </Link>
         </div>
@@ -426,7 +426,7 @@ const HrDashboardPage = () => {
               style={{ backgroundColor: stageTheme[col.key].soft }}
             >
               <p className="text-2xl font-extrabold" style={{ color: stageTheme[col.key].color }}>{col.count}</p>
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-slate-600">{col.label}</p>
+              <p className="mt-1 text-xs font-bold uppercase tracking-[0.08em] text-slate-500 group-hover:text-slate-600">{col.label}</p>
             </Link>
           ))}
         </div>
@@ -437,7 +437,7 @@ const HrDashboardPage = () => {
         <section id="dashboard-view-activity" role="tabpanel" aria-labelledby="dashboard-tab-activity" className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-50 px-5 py-3.5">
             <h2 className="text-[15px] font-bold text-slate-900">Activity Feed</h2>
-            <Link to={jobPostingsRoute} className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700">
+            <Link to={jobPostingsRoute} className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 transition hover:text-indigo-700">
               View all <FiArrowRight size={11} />
             </Link>
           </div>
@@ -467,7 +467,7 @@ const HrDashboardPage = () => {
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-semibold text-slate-800">{activity.title}</p>
-                    <p className="truncate text-[11px] text-slate-400">{activity.subtitle}</p>
+                    <p className="truncate text-sm text-slate-500">{activity.subtitle}</p>
                   </div>
                 </div>
                 <StatusPill value={activity.status} />
@@ -477,7 +477,7 @@ const HrDashboardPage = () => {
               <div className="px-5 py-10 text-center">
                 <FiBriefcase className="mx-auto text-slate-300" size={28} />
                 <p className="mt-2 text-[13px] font-medium text-slate-400">No HR activity yet</p>
-                <Link to="/portal/hr/jobs?tab=post" className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold text-indigo-600 hover:text-indigo-700">
+                <Link to="/portal/hr/jobs?tab=post" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-700">
                   <FiPlus size={12} /> Post your first job
                 </Link>
               </div>
@@ -490,7 +490,7 @@ const HrDashboardPage = () => {
         <section id="dashboard-view-applicants" role="tabpanel" aria-labelledby="dashboard-tab-applicants" className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-50 px-5 py-3.5">
             <h2 className="text-[15px] font-bold text-slate-900">Applicant Pipelines</h2>
-            <Link to={applicantHubRoute} className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700">
+            <Link to={applicantHubRoute} className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 transition hover:text-indigo-700">
               View all <FiArrowRight size={11} />
             </Link>
           </div>
@@ -515,7 +515,7 @@ const HrDashboardPage = () => {
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-semibold text-slate-800">{applicant.title}</p>
-                    <p className="truncate text-[11px] text-slate-400">
+                    <p className="truncate text-sm text-slate-500">
                       {applicant.sourceType === 'campus' ? 'Campus drive' : 'Job post'} &middot; {applicant.subtitle}
                     </p>
                   </div>
@@ -541,16 +541,16 @@ const HrDashboardPage = () => {
             </span>
             <div>
               <h2 className="text-[15px] font-bold text-slate-900">Upcoming Interviews</h2>
-              <p className="text-[11px] text-slate-400">{upcomingInterviews.length > 0 ? `${upcomingInterviews.length} upcoming` : 'None upcoming'}</p>
+              <p className="text-sm text-slate-500">{upcomingInterviews.length > 0 ? `${upcomingInterviews.length} upcoming` : 'None upcoming'}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <FeatureGate feature="hr.interview_scheduling" featureLabel="Interview Scheduling" inline>
-              <Link to="/portal/hr/interviews" className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-slate-800">
+              <Link to="/portal/hr/interviews" className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">
                 <FiPlus size={11} /> Schedule
               </Link>
             </FeatureGate>
-            <Link to="/portal/hr/interviews" className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50">
+            <Link to="/portal/hr/interviews" className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
               View all <FiArrowRight size={11} />
             </Link>
           </div>
@@ -576,7 +576,7 @@ const HrDashboardPage = () => {
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-[13px] font-semibold text-slate-800">{interview.title || `${pickCandidateRole(interview, 'Role')} Interview`}</p>
-                  <p className="flex items-center gap-1 truncate text-[11px] text-slate-400">
+                  <p className="flex items-center gap-1 truncate text-sm text-slate-500">
                     <FiClock size={10} className="shrink-0" />
                     {pickCandidateName(interview, 'Candidate')} &middot; {formatInterviewDateTime(interview)}
                   </p>
@@ -588,7 +588,7 @@ const HrDashboardPage = () => {
             <div className="px-5 py-10 text-center sm:col-span-2">
               <FiCalendar className="mx-auto text-slate-300" size={28} />
               <p className="mt-2 text-[13px] font-medium text-slate-400">No upcoming interviews</p>
-              <p className="mt-1 text-[11px] text-slate-400">Schedule a future interview from the Interviews page</p>
+              <p className="mt-1 text-sm text-slate-500">Schedule a future interview from the Interviews page</p>
             </div>
           )}
         </div>

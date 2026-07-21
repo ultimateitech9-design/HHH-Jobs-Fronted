@@ -342,7 +342,14 @@ const DataEntryDashboard = () => {
           <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Data entry dashboard workspaces" title="Entry view" />
 
           {activeView === 'throughput' ? (
-            <DashboardSectionCard eyebrow="Throughput" title="Created records" subtitle="Current output recorded by the data entry team.">
+              <DashboardSectionCard
+                eyebrow="Throughput"
+                title="Created records"
+                subtitle="Current output recorded by the data entry team."
+                id="dashboard-view-throughput"
+                role="tabpanel"
+                aria-labelledby="dashboard-tab-throughput"
+              >
               <div className="divide-y divide-slate-100">
                 {[
                   ['Candidate profiles', totals.candidatesAdded, 'Profiles created by the data entry team'],
@@ -353,7 +360,7 @@ const DataEntryDashboard = () => {
                   <div key={label} className="flex min-h-14 items-center justify-between gap-4 px-2 py-3">
                     <div>
                       <p className="text-sm font-bold text-navy">{label}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">{helper}</p>
+                      <p className="mt-0.5 text-sm text-slate-500">{helper}</p>
                     </div>
                     <strong className="text-lg font-black tabular-nums text-slate-800">{Number(value || 0).toLocaleString('en-IN')}</strong>
                   </div>
@@ -363,7 +370,14 @@ const DataEntryDashboard = () => {
           ) : null}
 
           {activeView === 'quality' ? (
-            <DashboardSectionCard eyebrow="Quality control" title="Review queue" subtitle="Records that need correction, review, or approval.">
+              <DashboardSectionCard
+                eyebrow="Quality control"
+                title="Review queue"
+                subtitle="Records that need correction, review, or approval."
+                id="dashboard-view-quality"
+                role="tabpanel"
+                aria-labelledby="dashboard-tab-quality"
+              >
               <div className="divide-y divide-slate-100">
                 {[
                   ['Validation errors', quality.errors, 'Records with incomplete or invalid fields'],
@@ -375,7 +389,7 @@ const DataEntryDashboard = () => {
                   <div key={label} className="flex min-h-14 items-center justify-between gap-4 px-2 py-3">
                     <div>
                       <p className="text-sm font-bold text-navy">{label}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">{helper}</p>
+                      <p className="mt-0.5 text-sm text-slate-500">{helper}</p>
                     </div>
                     <strong className="text-lg font-black tabular-nums text-slate-800">{Number(value || 0).toLocaleString('en-IN')}</strong>
                   </div>

@@ -11,14 +11,14 @@ import {
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
 
 const platformNavItems = [
-  { to: '/portal/platform/dashboard', label: 'Dashboard', icon: FiBarChart2 },
-  { to: '/portal/platform/tenants', label: 'Tenants', icon: FiBriefcase },
-  { to: '/portal/platform/billing', label: 'Billing', icon: FiCreditCard },
-  { to: '/portal/platform/customization', label: 'Customization', icon: FiSettings },
-  { to: '/portal/platform/integrations', label: 'Integrations', icon: FiLayers },
-  { to: '/portal/platform/security', label: 'Security', icon: FiLock },
-  { to: '/portal/platform/support', label: 'Support', icon: FiHelpCircle },
-  { to: '/portal/platform/external-jobs', label: 'External Jobs', icon: FiGlobe }
+  { to: '/portal/platform/dashboard', label: 'Platform Overview', icon: FiBarChart2, section: 'Overview' },
+  { to: '/portal/platform/tenants', label: 'Tenant Directory', icon: FiBriefcase, section: 'Customers' },
+  { to: '/portal/platform/billing', label: 'Tenant Billing', icon: FiCreditCard, section: 'Customers' },
+  { to: '/portal/platform/integrations', label: 'Integrations', icon: FiLayers, section: 'Infrastructure' },
+  { to: '/portal/platform/external-jobs', label: 'External Job Sources', icon: FiGlobe, section: 'Infrastructure' },
+  { to: '/portal/platform/security', label: 'Security', icon: FiLock, section: 'Governance' },
+  { to: '/portal/platform/customization', label: 'Workspace Settings', icon: FiSettings, section: 'Governance' },
+  { to: '/portal/platform/support', label: 'Tenant Support', icon: FiHelpCircle, section: 'Support' }
 ];
 
 const PlatformModuleLayout = () => {

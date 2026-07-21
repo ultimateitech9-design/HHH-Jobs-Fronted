@@ -89,11 +89,14 @@ const SupportDashboard = () => {
           <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Support dashboard workspaces" />
 
           {activeView === 'priorities' ? (
-            <DashboardSectionCard
-              eyebrow="Service Protocol"
-              title="Immediate Desk Priorities"
-              subtitle="Suggested sequence to protect response time and service quality."
-            >
+              <DashboardSectionCard
+                eyebrow="Service Protocol"
+                title="Immediate Desk Priorities"
+                subtitle="Suggested sequence to protect response time and service quality."
+                id="dashboard-view-priorities"
+                role="tabpanel"
+                aria-labelledby="dashboard-tab-priorities"
+              >
               <ul className="space-y-3">
                 {supportChecklist.map((item, index) => (
                   <li key={item.title}>
@@ -116,11 +119,14 @@ const SupportDashboard = () => {
           ) : null}
 
           {activeView === 'queue' ? (
-            <DashboardSectionCard
-              eyebrow="Queue Mix"
-              title="Ticket Status Distribution"
-              subtitle="Snapshot of how the support desk is balancing active and resolved workload."
-            >
+              <DashboardSectionCard
+                eyebrow="Queue Mix"
+                title="Ticket Status Distribution"
+                subtitle="Snapshot of how the support desk is balancing active and resolved workload."
+                id="dashboard-view-queue"
+                role="tabpanel"
+                aria-labelledby="dashboard-tab-queue"
+              >
               <div className="divide-y divide-slate-100">
                 {[
                   ['Open', queueMix.open, ticketStatusRoute('open')],
@@ -143,11 +149,14 @@ const SupportDashboard = () => {
           ) : null}
 
           {activeView === 'recent' ? (
-          <DashboardSectionCard
-            eyebrow="Priority Tickets"
-            title="Latest Queue Items"
-            subtitle="Recent support tickets that need queue visibility."
-            action={
+            <DashboardSectionCard
+              eyebrow="Priority Tickets"
+              title="Latest Queue Items"
+              subtitle="Recent support tickets that need queue visibility."
+              id="dashboard-view-recent"
+              role="tabpanel"
+              aria-labelledby="dashboard-tab-recent"
+              action={
               <Link to="/portal/support/tickets" className={dashboardSectionActionClassName}>
                 Full Ticket Queue
               </Link>
@@ -166,7 +175,7 @@ const SupportDashboard = () => {
                         </Link>
                       </p>
                       <p className="mt-1 text-sm text-slate-500">{ticket.customer} • {ticket.category}</p>
-                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      <p className="mt-1 text-sm font-medium text-slate-500">
                         Updated {formatDateTime(ticket.updatedAt)}
                       </p>
                     </div>

@@ -183,7 +183,7 @@ const AuditDashboardPage = () => {
                     <div>
                       <p className="font-semibold text-slate-900">{event.action}</p>
                       <p className="mt-1 text-sm text-slate-500">{event.entity_type}:{event.entity_id}</p>
-                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{formatDateTime(event.created_at)}</p>
+                      <p className="mt-1 text-sm font-medium text-slate-500">{formatDateTime(event.created_at)}</p>
                     </div>
                     <StatusPill value={event.severity} />
                   </li>
@@ -211,7 +211,7 @@ const AuditDashboardPage = () => {
                     <div>
                       <p className="font-semibold text-slate-900">{alert.title}</p>
                       <p className="mt-1 text-sm text-slate-500">{alert.description}</p>
-                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      <p className="mt-1 text-sm font-medium text-slate-500">
                         {formatDateTime(alert.created_at)} • Owner: {alert.owner || '-'}
                       </p>
                     </div>

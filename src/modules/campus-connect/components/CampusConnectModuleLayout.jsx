@@ -13,14 +13,14 @@ import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLay
 import usePlanAccess from '../../../shared/hooks/usePlanAccess';
 
 const campusNavItems = [
-  { to: '/portal/campus-connect/dashboard', label: 'Dashboard', icon: FiBarChart2 },
-  { to: '/portal/campus-connect/students', label: 'Students', icon: FiUsers },
-  { to: '/portal/campus-connect/drives', label: 'Campus Drives', icon: FiBriefcase },
-  { to: '/portal/campus-connect/notifications', label: 'Notifications', icon: FiBell },
-  { to: '/portal/campus-connect/connections', label: 'Company Connections', icon: FiLink },
-  { to: '/portal/campus-connect/reports', label: 'Placement Reports', icon: FiFileText },
-  { to: '/portal/campus-connect/billing', label: 'Billing', icon: FiCreditCard },
-  { to: '/portal/campus-connect/help-support', label: 'Help & Support', icon: FiHelpCircle }
+  { to: '/portal/campus-connect/dashboard', label: 'Placement Overview', icon: FiBarChart2, section: 'Overview' },
+  { to: '/portal/campus-connect/students', label: 'Student Directory', icon: FiUsers, section: 'Placements' },
+  { to: '/portal/campus-connect/drives', label: 'Placement Drives', icon: FiBriefcase, section: 'Placements' },
+  { to: '/portal/campus-connect/connections', label: 'Employer Connections', icon: FiLink, section: 'Relationships' },
+  { to: '/portal/campus-connect/reports', label: 'Placement Reports', icon: FiFileText, section: 'Insights' },
+  { to: '/portal/campus-connect/notifications', label: 'Notifications', icon: FiBell, section: 'Account' },
+  { to: '/portal/campus-connect/billing', label: 'Plan & Billing', icon: FiCreditCard, section: 'Account' },
+  { to: '/portal/campus-connect/help-support', label: 'Help & Support', icon: FiHelpCircle, section: 'Account' }
 ];
 
 const hasUsableCampusSubscription = (subscription = null) => {

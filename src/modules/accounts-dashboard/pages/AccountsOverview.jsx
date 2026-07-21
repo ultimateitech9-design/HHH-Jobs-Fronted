@@ -78,13 +78,13 @@ const AccountsOverview = () => {
           <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Accounts dashboard workspaces" />
 
           {activeView === 'cashflow' ? (
-            <DashboardSectionCard eyebrow="Revenue Trend" title="Collections vs expense pressure">
+              <DashboardSectionCard eyebrow="Revenue Trend" title="Collections vs expense pressure" id="dashboard-view-cashflow" role="tabpanel" aria-labelledby="dashboard-tab-cashflow">
               <RevenueChart points={state.overview.monthlyRevenue || []} />
             </DashboardSectionCard>
           ) : null}
 
           {activeView === 'methods' ? (
-            <DashboardSectionCard eyebrow="Payment Rails" title="Settlement Channels" subtitle="Gateways and collection rails active on the portal.">
+              <DashboardSectionCard eyebrow="Payment Rails" title="Settlement Channels" subtitle="Gateways and collection rails active on the portal." id="dashboard-view-methods" role="tabpanel" aria-labelledby="dashboard-tab-methods">
               <div className="grid gap-3 md:grid-cols-2">
                 {(state.overview.paymentMethods || []).map((method) => (
                   <PaymentMethodCard key={method.id} method={method} />
@@ -94,13 +94,13 @@ const AccountsOverview = () => {
           ) : null}
 
           {activeView === 'transactions' ? (
-            <DashboardSectionCard eyebrow="Transactions" title="Recent Collections">
+              <DashboardSectionCard eyebrow="Transactions" title="Recent Collections" id="dashboard-view-transactions" role="tabpanel" aria-labelledby="dashboard-tab-transactions">
               <TransactionTable rows={state.overview.recentTransactions || []} />
             </DashboardSectionCard>
           ) : null}
 
           {activeView === 'invoices' ? (
-            <DashboardSectionCard eyebrow="Invoices" title="Recent Invoice Activity">
+              <DashboardSectionCard eyebrow="Invoices" title="Recent Invoice Activity" id="dashboard-view-invoices" role="tabpanel" aria-labelledby="dashboard-tab-invoices">
               <InvoiceTable rows={state.overview.recentInvoices || []} />
             </DashboardSectionCard>
           ) : null}

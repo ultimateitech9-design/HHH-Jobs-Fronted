@@ -193,10 +193,6 @@ const PortalWorkbenchLayout = ({
   return (
     <div
       className={`portal-workbench w-full overflow-x-clip min-h-screen portal-workbench--${portalKey}`}
-      style={{
-        background:
-          'radial-gradient(circle at top left, rgba(229,155,23,0.12), transparent 26%), radial-gradient(circle at 100% 0%, rgba(36,95,176,0.1), transparent 24%), linear-gradient(180deg, #f8f6f2 0%, #f3f6fb 100%)'
-      }}
     >
       <PortalWorkbenchMobileDrawer
         open={mobileMenuOpen}
@@ -220,6 +216,7 @@ const PortalWorkbenchLayout = ({
           headerSearchPlaceholder={headerSearchPlaceholder}
           headerVariant={headerVariant}
           notificationPath={notificationPath}
+          contextLabel={portalLabel}
           profilePath={profilePath}
           roleSwitchOptions={roleSwitchOptions}
           showProfileShortcut={showProfileShortcut}
@@ -268,6 +265,7 @@ const PortalWorkbenchLayout = ({
               headerSearchPlaceholder={headerSearchPlaceholder}
               headerVariant={headerVariant}
               notificationPath={notificationPath}
+              contextLabel={portalLabel}
               profilePath={profilePath}
               roleSwitchOptions={roleSwitchOptions}
               showProfileShortcut={showProfileShortcut}

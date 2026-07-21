@@ -306,7 +306,7 @@ const SuperAdminDashboard = () => {
           <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Super admin dashboard workspaces" title="Control view" />
 
           {activeView === 'overview' ? (
-            <DashboardSectionCard eyebrow="Revenue trend" title="Platform revenue movement" subtitle="Monthly top-line collections and refund pressure.">
+            <DashboardSectionCard eyebrow="Revenue trend" title="Platform revenue movement" subtitle="Monthly top-line collections and refund pressure." id="dashboard-view-overview" role="tabpanel" aria-labelledby="dashboard-tab-overview">
               <ReportsChart rows={dashboard.reports?.revenueTrend || []} />
             </DashboardSectionCard>
           ) : null}
@@ -316,6 +316,9 @@ const SuperAdminDashboard = () => {
             eyebrow="Cross-role access"
             title={activeWorkspace?.title || 'Operational workspace'}
             subtitle={activeWorkspace?.subtitle || 'Choose a role workspace to inspect its records.'}
+            id="dashboard-view-workspaces"
+            role="tabpanel"
+            aria-labelledby="dashboard-tab-workspaces"
           >
             <div className="mb-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {workspaceSnapshots.map((workspace) => (
@@ -336,7 +339,7 @@ const SuperAdminDashboard = () => {
                     {activeWorkspace.metrics.map((metric) => (
                       <div key={metric.label} className="min-w-0 border-r border-slate-200 px-3 py-3 last:border-r-0">
                         <strong className="block text-lg font-black text-navy">{metric.value}</strong>
-                        <span className="block truncate text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">{metric.label}</span>
+                        <span className="block truncate text-xs font-bold uppercase tracking-[0.08em] text-slate-500">{metric.label}</span>
                       </div>
                     ))}
                   </div>
@@ -351,8 +354,8 @@ const SuperAdminDashboard = () => {
                       >
                         <div className="min-w-0">
                           <strong className="block truncate text-sm text-slate-900">{record.title}</strong>
-                          <p className="mt-0.5 truncate text-xs text-slate-500">{record.subtitle}</p>
-                          <span className="mt-1 block text-[11px] font-semibold text-slate-400">{record.meta}</span>
+                          <p className="mt-0.5 truncate text-sm text-slate-500">{record.subtitle}</p>
+                          <span className="mt-1 block text-xs font-semibold text-slate-500">{record.meta}</span>
                         </div>
                         <StatusBadge value={activeRecord?.id === record.id ? 'selected' : 'active'} />
                       </li>
@@ -363,9 +366,9 @@ const SuperAdminDashboard = () => {
                   </div>
                 </div>
                 <section className="min-w-0 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-brand-700">Selected record</p>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-brand-700">Selected record</p>
                   <h3 className="mt-1 text-lg font-bold text-navy">{activeRecord?.title || 'No record selected'}</h3>
-                  <p className="mt-1 text-xs text-slate-500">{activeRecord?.subtitle || 'Select a row to inspect full details.'}</p>
+                  <p className="mt-1 text-sm text-slate-500">{activeRecord?.subtitle || 'Select a row to inspect full details.'}</p>
                   {activeRecord ? (
                     <dl className="mt-4 divide-y divide-slate-100 border-y border-slate-100">
                       {activeRecord.profile.map(([label, value]) => (
@@ -385,14 +388,14 @@ const SuperAdminDashboard = () => {
           ) : null}
 
           {activeView === 'support' ? (
-            <DashboardSectionCard eyebrow="Escalations" title="Open support escalations" subtitle="Critical or high-priority issues that need immediate attention.">
+            <DashboardSectionCard eyebrow="Escalations" title="Open support escalations" subtitle="Critical or high-priority issues that need immediate attention." id="dashboard-view-support" role="tabpanel" aria-labelledby="dashboard-tab-support">
               <ul className="divide-y divide-slate-100">
                 {paginatedSupportTickets.map((ticket) => (
                   <li key={ticket.id} className="flex items-start justify-between gap-4 px-2 py-3">
                     <div className="min-w-0">
                       <strong className="block truncate text-sm text-slate-900">{ticket.title}</strong>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">{ticket.company} · Assigned to {ticket.assignedTo}</p>
-                      <span className="mt-1 block text-[11px] font-semibold text-slate-400">{formatDateTime(ticket.updatedAt)}</span>
+                      <p className="mt-0.5 truncate text-sm text-slate-500">{ticket.company} · Assigned to {ticket.assignedTo}</p>
+                      <span className="mt-1 block text-xs font-semibold text-slate-500">{formatDateTime(ticket.updatedAt)}</span>
                     </div>
                     <StatusBadge value={ticket.status} />
                   </li>
@@ -403,14 +406,14 @@ const SuperAdminDashboard = () => {
           ) : null}
 
           {activeView === 'logs' ? (
-            <DashboardSectionCard eyebrow="System watch" title="Critical logs" subtitle="Recent incidents and unusual platform behavior.">
+            <DashboardSectionCard eyebrow="System watch" title="Critical logs" subtitle="Recent incidents and unusual platform behavior." id="dashboard-view-logs" role="tabpanel" aria-labelledby="dashboard-tab-logs">
               <ul className="divide-y divide-slate-100">
                 {(dashboard.systemLogs || []).slice(0, 4).map((log) => (
                   <li key={log.id} className="flex items-start justify-between gap-4 px-2 py-3">
                     <div className="min-w-0">
                       <strong className="block truncate text-sm text-slate-900">{log.action}</strong>
-                      <p className="mt-0.5 text-xs leading-5 text-slate-500">{log.details}</p>
-                      <span className="mt-1 block text-[11px] font-semibold text-slate-400">{formatDateTime(log.createdAt)}</span>
+                      <p className="mt-0.5 text-sm leading-5 text-slate-500">{log.details}</p>
+                      <span className="mt-1 block text-xs font-semibold text-slate-500">{formatDateTime(log.createdAt)}</span>
                     </div>
                     <StatusBadge value={log.level} />
                   </li>

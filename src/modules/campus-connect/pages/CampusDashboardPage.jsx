@@ -93,11 +93,14 @@ export default function CampusDashboardPage() {
       <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Campus dashboard workspaces" title="Placement view" />
 
       {activeView === 'placement' ? (
-        <DashboardSectionCard
-          eyebrow="Placement health"
-          title="Outcome and pool summary"
-          subtitle="A concise view of packages, placement progress, and active placement cycles."
-        >
+          <DashboardSectionCard
+            eyebrow="Placement health"
+            title="Outcome and pool summary"
+            subtitle="A concise view of packages, placement progress, and active placement cycles."
+            id="dashboard-view-placement"
+            role="tabpanel"
+            aria-labelledby="dashboard-tab-placement"
+          >
           <div className="divide-y divide-slate-100">
             {[
               ['Placement rate', `${stats.placementRate || 0}%`, `${stats.placedStudents || 0} of ${stats.totalStudents || 0} students placed`],
@@ -108,7 +111,7 @@ export default function CampusDashboardPage() {
               <div key={label} className="flex min-h-14 items-center justify-between gap-4 px-2 py-3">
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-navy">{label}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">{helper}</p>
+                  <p className="mt-0.5 text-sm text-slate-500">{helper}</p>
                 </div>
                 <strong className="shrink-0 text-lg font-black text-slate-800">{loading ? '--' : value}</strong>
               </div>
@@ -118,7 +121,14 @@ export default function CampusDashboardPage() {
       ) : null}
 
       {activeView === 'branches' ? (
-        <DashboardSectionCard eyebrow="Branch performance" title="Branch-wise placement" subtitle="Placement progress by academic branch.">
+          <DashboardSectionCard
+            eyebrow="Branch performance"
+            title="Branch-wise placement"
+            subtitle="Placement progress by academic branch."
+            id="dashboard-view-branches"
+            role="tabpanel"
+            aria-labelledby="dashboard-tab-branches"
+          >
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((item) => (
@@ -136,7 +146,7 @@ export default function CampusDashboardPage() {
                 <div key={`${b.branch || 'branch'}-${index}`}>
                   <div className="mb-1 flex items-center justify-between">
                     <span className="text-sm font-semibold text-slate-700">{b.branch}</span>
-                    <span className="text-xs font-bold text-slate-500">{b.placed}/{b.total} placed ({b.rate}%)</span>
+                    <span className="text-sm font-semibold text-slate-500">{b.placed}/{b.total} placed ({b.rate}%)</span>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                     <div
@@ -152,7 +162,14 @@ export default function CampusDashboardPage() {
       ) : null}
 
       {activeView === 'drives' ? (
-        <DashboardSectionCard eyebrow="Drive execution" title="Recent drives" subtitle="Current placement drives and their operational status.">
+          <DashboardSectionCard
+            eyebrow="Drive execution"
+            title="Recent drives"
+            subtitle="Current placement drives and their operational status."
+            id="dashboard-view-drives"
+            role="tabpanel"
+            aria-labelledby="dashboard-tab-drives"
+          >
           <div className="mb-5 flex items-center justify-between">
             <Link to="/portal/campus-connect/drives" className="text-sm font-bold text-[#2d5bff]">View all</Link>
           </div>
@@ -179,9 +196,9 @@ export default function CampusDashboardPage() {
                 <div key={`${drive.id || drive._id || drive.company_name || 'drive'}-${index}`} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                   <div>
                     <p className="text-sm font-bold text-slate-800">{drive.company_name}</p>
-                    <p className="text-xs text-slate-500">{new Date(drive.drive_date).toDateString()}</p>
+                    <p className="text-sm text-slate-500">{new Date(drive.drive_date).toDateString()}</p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                  <span className={`rounded-full px-2.5 py-0.5 text-sm font-bold ${
                     drive.status === 'completed' ? 'bg-emerald-50 text-emerald-700' :
                     drive.status === 'upcoming' ? 'bg-brand-50 text-brand-700' :
                     'bg-slate-100 text-slate-600'

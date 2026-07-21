@@ -95,8 +95,11 @@ select {
   min-width: 0;
   overflow-x: clip;
   font-family: var(--font-body);
-  font-size: 13px;
-  letter-spacing: -0.006em;
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: 0;
+  color: #172033;
+  background: #f4f6f8;
 }
 
 .portal-workbench h1,
@@ -118,6 +121,30 @@ select {
 
 .portal-workbench :where(button, a, input, select, textarea) {
   max-width: 100%;
+}
+
+.portal-workbench :where(input, select, textarea) {
+  font-size: 0.94rem;
+}
+
+.portal-workbench :where(table) {
+  font-size: 0.91rem;
+  line-height: 1.45;
+}
+
+.portal-workbench :where(table th) {
+  color: #526175;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+}
+
+.portal-workbench :where(table td) {
+  color: #263247;
+}
+
+.portal-workbench-header {
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
 }
 
 .portal-workbench :where(.overflow-x-auto) {
@@ -4818,7 +4845,7 @@ select {
 
 .dashboard-page-header__eyebrow {
   color: #a16207;
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 850;
   letter-spacing: 0.12em;
   line-height: 1.2;
@@ -4829,7 +4856,7 @@ select {
   margin-top: 0.35rem;
   color: var(--navy, #102f52);
   font-family: var(--font-heading, inherit);
-  font-size: clamp(1.55rem, 2vw, 2rem);
+  font-size: clamp(1.8rem, 2vw, 2.2rem);
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1.12;
@@ -4839,9 +4866,9 @@ select {
   max-width: 48rem;
   margin-top: 0.38rem;
   color: #64748b;
-  font-size: 0.84rem;
-  font-weight: 550;
-  line-height: 1.5;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.55;
 }
 
 .dashboard-page-header__aside {
@@ -4873,7 +4900,7 @@ select {
 
 .dashboard-page-header__meta dt {
   color: #94a3b8;
-  font-size: 0.62rem;
+  font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4882,7 +4909,7 @@ select {
 .dashboard-page-header__meta dd {
   overflow: hidden;
   color: #0f294d;
-  font-size: 0.86rem;
+  font-size: 1rem;
   font-weight: 800;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -4907,7 +4934,7 @@ select {
 .dashboard-summary-strip__item {
   display: flex;
   min-width: 0;
-  min-height: 74px;
+  min-height: 82px;
   align-items: center;
   gap: 0.7rem;
   padding: 0.75rem 1rem;
@@ -4932,9 +4959,9 @@ select {
 
 .dashboard-summary-strip__icon {
   display: grid;
-  width: 2rem;
-  height: 2rem;
-  flex: 0 0 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 2.25rem;
   place-items: center;
   border: 1px solid #dbe3ee;
   border-radius: 7px;
@@ -4943,8 +4970,8 @@ select {
 }
 
 .dashboard-summary-strip__icon svg {
-  width: 0.95rem;
-  height: 0.95rem;
+  width: 1.05rem;
+  height: 1.05rem;
 }
 
 .dashboard-summary-strip__copy {
@@ -4956,7 +4983,7 @@ select {
 .dashboard-summary-strip__copy strong {
   color: #0f294d;
   font-family: var(--font-heading, inherit);
-  font-size: 1.32rem;
+  font-size: 1.48rem;
   font-variant-numeric: tabular-nums;
   font-weight: 800;
   line-height: 1;
@@ -4965,7 +4992,7 @@ select {
 .dashboard-summary-strip__copy > span {
   overflow: hidden;
   color: #475569;
-  font-size: 0.7rem;
+  font-size: 0.88rem;
   font-weight: 750;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -4975,7 +5002,7 @@ select {
 .dashboard-summary-strip__copy small {
   overflow: hidden;
   color: #94a3b8;
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -4994,7 +5021,7 @@ select {
 .dashboard-focus-nav__label {
   padding: 0 1rem 0 0;
   color: #94a3b8;
-  font-size: 0.64rem;
+  font-size: 0.78rem;
   font-weight: 850;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -5019,7 +5046,7 @@ select {
 .dashboard-focus-nav__tab {
   position: relative;
   display: inline-flex;
-  min-height: 48px;
+  min-height: 52px;
   align-items: center;
   gap: 0.45rem;
   border: 0;
@@ -5027,7 +5054,7 @@ select {
   padding: 0 0.9rem;
   color: #64748b;
   cursor: pointer;
-  font-size: 0.77rem;
+  font-size: 0.94rem;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -5066,7 +5093,7 @@ select {
   background: #eef3f8;
   padding: 0.12rem 0.35rem;
   color: #475569;
-  font-size: 0.64rem;
+  font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
   font-weight: 800;
   text-align: center;
@@ -5078,9 +5105,9 @@ select {
   border-top: 1px solid #eef2f7;
   padding: 0.55rem 0;
   color: #64748b;
-  font-size: 0.72rem;
-  font-weight: 550;
-  line-height: 1.4;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 @media (max-width: 767px) {
@@ -5626,14 +5653,14 @@ select {
   background: #f8fafc;
   padding: 0.65rem 1.05rem;
   color: #748197;
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   font-weight: 850;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .admin-workforce-row {
-  min-height: 70px;
+  min-height: 78px;
   border-bottom: 1px solid #edf0f4;
   padding: 0.7rem 1.05rem;
   transition: background-color 0.18s ease;
@@ -5660,7 +5687,7 @@ select {
 .admin-workforce-row__scope strong {
   overflow: hidden;
   color: #111827;
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -5670,7 +5697,7 @@ select {
 .admin-workforce-row__scope span {
   overflow: hidden;
   color: #64748b;
-  font-size: 0.73rem;
+  font-size: 0.82rem;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -5680,7 +5707,7 @@ select {
 .admin-workforce-row__access small {
   color: #94a3b8;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.64rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -5696,7 +5723,7 @@ select {
   gap: 0.3rem;
   border-radius: 6px;
   padding: 0.3rem 0.52rem;
-  font-size: 0.65rem;
+  font-size: 0.74rem;
   font-weight: 850;
   letter-spacing: 0.04em;
   line-height: 1;
@@ -5760,7 +5787,7 @@ select {
   background: #f8fafc;
   padding: 0.35rem 0.55rem;
   color: #526176;
-  font-size: 0.66rem;
+  font-size: 0.76rem;
   font-weight: 800;
 }
 
@@ -5804,7 +5831,7 @@ select {
   background: #ffffff;
   padding: 0.62rem 0.8rem 0.62rem 2.25rem;
   color: #172033;
-  font-size: 0.79rem;
+  font-size: 0.9rem;
   font-weight: 650;
   outline: none;
 }
@@ -5839,7 +5866,7 @@ select {
 
 .admin-filter-field > span {
   color: #7d8999;
-  font-size: 0.57rem;
+  font-size: 0.7rem;
   font-weight: 850;
   letter-spacing: 0.065em;
   text-transform: uppercase;
@@ -5854,7 +5881,7 @@ select {
   background: #ffffff;
   padding: 0.58rem 1.9rem 0.58rem 0.65rem;
   color: #283548;
-  font-size: 0.74rem;
+  font-size: 0.84rem;
   font-weight: 750;
   outline: none;
 }
@@ -5878,7 +5905,7 @@ select {
   background: #ffffff;
   padding: 0.55rem 0.68rem;
   color: #315e91;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 800;
 }
 
@@ -5901,7 +5928,7 @@ select {
 }
 
 .admin-user-row {
-  min-height: 104px;
+  min-height: 112px;
   align-items: start;
   border-bottom: 1px solid #edf0f4;
   padding: 0.9rem 1rem;
@@ -5941,7 +5968,7 @@ select {
   border-radius: 7px;
   background: #eef4fb;
   color: #173f6d;
-  font-size: 0.67rem;
+  font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.02em;
 }
@@ -5955,7 +5982,7 @@ select {
 .admin-user-row__account-copy strong {
   overflow: hidden;
   color: #111827;
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   font-weight: 850;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -5965,7 +5992,7 @@ select {
 .admin-user-row__account-copy small {
   overflow: hidden;
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -6001,7 +6028,7 @@ select {
 
 .admin-date-pair > span:first-child {
   color: #94a3b8;
-  font-size: 0.62rem;
+  font-size: 0.71rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -6009,13 +6036,13 @@ select {
 
 .admin-date-value__date {
   color: #283548;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 800;
 }
 
 .admin-date-value__time {
   color: #718096;
-  font-size: 0.64rem;
+  font-size: 0.74rem;
   font-weight: 650;
 }
 
@@ -6033,7 +6060,7 @@ select {
   background: #ffffff;
   padding: 0.4rem 0.5rem;
   color: #334155;
-  font-size: 0.68rem;
+  font-size: 0.78rem;
 }
 
 .admin-control-button:hover {
@@ -6058,7 +6085,7 @@ select {
   background: #ffffff;
   padding: 0.4rem 1.75rem 0.4rem 0.55rem;
   color: #334155;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 750;
 }
 
@@ -6071,14 +6098,14 @@ select {
 
 .admin-muted-value {
   color: #94a3b8;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 650;
 }
 
 .admin-directory-empty {
   padding: 2.5rem 1rem;
   color: #64748b;
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   font-weight: 650;
   text-align: center;
 }
@@ -6118,7 +6145,7 @@ select {
 .company-context-summary__primary {
   overflow: hidden;
   color: #172033;
-  font-size: 0.79rem;
+  font-size: 0.9rem;
   font-weight: 850;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -6141,7 +6168,7 @@ select {
   background: #f8fafc;
   padding: 0.18rem 0.4rem;
   color: #526176;
-  font-size: 0.61rem;
+  font-size: 0.72rem;
   font-weight: 700;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -6158,7 +6185,7 @@ select {
   width: fit-content;
   cursor: pointer;
   color: #315e91;
-  font-size: 0.64rem;
+  font-size: 0.74rem;
   font-weight: 800;
   list-style: none;
 }
@@ -6173,7 +6200,7 @@ select {
 
 .company-context-summary__meta {
   color: #94a3b8;
-  font-size: 0.63rem;
+  font-size: 0.73rem;
   font-weight: 750;
 }
 
@@ -6184,7 +6211,7 @@ select {
 .admin-pagination-summary {
   margin: 0;
   color: #718096;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
@@ -6206,7 +6233,7 @@ select {
   height: 32px;
   min-width: 30px;
   border-radius: 5px;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 
 .command-result-account {

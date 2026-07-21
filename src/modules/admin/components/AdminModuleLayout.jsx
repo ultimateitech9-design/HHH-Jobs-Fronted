@@ -12,15 +12,15 @@ import {
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
 
 const adminNavItems = [
-  { to: '/portal/admin/dashboard', label: 'Dashboard', icon: FiBarChart2 },
-  { to: '/portal/admin/users', label: 'Users', icon: FiUsers },
-  { to: '/portal/admin/360-search', label: '360 Search', icon: FiSearch },
-  { to: '/portal/admin/jobs', label: 'Jobs', icon: FiBriefcase },
-  { to: '/portal/admin/consultancy', label: 'Consultancy', icon: FiLayers },
-  { to: '/portal/admin/reports', label: 'Reports', icon: FiFlag },
-  { to: '/portal/admin/applications', label: 'Applications', icon: FiFileText },
-  { to: '/portal/admin/master-data', label: 'Master Data', icon: FiDatabase },
-  { to: '/portal/admin/payments', label: 'Payments', icon: FiCreditCard }
+  { to: '/portal/admin/dashboard', label: 'Operations Overview', icon: FiBarChart2, section: 'Overview' },
+  { to: '/portal/admin/users', label: 'Users & Access', icon: FiUsers, section: 'People' },
+  { to: '/portal/admin/360-search', label: 'Account Search', icon: FiSearch, section: 'People' },
+  { to: '/portal/admin/jobs', label: 'Job Review', icon: FiBriefcase, section: 'Marketplace' },
+  { to: '/portal/admin/applications', label: 'Applications', icon: FiFileText, section: 'Marketplace' },
+  { to: '/portal/admin/consultancy', label: 'Consultancy Pipeline', icon: FiLayers, section: 'Business' },
+  { to: '/portal/admin/reports', label: 'Reports & Issues', icon: FiFlag, section: 'Business' },
+  { to: '/portal/admin/master-data', label: 'Master Data', icon: FiDatabase, section: 'Administration' },
+  { to: '/portal/admin/payments', label: 'Payments', icon: FiCreditCard, section: 'Administration' }
 ];
 
 const AdminModuleLayout = () => {

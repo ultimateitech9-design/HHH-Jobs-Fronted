@@ -4,7 +4,7 @@ const renderIcon = (icon) => {
   if (!icon) return null;
   if (isValidElement(icon)) return icon;
   const Icon = icon;
-  return <Icon aria-hidden="true" className="h-4 w-4" />;
+  return <Icon aria-hidden="true" className="h-[18px] w-[18px]" />;
 };
 
 const DashboardFocusNav = ({
@@ -15,6 +15,22 @@ const DashboardFocusNav = ({
   title = 'Workspace'
 }) => {
   const activeItem = items.find((item) => item.key === activeKey) || items[0];
+
+  const handleTabKeyDown = (event, itemKey) => {
+    const currentIndex = items.findIndex((item) => item.key === itemKey);
+    if (currentIndex < 0) return;
+
+    let nextIndex = currentIndex;
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % items.length;
+    else if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + items.length) % items.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = items.length - 1;
+    else return;
+
+    event.preventDefault();
+    onChange(items[nextIndex].key);
+    event.currentTarget.parentElement?.querySelectorAll('[role="tab"]')?.[nextIndex]?.focus();
+  };
 
   return (
     <nav className="dashboard-focus-nav" aria-label={label}>
@@ -31,7 +47,9 @@ const DashboardFocusNav = ({
                 aria-selected={selected}
                 aria-controls={`dashboard-view-${item.key}`}
                 id={`dashboard-tab-${item.key}`}
+                tabIndex={selected ? 0 : -1}
                 onClick={() => onChange(item.key)}
+                onKeyDown={(event) => handleTabKeyDown(event, item.key)}
                 className={`dashboard-focus-nav__tab${selected ? ' is-active' : ''}`}
               >
                 {renderIcon(item.icon)}

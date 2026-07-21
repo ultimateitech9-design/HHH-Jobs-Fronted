@@ -2,9 +2,9 @@ import { FiAlertTriangle, FiBarChart2, FiSearch } from 'react-icons/fi';
 import PortalWorkbenchLayout from '../../../shared/components/PortalWorkbenchLayout';
 
 const auditNavItems = [
-  { to: '/portal/audit/dashboard', label: 'Dashboard', icon: FiBarChart2 },
-  { to: '/portal/audit/events', label: 'Event Explorer', icon: FiSearch },
-  { to: '/portal/audit/alerts', label: 'Alerts & Compliance', icon: FiAlertTriangle }
+  { to: '/portal/audit/dashboard', label: 'Audit Overview', icon: FiBarChart2, section: 'Overview' },
+  { to: '/portal/audit/events', label: 'Event Explorer', icon: FiSearch, section: 'Investigation' },
+  { to: '/portal/audit/alerts', label: 'Alerts & Compliance', icon: FiAlertTriangle, section: 'Investigation' }
 ];
 
 const AuditModuleLayout = () => {

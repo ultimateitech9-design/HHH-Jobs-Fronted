@@ -230,7 +230,7 @@ const PlatformDashboardPage = () => {
                     <div>
                       <p className="font-semibold text-slate-900">{ticket.title}</p>
                       <p className="mt-1 text-sm text-slate-500">{ticket.tenantName || ticket.tenantId} • Owner: {ticket.owner || '-'}</p>
-                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Updated {formatDateTime(ticket.updatedAt)}</p>
+                      <p className="mt-1 text-sm font-medium text-slate-500">Updated {formatDateTime(ticket.updatedAt)}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <StatusPill value={ticket.priority || 'low'} />
@@ -261,7 +261,7 @@ const PlatformDashboardPage = () => {
                     <div>
                       <p className="font-semibold text-slate-900">{integration.name}</p>
                       <p className="mt-1 text-sm text-slate-500">{integration.category} • Owner: {integration.owner}</p>
-                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Last sync {formatDateTime(integration.lastSyncAt)}</p>
+                      <p className="mt-1 text-sm font-medium text-slate-500">Last sync {formatDateTime(integration.lastSyncAt)}</p>
                     </div>
                     <StatusPill value={integration.status || 'active'} />
                   </li>

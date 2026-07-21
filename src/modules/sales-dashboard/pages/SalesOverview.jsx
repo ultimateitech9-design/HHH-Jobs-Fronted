@@ -73,7 +73,7 @@ const SalesOverview = () => {
       {state.error ? <p className="form-error">{state.error}</p> : null}
       {state.loading ? <p className="module-note">Loading sales overview...</p> : null}
 
-      {!state.loading && state.overview ? (
+      {!state.loading ? (
         <div className="space-y-3">
           <DashboardPageHeader
             eyebrow="Commercial operations"
@@ -105,37 +105,40 @@ const SalesOverview = () => {
 
           <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Sales dashboard workspaces" title="Sales view" />
 
-          {activeView === 'automation' && automation ? (
-            <DashboardSectionCard
-              eyebrow="Revenue Automation"
-              title="Next best actions for growth"
-              subtitle={`${formatCompactCurrency(automation.summary?.forecastNext30 || 0)} forecast next 30 days · ${formatCompactCurrency(automation.summary?.pendingPaymentValue || 0)} pending recovery`}
-            >
+          {activeView === 'automation' ? (
+              <DashboardSectionCard
+                eyebrow="Revenue Automation"
+                title="Next best actions for growth"
+                subtitle={`${formatCompactCurrency(automation?.summary?.forecastNext30 || 0)} forecast next 30 days · ${formatCompactCurrency(automation?.summary?.pendingPaymentValue || 0)} pending recovery`}
+                id="dashboard-view-automation"
+                role="tabpanel"
+                aria-labelledby="dashboard-tab-automation"
+              >
               <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
                 <div className="grid gap-3 sm:grid-cols-2">
                   {[
-                    ['Forecast', formatCompactCurrency(automation.summary?.forecastNext30 || 0), 'Next 30 days'],
-                    ['Open leads', formatNumber(automation.summary?.openLeads || 0), `${automation.summary?.conversionRate || 0}% conversion`],
-                    ['Pending value', formatCompactCurrency(automation.summary?.pendingPaymentValue || 0), 'Recovery queue'],
-                    ['Active subs', formatNumber(automation.summary?.activeSubscriptions || 0), 'Renewal base']
+                    ['Forecast', formatCompactCurrency(automation?.summary?.forecastNext30 || 0), 'Next 30 days'],
+                    ['Open leads', formatNumber(automation?.summary?.openLeads || 0), `${automation?.summary?.conversionRate || 0}% conversion`],
+                    ['Pending value', formatCompactCurrency(automation?.summary?.pendingPaymentValue || 0), 'Recovery queue'],
+                    ['Active subs', formatNumber(automation?.summary?.activeSubscriptions || 0), 'Renewal base']
                   ].map(([label, value, helper]) => (
                     <div key={label} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
-                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
+                      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-500">{label}</p>
                       <p className="mt-1 text-xl font-black text-navy">{value}</p>
-                      <p className="mt-1 text-xs font-semibold text-slate-500">{helper}</p>
+                      <p className="mt-1 text-sm font-medium text-slate-500">{helper}</p>
                     </div>
                   ))}
                 </div>
 
                 <div className="space-y-3">
-                  {(automation.automationActions || []).slice(0, 3).map((action) => (
+                  {(automation?.automationActions || []).slice(0, 3).map((action) => (
                     <div key={action.title} className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-sm font-black text-emerald-950">{action.title}</p>
-                          <p className="mt-1 text-xs font-semibold text-emerald-700">{action.impact}</p>
+                          <p className="mt-1 text-sm font-medium text-emerald-700">{action.impact}</p>
                         </div>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-extrabold uppercase tracking-[0.08em] text-emerald-700">
                           {action.channel}
                         </span>
                       </div>
@@ -146,20 +149,20 @@ const SalesOverview = () => {
 
               <div className="mt-4 grid gap-3 lg:grid-cols-2">
                 <div className="rounded-lg border border-slate-100 bg-white p-3">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Priority Leads</p>
-                  {(automation.priorityLeads || []).slice(0, 5).map((lead) => (
+                  <p className="mb-2 text-xs font-extrabold uppercase tracking-[0.12em] text-slate-500">Priority Leads</p>
+                  {(automation?.priorityLeads || []).slice(0, 5).map((lead) => (
                     <div key={lead.id} className="flex items-center justify-between gap-3 border-t border-slate-100 py-2 first:border-t-0">
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-bold text-navy">{lead.companyName || lead.contactName || 'Lead'}</span>
-                        <span className="block truncate text-xs font-semibold text-slate-500">{lead.reason}</span>
+                        <span className="block truncate text-sm font-medium text-slate-500">{lead.reason}</span>
                       </span>
                       <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700">{lead.priorityScore}%</span>
                     </div>
                   ))}
                 </div>
                 <div className="rounded-lg border border-slate-100 bg-white p-3">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Revenue Risks</p>
-                  {(automation.revenueRisks || []).length === 0 ? (
+                  <p className="mb-2 text-xs font-extrabold uppercase tracking-[0.12em] text-slate-500">Revenue Risks</p>
+                  {(automation?.revenueRisks || []).length === 0 ? (
                     <p className="text-sm text-slate-500">No major revenue risk detected from current signals.</p>
                   ) : automation.revenueRisks.slice(0, 4).map((risk) => (
                     <p key={risk} className="border-t border-slate-100 py-2 text-sm leading-5 text-slate-600 first:border-t-0">{risk}</p>
@@ -170,11 +173,14 @@ const SalesOverview = () => {
           ) : null}
 
           {activeView === 'priorities' ? (
-          <DashboardSectionCard
-            eyebrow="Work Queue"
-            title="Sales operating priorities"
-            subtitle={`${formatNumber(stats.contactedLeads)} contacted · ${formatNumber(stats.untouchedLeads)} not contacted · ${formatNumber(stats.upcomingFollowups)} upcoming follow-ups`}
-          >
+            <DashboardSectionCard
+              eyebrow="Work Queue"
+              title="Sales operating priorities"
+              subtitle={`${formatNumber(stats.contactedLeads)} contacted · ${formatNumber(stats.untouchedLeads)} not contacted · ${formatNumber(stats.upcomingFollowups)} upcoming follow-ups`}
+              id="dashboard-view-priorities"
+              role="tabpanel"
+              aria-labelledby="dashboard-tab-priorities"
+            >
             <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100">
               {workQueue.map((item) => {
                 const toneClass = queueToneClass[item.tone] || queueToneClass.default;
@@ -186,7 +192,7 @@ const SalesOverview = () => {
                   >
                     <span className="min-w-0">
                       <span className="block text-sm font-bold text-navy">{item.label}</span>
-                      <span className="mt-0.5 block text-xs font-semibold text-slate-500">{item.helper}</span>
+                      <span className="mt-0.5 block text-sm font-medium text-slate-500">{item.helper}</span>
                     </span>
                     <span className="flex shrink-0 items-center gap-3">
                       <span className={`min-w-[72px] rounded-full border px-3 py-1 text-center text-sm font-black ${toneClass}`}>
@@ -202,10 +208,10 @@ const SalesOverview = () => {
           ) : null}
 
           {activeView === 'audience' ? (
-            <DashboardSectionCard eyebrow="Audience" title="Plan coverage by audience">
+              <DashboardSectionCard eyebrow="Audience" title="Plan coverage by audience" id="dashboard-view-audience" role="tabpanel" aria-labelledby="dashboard-tab-audience">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[520px] text-left text-sm">
-                  <thead className="text-xs uppercase tracking-[0.14em] text-slate-400">
+                  <thead className="text-sm uppercase tracking-[0.08em] text-slate-500">
                     <tr>
                       <th className="py-2 pr-3">Audience</th>
                       <th className="py-2 pr-3">Users</th>
@@ -231,13 +237,13 @@ const SalesOverview = () => {
           ) : null}
 
           {activeView === 'payments' ? (
-            <DashboardSectionCard eyebrow="Payments" title="Payment health">
+              <DashboardSectionCard eyebrow="Payments" title="Payment health" id="dashboard-view-payments" role="tabpanel" aria-labelledby="dashboard-tab-payments">
               <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100">
                 {paymentRows.map(([label, value, helper]) => (
                   <div key={label} className="flex min-h-[58px] items-center justify-between gap-4 px-4 py-3">
                     <span className="min-w-0">
                       <span className="block text-sm font-bold text-navy">{label}</span>
-                      <span className="mt-0.5 block text-xs font-semibold text-slate-500">{helper}</span>
+                      <span className="mt-0.5 block text-sm font-medium text-slate-500">{helper}</span>
                     </span>
                     <span className="shrink-0 text-right font-heading text-lg font-black text-slate-800">{value}</span>
                   </div>
@@ -247,7 +253,7 @@ const SalesOverview = () => {
           ) : null}
 
           {activeView === 'activity' ? (
-          <DashboardSectionCard eyebrow="Activity" title="Recent real sales activity">
+            <DashboardSectionCard eyebrow="Activity" title="Recent real sales activity" id="dashboard-view-activity" role="tabpanel" aria-labelledby="dashboard-tab-activity">
             {recentActivity.length === 0 ? (
               <p className="module-note">No sales activity recorded yet.</p>
             ) : (
@@ -260,14 +266,14 @@ const SalesOverview = () => {
                       </span>
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-bold text-navy">{item.label}</span>
-                        <span className="mt-0.5 block truncate text-xs font-semibold text-slate-500">{item.detail}</span>
+                        <span className="mt-0.5 block truncate text-sm font-medium text-slate-500">{item.detail}</span>
                       </span>
                     </div>
                     <div className="shrink-0 text-right">
                       {item.amount !== undefined ? (
                         <p className="text-sm font-black text-emerald-700">{formatCompactCurrency(item.amount)}</p>
                       ) : null}
-                      <p className="text-xs font-semibold text-slate-500">{formatDateTime(item.timestamp)}</p>
+                      <p className="text-sm font-medium text-slate-500">{formatDateTime(item.timestamp)}</p>
                     </div>
                   </div>
                 ))}

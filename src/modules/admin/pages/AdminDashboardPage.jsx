@@ -138,7 +138,12 @@ const AdminDashboardPage = () => {
             <DashboardFocusNav items={focusItems} activeKey={activeView} onChange={setActiveView} label="Admin dashboard workspaces" title="Review queue" />
           </div>
 
-          <div className="mt-3">
+          <div
+            id={`dashboard-view-${activeView}`}
+            role="tabpanel"
+            aria-labelledby={`dashboard-tab-${activeView}`}
+            className="mt-3"
+          >
             {activeView === 'recruiters' ? (
               <DashboardSectionCard
                 eyebrow="Recruiter Queue"
@@ -152,12 +157,12 @@ const AdminDashboardPage = () => {
               >
                 <div className="grid gap-2">
                   {state.pendingHr.length === 0 ? (
-                    <div className="rounded-[1rem] border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-sm text-slate-500">
+                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-sm text-slate-500">
                       No recruiter approvals are pending right now.
                     </div>
                   ) : (
                     state.pendingHr.slice(0, 4).map((user) => (
-                      <div key={user.id} className="flex items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50/80 px-4 py-3">
+                      <div key={user.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
                         <div className="min-w-0">
                           <p className="truncate font-semibold text-slate-900">{user.name || 'HR Recruiter'}</p>
                           <p className="truncate text-sm text-slate-500">{user.email || 'No email available'}</p>
@@ -183,12 +188,12 @@ const AdminDashboardPage = () => {
               >
                 <div className="grid gap-2">
                   {state.pendingJobs.length === 0 ? (
-                    <div className="rounded-[1rem] border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-sm text-slate-500">
+                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-sm text-slate-500">
                       No job listings are awaiting review.
                     </div>
                   ) : (
                     state.pendingJobs.slice(0, 4).map((job) => (
-                      <div key={job.id || job._id} className="flex items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-slate-50/80 px-4 py-3">
+                      <div key={job.id || job._id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
                         <div className="min-w-0">
                           <p className="truncate font-semibold text-slate-900">{job.jobTitle || 'Job listing'}</p>
                           <p className="truncate text-sm text-slate-500">{job.companyName || 'Company'} {job.jobLocation ? `• ${job.jobLocation}` : ''}</p>
@@ -214,12 +219,12 @@ const AdminDashboardPage = () => {
               >
                 <div className="grid gap-2">
                   {state.openReports.length === 0 ? (
-                    <div className="rounded-[1rem] border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-sm text-slate-500">
+                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-sm text-slate-500">
                       No open reports at the moment.
                     </div>
                   ) : (
                     state.openReports.slice(0, 4).map((report) => (
-                      <div key={report.id} className="rounded-[1rem] border border-slate-200 bg-slate-50/80 px-4 py-3">
+                      <div key={report.id} className="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="truncate font-semibold capitalize text-slate-900">
@@ -228,7 +233,7 @@ const AdminDashboardPage = () => {
                             <p className="mt-1 line-clamp-2 text-sm text-slate-500">
                               {report.details || 'No additional details provided.'}
                             </p>
-                            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                            <p className="mt-2 text-sm font-medium text-slate-500">
                               {formatDateTime(report.updated_at || report.created_at)}
                             </p>
                           </div>
@@ -249,7 +254,7 @@ const AdminDashboardPage = () => {
               >
                 <div className="grid gap-2">
                   {priorityItems.map((item) => (
-                    <div key={item.label} className="flex items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-gradient-to-r from-white to-slate-50 px-4 py-3">
+                    <div key={item.label} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
                       <div className="min-w-0">
                         <p className="font-semibold text-slate-900">{item.label}</p>
                         <p className="text-sm text-slate-500">{item.note}</p>
