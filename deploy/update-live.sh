@@ -176,10 +176,16 @@ child_file="$(mktemp)"
 headers_file="$(mktemp)"
 cache_buster="$(date +%s)"
 
-curl -fsS --retry 10 --retry-delay 1 --retry-connrefused --max-time 90 \
+index_url="https://hhh-jobs.com/sitemap.xml?refresh=1&v=$cache_buster"
+printf 'Validating sitemap index: %s\n' "$index_url"
+if ! curl -fsS --retry 10 --retry-delay 1 --retry-connrefused \
+  --retry-all-errors --max-time 90 \
   -D "$headers_file" \
-  "https://hhh-jobs.com/sitemap.xml?refresh=1&v=$cache_buster" \
-  -o "$index_file"
+  "$index_url" \
+  -o "$index_file"; then
+  echo "Public sitemap index request failed: $index_url" >&2
+  exit 1
+fi
 
 grep -q '<sitemapindex' "$index_file" || {
   head -30 "$index_file" >&2
@@ -198,21 +204,32 @@ first_child="$(sed -n '/<loc>/ {
   exit 1
 }
 
-curl -fsS --retry 5 --retry-delay 1 --max-time 90 \
-  "$first_child" -o "$child_file"
+printf 'Validating first sitemap child: %s\n' "$first_child"
+if ! curl -fsS --retry 5 --retry-delay 1 --retry-all-errors --max-time 90 \
+  "$first_child" -o "$child_file"; then
+  echo "First sitemap child request failed: $first_child" >&2
+  exit 1
+fi
 grep -q '<urlset' "$child_file" || {
   head -30 "$child_file" >&2
   echo "First child sitemap is invalid." >&2
   exit 1
 }
 
-asset_path="$(find "$WEB_ROOT/assets" -maxdepth 1 -type f -name '*.js' -printf '%f\n' -quit)"
+asset_path="$(sed -n 's:.*<script[^>]*src="/assets/\([^\"]*\.js\)".*:\1:p' \
+  "$WEB_ROOT/index.html")"
 [[ -n "$asset_path" ]] || {
-  echo "No built JavaScript asset found for compression validation." >&2
+  echo "No JavaScript entry asset found in $WEB_ROOT/index.html." >&2
   exit 1
 }
 
-asset_headers="$(curl -fsSI -H 'Accept-Encoding: gzip' "https://hhh-jobs.com/assets/$asset_path")"
+asset_url="https://hhh-jobs.com/assets/$asset_path"
+printf 'Validating current frontend asset: %s\n' "$asset_url"
+if ! asset_headers="$(curl -fsSI --retry 5 --retry-delay 1 --retry-all-errors \
+  -H 'Accept-Encoding: gzip' "$asset_url")"; then
+  echo "Frontend asset request failed: $asset_url" >&2
+  exit 1
+fi
 grep -qi '^content-encoding: gzip' <<< "$asset_headers" || {
   printf '%s\n' "$asset_headers" >&2
   echo "Static JavaScript is not being served with gzip compression." >&2

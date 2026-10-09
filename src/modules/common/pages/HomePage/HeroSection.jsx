@@ -187,7 +187,7 @@ export function HeroSection({ filters, onFiltersChange, onSearch, onKeywordChipC
           </div>
 
           <h1 className="mt-4 max-w-4xl font-heading text-4xl font-black leading-[1.06] tracking-normal text-white sm:text-5xl lg:text-6xl">
-            Ambitions meets the right opportunity.
+            Ambition meets the right opportunity.
           </h1>
 
           <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base sm:leading-7">
