@@ -187,8 +187,12 @@ grep -q '<sitemapindex' "$index_file" || {
   exit 1
 }
 
-first_child="$(sed -n 's:.*<loc>\(.*\)</loc>.*:\1:p' "$index_file" \
-  | head -1 | sed 's/&amp;/\&/g')"
+first_child="$(sed -n '/<loc>/ {
+  s:.*<loc>\(.*\)</loc>.*:\1:
+  s/&amp;/\&/g
+  p
+  q
+}' "$index_file")"
 [[ -n "$first_child" ]] || {
   echo "No child sitemap URL found in the sitemap index." >&2
   exit 1
@@ -202,7 +206,7 @@ grep -q '<urlset' "$child_file" || {
   exit 1
 }
 
-asset_path="$(find "$WEB_ROOT/assets" -maxdepth 1 -type f -name '*.js' -printf '%f\n' | head -1)"
+asset_path="$(find "$WEB_ROOT/assets" -maxdepth 1 -type f -name '*.js' -printf '%f\n' -quit)"
 [[ -n "$asset_path" ]] || {
   echo "No built JavaScript asset found for compression validation." >&2
   exit 1
