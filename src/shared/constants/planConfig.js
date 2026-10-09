@@ -14,6 +14,7 @@ export const TRIAL_DAYS = Object.freeze({
 // Higher tier = more features unlocked.
 export const PLAN_TIERS = Object.freeze({
   free:                0,
+  internal_staff:      99,
   // HR tiers
   hr_starter:          1,
   hr_growth:           2,

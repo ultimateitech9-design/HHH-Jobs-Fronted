@@ -68,7 +68,7 @@ const hasDisplayableSubscription = (subscription = null) =>
   Boolean(subscription?.role_plan_slug) && isUsableRoleSubscription(subscription);
 
 const HrModuleLayout = () => {
-  const { currentPlanConfig, isActive, loading, planName, subscription, isTrialing, trialDaysRemaining, subscriptionDaysRemaining } = usePlanAccess();
+  const { currentPlanConfig, isActive, isInternalStaff, loading, planName, subscription, isTrialing, trialDaysRemaining, subscriptionDaysRemaining } = usePlanAccess();
   const [planPopoverOpen, setPlanPopoverOpen] = useState(false);
   const [planUsage, setPlanUsage] = useState({
     loading: false,
@@ -88,6 +88,8 @@ const HrModuleLayout = () => {
       : 'No active plan');
   const planStatusText = loading
     ? 'Checking plan...'
+    : isInternalStaff
+      ? 'Unlimited platform access'
     : !displayableSubscription
       ? 'No active subscription'
       : (isTrialing || subscription?.meta?.isTrial)
@@ -221,12 +223,14 @@ const HrModuleLayout = () => {
                 ) : null}
               </div>
             )}
-            <Link
-              to="/portal/hr/jobs?tab=billing&billingTab=subscription"
-              className="rounded-full border border-sky-200 bg-sky-50 px-3.5 py-1 text-[13px] font-semibold text-sky-700 transition-colors hover:bg-sky-100"
-            >
-              Upgrade Plan
-            </Link>
+            {!isInternalStaff ? (
+              <Link
+                to="/portal/hr/jobs?tab=billing&billingTab=subscription"
+                className="rounded-full border border-sky-200 bg-sky-50 px-3.5 py-1 text-[13px] font-semibold text-sky-700 transition-colors hover:bg-sky-100"
+              >
+                Upgrade Plan
+              </Link>
+            ) : null}
           </div>
         )
       }}

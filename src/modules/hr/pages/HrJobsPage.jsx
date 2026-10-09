@@ -273,6 +273,11 @@ const HrJobsPage = () => {
     () => rolePlans.find((plan) => plan.slug === roleCheckoutForm.planSlug) || rolePlans[0] || null,
     [rolePlans, roleCheckoutForm.planSlug]
   );
+  const isInternalStaff = Boolean(
+    currentRoleSubscription?.is_internal_staff
+    || currentRoleSubscription?.meta?.isInternalStaff
+    || currentRoleSubscription?.meta?.unlimitedAccess
+  );
   const currentRolePlan = useMemo(
     () => {
       if (!isUsableRoleSubscription(currentRoleSubscription)) return null;
@@ -346,17 +351,26 @@ const HrJobsPage = () => {
     return counts;
   }, [jobs, currentRoleSubscription]);
   const hasUsableRecruiterPlan = useMemo(
-    () => isUsableRoleSubscription(currentRoleSubscription),
-    [currentRoleSubscription]
+    () => isInternalStaff || isUsableRoleSubscription(currentRoleSubscription),
+    [currentRoleSubscription, isInternalStaff]
   );
   const hasExistingRecruiterPlan = useMemo(() => {
-    return isUsableRoleSubscription(currentRoleSubscription);
-  }, [currentRoleSubscription]);
+    return isInternalStaff || isUsableRoleSubscription(currentRoleSubscription);
+  }, [currentRoleSubscription, isInternalStaff]);
   const selectedRolePlanChangeType = useMemo(() => {
     return getRolePlanChangeType(currentRolePlan, selectedRolePlan, hasExistingRecruiterPlan, selectedRolePlanIsCurrent);
   }, [currentRolePlan, hasExistingRecruiterPlan, selectedRolePlan, selectedRolePlanIsCurrent]);
   const selectedRolePlanNeedsSalesFollowUp = selectedRolePlanRequiresSales || selectedRolePlanChangeType === 'downgrade';
   const postingUsageByPlan = useMemo(() => {
+    if (isInternalStaff) {
+      return Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug) => [slug, {
+        limit: null,
+        used: postedJobCountsByPlan[slug] || 0,
+        remaining: null,
+        unlimited: true
+      }]));
+    }
+
     const usage = Object.fromEntries(TRACKED_JOB_PLAN_SLUGS.map((slug) => [slug, {
       limit: 0,
       used: postedJobCountsByPlan[slug] || 0,
@@ -370,7 +384,7 @@ const HrJobsPage = () => {
     }
 
     return usage;
-  }, [currentRolePlan, postedJobCountsByPlan]);
+  }, [currentRolePlan, isInternalStaff, postedJobCountsByPlan]);
   const selectedPlanPostingUsage = useMemo(
     () => postingUsageByPlan[String(selectedPlan?.slug || '').toLowerCase()] || { limit: 0, used: 0, remaining: 0 },
     [postingUsageByPlan, selectedPlan]
@@ -378,12 +392,13 @@ const HrJobsPage = () => {
   const autoPostingPlan = useMemo(() => {
     const planBySlug = new Map(postablePlans.map((plan) => [String(plan.slug || '').toLowerCase(), plan]));
     const orderedPlans = AUTO_JOB_PLAN_SLUGS.map((slug) => planBySlug.get(slug)).filter(Boolean);
-    return orderedPlans.find((plan) => (postingUsageByPlan[String(plan.slug || '').toLowerCase()]?.remaining || 0) > 0)
+    return (isInternalStaff ? orderedPlans[0] : null)
+      || orderedPlans.find((plan) => (postingUsageByPlan[String(plan.slug || '').toLowerCase()]?.remaining || 0) > 0)
       || orderedPlans.find((plan) => (postingUsageByPlan[String(plan.slug || '').toLowerCase()]?.limit || 0) > 0)
       || orderedPlans[0]
       || postablePlans[0]
       || null;
-  }, [postablePlans, postingUsageByPlan]);
+  }, [isInternalStaff, postablePlans, postingUsageByPlan]);
   const postingTypeOptions = useMemo(() => {
     const planBySlug = new Map(postablePlans.map((plan) => [String(plan.slug || '').toLowerCase(), plan]));
     return AUTO_JOB_PLAN_SLUGS.map((slug) => planBySlug.get(slug)).filter(Boolean);
@@ -402,8 +417,8 @@ const HrJobsPage = () => {
       slug,
       label: planNameBySlug[slug] || (slug === 'standard' ? 'Normal' : slug.replace(/_/g, ' ')),
       count: postedJobCountsByPlan[slug] || 0,
-      limit: postingUsageByPlan[slug]?.limit || 0,
-      remaining: postingUsageByPlan[slug]?.remaining || 0
+      limit: postingUsageByPlan[slug]?.unlimited ? 'Unlimited' : (postingUsageByPlan[slug]?.limit || 0),
+      remaining: postingUsageByPlan[slug]?.unlimited ? 'Unlimited' : (postingUsageByPlan[slug]?.remaining || 0)
     })),
     [planNameBySlug, postedJobCountsByPlan, postingUsageByPlan]
   );
@@ -427,6 +442,12 @@ const HrJobsPage = () => {
     [currentRoleSubscription, hasPendingAutopaySetup, selectedRolePlan]
   );
   const roleCheckoutAction = useMemo(() => {
+    if (isInternalStaff) {
+      return {
+        title: 'Internal Access Active',
+        detail: 'No recruiter plan purchase is required'
+      };
+    }
     if (selectedRolePlanIsCurrent) {
       return {
         title: 'Current Plan Active',
@@ -473,7 +494,7 @@ const HrJobsPage = () => {
       title: 'Change Plan',
       detail: 'No extra trial on plan change'
     };
-  }, [hasExistingRecruiterPlan, hasPendingAutopaySetup, selectedRolePlanChangeType, selectedRolePlanIsCurrent, selectedRolePlanIsPendingSetup, selectedRolePlanRequiresSales]);
+  }, [hasExistingRecruiterPlan, hasPendingAutopaySetup, isInternalStaff, selectedRolePlanChangeType, selectedRolePlanIsCurrent, selectedRolePlanIsPendingSetup, selectedRolePlanRequiresSales]);
 
   const requestedAudience = useMemo(() => {
     const value = new URLSearchParams(location.search).get('audience');
@@ -744,11 +765,11 @@ const HrJobsPage = () => {
     setDraft((current) => {
       const currentSlug = String(current.planSlug || '').toLowerCase();
       const currentPlanExists = postablePlans.some((plan) => String(plan.slug || '').toLowerCase() === currentSlug);
-      const currentHasQuota = (postingUsageByPlan[currentSlug]?.remaining || 0) > 0;
+      const currentHasQuota = isInternalStaff || (postingUsageByPlan[currentSlug]?.remaining || 0) > 0;
       if (currentPlanExists && currentHasQuota) return current;
       return current.planSlug === autoPostingPlan.slug ? current : { ...current, planSlug: autoPostingPlan.slug };
     });
-  }, [autoPostingPlan, editingJobId, postablePlans, postingUsageByPlan]);
+  }, [autoPostingPlan, editingJobId, isInternalStaff, postablePlans, postingUsageByPlan]);
 
   const filteredJobs = useMemo(() => {
     const visibleJobs = activeCompanyKeys.size > 0
@@ -1072,7 +1093,7 @@ const HrJobsPage = () => {
         return 'Free job posting is disabled. Use your active recruiter plan.';
       }
 
-      if (!editingJobId && selectedPlanPostingUsage.remaining <= 0) {
+      if (!editingJobId && !isInternalStaff && selectedPlanPostingUsage.remaining <= 0) {
         return `No ${selectedPlan.name} job posts left in your current plan. Upgrade your plan to post more.`;
       }
     }
@@ -1190,6 +1211,11 @@ const HrJobsPage = () => {
     event.preventDefault();
     setMessage('');
     setError('');
+
+    if (isInternalStaff) {
+      setMessage('Internal staff unlimited access is already active. No plan purchase is required.');
+      return;
+    }
 
     if (!selectedRolePlan) {
       setError('No recruiter plan is available right now. Contact admin.');
@@ -1625,10 +1651,10 @@ const HrJobsPage = () => {
                   {postingTypeOptions.map((plan) => {
                     const slug = String(plan.slug || '').toLowerCase();
                     const usage = postingUsageByPlan[slug] || { remaining: 0 };
-                    const disabled = !editingJobId && usage.remaining <= 0;
+                    const disabled = !editingJobId && !isInternalStaff && usage.remaining <= 0;
                     return (
                       <option key={plan.slug} value={plan.slug} disabled={disabled}>
-                        {plan.name || planNameBySlug[slug] || slug.replace(/_/g, ' ')} ({usage.remaining} left)
+                        {plan.name || planNameBySlug[slug] || slug.replace(/_/g, ' ')} ({isInternalStaff ? 'Unlimited' : `${usage.remaining} left`})
                       </option>
                     );
                   })}
@@ -2100,13 +2126,15 @@ const HrJobsPage = () => {
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-600">Current Subscription</p>
                   <p className="mt-1.5 text-lg font-extrabold text-slate-900">
                     {hasUsableRecruiterPlan
-                      ? (rolePlanNameBySlug[currentRoleSubscription.role_plan_slug] || currentRoleSubscription.role_plan_slug)
+                      ? (currentRoleSubscription?.plan_name || rolePlanNameBySlug[currentRoleSubscription.role_plan_slug] || currentRoleSubscription.role_plan_slug)
                       : isPendingAutopayRoleSubscription(currentRoleSubscription)
                         ? `${rolePlanNameBySlug[currentRoleSubscription.role_plan_slug] || currentRoleSubscription.role_plan_slug} setup pending`
                         : 'No active plan'}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {isPendingAutopayRoleSubscription(currentRoleSubscription)
+                    {isInternalStaff
+                      ? 'Platform staff access has no commercial usage limits.'
+                      : isPendingAutopayRoleSubscription(currentRoleSubscription)
                       ? 'Auto-pay must be authorised before this plan becomes active.'
                       : currentRoleSubscription?.meta?.isTrial
                       ? `${currentTrialProgressLabel || 'Trial active'}${currentRoleSubscription?.trial_ends_at || currentRoleSubscription?.ends_at ? ` • Valid till ${formatDateTime(currentRoleSubscription.trial_ends_at || currentRoleSubscription.ends_at)}` : ''}`
@@ -2114,7 +2142,7 @@ const HrJobsPage = () => {
                         ? `Active until ${formatDateTime(currentRoleSubscription.ends_at)}`
                         : 'Choose a plan to unlock recruiter-side billing.')}
                   </p>
-                  {currentRoleSubscription && (
+                  {currentRoleSubscription && !isInternalStaff && (
                     <p className="mt-1 text-[11px] font-semibold text-brand-700">
                       Auto-pay: {currentRoleSubscription?.autopay_enabled ? (currentRoleSubscription?.autopay_status || 'active') : 'not enabled'}
                     </p>
@@ -2287,7 +2315,7 @@ const HrJobsPage = () => {
 
                   <button
                     type="submit"
-                    disabled={roleCheckoutSaving || rolePlans.length === 0 || selectedRolePlanIsCurrent}
+                    disabled={isInternalStaff || roleCheckoutSaving || rolePlans.length === 0 || selectedRolePlanIsCurrent}
                     className="flex min-h-[56px] w-full flex-col items-center justify-center gap-0.5 rounded-lg bg-brand-600 px-4 py-2.5 text-center text-white transition-colors hover:bg-brand-500 disabled:opacity-50"
                   >
                     {roleCheckoutSaving ? (

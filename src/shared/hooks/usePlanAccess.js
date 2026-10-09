@@ -106,10 +106,17 @@ export const usePlanAccess = () => {
     return () => window.removeEventListener(PLAN_ACCESS_INVALIDATED_EVENT, handleInvalidation);
   }, [audienceRole, fetchSubscription]);
 
+  const isInternalStaff = Boolean(
+    subscription?.is_internal_staff
+    || subscription?.meta?.isInternalStaff
+    || subscription?.meta?.unlimitedAccess
+  );
   const currentPlanSlug = subscription?.role_plan_slug || 'free';
-  const currentTier = PLAN_TIERS[currentPlanSlug] || 0;
-  const planName = subscription?.plan_name || currentPlanSlug;
-  const isActive = isSubscriptionActive(subscription);
+  const currentTier = isInternalStaff ? 99 : (PLAN_TIERS[currentPlanSlug] || 0);
+  const planName = isInternalStaff
+    ? (subscription?.plan_name || 'Internal Staff - Unlimited')
+    : (subscription?.plan_name || currentPlanSlug);
+  const isActive = isInternalStaff || isSubscriptionActive(subscription);
   const isTrialing = checkIsTrialing(subscription);
   const trialDaysRemaining = getTrialRemainingDays(subscription);
   const subscriptionDaysRemaining = getSubscriptionRemainingDays(subscription);
@@ -119,9 +126,10 @@ export const usePlanAccess = () => {
   const availablePlans = useMemo(() => getPlansForRole(audienceRole), [audienceRole]);
 
   const canAccess = useCallback((featureKey) => {
+    if (isInternalStaff) return true;
     if (!isActive && currentTier > 0) return false;
     return canAccessFeature(featureKey, currentTier, role);
-  }, [currentTier, role, isActive]);
+  }, [currentTier, role, isActive, isInternalStaff]);
 
   const getRequiredTier = useCallback((featureKey) => {
     return FEATURE_REQUIREMENTS[featureKey] || 0;
@@ -143,6 +151,7 @@ export const usePlanAccess = () => {
     currentTier,
     planName,
     isActive,
+    isInternalStaff,
     isTrialing,
     trialDaysRemaining,
     subscriptionDaysRemaining,
